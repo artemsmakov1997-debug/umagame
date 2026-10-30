@@ -1,10 +1,10 @@
-import {WIDTH,HEIGHT,WORLD,rooms,MAX_HEALTH,platforms,ladders} from './engine.js?v=0.4.0';
-import {rect,text,heart,headline} from './pixel.js?v=0.4.0';
-import {cats,creatures,sprite} from './assets.js?v=0.4.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.4.0';
-import {abilityNames} from './boss.js?v=0.4.0';
+import {WIDTH,HEIGHT,WORLD,rooms,MAX_HEALTH,platforms,ladders} from './engine.js?v=0.5.0';
+import {rect,text,heart,headline} from './pixel.js?v=0.5.0';
+import {cats,creatures,sprite} from './assets.js?v=0.5.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.5.0';
+import {abilityNames} from './boss.js?v=0.5.0';
 const HUD='#030a1e',CREAM='#ffe5a4',CYAN='#9ce7fa';
-function title(c){text(c,'УМА ПРОТИВ ИНФОШУМА',12,10,CREAM,2,1);text(c,'ДЕРЖИ УХО ВОСТРО',12,34,CYAN);}
+function title(c){text(c,'УМА ПРОТИВ ИНФОШУМА',12,10,CREAM,2,1);rect(c,10,28,203,18,'#176185');rect(c,11,29,201,16,HUD);text(c,'ДЕРЖИ УХО ВОСТРО',15,30,CYAN,2);}
 export function drawControls(canvas){const c=canvas.getContext('2d');rect(c,0,0,768,32,HUD);
  const key=(x,label,w=30)=>{rect(c,x,2,w,25,'#7d91b6');rect(c,x+2,4,w-4,21,'#101c38');text(c,label,x+7,8,'#c1d8ee',2);};
  key(14,'');key(51,''); // Arrow shapes are deliberately drawn with square pixels.
@@ -53,7 +53,7 @@ export class Renderer{
   }
   const bx=WIDTH*2;if(b.active){rect(c,bx+300,48,3,426,'#a7a3ff70');}
   if(b.hp>0){
-   sprite(c,a.noise,creatures.boss,bx+543,53+Math.round(Math.sin(t*2)*3),221,205);
+   drawMonster(c,a,'source',bx+543,53,221,205,t,false,b);
    if(b.active&&b.state==='recover')rect(c,b.x,245,b.w-20,7,'#a8ffc2');
    if(b.active&&b.state!=='recover'){c.strokeStyle='#91dfff';c.lineWidth=2;c.strokeRect(bx+620,123,115,127);}
    if(b.cooldown>0){c.globalAlpha=.35;rect(c,bx+619,125,114,124,'#d9ffff');c.globalAlpha=1;}
@@ -69,12 +69,12 @@ export class Renderer{
   for(const e of g.enemies)if(!e.dead&&e.x>cam-330&&e.x<cam+WIDTH+330){
    if(e.type==='clickbait'&&e.state==='lure'){drawLure(c,a,e.x+24,e.y+8,t);continue;}
    if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.5;
-   if(e.type==='infonoise')drawMonster(c,a,e.type,e.x-19,e.y-20,88,49,t,e.dir>0);
-   if(e.type==='headline')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0);
-   if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t);
+   if(e.type==='infonoise')drawMonster(c,a,e.type,e.x-24,e.y-38,96,67,t,e.dir<0,e);
+   if(e.type==='headline')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0,e);
+   if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,false,e);
    if(e.type==='clickbait'){
     const grow=e.state==='windup'?.55+.45*(1-e.timer/.6):1;
-    drawMonster(c,a,e.type,e.x-35,e.y+29-108*grow,112,108*grow,t,e.dir>0);
+    drawMonster(c,a,e.type,e.x-35,e.y+29-108*grow,112,108*grow,t,e.dir>0,e);
    }
    c.globalAlpha=1;
    rect(c,e.x+3,e.y-53,42,3,'#12203b');rect(c,e.x+3,e.y-53,42*Math.max(0,e.hp)/e.maxHp,3,e.guardian?'#ffcf77':'#fc7b88');

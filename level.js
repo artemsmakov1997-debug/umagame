@@ -12,8 +12,8 @@ export function enemy(type,room,x,platformIndex,extra={}){
  if(!s)throw new Error('Unknown enemy platform');
  const hp=type==='headline'?3:2;
  return {id:`${type}-${room}-${x}-${platformIndex}`,type,room,x:rooms[room].x+x,y:s.y-29,w:48,h:29,origin:s.x+12,end:s.x+s.w-60,
- dir:-1,speed:type==='infonoise'?24:0,hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
- inv:0,lastSwing:-1,dead:false,alert:0,blastHit:false,...extra};
+ dir:-1,speed:type==='infonoise'?24:type==='headline'?14:type==='panicker'?18:0,hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
+ inv:0,lastSwing:-1,dead:false,alert:0,blastHit:false,attackFlash:0,walkTime:0,...extra};
 }
 export function createEnemies(){return [
  enemy('infonoise',0,133,0),enemy('infonoise',0,365,1,{guardian:true,hp:3,maxHp:3}),

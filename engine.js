@@ -1,7 +1,7 @@
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup} from './level.js?v=0.4.0';
-import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.4.0';
-import {stepEnemies} from './enemies.js?v=0.4.0';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,platforms,ladders,ladder,rooms} from './level.js?v=0.4.0';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup} from './level.js?v=0.5.0';
+import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.5.0';
+import {stepEnemies} from './enemies.js?v=0.5.0';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,platforms,ladders,ladder,rooms} from './level.js?v=0.5.0';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export class Game {
  constructor(){this.overlap=overlap;this.reset();}

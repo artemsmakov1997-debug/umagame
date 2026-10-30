@@ -1,7 +1,7 @@
-import {Game} from './engine.js?v=0.4.0';
-import {Renderer,drawControls} from './render.js?v=0.4.0';
-import {loadAssets} from './assets.js?v=0.4.0';
-import {ScreenManager} from './screens.js?v=0.4.0';
+import {Game} from './engine.js?v=0.5.0';
+import {Renderer,drawControls} from './render.js?v=0.5.0';
+import {loadAssets} from './assets.js?v=0.5.0';
+import {ScreenManager} from './screens.js?v=0.5.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0);

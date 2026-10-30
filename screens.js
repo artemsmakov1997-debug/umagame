@@ -1,6 +1,6 @@
-import {monsters} from './catalog.js?v=0.4.0';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.4.0';
-import {idleFrame} from './menu-animation.js?v=0.4.0';
+import {monsters} from './catalog.js?v=0.5.0';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.5.0';
+import {idleFrame} from './menu-animation.js?v=0.5.0';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
  constructor(assets,onStart,onExit){
@@ -12,7 +12,7 @@ export class ScreenManager{
   for(const button of document.querySelectorAll('[data-back]'))button.addEventListener('click',()=>this.show('menu'));
   this.monsterButtons=monsters.map((monster,index)=>{
    const button=document.createElement('button');button.className='monster-option';button.setAttribute('aria-label',monster.name);button.setAttribute('aria-pressed','false');
-   const canvas=document.createElement('canvas');canvas.width=100;canvas.height=72;canvas.setAttribute('aria-hidden','true');
+   const canvas=document.createElement('canvas');canvas.width=140;canvas.height=94;canvas.setAttribute('aria-hidden','true');
    const label=document.createElement('span');label.textContent=monster.name;button.append(canvas,label);$('monster-list').append(button);
    drawPortrait(canvas,assets,monster.id);button.addEventListener('click',()=>this.selectMonster(index));return button;
   });
@@ -22,9 +22,9 @@ export class ScreenManager{
  selectMonster(index,focus=false){
   this.monsterIndex=(index+monsters.length)%monsters.length;const monster=monsters[this.monsterIndex];
   this.monsterButtons.forEach((button,i)=>{button.classList.toggle('selected',i===this.monsterIndex);button.setAttribute('aria-pressed',String(i===this.monsterIndex));});
-  $('monster-title').textContent=monster.name;$('monster-description').textContent=monster.description;$('monster-tip').textContent=monster.tip;
+  $('monster-title').textContent=monster.name;$('monster-title').classList.toggle('long-title',monster.name.length>11);$('monster-description').textContent=monster.description;$('monster-tip').textContent=monster.tip;
   const abilities=$('monster-abilities');abilities.replaceChildren();
-  for(const [label,value] of monster.abilities){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;row.append(dt,dd);abilities.append(row);}
+  for(const [i,[label,value]] of monster.abilities.entries()){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd'),icon=document.createElement('i');icon.className=i===0?'sound-icon':'danger-icon';icon.setAttribute('aria-hidden','true');dt.append(icon,document.createTextNode(label));dd.textContent=value;row.append(dt,dd);abilities.append(row);}
   drawPortrait($('monster-art'),this.assets,monster.id);if(focus)this.monsterButtons[this.monsterIndex].focus({preventScroll:true});
  }
  show(view,focus=true){
@@ -46,6 +46,15 @@ export class ScreenManager{
  }
  draw(canvas,time){
   this.time=time;this.idleAction=idleFrame(time).action;const bounds=canvas.getBoundingClientRect(),height=Math.round(768*bounds.height/bounds.width);if(canvas.height!==height)canvas.height=height;
-  drawMenuScene(canvas.getContext('2d'),this.assets,time,this.view==='menu');
+  const c=canvas.getContext('2d');
+  if(this.view==='library'){
+   c.imageSmoothingEnabled=false;if(height===480)c.drawImage(this.assets.library,0,0,768,512);else{const w=height*1.5;c.drawImage(this.assets.library,(768-w)/2,0,w,height);}
+   // Animate the selected illustration and list poses at a pixel animation cadence.
+   if(this.lastPortraitTick!==Math.floor(time*12)||this.lastPortraitIndex!==this.monsterIndex){
+    drawPortrait($('monster-art'),this.assets,monsters[this.monsterIndex].id,time);
+    this.monsterButtons.forEach((button,i)=>drawPortrait(button.querySelector('canvas'),this.assets,monsters[i].id,time+i*.4));
+    this.lastPortraitTick=Math.floor(time*12);this.lastPortraitIndex=this.monsterIndex;
+   }
+  }else drawMenuScene(c,this.assets,time,this.view==='menu');
  }
 }

@@ -5,13 +5,28 @@ import {enemy,createEnemies} from '../level.js';
 import {abilities,planAttack,castAttack,stepBoss,damageBoss} from '../boss.js';
 import {alertNearby} from '../enemies.js';
 import {monsters} from '../catalog.js';
-import {idleFrame} from '../menu-animation.js';
+import {idleFrame,idlePlacement} from '../menu-animation.js';
+import {monsterFrame} from '../monster-animation.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function stand(g,x=45,room=0,index=0){const s=platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x,y:s.y-g.player.h,vy:0,vx:0,grounded:true});}
 function isolated(){const g=new Game();g.start();g.enemies=[];return g;}
 function bossGame(){const g=isolated();g.relays.forEach(r=>r.hp=0);g.checkpoint=2;stand(g,WIDTH*2+604,2,2);g.boss.active=true;g.boss.state='recover';g.boss.timer=2;return g;}
 test('catalogue and game agree on exactly the five approved monsters',()=>{assert.deepEqual(monsters.map(m=>m.name),['Инфошум','Кликбейт','Громкий заголовок','Паникёр','Источник шума']);assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>m.id!=='source').map(m=>m.id)));assert.throws(()=>enemy('guard',0,100,0));for(const m of monsters){assert.ok(m.description);assert.equal(m.abilities.length,2);assert.ok(m.tip);}});
 test('menu animation contains real blink, lick and multiple grooming frames',()=>{assert.equal(idleFrame(0).frame,0);assert.deepEqual(idleFrame(3.07),{frame:1,action:'blink'});assert.deepEqual(idleFrame(6.1),{frame:2,action:'lick'});const frames=new Set(Array.from({length:31},(_,i)=>idleFrame(9+i*.1).frame));assert.ok(frames.has(3)&&frames.has(4)&&frames.has(5));assert.equal(idleFrame(18+3.07).action,'blink');});
+test('menu registration holds the same ground point and scale through all poses',()=>{
+ for(const height of [480,1440]){const base=idlePlacement(0,height);assert.deepEqual(idlePlacement(1.5,height),base);for(const time of [3.07,6.1,9.8,10.4,11.6]){const pose=idlePlacement(time,height);assert.equal(pose.groundY,base.groundY);assert.equal(pose.groundX,base.groundX);assert.equal(pose.scale,base.scale);}}
+});
+test('monster animation selects walking, preparation and actual attack poses',()=>{
+ for(const id of ['infonoise','headline','panicker','clickbait','source']){
+  const walking=monsterFrame(id,0,{state:'patrol',walkTime:0}),step=monsterFrame(id,.48,{state:'patrol',walkTime:.48});assert.notEqual(walking,step,id);
+  const windup=monsterFrame(id,0,{state:'windup'}),attack=monsterFrame(id,0,{state:id==='headline'?'blast':id==='panicker'?'alarm':id==='clickbait'?'snap':'casting',attackFlash:1});assert.notEqual(windup,attack,id);
+ }
+});
+test('real patrol distance advances steps and a shot keeps its throwing pose',()=>{
+ const g=isolated();stand(g,0);const e=enemy('infonoise',0,365,1,{timer:10});g.enemies=[e];const x=e.x;tick(g,10);assert.ok(e.x<x&&e.walkTime>0);
+ e.state='windup';e.timer=.01;tick(g,1);assert.ok(e.attackFlash>0);assert.equal(monsterFrame(e.type,g.time,e),4);
+ for(const type of ['headline','panicker']){const m=enemy(type,2,500,4,{origin:1840,end:2150});g.enemies=[m];const mx=m.x;tick(g,10);assert.ok(m.x<mx&&m.walkTime>0);}
+});
 test('three rooms are traversable; relay gates work and camera follows',()=>{const g=isolated();let jumped=false;for(let i=0;i<3000&&g.player.x<WORLD-200&&g.mode==='playing';i++){const p=g.player,s=platforms.find(s=>Math.abs(p.y+p.h-s.y)<1&&p.x+p.w>s.x&&p.x<s.x+s.w);let jump=false;if(p.grounded&&s&&p.x>s.x+s.w-50&&(s.index===0||s.index===1)){jump=!jumped;jumped=true;}else if(!p.grounded)jumped=false;g.step(1/60,{right:true,jump,attack:true});}assert.ok(g.player.x>WORLD-205);assert.equal(g.relays.filter(r=>r.hp===0).length,2);assert.equal(g.checkpoint,2);assert.ok(g.camera>WIDTH);assert.ok(g.lives>0);});
 test('closed relay prevents passage; three separate hits open it',()=>{const g=isolated();stand(g,WIDTH-60,0,2);tick(g,80,{right:true});assert.ok(g.player.x+34<=WIDTH-12);stand(g,604,0,2);tick(g,65,{attack:true});assert.equal(g.relays[0].hp,0);stand(g,WIDTH-50,0,2);tick(g,50,{right:true});assert.equal(g.room,1);});
 test('jumping lands on illustrated surface; buffered jump is honored',()=>{const g=isolated(),x=g.player.x;g.step(1/60,{jump:true});assert.ok(g.player.vy<0);tick(g,65);assert.equal(g.player.y+48,303);assert.equal(g.player.x,x);g.player.y=253;g.player.vy=40;g.player.grounded=false;g.player.coyote=0;g.step(1/60,{jump:true});tick(g,4);assert.ok(g.player.vy<0);});
