@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#030a1e">
 <meta name="description" content="Держи ухо востро. Ночная смена — пиксельная аркада про кошку Уму и оживший информационный шум.">
 <title>Держи ухо востро — Ночная смена</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.2.0">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.3.0">
 </head>
 <body>
 <main>
@@ -17,18 +17,18 @@
 <div class="intro-kicker" id="kicker">МАЛЕНЬКАЯ КОШКА. БОЛЬШАЯ НОЧЬ.</div>
 <canvas id="title-art" width="330" height="100" aria-label="Держи ухо востро"></canvas>
 <div class="subtitle" id="subtitle">НОЧНАЯ СМЕНА</div>
-<p id="description">Шум ожил. Редакция под угрозой.<br>Ума, твой выход.</p>
+<p id="description">Три зоны. Два ретранслятора. Один источник шума.<br>Ума, держи ухо востро.</p>
 <button class="primary" id="play" disabled>ЗАГРУЗКА РЕДАКЦИИ…</button>
-<p class="overlay-help" id="overlay-help">Собирай рыбок. Отбивайся лапой. Выключи источник шума.</p>
+<p class="overlay-help" id="overlay-help">Броню сбивает прыжок. SHIFT — рывок. Лапа отражает бумажные снаряды.</p>
 </div>
 <div class="status" id="toast" role="status" aria-live="polite"></div>
 </div>
 <canvas id="controls-art" width="768" height="32" aria-hidden="true"></canvas>
-<p class="sr-only">Стрелки или A и D — бег. Стрелка вверх или W — прыжок и подъём по лестнице. Стрелка вниз или S — спуск по лестнице. Пробел или X — удар лапой. Escape — пауза.</p>
+<p class="sr-only">Стрелки или A и D — бег. Стрелка вверх или W — прыжок и подъём по лестнице. Стрелка вниз или S — спуск по лестнице. Пробел или X — удар лапой. Shift — рывок. Escape — пауза.</p>
 </section>
-<div class="touch-controls" aria-label="Сенсорное управление"><div><button data-control="left" aria-label="Бежать влево">◀</button><button data-control="right" aria-label="Бежать вправо">▶</button><button data-control="down" aria-label="Спуститься по лестнице">↓</button></div><div><button data-control="attack" aria-label="Удар лапой">ЛАПА</button><button data-control="jump" aria-label="Прыгнуть или подняться по лестнице">↑</button></div></div>
-<footer><button id="sound" aria-label="Включить звук" aria-pressed="false">ЗВУК: ВЫКЛ</button><span>ESC — ПАУЗА <b>✦</b> У ЛЕСТНИЦЫ: ↑ ↓</span></footer>
+<div class="touch-controls" aria-label="Сенсорное управление"><div><button data-control="left" aria-label="Бежать влево">◀</button><button data-control="right" aria-label="Бежать вправо">▶</button><button data-control="down" aria-label="Спуститься по лестнице">↓</button></div><div><button data-control="dash" aria-label="Сделать рывок">РЫВОК</button><button data-control="attack" aria-label="Удар лапой">ЛАПА</button><button data-control="jump" aria-label="Прыгнуть или подняться по лестнице">↑</button></div></div>
+<footer><button id="sound" aria-label="Включить звук" aria-pressed="false">ЗВУК: ВЫКЛ</button><span>SHIFT — РЫВОК <b>✦</b> ESC — ПАУЗА <b>✦</b> У ЛЕСТНИЦЫ: ↑ ↓</span></footer>
 <div id="accessible-state" class="sr-only" aria-live="polite"></div>
 </main>
-<script type="module" src="game.js?v=0.2.0"></script>
+<script type="module" src="game.js?v=0.3.0"></script>
 </body></html>

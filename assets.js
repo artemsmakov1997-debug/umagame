@@ -1,5 +1,5 @@
 // Generated art stays separate from the simulation. Atlas rectangles are in source pixels.
-const sources={room:'./assets/newsroom.png',uma:'./assets/uma.png',noise:'./assets/noise.png'};
+const sources={room:'./assets/newsroom.png',archive:'./assets/archive.png',uma:'./assets/uma.png',noise:'./assets/noise.png'};
 export async function loadAssets(){
  const entries=await Promise.all(Object.entries(sources).map(async([name,path])=>{
   const image=new Image();image.src=new URL(path,import.meta.url).href;await image.decode();return[name,image];

@@ -11,4 +11,4 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
-      - run: node --check game.js && node --check render.js && node --check pixel.js && node --check assets.js
+      - run: node --check game.js && node --check render.js && node --check pixel.js && node --check assets.js && node --check level.js && node --check boss.js
