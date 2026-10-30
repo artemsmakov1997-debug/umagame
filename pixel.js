@@ -45,37 +45,27 @@ const glyphs={
  '-':['000','000','000','111','000','000','000'],'.':['0','0','0','0','0','1','1'],'!':['1','1','1','1','1','0','1'],
  ' ':['000','000','000','000','000','000','000']
 };
-export function text(ctx,str,x,y,color='#ffdf9c',scale=1){ctx.fillStyle=color;let cursor=Math.round(x);for(const char of str.toUpperCase().replaceAll('Ё','Е')){const g=glyphs[char]||glyphs[' '];for(let row=0;row<7;row++)for(let col=0;col<g[row].length;col++)if(g[row][col]==='1')ctx.fillRect(cursor+col*scale,Math.round(y)+row*scale,scale,scale);cursor+=(g[0].length+1)*scale;}return cursor-x;}
+export function text(ctx,str,x,y,color='#ffdf9c',scale=1,weight=0){ctx.fillStyle=color;let cursor=Math.round(x);for(const char of str.toUpperCase().replaceAll('Ё','Е')){const g=glyphs[char]||glyphs[' '];for(let row=0;row<7;row++)for(let col=0;col<g[row].length;col++)if(g[row][col]==='1')ctx.fillRect(cursor+col*scale,Math.round(y)+row*scale,scale+weight,scale+weight);cursor+=(g[0].length+1)*scale;}return cursor-x;}
 export function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h);}
-const cat=[
- '....o...............o.....',
- '....oo.............oo.....',
- '....opo...........opo.....',
- '....oppo.........oppo.....',
- '....opppo.......opppo.....',
- '....oppppo.....oppppo.....',
- '.....opppobbbbbopppo......',
- '.....obbbbbbbbbbbbo.......',
- '......obbbbbbbbbbbo.......',
- '......obGGobbbGGobo.......',
- '......obGkobbbGkobo.......',
- '.......obbbpbbbbbbo.......',
- '........ollllbbbo........',
- '.........obbbbbo.........',
- '..ooo....obbbbbo.........',
- '.obbo....obbbbbbo........',
- '.obo....obbbbbbbbo.......',
- '.obo...obbbbbbbbbo.......',
- '..obo..obbbbbbbbbo.......',
- '...obo.obbbbbbbbo........',
- '....ooobbbbblbbbo........',
- '......obbbbblbbbo........',
- '......obbbbolbbbo........',
- '......ollloollllo........',
- '......oooo.oooooo........'
-];
-const palette={o:'#251e2d',b:'#a68e7b',p:'#e3a193',G:'#c1e975',k:'#14272c',l:'#dec6a1'};
-export function catSprite(c,x,y,dir=1,frame=0,attack=false){c.save();c.translate(Math.round(x+8),Math.round(y));if(dir<0)c.scale(-1,1);for(let row=0;row<cat.length;row++)for(let col=0;col<cat[row].length;col++){const key=cat[row][col];if(key!=='.')rect(c,col-13,row+(row>20?Math.round(Math.sin(frame)*1):0),1,1,palette[key]);}if(attack){rect(c,11,14,12,3,'#dec6a1');rect(c,20,12,4,3,'#ffedc8');}c.restore();}
-export function fish(c,x,y){rect(c,x-4,y-2,7,5,'#f6bc54');rect(c,x-2,y-3,4,7,'#ffdc85');rect(c,x-7,y-3,2,7,'#dc9c3b');rect(c,x-5,y-1,2,3,'#f6bc54');rect(c,x+1,y-1,1,1,'#403340');}
 export function heart(c,x,y,on=true){const col=on?'#f27679':'#33495e';['0110110','1111111','1111111','0111110','0011100','0001000'].forEach((r,j)=>[...r].forEach((v,i)=>{if(v==='1')rect(c,x+i,y+j,1,1,col);}));}
-export function monster(c,x,y,t=0,big=false){c.save();c.translate(Math.round(x),Math.round(y));if(big)c.scale(1.6,1.6);rect(c,3,5,16,10,'#050b19');rect(c,6,2,10,4,'#050b19');for(let i=0;i<4;i++){const xx=(i*7)%23,yy=(i%2)*11+Math.round(Math.sin(t*3+i));rect(c,xx,yy,6,5,'#b7bacb');rect(c,xx+1,yy+1,4,1,'#626c91');rect(c,xx+1,yy+3,3,1,'#626c91');}rect(c,7,7,3,4,'#fb4e56');rect(c,13,7,3,4,'#fb4e56');rect(c,5,15,3,2,'#7399af');rect(c,17,15,3,2,'#7399af');c.restore();}
+// Heavy 8×8 display lettering for the title from the approved mockup.
+const displayGlyphs={
+ 'Д':['00111100','01111100','01101100','01101100','01101100','11111110','11111110','11000110'],
+ 'Е':['11111110','11111110','11000000','11111100','11111100','11000000','11111110','11111110'],
+ 'Р':['11111100','11111110','11000110','11111110','11111100','11000000','11000000','11000000'],
+ 'Ж':['11011011','11011011','01111110','00111100','00111100','01111110','11011011','11011011'],
+ 'И':['11000110','11001110','11011110','11110110','11100110','11000110','11000110','11000110'],
+ 'У':['11000110','11000110','11000110','01111110','00111110','00000110','01111100','01111000'],
+ 'Х':['11000110','11000110','01101100','00111000','00111000','01101100','11000110','11000110'],
+ 'О':['01111100','11111110','11000110','11000110','11000110','11000110','11111110','01111100'],
+ 'В':['11111100','11111110','11000110','11111100','11111110','11000110','11111110','11111100'],
+ 'С':['01111110','11111110','11000000','11000000','11000000','11000000','11111110','01111110'],
+ 'Т':['11111110','11111110','00110000','00110000','00110000','00110000','00110000','00110000']
+};
+export function headline(c,str,x,y,scale=2){
+ let cursor=x;
+ for(const ch of str){if(ch===' '){cursor+=4*scale;continue;}const rows=displayGlyphs[ch];if(!rows)continue;
+  for(let row=0;row<8;row++)for(let col=0;col<8;col++)if(rows[row][col]==='1')rect(c,cursor+col*scale+1,y+row*scale+2,scale,scale,'#a7692b');
+  for(let row=0;row<8;row++)for(let col=0;col<8;col++)if(rows[row][col]==='1')rect(c,cursor+col*scale,y+row*scale,scale,scale,row<2?'#fff0bc':'#ffe0a0');cursor+=9*scale;
+ }
+}

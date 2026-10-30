@@ -1,53 +1,55 @@
-import {WIDTH,HEIGHT,WORLD,platforms} from './engine.js';
-import {rect,text,catSprite,monster,fish,heart} from './pixel.js';
-const C={navy:'#080f23',line:'#1f3952',cyan:'#65dce5',gold:'#efb85e'};
-function rng(n){let s=n;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
-function plant(c,x,y){rect(c,x-6,y-9,12,10,'#9d6347');rect(c,x-8,y-11,16,3,'#c18c60');rect(c,x-1,y-37,2,27,'#456d54');for(let i=0;i<7;i++){const side=i%2?1:-1;rect(c,x+(side<0?-9:0),y-35+i*3,9,3,i%3?'#3d6953':'#6b8050');rect(c,x+side*7,y-36+i*3,4,3,'#284f47');}}
-function lamp(c,x,y){rect(c,x,y-30,2,29,'#b28655');rect(c,x-7,y-32,16,4,'#c89c5b');rect(c,x-5,y-28,12,2,'#ffe2a0');rect(c,x-5,y-1,13,2,'#c89c5b');c.fillStyle='#e6a84a0c';c.beginPath();c.moveTo(x-5,y-27);c.lineTo(x-22,y);c.lineTo(x+24,y);c.lineTo(x+7,y-27);c.fill();}
-function monitor(c,x,y,on=true){rect(c,x,y-30,34,27,'#263a4e');rect(c,x+2,y-29,30,23,'#456079');rect(c,x+4,y-27,25,18,'#0b2a43');rect(c,x+6,y-25,21,14,on?'#124d69':'#10283c');if(on){rect(c,x+9,y-22,14,1,'#5ec6df');rect(c,x+9,y-19,8,1,'#2f94b5');rect(c,x+9,y-16,12,1,'#3ba3bd');}rect(c,x+15,y-3,6,3,'#536274');rect(c,x+10,y,16,2,'#37495d');}
-function books(c,x,y){for(let j=0;j<5;j++){rect(c,x+j%2,y-3-j*3,19,3,j%2?'#8f9aae':'#bfbdba');rect(c,x+3,y-2-j*3,13,1,'#676e88');}}
+import {WIDTH,HEIGHT} from './engine.js?v=0.2.0';
+import {rect,text,heart,headline} from './pixel.js?v=0.2.0';
+import {cats,creatures,sprite} from './assets.js?v=0.2.0';
+const HUD='#030a1e',CREAM='#ffe5a4',CYAN='#9ce7fa';
+function title(c){headline(c,'ДЕРЖИ УХО ВОСТРО',12,14);text(c,'НОЧНАЯ СМЕНА',13,35,'#265f86',2);text(c,'НОЧНАЯ СМЕНА',12,34,CYAN,2);}
+export function drawControls(canvas){const c=canvas.getContext('2d');rect(c,0,0,768,32,HUD);
+ const key=(x,label,w=30)=>{rect(c,x,2,w,25,'#7d91b6');rect(c,x+2,4,w-4,21,'#101c38');text(c,label,x+7,8,'#c1d8ee',2);};
+ key(14,'');key(51,''); // Arrow shapes are deliberately drawn with square pixels.
+ const arrow=['00011000','00111000','01111111','11111111','01111111','00111000','00011000'];
+ for(const [x,flip] of [[29,false],[66,true]])for(let y=0;y<7;y++)for(let i=0;i<8;i++)if(arrow[y][i]==='1')rect(c,x+((flip?7-i:i)-4)*2,7+y*2,2,2,'#c1d8ee');
+ text(c,'БЕГ',89,11,'#c1d8ee',2);
+ key(157,'');const up=['0001000','0011100','0111110','1111111','0001000','0001000','0001000'];for(let y=0;y<7;y++)for(let x=0;x<7;x++)if(up[y][x]==='1')rect(c,165+x*2,7+y*2,2,2,'#c1d8ee');text(c,'ПРЫЖОК',198,11,'#c1d8ee',2);
+ key(607,'ПРОБЕЛ',86);text(c,'-',700,13,'#c1d8ee');text(c,'ЛАПА',711,11,'#c1d8ee',2);
+}
 export class Renderer{
- constructor(canvas){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.particles=[];}
- burst(x,y,color){for(let i=0;i<10;i++)this.particles.push({x,y,vx:(Math.random()-.5)*85,vy:-Math.random()*95,life:.5,color});}
- draw(g,dt=0){const c=this.c,t=g.time,cam=Math.floor(g.camera);rect(c,0,0,WIDTH,HEIGHT,C.navy);
- // Night sky and distant city use different parallax speeds.
- rect(c,0,20,480,182,'#0b1932');
- const random=rng(25);for(let i=0;i<60;i++){const x=((random()*800-cam*.12)%500+500)%500,y=25+random()*125;rect(c,x,y,1,1,i%4?'#314965':'#92cad4');}
- const moonX=370-cam*.04;rect(c,moonX,39,13,17,'#f1d69a');rect(c,moonX-3,42,17,11,'#f1d69a');rect(c,moonX+5,36,12,15,'#0b1932');
- const rand=rng(144);for(let i=-1;i<23;i++){const x=i*37-cam*.22%37,h=40+rand()*90;rect(c,x,179-h,32,h,'#10203b');rect(c,x+7,174-h,18,5,'#10203b');for(let a=0;a<4;a++)for(let b=0;b<6;b++)if(rand()>.46)rect(c,x+4+a*7,185-h+b*15,3,5,rand()>.6?'#c38b4d':'#2a415b');}
- // Window mullions and interior wall.
- for(let i=-1;i<8;i++){const x=i*100-cam*.4%100;rect(c,x,22,5,178,'#071321');rect(c,x+5,22,2,178,'#21344b');}
- rect(c,0,117,480,4,'#091525');rect(c,0,194,480,8,'#203549');rect(c,0,202,480,68,'#0d1b2c');
- for(let i=-1;i<14;i++){const x=i*40-cam*.65%40;rect(c,x,218,25,52,'#14253a');rect(c,x+2,222,21,2,'#1f3246');rect(c,x+2,227,21,2,'#1b3044');rect(c,x+5,235,4,25,'#0a1729');rect(c,x+12,235,8,25,'#1a2b40');}
- // Desks, shelves and set dressing in world coordinates.
- c.save();c.translate(-cam,0);
- for(let i=0;i<platforms.length;i++){const p=platforms[i];if(p.x+p.w<cam-40||p.x>cam+520)continue;
- const shelf=i>10;
- if(!shelf){rect(c,p.x+10,p.y+5,8,270-p.y,'#1d2c3b');rect(c,p.x+p.w-18,p.y+5,8,270-p.y,'#2b3541');rect(c,p.x+20,p.y+10,40,270-p.y,'#273548');for(let y=p.y+14;y<270;y+=20){rect(c,p.x+23,y,34,15,'#334154');rect(c,p.x+35,y+5,10,2,'#152638');}rect(c,p.x+65,p.y+15,p.w-100,4,'#1b2c3d');}
- rect(c,p.x,p.y,p.w,3,'#d2a164');rect(c,p.x,p.y+3,p.w,4,'#815e40');rect(c,p.x+3,p.y+7,p.w-6,3,'#352d2f');for(let k=7;k<p.w;k+=28)rect(c,p.x+k,p.y+1,13,1,'#f4c67b');
- if(!shelf){if(i%3===0)plant(c,p.x+28,p.y);else books(c,p.x+20,p.y);if(i!==10)monitor(c,p.x+p.w-58,p.y-2);if(i%2===0)lamp(c,p.x+p.w*.55,p.y-1);}
+ constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;}
+ burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
+ draw(g,dt=0){const c=this.c,a=this.assets,t=g.time,p=g.player,b=g.boss;
+ c.clearRect(0,0,WIDTH,HEIGHT);c.drawImage(a.room,0,0,WIDTH,512);
+ // Fireflies and individual pixel sparks add motion without obscuring the painted level.
+ for(let i=0;i<16;i++){const x=(i*137+Math.sin(t*.3+i)*7)%WIDTH,y=65+(i*43)%170;if(Math.sin(t+i*2)>.4)rect(c,x,y,1,1,'#8bc6ff');}
+ // The source monitor and its monster are separate: defeating it removes the monster.
+ if(b.hp>0){
+  sprite(c,a.noise,creatures.boss,543,53+Math.round(Math.sin(t*2)*3),221,205);
+  if(b.cooldown>.35){c.globalAlpha=.3;rect(c,619,125,114,124,'#d9ffff');c.globalAlpha=1;}
+  if(p.x>485){rect(c,615,65,118,4,'#15243c');rect(c,615,65,118*b.hp/5,4,'#fa5f70');}
+ }else{
+  rect(c,627,131,102,110,'#0c4158');text(c,'ТИШИНА',643,181,'#b8f5c9',1);
  }
- // Checkpoint lamp.
- rect(c,1150,183,3,28,'#6a8c9b');rect(c,1153,184,18,11,g.checkpoint?'#87e0ba':'#537e92');rect(c,1157,187,10,1,'#163143');
- for(const f of g.fishes)if(!f.taken&&f.x>cam-10&&f.x<cam+490)fish(c,Math.round(f.x),Math.round(f.y+Math.sin(t*3+f.x)*2));
- for(const e of g.enemies)if(!e.dead&&e.x>cam-30&&e.x<cam+500)monster(c,e.x,e.y,t);
- const b=g.boss;
- // Portal: an oversized infected CRT.
- rect(c,b.x-7,b.y-11,63,68,'#3d5164');rect(c,b.x-4,b.y-8,57,59,'#697580');rect(c,b.x,b.y-4,49,49,b.hp?'#0b4962':'#153a42');
- if(b.hp>0){const noise=rng(Math.floor(t*8));for(let i=0;i<65;i++)rect(c,b.x+3+noise()*42,b.y+noise()*40,2+Math.floor(noise()*5),1,noise()>.5?'#48c8de':'#1d7894');monster(c,b.x+7,b.y+7,t,true);rect(c,b.x-5,b.y-21,61,3,'#26364a');rect(c,b.x-5,b.y-21,61*b.hp/5,3,'#fa6b73');if(b.cooldown>.35)rect(c,b.x,b.y-4,49,49,'#d9ffff77');}
- else {text(c,'ТИШИНА',b.x+4,b.y+13,'#8ce0bd');}
- rect(c,b.x+13,b.y+57,23,3,'#314c60');rect(c,b.x+7,b.y+60,35,2,'#49657a');
- for(const bolt of g.bolts){rect(c,bolt.x,bolt.y,10,8,'#c0bcc8');rect(c,bolt.x+2,bolt.y+2,5,1,'#5d6383');rect(c,bolt.x-4,bolt.y+4,4,1,'#5dd5e7');}
- const p=g.player;
- if(p.inv===0||Math.floor(t*12)%2===0)catSprite(c,p.x,p.y,p.dir,p.vx?t*18:0,p.attack>0);
- if(p.attack>.05){c.strokeStyle='#fbe9bc';c.lineWidth=1;c.beginPath();c.arc(Math.round(p.x+8+p.dir*12),Math.round(p.y+13),16,p.dir>0?-1.1:2,p.dir>0?1.1:4.2);c.stroke();}
- for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,2,2,q.color);}this.particles=this.particles.filter(q=>q.life>0);
- c.restore();
- // HUD.
- rect(c,0,0,480,22,'#070e1eee');rect(c,0,21,480,1,'#324b61');text(c,'НОЧНАЯ СМЕНА',10,8,'#c1e5e6');for(let i=0;i<3;i++)heart(c,205+i*13,8,i<g.lives);fish(c,269,10);text(c,String(g.fish).padStart(2,'0'),281,7);
- const seconds=Math.ceil(g.clock);text(c,`${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`,428,7,'#f5dec1');
- rect(c,10,258,460,2,'#24394d');rect(c,10,258,Math.min(460,p.x/WORLD*460),2,'#5ac6d2');rect(c,467,255,3,7,'#efb85e');
- if(p.x<180&&g.mode==='playing'){text(c,'К ИСТОЧНИКУ ШУМА',20,39,'#a8cbd4');text(c,'БЕГИ ВПРАВО',20,51,'#e8d3ad');}
- if(p.x>2220&&b.hp&&g.mode==='playing')text(c,'УДАРЬ ПО МОНИТОРУ ЛАПОЙ!',258,40,'#f3d49e');
+ for(const f of g.fishes)if(!f.taken){const y=f.y+Math.sin(t*3+f.x)*2;sprite(c,a.noise,creatures.fish,f.x-13,y-8,26,16);}
+ for(const e of g.enemies)if(!e.dead){
+  if(e.flying)sprite(c,a.noise,creatures.flyer,e.x-24,e.y-22,100,84,e.dir>0);
+  else sprite(c,a.noise,creatures.crawler,e.x-19,e.y-19+Math.round(Math.sin(t*9)*.8),88,49,e.dir>0);
+ }
+ for(const bolt of g.bolts){c.save();c.translate(Math.round(bolt.x+8),Math.round(bolt.y+6));c.rotate(Math.sin(t*8)*.2);rect(c,-9,-7,18,14,'#ddd3c3');for(let j=0;j<3;j++)rect(c,-6,-4+j*4,11,2,'#697895');c.restore();}
+ if(!p.grounded&&Math.abs(p.vx)>0&&g.mode==='playing'){
+  this.trailTimer+=dt;if(this.trailTimer>.035){this.trailTimer=0;this.trail.push({x:p.x+9,y:p.y+34,life:.3});}
+ }
+ for(const trail of this.trail){trail.life-=dt;c.globalAlpha=Math.max(0,trail.life/.3);rect(c,trail.x,trail.y,3,3,'#ccd3ff');}c.globalAlpha=1;this.trail=this.trail.filter(v=>v.life>0);
+ if(p.inv===0||Math.floor(t*12)%2===0){
+  let pose=p.attack>0?4:!p.grounded&&!p.climbing?3:Math.abs(p.vx)>0?1+Math.floor(t*10)%2:0;
+  const {box,anchor}=cats[pose],w=Math.round(box[2]*.195),h=Math.round(box[3]*.195);
+  const center=p.x+p.w/2;const x=p.dir>0?center-w*anchor:center-w*(1-anchor);
+  sprite(c,a.uma,box,x,p.y+p.h-h,w,h,p.dir<0);
+ }
+ if(p.attack>.07){c.save();c.translate(Math.round(p.x+17+p.dir*36),Math.round(p.y+24));if(p.dir<0)c.scale(-1,1);for(let i=0;i<3;i++){rect(c,10+i*2,-13+i*8,3,10,'#ffe6a7');rect(c,6+i*2,-15+i*8,4,2,'#ffe6a7');}c.restore();}
+ for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
+ if(g.checkpoint){rect(c,308,303,3,6,'#a9e6ce');rect(c,311,303,11,5,'#39746b');}
+ // Bold, compact HUD follows the approved reference; no outer app chrome.
+ rect(c,0,0,WIDTH,48,HUD);title(c);
+ c.save();c.scale(3,3);for(let i=0;i<3;i++)heart(c,111+i*9,6,i<g.lives);c.restore();
+ sprite(c,a.noise,creatures.fish,431,17,31,19);text(c,String(g.fish).padStart(2,'0'),474,17,CREAM,3,1);
+ const s=Math.ceil(g.clock);text(c,`${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`,627,16,CREAM,3,1);
  }
 }
