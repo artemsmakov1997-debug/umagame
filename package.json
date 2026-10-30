@@ -1,10 +1,14 @@
 {
-  "name": "uma-night-shift",
-  "version": "0.3.0",
+  "name": "uma-vs-infoshum",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node tests/engine.test.js",
-    "start": "python3 -m http.server 8000"
+    "start": "python3 -m http.server 8000",
+    "test:browser": "node tests/browser.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
   }
 }

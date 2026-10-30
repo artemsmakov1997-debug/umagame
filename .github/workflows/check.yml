@@ -3,7 +3,7 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  test:
+  logic:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -11,4 +11,24 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
-      - run: node --check game.js && node --check render.js && node --check pixel.js && node --check assets.js && node --check level.js && node --check boss.js
+      - run: for file in *.js tests/*.cjs; do node --check "$file"; done
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start static server
+        run: python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/uma-http.log 2>&1 &
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-screenshots
+          path: /tmp/uma-browser
+          if-no-files-found: ignore
