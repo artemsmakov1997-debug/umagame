@@ -1,19 +1,45 @@
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup} from './level.js?v=0.5.0';
-import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.5.0';
-import {stepEnemies} from './enemies.js?v=0.5.0';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,platforms,ladders,ladder,rooms} from './level.js?v=0.5.0';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup,createPeople,LAST_ROOM,FINAL_X} from './level.js?v=0.6.0';
+import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.6.0';
+import {stepEnemies} from './enemies.js?v=0.6.0';
+import {scenes,firstEncounter} from './story.js?v=0.6.0';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,platforms,ladders,ladder,rooms,LAST_ROOM,FINAL_X} from './level.js?v=0.6.0';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export class Game {
- constructor(){this.overlap=overlap;this.reset();}
+ constructor({story=true}={}){this.overlap=overlap;this.storyEnabled=story;this.reset();}
  reset(){
-  this.mode='ready';this.time=0;this.clock=420;this.fish=0;this.kills=0;this.lives=MAX_HEALTH;this.camera=0;this.checkpoint=0;this.room=0;this.gateHint=-1;
+  this.mode='ready';this.time=0;this.clock=900;this.fish=0;this.kills=0;this.lives=MAX_HEALTH;this.camera=0;this.checkpoint=0;this.room=0;this.gateHint=-1;
+  this.dialogue=null;this.seenScenes=new Set();this.people=createPeople();this.clueFound=false;this.crewAssisted=false;
   this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,coyote:0,jumpBuffer:0,inv:0,attack:0,cooldown:0,climbing:false,swing:0,dash:0,dashCooldown:0,knock:0,powerTime:0};
-  this.swallow=null;this.soups=createSoup();this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();this.relays=[0,1].map(room=>({x:room*WIDTH+651,y:165,w:88,h:110,hp:3,inv:0,lastSwing:-1,room}));this.bolts=[];this.events=[];
+  this.swallow=null;this.soups=createSoup();this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();this.relays=rooms.slice(0,-1).map((r,room)=>({x:r.x+651,y:platforms.find(p=>p.room===room&&p.index===2).y-110,w:88,h:110,hp:3,inv:0,lastSwing:-1,room}));this.bolts=[];this.events=[];
  }
  emit(type,data={}){this.events.push({type,...data});}
- start(){this.reset();this.mode='playing';this.emit('start');}
+ start(){this.reset();if(this.storyEnabled)this.player.y=platforms.find(p=>p.room===0&&p.index===7).y-this.player.h;this.mode='playing';this.emit('start');this.openDialogue('intro');}
+ openDialogue(id,after='playing'){
+  if(!this.storyEnabled||this.dialogue||this.seenScenes.has(id)||!scenes[id])return false;
+  this.seenScenes.add(id);this.dialogue={id,page:0,after};this.mode='dialogue';this.player.attack=0;this.player.vx=0;this.emit('dialogue',{id});return true;
+ }
+ advanceDialogue(skip=false){
+  if(this.mode!=='dialogue'||!this.dialogue)return false;
+  const d=this.dialogue;if(!skip&&d.page+1<scenes[d.id].pages.length){d.page++;this.emit('dialogue',{id:d.id});return true;}
+  this.dialogue=null;this.mode=d.after;this.player.inv=Math.max(this.player.inv,.65);
+  this.emit(this.mode==='won'?'won':'dialogueEnd',{id:d.id});return true;
+ }
+ checkStory(){
+  if(!this.storyEnabled)return false;
+  if(this.room>0&&this.openDialogue('arrival'+this.room))return true;
+  const encounter=firstEncounter(this);return encounter?this.openDialogue(encounter):false;
+ }
+ completeChapter(room){
+  if(room===0)this.clueFound=true;
+  const person=this.people.find(p=>p.room===room);if(person&&!person.rescued){person.rescued=true;this.emit('rescued',{id:person.id,name:person.name});}
+  this.openDialogue('chapter'+room);
+ }
+ finish(){
+  this.people.find(p=>p.id==='yuri').rescued=true;this.bolts=[];
+  if(this.openDialogue('ending','won'))this.emit('victory');else{this.mode='won';this.emit('won');}
+ }
  respawn(){this.swallow=null;Object.assign(this.player,{...spawns[this.checkpoint],vx:0,vy:0,inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,knock:0});this.bolts=[];this.updateCamera();}
- retry(){if(this.mode!=='lost'||this.checkpoint===0){this.start();return;}this.lives=MAX_HEALTH;this.clock=Math.max(120,this.clock);this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(createEnemies().filter(e=>e.room===this.checkpoint));this.boss=createBoss();this.respawn();this.mode='playing';this.emit('retry');}
+ retry(){if(this.mode!=='lost'||this.checkpoint===0){this.start();return;}this.lives=MAX_HEALTH;this.clock=Math.max(180,this.clock);this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(createEnemies().filter(e=>e.room===this.checkpoint));this.boss=createBoss();this.crewAssisted=false;this.dialogue=null;this.respawn();this.mode='playing';this.emit('retry');}
  hurt(fall=false,sourceX=this.player.x+this.player.dir*50){
   const p=this.player;if(this.mode!=='playing'||(!fall&&(p.inv>0||p.dash>0)))return;
   this.lives--;this.emit('hurt');if(this.lives<=0){this.mode='lost';this.emit('lost');return;}
@@ -27,7 +53,7 @@ export class Game {
   this.emit('enemyHit',{x:e.x+24,y:e.y});if(e.hp<=0){e.dead=true;this.kills++;this.emit('pop',{x:e.x+24,y:e.y});}
  }
  step(dt,input={}){
-  if(this.mode!=='playing')return;dt=Math.min(dt,1/30);this.time+=dt;this.clock=Math.max(0,this.clock-dt);
+  if(this.mode!=='playing'||this.checkStory())return;dt=Math.min(dt,1/30);this.time+=dt;this.clock=Math.max(0,this.clock-dt);
   if(this.clock===0){this.mode='lost';this.emit('lost');return;}
   const p=this.player;
   p.powerTime=Math.max(0,p.powerTime-dt);
@@ -42,22 +68,26 @@ export class Game {
   if(p.jumpBuffer>0&&(p.coyote>0||p.climbing)){p.vy=-500;p.grounded=false;p.coyote=0;p.jumpBuffer=0;p.climbing=false;this.emit('jump');}
   if(input.attack&&p.cooldown===0){p.attack=.19;p.cooldown=.36;p.swing++;this.emit('swat');}
   const prevBottom=p.y+p.h;
+  const belt=p.grounded&&p.dash===0&&!p.climbing?platforms.find(s=>s.belt&&Math.abs(s.y-prevBottom)<1&&p.x+p.w>s.x&&p.x<s.x+s.w)?.belt||0:0;
   if(!p.climbing)p.vy=Math.min(p.vy+(p.dash>0?150:1080)*dt,550);else if(!input.up&&!input.down)p.vy=0;
-  p.x=Math.max(0,Math.min(WORLD-p.w,p.x+p.vx*dt));p.y+=p.vy*dt;p.grounded=false;
+  p.x=Math.max(0,Math.min(WORLD-p.w,p.x+(p.vx+belt)*dt));p.y+=p.vy*dt;p.grounded=false;
   for(const relay of this.relays)if(relay.hp>0&&p.x+p.w>WIDTH*(relay.room+1)-12){p.x=WIDTH*(relay.room+1)-12-p.w;if(this.gateHint!==relay.room){this.gateHint=relay.room;this.emit('gate');}break;}
   if(ladder&&p.climbing&&input.up&&p.y+p.h<=ladder.y+3){p.y=ladder.y-p.h;p.vy=0;p.grounded=true;p.climbing=false;}
   if(p.vy>=0&&!p.climbing)for(const s of platforms){if(p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=s.y+1&&p.y+p.h>=s.y){p.y=s.y-p.h;p.vy=0;p.grounded=true;}}
   if(p.y>HEIGHT+30){this.hurt(true);return;}
-  this.room=Math.min(2,Math.floor((p.x+p.w/2)/WIDTH));
+  this.room=Math.min(LAST_ROOM,Math.floor((p.x+p.w/2)/WIDTH));
   if(this.room>this.checkpoint){this.checkpoint=this.room;this.lives=Math.min(MAX_HEALTH,this.lives+1);this.emit('checkpoint',{room:this.room});}
+  if(this.checkStory()){this.updateCamera();return;}
   const reach=p.powerTime>0?81:54;const paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:54};stepEnemies(this,dt,paw,prevBottom);
   if(this.mode!=='playing'||this.swallow)return;
   for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+24-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.lives=Math.min(MAX_HEALTH,this.lives+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
-  for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+24-soup.y)<35){soup.taken=true;this.lives=Math.min(MAX_HEALTH,this.lives+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});}
-  for(const relay of this.relays){relay.inv=Math.max(0,relay.inv-dt);if(relay.hp>0&&p.attack>0&&relay.inv===0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;if(this.enemies.some(e=>e.room===relay.room&&e.guardian&&!e.dead)){if(!relay.hint){relay.hint=true;this.emit('guardian');}this.emit('blocked',{x:relay.x,y:relay.y+45});continue;}relay.hp--;relay.inv=.35;this.emit('bossHit',{x:relay.x,y:relay.y+45});if(!relay.hp)this.emit('relay',{room:relay.room});}}
+  for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+24-soup.y)<35){soup.taken=true;this.lives=Math.min(MAX_HEALTH,this.lives+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});this.openDialogue('soup');}
+  if(this.mode!=='playing'){this.updateCamera();return;}
+  for(const relay of this.relays){relay.inv=Math.max(0,relay.inv-dt);if(relay.hp>0&&p.attack>0&&relay.inv===0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;if(this.enemies.some(e=>e.room===relay.room&&e.guardian&&!e.dead)){if(!relay.hint){relay.hint=true;this.emit('guardian');}this.emit('blocked',{x:relay.x,y:relay.y+45});continue;}relay.hp--;relay.inv=.35;this.emit('bossHit',{x:relay.x,y:relay.y+45});if(!relay.hp){this.emit('relay',{room:relay.room});this.completeChapter(relay.room);}}}
+  if(this.mode!=='playing'){this.updateCamera();return;}
   const b=this.boss;
-  if(!b.active&&p.x>WIDTH*2+470){b.active=true;b.state='recover';b.timer=1;this.emit('bossStart');}
-  if(b.active){p.x=Math.max(WIDTH*2+302,p.x);stepBoss(this,dt);if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+60,w:b.w,h:b.h-60})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y+45});}if(overlap(p,b))this.hurt(false,b.x);}
+  if(!b.active&&p.x>FINAL_X+470){b.active=true;b.state='recover';b.timer=1;this.emit('bossStart');if(this.openDialogue('source')){this.updateCamera();return;}}
+  if(b.active){p.x=Math.max(FINAL_X+302,p.x);stepBoss(this,dt);if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+60,w:b.w,h:b.h-60})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y+45});}if(overlap(p,b))this.hurt(false,b.x);}
   if(this.mode==='playing')stepProjectiles(this,dt,paw);this.updateCamera();
  }
 }

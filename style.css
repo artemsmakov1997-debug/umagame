@@ -27,7 +27,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #dff6ff;outline-offset:4p
 .menu-item.selected::before{content:'';position:absolute;left:-36px;top:50%;transform:translateY(-50%)}
 .media-blue{color:#72d8ff}.media-link.selected .media-blue{color:#17679d}.loading{position:absolute;bottom:3%;left:5%;width:90%;text-align:center;color:#bddeee;font-size:12px}
 .menu-hint{height:clamp(30px,4.17cqw,64px);display:flex;align-items:center;justify-content:center;gap:clamp(16px,3cqw,46px);font:clamp(12px,1.75cqw,27px)/1 UmaText,monospace;color:#00cfff;background:#030a1e8c}
-[data-screen="library"] .cabinet{background:url('./assets/library-room.png?v=0.5.0') center/cover}
+[data-screen="library"] .cabinet{background:url('./assets/library-room.png?v=0.6.0') center/cover}
 .section-heading{position:absolute;top:3.7%;left:4.3%;width:91.4%;text-align:center}
 .section-heading h2{margin:0;font:clamp(35px,6.51cqw,100px)/1.04 UmaDisplay,UmaPixel,monospace;color:#ffe6a4;text-shadow:0 6px #a96b23,4px 7px #020816;filter:drop-shadow(-4px 0 #020816) drop-shadow(4px 0 #020816)}
 .section-heading>.ornament{margin-top:0;font-size:clamp(16px,2.6cqw,40px);letter-spacing:clamp(1px,.26cqw,4px)}.section-heading>.ornament span{border:0;padding:0 4px}
@@ -45,7 +45,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #dff6ff;outline-offset:4p
 #monster-card{min-width:0;display:flex;flex-direction:column;padding:clamp(7px,.91cqw,14px) clamp(10px,1.69cqw,26px) clamp(8px,1.17cqw,18px) clamp(10px,1.56cqw,24px);overflow:auto;scrollbar-color:#437391 #061329}
 #monster-title{font:clamp(28px,5.47cqw,84px)/1 UmaDisplay,UmaPixel,monospace;color:#ffebaf;text-transform:uppercase;text-align:left;margin:0;flex-shrink:0;text-shadow:2px 3px #050916}
 #monster-title.long-title{font-size:clamp(24px,3.65cqw,56px);line-height:1.2}
-.portrait-stage{position:relative;flex:1;min-height:clamp(40px,6.51cqw,100px);margin:2px -6px 8px;background:linear-gradient(0deg,#08537d 0 2px,transparent 2px 7px,#03142d 7px 9px,transparent 9px),url('./assets/library-room.png?v=0.5.0') 73% 50% /200%;isolation:isolate}
+.portrait-stage{position:relative;flex:1;min-height:clamp(40px,6.51cqw,100px);margin:2px -6px 8px;background:linear-gradient(0deg,#08537d 0 2px,transparent 2px 7px,#03142d 7px 9px,transparent 9px),url('./assets/library-room.png?v=0.6.0') 73% 50% /200%;isolation:isolate}
 .portrait-stage::before{content:'';position:absolute;inset:0;background:#020e23c9;z-index:-1}
 #monster-art{width:100%;height:100%;object-fit:contain;position:absolute;inset:0}
 #monster-description{font:clamp(14px,2.21cqw,34px)/1.04 UmaText,monospace;color:#fff3d4;margin:0 0 12px;flex-shrink:0}
@@ -99,4 +99,45 @@ footer{display:flex;align-items:center;justify-content:space-between;padding:10p
  #monster-card{padding:7px 10px 7px}#monster-list{padding:7px 5px 10px 5px;gap:4px}.monster-option{font-size:2.7cqw}#monster-abilities>div{min-height:23px;padding:3px 0}dt{gap:7px}.sound-icon,.danger-icon{width:18px;height:18px;flex-basis:18px}.danger-icon::before,.danger-icon::after{width:6px;left:6px}.danger-icon::before{height:12px}.danger-icon::after{height:4px}
  #monster-description{margin-bottom:5px}.portrait-stage{min-height:40px;margin-bottom:5px}.tactic{margin-top:6px;padding:5px;min-height:29px;gap:7px}.tactic strong{gap:4px;padding-right:6px}.tactic .paw-icon{width:16px;height:18px}
  #app[data-screen="authors"] .game-shell{height:auto;min-height:350px;aspect-ratio:8/5}.authors-panel{top:24%}
+}
+.dialogue-screen{position:absolute;inset:auto 2% 2%;z-index:8;filter:drop-shadow(0 -15px 25px #020817a0)}
+.dialogue-panel{display:grid;grid-template-columns:auto 1fr;gap:clamp(12px,1.56cqw,24px);padding:clamp(12px,1.43cqw,22px);background:#020b1dfb}
+#narrator-portrait{width:clamp(100px,12.5cqw,192px);height:auto;image-rendering:pixelated;align-self:center}
+.dialogue-content{min-width:0}.dialogue-heading{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.dialogue-heading h2{font:clamp(18px,2.34cqw,36px)/1.15 UmaDisplay,UmaPixel,monospace;margin:0;color:#ffe4a3}
+.narrator-role{font:clamp(15px,1.56cqw,24px)/1.1 UmaText,monospace;color:#a4bacb;margin:5px 0 0}
+#dialogue-progress{font:clamp(16px,1.56cqw,24px)/1 UmaText,monospace;color:#88dce9;white-space:nowrap}
+.dialogue-scene{font:clamp(16px,1.69cqw,26px)/1.1 UmaText,monospace;letter-spacing:1px;color:#05d9f0;margin:14px 0 7px}
+#dialogue-text{font:clamp(20px,2.21cqw,34px)/1.16 UmaText,monospace;color:#fff0d2;margin:0 0 18px;min-height:2.3em}
+.dialogue-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.dialogue-actions .gold-button{font:clamp(18px,1.82cqw,28px)/1.1 UmaText,monospace;min-height:44px;padding:9px 20px}
+.dialogue-secondary{font:clamp(16px,1.56cqw,24px)/1.1 UmaText,monospace;min-height:44px;padding:8px 12px;border:1px solid #357b9e;background:#06172a;color:#b1d0de}
+.dialogue-hint{font:clamp(13px,1.17cqw,18px)/1.1 UmaText,monospace;color:#7595ad;margin:12px 0 0}
+.dialogue-touch-hint{display:none}.has-touch .dialogue-keyboard-hint{display:none}.has-touch .dialogue-touch-hint{display:inline}
+[data-dialogue="true"] .touch-controls{display:none}
+@media(max-width:700px) and (orientation:portrait){
+ [data-screen="game"][data-dialogue="true"] .game-shell{aspect-ratio:auto}
+ [data-screen="game"][data-dialogue="true"] #game{height:auto}
+ .dialogue-screen{position:relative;inset:auto;padding:0 10px 14px;filter:none;background:#030b1e}
+ .dialogue-panel{display:block;padding:12px}
+ #narrator-portrait{float:left;width:76px;margin:0 12px 10px 0}
+ .dialogue-heading{min-height:100px;gap:4px}.dialogue-heading h2{font:28px/1.12 UmaText,monospace}
+ .narrator-role{font-size:19px;line-height:1.15}#dialogue-progress{font-size:17px}
+ .dialogue-scene{clear:both;font-size:21px;line-height:1.2;margin:9px 0}
+ #dialogue-text{clear:both;font-size:24px;line-height:1.16;margin-bottom:16px}
+ .dialogue-actions{clear:both;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .dialogue-actions .gold-button{grid-column:1/-1;font-size:25px}
+ .dialogue-secondary{font-size:20px;padding:7px 5px}
+ .dialogue-hint{font-size:17px;line-height:1.25;margin-top:10px}
+ .dialogue-keyboard-hint{display:none}.dialogue-touch-hint{display:inline}
+ .authors-panel{padding:14px}.authors-panel p{margin:12px 0}
+ #app[data-screen="authors"] .game-shell{height:650px}
+}
+@media(max-height:550px) and (orientation:landscape){
+ .dialogue-screen{inset:auto 2% 1%}.dialogue-panel{padding:9px;gap:10px}
+ #narrator-portrait{width:78px}.dialogue-heading h2{font-size:21px}
+ .narrator-role{font-size:16px}.dialogue-scene{font-size:17px;margin:7px 0 5px}
+ #dialogue-text{font-size:20px;margin-bottom:8px}.dialogue-actions{gap:6px}
+ .dialogue-actions .gold-button,.dialogue-secondary{min-height:34px;padding:6px 10px;font-size:18px}
+ .dialogue-hint{display:none}
 }

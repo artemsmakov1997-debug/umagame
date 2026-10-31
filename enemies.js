@@ -7,7 +7,7 @@ export function alertNearby(g,caller){
 export function stepEnemies(g,dt,paw,prevBottom){
  const p=g.player;
  for(const e of g.enemies){
-  if(e.dead)continue;e.inv=Math.max(0,e.inv-dt);e.timer-=dt;e.alert=Math.max(0,e.alert-dt);e.attackFlash=Math.max(0,(e.attackFlash||0)-dt);
+  if(e.dead||e.room!==g.room||g.storyEnabled&&!g.seenScenes.has(e.type))continue;e.inv=Math.max(0,e.inv-dt);e.timer-=dt;e.alert=Math.max(0,e.alert-dt);e.attackFlash=Math.max(0,(e.attackFlash||0)-dt);
   const previousX=e.x;
   const dx=p.x-e.x,dy=p.y+p.h-(e.y+e.h),near=Math.abs(dx)<380&&Math.abs(dy)<190;
   if(e.type==='infonoise'){

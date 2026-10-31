@@ -1,12 +1,12 @@
-import {WIDTH,enemy,surfaceAt} from './level.js?v=0.5.0';
+import {WIDTH,WORLD,LAST_ROOM,FINAL_X,enemy,surfaceAt} from './level.js?v=0.6.0';
 export const BOSS_HEALTH=24;
 export const abilities=['volley','wave','rain','summon'];
 export const abilityNames={volley:'ПРИЦЕЛЬНЫЙ ЗАЛП',wave:'ВОЛНА — ПРЫГАЙ!',rain:'БУМАЖНЫЙ ДОЖДЬ',summon:'ПРИЗЫВ ПОМЕХ'};
-export function createBoss(){return {x:WIDTH*2+651,y:165,w:88,h:110,hp:BOSS_HEALTH,maxHp:BOSS_HEALTH,phase:1,state:'idle',timer:0,turn:0,ability:null,targets:[],cooldown:0,lastSwing:-1,active:false};}
+export function createBoss(){return {x:FINAL_X+651,y:165,w:88,h:110,hp:BOSS_HEALTH,maxHp:BOSS_HEALTH,phase:1,state:'idle',timer:0,turn:0,ability:null,targets:[],cooldown:0,lastSwing:-1,active:false};}
 export function planAttack(g){
  const b=g.boss,p=g.player;b.ability=abilities[b.turn++%abilities.length];b.state='windup';b.timer=b.phase===1?.95:.7;
  b.aim={x:p.x+p.w/2,y:p.y+p.h/2};
- b.targets=[-90,0,90].map(dx=>Math.max(WIDTH*2+320,Math.min(WIDTH*3-40,b.aim.x+dx)));
+ b.targets=[-90,0,90].map(dx=>Math.max(FINAL_X+320,Math.min(WORLD-40,b.aim.x+dx)));
  g.emit('bossWarning',{ability:b.ability});
 }
 export function castAttack(g){
@@ -20,21 +20,23 @@ export function castAttack(g){
   for(const x of b.targets)g.bolts.push({kind:'rain',x:x-8,y:68,w:17,h:26,vx:0,vy:300*fast,ttl:2});
  }else{
   const alive=g.enemies.filter(e=>e.minion&&!e.dead).length;
-  for(let i=0;i<Math.min(2,3-alive);i++)g.enemies.push(enemy('infonoise',2,i?550:380,i?2:1,{minion:true,speed:52,hp:1,maxHp:1,dir:-1}));
+  const reporter=g.people.some(p=>p.id==='reporter'&&p.rescued),count=reporter?1:2;
+  for(let i=0;i<Math.min(count,3-alive);i++)g.enemies.push(enemy('infonoise',LAST_ROOM,i?550:380,i?2:1,{minion:true,speed:52,hp:1,maxHp:1,dir:-1}));
+  if(reporter)g.emit('bossAssist',{who:'reporter',message:'Репортёр отвлёк часть помех!'});
  }
  b.state='casting';b.timer=b.phase===1?1.1:.85;g.emit('bossCast',{ability:b.ability});
 }
 export function stepBoss(g,dt){
  const b=g.boss;if(!b.active||b.hp<=0)return;b.cooldown=Math.max(0,b.cooldown-dt);
- if(b.hp<=b.maxHp/2&&b.phase===1){b.phase=2;g.emit('bossPhase');}
+ if(b.hp<=b.maxHp/2&&b.phase===1){b.phase=2;g.emit('bossPhase');if(!g.crewAssisted&&g.people.some(p=>p.id==='crew'&&p.rescued)){g.crewAssisted=true;g.lives=Math.min(4,g.lives+1);g.emit('bossAssist',{who:'crew',message:'Съёмочная группа поддержала Уму: +1 сердечко.'});}}
  b.timer-=dt;if(b.timer>0)return;
- if(b.state==='windup')castAttack(g);else if(b.state==='casting'){b.state='recover';b.timer=b.phase===1?1.35:1;}else planAttack(g);
+ if(b.state==='windup')castAttack(g);else if(b.state==='casting'){b.state='recover';b.timer=b.phase===1?1.35:1;if(g.people.some(p=>p.id==='editor'&&p.rescued)){b.timer+=.45;g.emit('bossAssist',{who:'editor',message:'Редактор удерживает панель открытой. Бей лапой!'});}}else planAttack(g);
 }
 export function damageBoss(g,amount,reflected=false){
  const b=g.boss;if(!b.active||b.hp<=0||b.cooldown>0)return false;
  if(!reflected&&b.state!=='recover')return false;
  b.hp=Math.max(0,b.hp-amount);b.cooldown=.22;g.emit('bossHit',{x:b.x,y:b.y+45});
- if(b.hp===0){g.mode='won';g.emit('won');}return true;
+ if(b.hp===0)g.finish();return true;
 }
 export function stepProjectiles(g,dt,paw){
  for(const bolt of g.bolts){
@@ -47,5 +49,5 @@ export function stepProjectiles(g,dt,paw){
   if(bolt.friendly){if(g.boss.active&&g.overlap(bolt,g.boss)){damageBoss(g,2,true);bolt.dead=true;}else for(const e of g.enemies)if(!e.dead&&g.overlap(bolt,e)){g.hitEnemy(e,false,2);bolt.dead=true;break;}}
   else if(g.overlap(g.player,bolt)){g.hurt(false,bolt.x);bolt.dead=true;}
  }
- g.bolts=g.bolts.filter(v=>!v.dead&&v.ttl>0&&v.x>-50&&v.x<WIDTH*3+50&&v.y<530).slice(-80);
+ g.bolts=g.bolts.filter(v=>!v.dead&&v.ttl>0&&v.x>-50&&v.x<WORLD+50&&v.y<530).slice(-80);
 }
