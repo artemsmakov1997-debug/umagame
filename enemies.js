@@ -7,9 +7,14 @@ export function alertNearby(g,caller){
 export function stepEnemies(g,dt,paw,prevBottom){
  const p=g.player;
  for(const e of g.enemies){
-  if(e.dead||e.room!==g.room||g.storyEnabled&&!g.seenScenes.has(e.type))continue;e.inv=Math.max(0,e.inv-dt);e.timer-=dt;e.alert=Math.max(0,e.alert-dt);e.attackFlash=Math.max(0,(e.attackFlash||0)-dt);
+  if(e.dead){e.deathTime=Math.max(0,(e.deathTime||0)-dt);continue;}
+  if(e.room!==g.room||g.storyEnabled&&!g.seenScenes.has(e.type))continue;
+  e.inv=Math.max(0,e.inv-dt);e.alert=Math.max(0,e.alert-dt);e.attackFlash=Math.max(0,(e.attackFlash||0)-dt);e.hurtTime=Math.max(0,(e.hurtTime||0)-dt);e.noticeTime=Math.max(0,(e.noticeTime||0)-dt);e.moving=false;
   const previousX=e.x;
   const dx=p.x-e.x,dy=p.y+p.h-(e.y+e.h),near=Math.abs(dx)<380&&Math.abs(dy)<190;
+  if(!e.noticed&&near&&(e.type!=='clickbait'||e.state!=='lure')){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y});}
+  if(e.noticeTime===0&&e.hurtTime===0){
+  e.timer-=dt;
   if(e.type==='infonoise'){
    if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.6;}
    if(e.state==='patrol'){
@@ -42,6 +47,8 @@ export function stepEnemies(g,dt,paw,prevBottom){
    else if(e.state==='recover'&&e.timer<=0)e.state='lure';
   }
   if((e.type==='headline'||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*dt;
+  }
+  e.moving=Math.abs(e.x-previousX)>.01;
   e.walkTime=(e.walkTime||0)+Math.abs(e.x-previousX)/24;
   if(e.x<e.origin||e.x>e.end){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
   if(p.attack>0&&e.lastSwing!==p.swing&&g.overlap(paw,e)){

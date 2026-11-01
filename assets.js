@@ -1,7 +1,7 @@
-const sources={room:'./assets/newsroom.png',uma:'./assets/uma.png',noise:'./assets/noise.png',menu:'./assets/menu-room.png',library:'./assets/library-room.png',idle:'./assets/uma-idle.png',monsters:'./assets/monsters.png',noiseMotion:'./assets/infonoise-motion.png',monsterMotion:'./assets/monster-motion.png',journey:'./assets/journey-rooms.png',yuri:'./assets/yuri-shmakov.png',journalists:'./assets/journalists.png'};
+const sources={room:'./assets/newsroom.png',uma:'./assets/uma.png',noise:'./assets/noise.png',menu:'./assets/menu-room.png',library:'./assets/library-room.png',idle:'./assets/uma-idle.png',monsters:'./assets/monsters.png',noiseMotion:'./assets/infonoise-motion.png',monsterMotion:'./assets/monster-motion.png',journey:'./assets/journey-rooms.png',yuri:'./assets/yuri-shmakov.png',journalists:'./assets/journalists.png',emotions:'./assets/uma-emotions.png',reactions:'./assets/monster-reactions.png'};
 export async function loadAssets(onProgress=()=>{}){
  let done=0,failed=false;
- const entries=await Promise.all(Object.entries(sources).map(async([name,path])=>{const image=new Image(),url=new URL(path,import.meta.url);url.searchParams.set('v','0.6.0');image.src=url.href;try{await image.decode();}catch(error){failed=true;throw error;}done++;if(!failed)onProgress(done,Object.keys(sources).length);return[name,image];}));
+ const entries=await Promise.all(Object.entries(sources).map(async([name,path])=>{const image=new Image(),url=new URL(path,import.meta.url);url.searchParams.set('v','0.7.0');image.src=url.href;try{await image.decode();}catch(error){failed=true;throw error;}done++;if(!failed)onProgress(done,Object.keys(sources).length);return[name,image];}));
  return Object.fromEntries(entries);
 }
 export const cats=[

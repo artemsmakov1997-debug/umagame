@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Game,platforms,ladders,WIDTH,HEIGHT,WORLD,MAX_HEALTH,LAST_ROOM,FINAL_X,rooms} from '../engine.js';
-import {enemy,createEnemies} from '../level.js';
+import {enemy as spawnEnemy,createEnemies} from '../level.js';
+// Attack timing fixtures begin after the separate detection animation.
+const enemy=(type,room,x,platform,extra={})=>spawnEnemy(type,room,x,platform,{noticed:true,...extra});
 import {abilities,planAttack,castAttack,stepBoss,damageBoss} from '../boss.js';
 import {alertNearby} from '../enemies.js';
 import {monsters} from '../catalog.js';

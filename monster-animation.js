@@ -42,5 +42,13 @@ export function monsterFrame(id,time,actor={}){
 }
 export function previewActor(time){
  const phase=((time%8)+8)%8;
- return {state:phase<3.2?'patrol':phase<4.3?'windup':phase<5.1?'casting':'recover',walkTime:time};
+ return {state:phase<3.2?'patrol':phase<4.3?'windup':phase<5.1?'casting':'recover',walkTime:time,moving:phase<3.2,noticeTime:phase>6&&phase<6.5?.2:0,hurtTime:phase>7&&phase<7.3?.2:0};
+}
+const rows={infonoise:[50,292],clickbait:[320,568],headline:[590,810],panicker:[820,1072],source:[1080,1374]};
+export function monsterReaction(id,time,actor={}){
+ const kind=actor.hurtTime>0||actor.dead?'hit':actor.noticeTime>0?'notice':actor.moving&&actor.state==='patrol'?'run':null;
+ if(!kind)return null;
+ const column=kind==='hit'?3:kind==='notice'?2:Math.floor((actor.walkTime??time)*10)%2;
+ const [top,bottom]=rows[id],cellLeft=Math.round(column*280.5),left=column===3?854:cellLeft,right=column===2?854:Math.round((column+1)*280.5);
+ return {kind,asset:'reactions',width:280.5,height:bottom-top,box:[left,top,right-left,bottom-top],pivot:[cellLeft+140.25,bottom-2]};
 }

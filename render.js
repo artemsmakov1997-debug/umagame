@@ -1,9 +1,10 @@
-import {WIDTH,HEIGHT,WORLD,rooms,MAX_HEALTH,platforms,ladders,FINAL_X} from './engine.js?v=0.6.0';
-import {rect,text,heart,headline} from './pixel.js?v=0.6.0';
-import {cats,creatures,sprite} from './assets.js?v=0.6.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.6.0';
-import {abilityNames} from './boss.js?v=0.6.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawEpilogue} from './campaign-art.js?v=0.6.0';
+import {WIDTH,HEIGHT,WORLD,rooms,MAX_HEALTH,platforms,ladders,FINAL_X} from './engine.js?v=0.7.0';
+import {rect,text,heart,headline} from './pixel.js?v=0.7.0';
+import {cats,creatures,sprite} from './assets.js?v=0.7.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.7.0';
+import {abilityNames} from './boss.js?v=0.7.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue} from './campaign-art.js?v=0.7.0';
+import {drawEmotion,hurtPose} from './cat-animation.js?v=0.7.0';
 const HUD='#030a1e',CREAM='#ffe5a4',CYAN='#9ce7fa';
 function title(c){text(c,'УМА ПРОТИВ ИНФОШУМА',12,10,CREAM,2,1);rect(c,10,28,203,18,'#176185');rect(c,11,29,201,16,HUD);text(c,'ДЕРЖИ УХО ВОСТРО',15,30,CYAN,2);}
 export function drawControls(canvas){const c=canvas.getContext('2d');rect(c,0,0,768,32,HUD);
@@ -20,26 +21,30 @@ export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
  draw(g,dt=0,visualTime=g.time){
-  const c=this.c,a=this.assets,t=g.time,p=g.player,b=g.boss,cam=Math.round(g.camera);
-  if(g.dialogue?.id==='ending'||g.mode==='won'){c.imageSmoothingEnabled=false;drawEpilogue(c,a,visualTime);return;}
-  c.imageSmoothingEnabled=false;c.clearRect(0,0,WIDTH,HEIGHT);c.save();c.translate(-cam,0);
+  const c=this.c,a=this.assets,bounds=c.canvas.getBoundingClientRect(),vw=Math.max(240,Math.round(HEIGHT*bounds.width/Math.max(1,bounds.height)));
+  if(c.canvas.width!==vw)c.canvas.width=vw;if(c.canvas.height!==HEIGHT)c.canvas.height=HEIGHT;
+  if(g.viewWidth!==vw){g.viewWidth=vw;g.updateCamera();}
+  const t=g.time,p=g.player,b=g.boss,cam=Math.round(g.camera);
+  if(g.dialogue?.id==='ending'||g.mode==='won'||g.pausedFrom==='won'){c.imageSmoothingEnabled=false;drawEpilogue(c,a,visualTime,vw);return;}
+  c.imageSmoothingEnabled=false;c.clearRect(0,0,vw,HEIGHT);c.save();c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
-   if(room.x+WIDTH<cam||room.x>cam+WIDTH)continue;
+   if(room.x+WIDTH<cam||room.x>cam+vw)continue;
    c.drawImage(this.layers[i],room.x,0);drawAmbience(c,room,t);
    if(i>0){rect(c,room.x,48,3,426,'#051024');rect(c,room.x+3,48,2,426,'#47627a');}
   }
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
   for(const platform of platforms){
-   if(platform.x+platform.w<cam||platform.x>cam+WIDTH)continue;
+   if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawSurface(c,a,platform,t);
   }
   for(const ladder of ladders){
-   if(ladder.x<cam-40||ladder.x>cam+WIDTH)continue;
+   if(ladder.x<cam-40||ladder.x>cam+vw)continue;
    rect(c,ladder.x-1,ladder.y+9,ladder.w+2,ladder.h-9,'#050e1e');
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
   drawCampaignObjects(c,a,g,t);
+  drawInfection(c,g);
   const bx=FINAL_X;if(b.active){rect(c,bx+300,48,3,426,'#a7a3ff70');}
   if(b.hp>0){
    drawMonster(c,a,'source',bx+543,53,221,205,t,false,b);
@@ -52,12 +57,12 @@ export class Renderer{
     if(b.ability==='volley'){c.strokeStyle='#f4bc66';c.setLineDash([4,7]);c.beginPath();c.moveTo(b.x,220);c.lineTo(b.aim.x,b.aim.y);c.stroke();c.setLineDash([]);}
     if(b.ability==='summon')for(const x of [bx+380,bx+550]){c.strokeStyle='#d5a4ff';c.lineWidth=3;c.strokeRect(x-4,x===bx+380?275:250,50,23);}
    }
-  }else{rect(c,bx+627,131,102,110,'#0c4158');text(c,'ТИШИНА',bx+643,181,'#b8f5c9');}
-  for(const f of g.fishes)if(!f.taken&&f.x>cam-20&&f.x<cam+WIDTH+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
+  }else{rect(c,bx+627,131,102,110,'#0c4158');text(c,'ЖУРНАЛ',bx+649,143,'#b8f5c9');text(c,'ПРОСМОТРЫ 999',bx+636,165,'#ffe0a4');text(c,'РЕАКЦИИ 999',bx+636,183,'#ffe0a4');text(c,'ПРОВЕРКА ВЫКЛ',bx+633,214,'#ff8193');}
+  for(const f of g.fishes)if(!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
-  for(const e of g.enemies)if(!e.dead&&e.x>cam-330&&e.x<cam+WIDTH+330){
+  for(const e of g.enemies)if((!e.dead||e.deathTime>0)&&e.x>cam-330&&e.x<cam+vw+330){
    if(e.type==='clickbait'&&e.state==='lure'){drawLure(c,a,e.x+24,e.y+8,t);continue;}
-   if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.5;
+   if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
    if(e.type==='infonoise')drawMonster(c,a,e.type,e.x-24,e.y-38,96,67,t,e.dir<0,e);
    if(e.type==='headline')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0,e);
    if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,false,e);
@@ -66,6 +71,7 @@ export class Renderer{
     drawMonster(c,a,e.type,e.x-35,e.y+29-108*grow,112,108*grow,t,e.dir>0,e);
    }
    c.globalAlpha=1;
+   if(e.dead)continue;
    rect(c,e.x+3,e.y-53,42,3,'#12203b');rect(c,e.x+3,e.y-53,42*Math.max(0,e.hp)/e.maxHp,3,e.guardian?'#ffcf77':'#fc7b88');
    if(e.guardian)text(c,'!',e.x+38,e.y-64,'#ffcf77');
    if(e.state==='windup')text(c,'!',e.x+19,e.y-69,'#ffcf79',2);
@@ -89,9 +95,12 @@ export class Renderer{
    this.trailTimer+=dt;if(this.trailTimer>.025){this.trailTimer=0;this.trail.push({x:p.x+9,y:p.y+34,life:.3,dash:p.dash>0});}
   }
   for(const trail of this.trail){trail.life-=dt;c.globalAlpha=Math.max(0,trail.life/.3);rect(c,trail.x,trail.y,trail.dash?12:3,3,trail.dash?'#72dffe':'#ccd3ff');}c.globalAlpha=1;this.trail=this.trail.filter(v=>v.life>0);
-  if(g.dialogue?.id==='intro'){
-   if(this.wakeupStart===null)this.wakeupStart=visualTime;drawWakeup(c,a,p,g.dialogue.page,visualTime-this.wakeupStart);
-  }else if(p.inv===0||Math.floor(t*12)%2===0||g.swallow){
+  if(g.storyEnabled&&!g.seenScenes.has('intro')||g.dialogue?.id==='intro'){
+   drawWakeup(c,a,p,g.wakeTime);
+  }else if(p.hurtTime>0){
+   drawEmotion(c,a,hurtPose(p.hurtTime),p.x+p.w/2,p.y+p.h,76,p.dir>0);
+  }else{
+   if(p.inv>0&&Math.floor(t*12)%2!==0&&!g.swallow)c.globalAlpha=.6;
    this.wakeupStart=null;
    const pose=p.attack>0?4:!p.grounded&&!p.climbing?3:Math.abs(p.vx)>0?1+Math.floor(t*10)%2:0;
    const {box,anchor}=cats[pose],progress=g.swallow?1-g.swallow.timer/g.swallow.total:0,scale=g.swallow?Math.max(0,1-progress*1.18):1;
@@ -100,20 +109,23 @@ export class Renderer{
    const feet=g.swallow?(g.swallow.y+48)*(1-progress)+(g.swallow.targetY+24)*progress:p.y+p.h;
    if(w>0&&h>0)sprite(c,a.uma,box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);
    if(p.powerTime>0)for(let i=0;i<5;i++)rect(c,p.x-13+i*14,p.y-10+Math.sin(t*5+i)*5,2,2,'#ffe6a0');
+   c.globalAlpha=1;
   }
   if(p.attack>.04){c.save();c.translate(Math.round(p.x+17+p.dir*36),Math.round(p.y+24));if(p.dir<0)c.scale(-1,1);for(let i=0;i<3;i++){rect(c,10+i*2,-13+i*8,3,10,'#ffe6a7');rect(c,6+i*2,-15+i*8,4,2,'#ffe6a7');}c.restore();}
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   for(let i=1;i<=g.checkpoint;i++){rect(c,WIDTH*i+28,281,3,22,'#accfc7');rect(c,WIDTH*i+31,281,18,10,'#60bd9b');}
   c.restore();
-  rect(c,0,0,WIDTH,48,HUD);title(c);
-  c.save();c.scale(2,2);for(let i=0;i<MAX_HEALTH;i++)heart(c,169+i*12,10,i<g.lives);c.restore();
-  sprite(c,a.noise,creatures.fish,431,17,31,19);text(c,String(g.fish).padStart(2,'0'),474,17,CREAM,3,1);
-  const s=Math.ceil(g.clock);text(c,`${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`,627,16,CREAM,3,1);
-  rect(c,9,54,272,31,'#030a1ee0');text(c,`${g.room+1}/${rooms.length} ${rooms[g.room].name}`,15,58,CYAN);text(c,rooms[g.room].objective,15,72,CREAM);
-  if(!b.active){rect(c,296,54,168,20,'#030a1ee0');text(c,`ЖУРНАЛИСТЫ ${g.people.filter(p=>p.rescued).length}/${g.people.length}`,303,60,CYAN);}
-  if(b.active&&b.hp>0){rect(c,296,54,434,28,'#030a1ee0');text(c,`ИСТОЧНИК ШУМА / ФАЗА ${b.phase}`,303,58,'#ffbfc4');rect(c,303,69,414,4,'#30364c');rect(c,303,69,414*b.hp/b.maxHp,4,'#ff6e85');text(c,b.state==='windup'?abilityNames[b.ability]:b.state==='recover'?'УЯЗВИМ: БЕЙ ПАНЕЛЬ ЛАПОЙ!':'ЩИТ',303,78,b.state==='recover'?'#a9efbf':'#ffe2a8');}
-  rect(c,12,468,200,3,'#10253c');rect(c,12,468,p.x/WORLD*200,3,CYAN);for(let i=1;i<rooms.length;i++)rect(c,12+200*i/rooms.length,467,1,5,'#749ab3');
-  if(p.powerTime>0){drawSoup(c,a,242,468,15);text(c,`СУПЕР-МУР ${Math.ceil(p.powerTime)}`,255,465,'#ffdd98');}
-  rect(c,620,465,112,11,'#06152ae0');text(c,'РЫВОК',625,467,p.dashCooldown>0?'#5a718f':'#a8e3e9');rect(c,668,469,57*(1-p.dashCooldown/1.5),2,'#8ae5f4');
+  const compact=vw<600;rect(c,0,0,vw,48,HUD);
+  if(compact){
+   text(c,'УМА',8,8,CREAM,2);c.save();c.scale(2,2);for(let i=0;i<MAX_HEALTH;i++)heart(c,28+i*9,5,i<g.lives);c.restore();
+   sprite(c,a.noise,creatures.fish,8,30,20,12);text(c,String(g.fish).padStart(2,'0'),34,32,CREAM);text(c,`СЛЕДЫ ${g.evidence.length}/4`,82,32,CYAN);
+  }else{title(c);c.save();c.scale(2,2);for(let i=0;i<MAX_HEALTH;i++)heart(c,169+i*12,10,i<g.lives);c.restore();sprite(c,a.noise,creatures.fish,431,17,31,19);text(c,String(g.fish).padStart(2,'0'),474,17,CREAM,3,1);}
+  const s=Math.ceil(g.clock);text(c,`${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`,compact?vw-124:vw-165,compact?10:16,CREAM,compact?2:3,compact?0:1);
+  rect(c,9,54,Math.min(272,vw-18),31,'#030a1ee0');text(c,`${g.room+1}/${rooms.length} ${rooms[g.room].name}`,15,58,CYAN);text(c,rooms[g.room].objective,15,72,CREAM);
+  if(!b.active&&!compact){rect(c,296,54,168,20,'#030a1ee0');text(c,`СЛЕДЫ СИГНАЛА ${g.evidence.length}/4`,303,60,CYAN);}
+  if(b.active&&b.hp>0){const x=compact?9:296,y=compact?88:54,w=compact?vw-18:Math.min(434,vw-310);rect(c,x,y,w,34,'#030a1ee0');text(c,`ИСТОЧНИК ШУМА / ФАЗА ${b.phase}`,x+7,y+4,'#ffbfc4');rect(c,x+7,y+15,w-20,4,'#30364c');rect(c,x+7,y+15,(w-20)*b.hp/b.maxHp,4,'#ff6e85');text(c,b.state==='windup'?abilityNames[b.ability]:b.state==='recover'?'БЕЙ ПАНЕЛЬ ЛАПОЙ!':'ЩИТ',x+7,y+24,b.state==='recover'?'#a9efbf':'#ffe2a8');}
+  const progressWidth=Math.min(200,vw*.44);rect(c,12,468,progressWidth,3,'#10253c');rect(c,12,468,p.x/WORLD*progressWidth,3,CYAN);for(let i=1;i<rooms.length;i++)rect(c,12+progressWidth*i/rooms.length,467,1,5,'#749ab3');
+  if(p.powerTime>0){const x=compact?vw-113:242;drawSoup(c,a,x,468,15);text(c,`СУПЕР-МУР ${Math.ceil(p.powerTime)}`,x+13,465,'#ffdd98');}
+  if(!compact){rect(c,vw-148,465,112,11,'#06152ae0');text(c,'РЫВОК',vw-143,467,p.dashCooldown>0?'#5a718f':'#a8e3e9');rect(c,vw-100,469,57*(1-p.dashCooldown/1.5),2,'#8ae5f4');}
  }
 }

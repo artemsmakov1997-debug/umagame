@@ -1,15 +1,16 @@
-import {monsters} from './catalog.js?v=0.6.0';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.6.0';
-import {idleFrame} from './menu-animation.js?v=0.6.0';
+import {monsters} from './catalog.js?v=0.7.0';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.7.0';
+import {idleFrame} from './menu-animation.js?v=0.7.0';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
- constructor(assets,onStart,onExit){
-  this.assets=assets;this.onStart=onStart;this.onExit=onExit;this.view='menu';this.menuIndex=0;this.monsterIndex=0;this.time=0;this.idleAction='idle';
+ constructor(assets,onStart,onExit,onQuit=()=>{}){
+  this.assets=assets;this.onStart=onStart;this.onExit=onExit;this.onQuit=onQuit;this.view='menu';this.menuIndex=0;this.monsterIndex=0;this.time=0;this.idleAction='idle';this.libraryReturn=null;
   this.menuItems=[...document.querySelectorAll('[data-menu]')];
   this.menuItems.forEach((button,index)=>{button.disabled=false;button.addEventListener('focus',()=>this.highlightMenu(index));button.addEventListener('pointerenter',()=>this.highlightMenu(index));button.addEventListener('click',()=>{
-   this.highlightMenu(index);if(button.dataset.menu==='start')this.onStart();else if(button.dataset.menu==='library')this.show('library');else if(button.dataset.menu==='authors')this.show('authors');
+   this.highlightMenu(index);if(button.dataset.menu==='start')this.onStart();else if(button.dataset.menu==='library')this.showLibrary();else if(button.dataset.menu==='authors')this.show('authors');else if(button.dataset.menu==='exit')this.onQuit();
   });});
-  for(const button of document.querySelectorAll('[data-back]'))button.addEventListener('click',()=>this.show('menu'));
+  for(const button of document.querySelectorAll('[data-back]'))button.addEventListener('click',()=>this.back());
+  document.querySelector('#exit-screen button').addEventListener('click',()=>{this.highlightMenu(0);this.show('menu');});
   this.monsterButtons=monsters.map((monster,index)=>{
    const button=document.createElement('button');button.className='monster-option';button.setAttribute('aria-label',monster.name);button.setAttribute('aria-pressed','false');
    const canvas=document.createElement('canvas');canvas.width=140;canvas.height=94;canvas.setAttribute('aria-hidden','true');
@@ -18,6 +19,8 @@ export class ScreenManager{
   });
   this.selectMonster(0);this.show('menu',false);
  }
+ showLibrary(returnTo=null){this.libraryReturn=returnTo;document.querySelector('#library-screen [data-back]').textContent=returnTo?'← МЕНЮ ИГРЫ':'← В МЕНЮ';this.show('library');}
+ back(){if(this.view==='library'&&this.libraryReturn){const back=this.libraryReturn;this.libraryReturn=null;back();}else this.show('menu');}
  highlightMenu(index){this.menuIndex=(index+this.menuItems.length)%this.menuItems.length;this.menuItems.forEach((el,i)=>el.classList.toggle('selected',i===this.menuIndex));}
  selectMonster(index,focus=false){
   this.monsterIndex=(index+monsters.length)%monsters.length;const monster=monsters[this.monsterIndex];
@@ -29,22 +32,23 @@ export class ScreenManager{
  }
  show(view,focus=true){
   if(this.view==='game'&&view!=='game')this.onExit();this.view=view;$('app').dataset.screen=view;
-  for(const id of ['menu','library','authors'])$(`${id}-screen`).hidden=id!==view;
+  for(const id of ['menu','library','authors','exit'])$(`${id}-screen`).hidden=id!==view;
   const game=view==='game';$('pause').hidden=!game;$('controls-art').hidden=!game;$('touch-controls').hidden=!game;$('menu-hint').hidden=game;
   if(!game)$('overlay').hidden=true;
-  $('footer-hint').textContent=game?'SHIFT — РЫВОК · ESC — ПАУЗА':'УМА ПРОТИВ ИНФОШУМА';
+  $('footer-hint').textContent=game?'SHIFT — РЫВОК · ESC — МЕНЮ':'УМА ПРОТИВ ИНФОШУМА';
   if(game&&$('game').height!==480)$('game').height=480;
-  if(focus){if(view==='menu')this.menuItems[this.menuIndex].focus({preventScroll:true});else if(view==='library')this.monsterButtons[this.monsterIndex].focus({preventScroll:true});else if(view==='authors')document.querySelector('#authors-screen [data-back]').focus({preventScroll:true});else $('game').focus({preventScroll:true});}
+  if(focus){if(view==='menu')this.menuItems[this.menuIndex].focus({preventScroll:true});else if(view==='library')this.monsterButtons[this.monsterIndex].focus({preventScroll:true});else if(view==='authors')document.querySelector('#authors-screen [data-back]').focus({preventScroll:true});else if(view==='exit')document.querySelector('#exit-screen button').focus({preventScroll:true});else $('game').focus({preventScroll:true});}
  }
  key(event){
   if(this.view==='game')return false;
-  if(event.code==='Escape'){event.preventDefault();this.show('menu');return true;}
+  if(event.code==='Escape'){event.preventDefault();this.back();return true;}
   if(this.view==='menu'&&['ArrowUp','ArrowDown'].includes(event.code)){event.preventDefault();this.highlightMenu(this.menuIndex+(event.code==='ArrowDown'?1:-1));this.menuItems[this.menuIndex].focus({preventScroll:true});return true;}
   if(this.view==='library'&&['ArrowUp','ArrowDown'].includes(event.code)){event.preventDefault();this.selectMonster(this.monsterIndex+(event.code==='ArrowDown'?1:-1),true);return true;}
   if(event.code==='Enter'&&this.view==='menu'&&!event.repeat){event.preventDefault();this.menuItems[this.menuIndex].click();return true;}
   return true;
  }
  draw(canvas,time){
+  if(canvas.width!==768)canvas.width=768;
   this.time=time;this.idleAction=idleFrame(time).action;const bounds=canvas.getBoundingClientRect(),height=Math.round(768*bounds.height/bounds.width);if(canvas.height!==height)canvas.height=height;
   const c=canvas.getContext('2d');
   if(this.view==='library'){

@@ -27,7 +27,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #dff6ff;outline-offset:4p
 .menu-item.selected::before{content:'';position:absolute;left:-36px;top:50%;transform:translateY(-50%)}
 .media-blue{color:#72d8ff}.media-link.selected .media-blue{color:#17679d}.loading{position:absolute;bottom:3%;left:5%;width:90%;text-align:center;color:#bddeee;font-size:12px}
 .menu-hint{height:clamp(30px,4.17cqw,64px);display:flex;align-items:center;justify-content:center;gap:clamp(16px,3cqw,46px);font:clamp(12px,1.75cqw,27px)/1 UmaText,monospace;color:#00cfff;background:#030a1e8c}
-[data-screen="library"] .cabinet{background:url('./assets/library-room.png?v=0.6.0') center/cover}
+[data-screen="library"] .cabinet{background:url('./assets/library-room.png?v=0.7.0') center/cover}
 .section-heading{position:absolute;top:3.7%;left:4.3%;width:91.4%;text-align:center}
 .section-heading h2{margin:0;font:clamp(35px,6.51cqw,100px)/1.04 UmaDisplay,UmaPixel,monospace;color:#ffe6a4;text-shadow:0 6px #a96b23,4px 7px #020816;filter:drop-shadow(-4px 0 #020816) drop-shadow(4px 0 #020816)}
 .section-heading>.ornament{margin-top:0;font-size:clamp(16px,2.6cqw,40px);letter-spacing:clamp(1px,.26cqw,4px)}.section-heading>.ornament span{border:0;padding:0 4px}
@@ -45,7 +45,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #dff6ff;outline-offset:4p
 #monster-card{min-width:0;display:flex;flex-direction:column;padding:clamp(7px,.91cqw,14px) clamp(10px,1.69cqw,26px) clamp(8px,1.17cqw,18px) clamp(10px,1.56cqw,24px);overflow:auto;scrollbar-color:#437391 #061329}
 #monster-title{font:clamp(28px,5.47cqw,84px)/1 UmaDisplay,UmaPixel,monospace;color:#ffebaf;text-transform:uppercase;text-align:left;margin:0;flex-shrink:0;text-shadow:2px 3px #050916}
 #monster-title.long-title{font-size:clamp(24px,3.65cqw,56px);line-height:1.2}
-.portrait-stage{position:relative;flex:1;min-height:clamp(40px,6.51cqw,100px);margin:2px -6px 8px;background:linear-gradient(0deg,#08537d 0 2px,transparent 2px 7px,#03142d 7px 9px,transparent 9px),url('./assets/library-room.png?v=0.6.0') 73% 50% /200%;isolation:isolate}
+.portrait-stage{position:relative;flex:1;min-height:clamp(40px,6.51cqw,100px);margin:2px -6px 8px;background:linear-gradient(0deg,#08537d 0 2px,transparent 2px 7px,#03142d 7px 9px,transparent 9px),url('./assets/library-room.png?v=0.7.0') 73% 50% /200%;isolation:isolate}
 .portrait-stage::before{content:'';position:absolute;inset:0;background:#020e23c9;z-index:-1}
 #monster-art{width:100%;height:100%;object-fit:contain;position:absolute;inset:0}
 #monster-description{font:clamp(14px,2.21cqw,34px)/1.04 UmaText,monospace;color:#fff3d4;margin:0 0 12px;flex-shrink:0}
@@ -140,4 +140,113 @@ footer{display:flex;align-items:center;justify-content:space-between;padding:10p
  #dialogue-text{font-size:20px;margin-bottom:8px}.dialogue-actions{gap:6px}
  .dialogue-actions .gold-button,.dialogue-secondary{min-height:34px;padding:6px 10px;font-size:18px}
  .dialogue-hint{display:none}
+}
+/* Dialogues share one grid and one height; page length cannot move the controls. */
+.dialogue-screen{position:absolute;inset:auto 2% 2%;padding:0;background:none;z-index:8}
+.dialogue-panel{height:310px;min-height:0;display:grid;grid-template-columns:140px minmax(0,1fr);gap:18px;padding:16px;background:#020c20fc}
+#narrator-portrait{float:none;width:140px;height:175px;margin:0;align-self:center;object-fit:contain}
+.dialogue-content{display:grid;grid-template-rows:64px 26px minmax(0,1fr)44px 18px;gap:7px;min-height:0}
+.dialogue-heading{position:relative;min-height:0;display:flex;align-items:start;gap:12px;padding-right:50px}
+.dialogue-heading h2{font:30px/1.1 UmaDisplay,monospace;margin:0;white-space:nowrap}
+.narrator-role{font:21px/1 UmaText,monospace;margin:6px 0 0}
+#dialogue-progress{position:absolute;right:0;top:0;font:24px/1 UmaText,monospace}
+.dialogue-scene{clear:none;font:23px/1 UmaText,monospace;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;align-self:center}
+#dialogue-text{clear:none;min-height:0;margin:0;font:28px/1.17 UmaText,monospace;overflow:auto;scrollbar-width:thin;scrollbar-color:#2f83a5 #07142c}
+.dialogue-actions{clear:none;display:flex;flex-wrap:nowrap;align-items:stretch;gap:10px}
+.dialogue-actions .gold-button,.dialogue-secondary{min-height:44px;margin:0;font:24px/1 UmaText,monospace;padding:8px 14px;white-space:nowrap}
+.dialogue-hint{display:block;clear:none;font:17px/1 UmaText,monospace;margin:0;align-self:end}
+#pause{flex-direction:column;gap:10%;z-index:9}
+#pause span{width:48%;height:7%;flex:none}
+.pause-layer{position:absolute;inset:0;z-index:15;background:#01081bd6;display:grid;place-items:center;padding:20px}
+.pause-panel{width:min(380px,86%);padding:22px 24px}
+.pause-panel h2{font:38px/1.1 UmaDisplay,monospace;text-align:center;color:#ffe6a4;margin:0 0 20px}
+.pause-options{display:flex;flex-direction:column;gap:9px}
+.pause-options .menu-item{flex:none;min-height:49px;padding:9px;font:30px/1 UmaText,monospace}
+.pause-options .menu-item.selected::before{left:-31px;width:24px;height:26px}
+.controls-panel{width:min(610px,95%);max-height:100%;overflow:auto;padding:22px}
+.controls-panel h2{font:30px/1.2 UmaDisplay,monospace;margin:0 0 18px;text-align:center}
+.controls-panel dl{margin:0}.controls-panel dl>div{display:grid;grid-template-columns:minmax(0,35fr) minmax(0,65fr);gap:12px;border-bottom:1px solid #1f5b80;padding:7px 0}
+.controls-panel dt,.controls-panel dd{font:25px/1.12 UmaText,monospace;display:block;padding:0;margin:0;overflow-wrap:normal}
+.controls-panel dt{color:#8be4f4}.controls-panel dd::before{content:none}
+.controls-panel p{font:24px/1.18 UmaText,monospace;color:#d6e0d9;margin:17px 0}
+.controls-panel .controls-note{font-size:20px;color:#9bb6c7}
+.controls-actions{position:sticky;bottom:-22px;background:#020c20;display:flex;gap:10px;justify-content:space-between;padding:10px 0 4px}
+.exit-screen{display:grid;place-items:center;background:#020a1a88}
+.exit-panel{width:min(700px,88%);padding:35px;text-align:center}
+.exit-panel h2{font:clamp(24px,4cqw,48px)/1.3 UmaDisplay,monospace;margin:0;color:#ffe7a9}
+.exit-panel p{font:30px/1.2 UmaText,monospace;margin:25px 0}.exit-panel button{font:25px/1.1 UmaText,monospace}
+.wake-caption{position:absolute;inset:auto 2% 4% auto;z-index:5;display:flex;align-items:center;gap:16px;padding:7px 10px;background:#020c20e8;color:#d6e8de;font:24px/1 UmaText,monospace;border-left:2px solid #21bddc}
+/* Touch controls live inside the game field. No separate lower button bar. */
+.touch-controls,.has-touch .touch-controls{position:absolute;inset:0;display:none;width:100%;height:100%;padding:0;gap:0;pointer-events:none;z-index:5;background:none}
+.has-touch .touch-controls{display:block}
+#stick-pad{display:block;position:absolute;left:0;top:38%;width:48%;height:62%;pointer-events:auto;touch-action:none;user-select:none}
+#stick-base{position:absolute;left:66px;top:calc(100% - 76px);width:112px;height:112px;transform:translate(-50%,-50%);border:3px solid #6bc6d080;border-radius:50%;background:#05162e6e;box-shadow:inset 0 0 0 9px #36799516;opacity:.65}
+#stick-knob{position:absolute;left:31px;top:31px;width:44px;height:44px;border:3px solid #b3e2e8;border-radius:50%;background:#45778d99;box-shadow:0 3px #04112280}
+#stick-pad.engaged #stick-base{opacity:1;border-color:#8ee8ee}
+#touch-actions{display:block;position:absolute;right:max(12px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom));width:144px;height:154px;pointer-events:none}
+#touch-actions button{position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;user-select:none;min-width:0;padding:0;border:3px solid #9ac8d4bd;border-radius:50%;background:#0a2542b8;color:#ffedbd;box-shadow:0 3px #01091780}
+#touch-actions .touch-paw{width:74px;height:74px;right:0;bottom:0;font:26px/1 UmaText,monospace}
+#touch-actions .touch-jump{width:60px;height:60px;right:6px;top:0;font:32px/1 UmaText,monospace}
+#touch-actions .touch-dash{width:56px;height:56px;left:0;bottom:14px;font:19px/1 UmaText,monospace;flex-direction:column;gap:2px;background:radial-gradient(circle,#10263c 63%,transparent 65%),conic-gradient(#93d9e0 var(--ready,100%),#263b58 0)}
+#touch-actions button.pressed{background:#38647bd9;transform:scale(.94);border-color:#ffe4a0}
+#dash-status{font:15px/1 UmaText,monospace;height:13px;color:#a9c7ce}
+#game{touch-action:none}
+.has-touch #app[data-screen="game"] footer{display:none}
+@media(pointer:coarse){.touch-controls{display:block}}
+@media(max-width:950px){
+ .dialogue-panel{height:280px;grid-template-columns:100px minmax(0,1fr);padding:12px;gap:14px}
+ #narrator-portrait{width:100px;height:125px}
+ .dialogue-content{grid-template-rows:56px 22px minmax(0,1fr)40px 16px;gap:6px}
+ .dialogue-heading h2{font-size:25px}.narrator-role{font-size:18px}
+ .dialogue-scene{font-size:21px}#dialogue-text{font-size:24px}
+ .dialogue-actions .gold-button,.dialogue-secondary{font-size:22px;padding:7px 10px;min-height:40px}
+}
+@media(max-width:700px) and (orientation:portrait){
+ #app[data-screen="menu"] .menu-panel{top:26%;height:66%}.menu-options{gap:8px}.menu-item{min-height:51px}.menu-panel h2{margin-bottom:8px}
+ #app[data-screen="game"] .game-shell{height:min(100svh,160cqw);aspect-ratio:auto}
+ #app[data-screen="game"][data-dialogue="true"] .game-shell{height:auto;aspect-ratio:auto}
+ #app[data-screen="game"][data-dialogue="true"] #game{height:min(100svh,160cqw);width:100%}
+ #pause{width:44px;height:44px;right:8px;top:8px;min-width:44px;min-height:44px}
+ .dialogue-screen{position:relative;inset:auto;padding:0 8px 10px;background:#030b1e}
+ .dialogue-panel{height:400px;display:grid;grid-template-columns:68px minmax(0,1fr);grid-template-rows:84px 21px minmax(0,1fr)44px 34px;gap:6px 10px;padding:12px}
+ #narrator-portrait{width:68px;height:84px;float:none;grid-column:1;grid-row:1;align-self:start;margin:0}
+ .dialogue-content{display:contents}
+ .dialogue-heading{grid-column:2;grid-row:1;min-height:0;padding-right:36px;gap:0;display:block}
+ .dialogue-heading h2{font:23px/1.15 UmaText,monospace;white-space:normal;margin:0}
+ .narrator-role{font:18px/1.12 UmaText,monospace;margin-top:7px}
+ #dialogue-progress{font-size:18px}
+ .dialogue-scene{grid-column:1/-1;grid-row:2;font:20px/1 UmaText,monospace;letter-spacing:0;margin:0}
+ #dialogue-text{grid-column:1/-1;grid-row:3;font:22px/1.17 UmaText,monospace;margin:0;min-height:0;clear:none}
+ .dialogue-actions{grid-column:1/-1;grid-row:4;display:grid;grid-template-columns:1fr 1.15fr .8fr;gap:6px}
+ .dialogue-actions .gold-button,.dialogue-secondary{grid-column:auto;font-size:19px;padding:6px 4px;min-height:44px;white-space:nowrap}
+ .dialogue-hint{grid-column:1/-1;grid-row:5;font-size:16px;line-height:1;margin:0;display:block}
+ .pause-layer{padding:14px}.pause-panel{width:82%;padding:20px}.pause-panel h2{font-size:32px;margin-bottom:16px}
+ .pause-options .menu-item{min-height:48px;font-size:27px}.pause-options .menu-item.selected::before{left:-26px;width:22px}
+ .controls-panel{padding:14px}.controls-panel h2{font-size:23px}.controls-panel dt,.controls-panel dd{font-size:21px}.controls-panel p{font-size:21px}
+ .controls-actions{bottom:-14px}.controls-actions button{font-size:20px;min-height:44px}
+ .wake-caption{left:auto;right:8px;bottom:12px;gap:8px;font-size:20px;padding:6px}
+ .wake-caption button{font-size:18px;min-height:36px;padding:6px}
+}
+@media(max-height:550px) and (orientation:landscape){
+ .has-touch #app[data-screen="game"]{max-width:none;width:100%;margin:0}
+ .has-touch #app[data-screen="game"] .game-shell{height:100svh;aspect-ratio:auto}
+ .dialogue-screen{position:absolute;inset:auto 2% 1%;padding:0}
+ .dialogue-panel{height:205px;grid-template-columns:76px minmax(0,1fr);padding:10px;gap:12px;grid-template-rows:none}
+ #narrator-portrait{width:76px;height:95px;grid-column:auto;grid-row:auto;align-self:center}
+ .dialogue-content{display:grid;grid-template-rows:44px 20px minmax(0,1fr)34px;gap:5px}
+ .dialogue-heading{grid-column:auto;grid-row:auto;padding-right:35px;min-height:0;display:flex}
+ .dialogue-heading h2{font-size:20px}.narrator-role{font-size:15px;margin-top:3px}#dialogue-progress{font-size:18px}
+ .dialogue-scene{grid-column:auto;grid-row:auto;font-size:18px;margin:0}
+ #dialogue-text{grid-column:auto;grid-row:auto;font-size:21px;margin:0}
+ .dialogue-actions{grid-column:auto;grid-row:auto;display:flex;gap:6px}
+ .dialogue-actions .gold-button,.dialogue-secondary{font-size:19px;min-height:34px;padding:5px 10px}
+ .dialogue-hint{display:none}
+ .pause-layer{padding:10px}.pause-panel{width:290px;padding:12px 20px}.pause-panel h2{font-size:27px;margin-bottom:8px}
+ .pause-options{gap:5px}.pause-options .menu-item{min-height:34px;font-size:23px;padding:5px}
+ .controls-panel{max-height:calc(100svh - 20px);padding:14px}.controls-panel h2{font-size:24px;margin-bottom:10px}
+ .controls-panel dt,.controls-panel dd,.controls-panel p{font-size:21px}
+ .controls-actions{bottom:-14px}
+ #pause{width:40px;height:40px;right:8px;top:8px;min-width:40px;min-height:40px}
+ #touch-actions{bottom:14px;right:14px}#stick-base{top:calc(100% - 68px)}
+ .wake-caption{font-size:20px;padding:4px}.wake-caption button{min-height:32px;font-size:18px;padding:5px}
 }

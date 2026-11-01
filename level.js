@@ -1,10 +1,10 @@
 export const WIDTH=768, HEIGHT=480, MAX_HEALTH=4;
 export const rooms=[
- {name:'ПУСТАЯ РЕДАКЦИЯ',theme:'newsroom',objective:'НАЙДИ БЛОКНОТ: СНИМИ СИГНАЛ'},
- {name:'НОЧНАЯ УЛИЦА',theme:'street',objective:'ОСВОБОДИ РЕПОРТЕРА'},
- {name:'ТИПОГРАФИЯ',theme:'press',objective:'ОСВОБОДИ РЕДАКТОРА'},
- {name:'ТЕЛЕСТУДИЯ',theme:'studio',objective:'ОСВОБОДИ СЪЕМОЧНУЮ ГРУППУ'},
- {name:'БАШНЯ ЭФИРА',theme:'tower',objective:'НАЙДИ ЮРИЯ ШМАКОВА'}
+ {name:'ПУСТАЯ РЕДАКЦИЯ',theme:'newsroom',objective:'НАЙДИ ИСХОДЯЩИЙ СИГНАЛ'},
+ {name:'НОЧНАЯ УЛИЦА',theme:'street',objective:'ПРОСЛЕДИ ПУТЬ ПОМЕХ'},
+ {name:'ТИПОГРАФИЯ',theme:'press',objective:'ПРОВЕРЬ ЖУРНАЛ ЗАПУСКА'},
+ {name:'ТЕЛЕСТУДИЯ',theme:'studio',objective:'НАЙДИ НАСТРОЙКИ ЭФИРА'},
+ {name:'БАШНЯ ЭФИРА',theme:'tower',objective:'ОСТАНОВИ ИСТОЧНИК ШУМА'}
 ].map((r,i)=>({...r,x:i*WIDTH}));
 export const WORLD=WIDTH*rooms.length,LAST_ROOM=rooms.length-1,FINAL_X=LAST_ROOM*WIDTH;
 // Every highlighted surface has matching one-way collision geometry.
@@ -24,7 +24,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  const hp=type==='headline'?3:2;
  return {id:`${type}-${room}-${x}-${platformIndex}`,type,room,x:rooms[room].x+x,y:s.y-29,w:48,h:29,origin:s.x+12,end:s.x+s.w-60,
  dir:-1,speed:type==='infonoise'?24:type==='headline'?14:type==='panicker'?18:0,hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
- inv:0,lastSwing:-1,dead:false,alert:0,blastHit:false,attackFlash:0,walkTime:0,...extra};
+ inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,moving:false,alert:0,blastHit:false,attackFlash:0,walkTime:0,...extra};
 }
 export function createEnemies(){return [
  enemy('infonoise',0,133,0),enemy('infonoise',0,365,1,{guardian:true,hp:3,maxHp:3}),
@@ -35,8 +35,4 @@ export function createEnemies(){return [
  ];}
 export function createFish(){return rooms.flatMap((r,i)=>[[114,layouts[i][0][1]-43],[216,228],[253,207],[290,189],[327,176],[365,165],[400,159],[503,221],[181,layouts[i][3][1]-41],[375,368],[570,368]].map(([x,y])=>({x:x+r.x,y,taken:false})));}
 export function createSoup(){return [1,2,3,4].map(room=>({x:WIDTH*room+(room%2?179:560),y:room%2?355:366,taken:false}));}
-export function createPeople(){return [
- {id:'reporter',name:'Репортёр',room:1}, {id:'editor',name:'Редактор',room:2},
- {id:'crew',name:'Съёмочная группа',room:3}, {id:'yuri',name:'Юрий Шмаков',room:LAST_ROOM}
-].map(person=>({...person,x:person.room*WIDTH+697,y:layouts[person.room][2][1],rescued:false}));}
 export function surfaceAt(x){const local=((x%WIDTH)+WIDTH)%WIDTH;return local<250?303:local<510?300:275;}

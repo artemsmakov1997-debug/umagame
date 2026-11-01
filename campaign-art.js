@@ -1,6 +1,7 @@
-import {rooms,WIDTH} from './level.js?v=0.6.0';
-import {rect,text} from './pixel.js?v=0.6.0';
-import {sprite,idleCats} from './assets.js?v=0.6.0';
+import {rooms,WIDTH} from './level.js?v=0.7.0';
+import {rect,text} from './pixel.js?v=0.7.0';
+import {sprite,idleCats} from './assets.js?v=0.7.0';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.7.0';
 export function sceneLayers(assets){
  return rooms.map((room,i)=>{
   const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;
@@ -33,10 +34,8 @@ const peopleSprites={reporter:[210,10,330,616],editor:[773,18,292,608],crew:[193
 export function drawPerson(c,a,person,time,scale=1){
  const box=peopleSprites[person.id],h=48*scale,w=h*box[2]/box[3];
  sprite(c,a.journalists,box,person.x-w/2,person.y-h,w,h);
- if(!person.rescued){const x=person.x-14;rect(c,x,person.y-53,29,56,'#1737505c');for(let yy=person.y-50;yy<person.y;yy+=10)rect(c,x,yy,29,1,'#74cbe875');}
 }
 export function drawCampaignObjects(c,a,g,time){
- for(const person of g.people)if(person.room===g.room)drawPerson(c,a,person,time);
  for(const relay of g.relays){
   const x=relay.x-21,y=relay.y-25;
   if(relay.hp>0){
@@ -46,21 +45,33 @@ export function drawCampaignObjects(c,a,g,time){
    if(g.enemies.some(e=>e.room===relay.room&&e.guardian&&!e.dead))text(c,'ПОБЕДИ ИНФОШУМ',x+8,y+64,'#ffdd91');
    else text(c,'ТРИ УДАРА ЛАПОЙ',x+7,y+64,'#ffdd91');
    const gate=WIDTH*(relay.room+1)-12;rect(c,gate,48,7,426,'#132c47');for(let yy=50;yy<474;yy+=14)rect(c,gate+1,yy,5,8,Math.sin(time*4)>0?'#71d2e7':'#397fa4');
-  }else{rect(c,x,y,98,81,'#0a2638');text(c,'СИГНАЛ СНЯТ',x+15,y+35,'#b8f5c9');}
-  if(relay.room===0){rect(c,x+62,y+84,19,15,'#d49b48');rect(c,x+65,y+86,14,11,'#f7deb0');for(let i=0;i<3;i++)rect(c,x+68,y+88+i*3,8,1,'#716c7b');}
+  }else{rect(c,x,y,98,81,'#0a2638');text(c,'ЖУРНАЛ СИГНАЛА',x+7,y+14,'#b8f5c9');for(let i=0;i<4;i++)rect(c,x+12,y+31+i*8,68-(i%2)*19,2,'#6ba9b6');}
  }
 }
-export function drawWakeup(c,a,p,page,elapsed){
- const frame=page===0&&elapsed<1.5?1:page===2?2:0,box=idleCats[frame],s=76/474;
- sprite(c,a.idle,box,p.x+17-box[2]*s*.5,p.y+p.h-box[3]*s,box[2]*s,box[3]*s);
+export function drawWakeup(c,a,p,elapsed){
+ drawEmotion(c,a,wakePose(elapsed).frame,p.x+17,p.y+p.h,76);
  const x=102,y=289;rect(c,x,y,36,14,'#8a6952');rect(c,x+3,y+3,19,8,'#17283b');for(let i=0;i<5;i++)rect(c,x+4+i*3,y+4,1,6,'#627a82');rect(c,x+27,y+5,4,4,'#a8c7c9');rect(c,x+27,y+2,2,2,Math.floor(elapsed*4)%2?'#73e4e8':'#236980');
 }
-export function drawEpilogue(c,a,time){
- c.drawImage(a.menu,0,0,768,512);rect(c,0,0,768,70,'#030a1eea');text(c,'РЕДАКЦИЯ СНОВА ВМЕСТЕ',150,22,'#ffe5a4',3,1);
- for(const [id,x] of [['reporter',130],['editor',285],['crew',397],['yuri',519]])drawPerson(c,a,{id,x,y:286,rescued:true},time,id==='yuri'?2.4:2);
- rect(c,70,270,640,12,'#8d5a34');rect(c,70,268,640,3,'#ffd38a');rect(c,78,282,8,55,'#322735');rect(c,690,282,8,55,'#322735');
- rect(c,565,264,67,5,'#386f8d');rect(c,569,265,59,2,'#e2d4b4');
- const box=idleCats[Math.floor(time*2)%17===0?1:0],h=87,w=h*box[2]/box[3];sprite(c,a.idle,box,600-w/2,264-h,w,h);
- rect(c,645,258,28,5,'#c9e8e4');rect(c,649,263,20,5,'#82aab0');rect(c,648,257,22,2,'#e5b373');
- for(let i=0;i<3;i++)rect(c,650+i*7,249-Math.floor(time*4+i)%4,1,4,'#d9ecdf77');
+export function drawInfection(c,g){
+ if(g.room!==0)return;const t=g.wakeTime;
+ for(const [i,[x,y,w,h]]of [[73,343,34,31],[386,352,54,35],[627,137,94,102]].entries()){
+  if(t<.7+i*.75)continue;rect(c,x,y,w,h,'#001128ee');
+  for(let row=0;row<7;row++)rect(c,x+2,y+3+row*(h-6)/7,w-4,1,(row+Math.floor((t+g.time)*8))%3?'#1595b2':'#8df2ff');
+  rect(c,x+w*.25,y+h*.38,w*.13,h*.18,'#ff334c');rect(c,x+w*.61,y+h*.38,w*.13,h*.18,'#ff334c');
+ }
+}
+export function drawEpilogue(c,a,time,width=768){
+ const backgroundWidth=Math.max(768,width);c.drawImage(a.menu,(width-backgroundWidth)/2,0,backgroundWidth,backgroundWidth*2/3);rect(c,0,0,width,70,'#030a1eea');const compact=width<768;
+ c.save();if(!compact)c.translate((width-768)/2,0);
+ text(c,'ШУМ ОСТАНОВЛЕН',compact?Math.max(8,(width-168)/2):215,22,'#ffe5a4',compact?2:3,compact?0:1);
+ if(compact){
+  drawPerson(c,a,{id:'yuri',x:width*.29,y:286,rescued:true},time,2.4);
+  for(const [i,id]of ['reporter','editor','crew'].entries())drawPerson(c,a,{id,x:width*(.18+i*.32),y:400,rescued:true},time,1.5);
+ }else for(const [id,x] of [['reporter',130],['editor',285],['crew',397],['yuri',519]])drawPerson(c,a,{id,x,y:286,rescued:true},time,id==='yuri'?2.4:2);
+ const left=compact?8:70,tableWidth=compact?width-16:640,catX=compact?width*.72:600;
+ rect(c,left,270,tableWidth,12,'#8d5a34');rect(c,left,268,tableWidth,3,'#ffd38a');rect(c,left+8,282,8,55,'#322735');rect(c,left+tableWidth-16,282,8,55,'#322735');
+ rect(c,catX-35,264,67,5,'#386f8d');rect(c,catX-31,265,59,2,'#e2d4b4');
+ const box=idleCats[Math.floor(time*2)%17===0?1:0],h=87,w=h*box[2]/box[3];sprite(c,a.idle,box,catX-w/2,264-h,w,h);
+ const bowl=compact?width-35:645;rect(c,bowl,258,28,5,'#c9e8e4');rect(c,bowl+4,263,20,5,'#82aab0');rect(c,bowl+3,257,22,2,'#e5b373');
+ c.restore();
 }

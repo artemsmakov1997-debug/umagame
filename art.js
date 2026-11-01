@@ -1,7 +1,7 @@
-import {creatures,newCreatures,sprite} from './assets.js?v=0.6.0';
-import {rect} from './pixel.js?v=0.6.0';
-import {idlePlacement} from './menu-animation.js?v=0.6.0';
-import {motion,monsterFrame,previewActor} from './monster-animation.js?v=0.6.0';
+import {creatures,newCreatures,sprite} from './assets.js?v=0.7.0';
+import {rect} from './pixel.js?v=0.7.0';
+import {idlePlacement} from './menu-animation.js?v=0.7.0';
+import {motion,monsterFrame,monsterReaction,previewActor} from './monster-animation.js?v=0.7.0';
 export function drawCrt(c,x,y,w,h,time=0){
  rect(c,x,y,w,h,'#080f22');rect(c,x+2,y+2,w-4,h-5,'#8792ab');rect(c,x+5,y+5,w-10,h-15,'#303f61');rect(c,x+9,y+9,w-18,h-23,'#062c51');
  for(let i=0;i<9;i++){const yy=y+12+i*(h-30)/9;rect(c,x+12,yy,w-24,2,'#0b658b');for(let j=0;j<6;j++)if((i*3+j+Math.floor(time*7))%4===0)rect(c,x+13+j*(w-28)/6,yy,Math.max(2,w/14),2,'#77ecff');}
@@ -9,11 +9,11 @@ export function drawCrt(c,x,y,w,h,time=0){
 }
 export function drawMonster(c,a,id,x,y,w,h,time=0,flip=false,actor={}){
  const atlas=motion[id];if(!atlas)return;
- const index=monsterFrame(id,time,actor),frame=atlas.frames[index],{box,pivot}=frame;
+ const index=monsterFrame(id,time,actor),reaction=monsterReaction(id,time,actor),frame=reaction||atlas.frames[index],{box,pivot}=frame;
  if(id==='source')drawCrt(c,x+w*.35,y+h*.18,w*.54,h*.73,time);
- const scale=Math.min(w/atlas.width,h/atlas.height),cx=x+w/2,feet=y+h;
- c.save();c.translate(Math.round(cx),Math.round(feet));if(flip!==(id==='clickbait'&&index===3))c.scale(-1,1);
- sprite(c,a[atlas.asset],box,(box[0]-pivot[0])*scale,(box[1]-pivot[1])*scale,box[2]*scale,box[3]*scale);c.restore();
+ const scale=Math.min(w/(reaction?.width||atlas.width),h/(reaction?.height||atlas.height)),cx=x+w/2,feet=y+h;
+ c.save();c.translate(Math.round(cx),Math.round(feet));if(flip!==(!reaction&&id==='clickbait'&&index===3))c.scale(-1,1);
+ sprite(c,a[reaction?.asset||atlas.asset],box,(box[0]-pivot[0])*scale,(box[1]-pivot[1])*scale,box[2]*scale,box[3]*scale);c.restore();
 }
 export function drawLure(c,a,x,y,time){
  const yy=Math.round(y+Math.sin(time*3)*2);sprite(c,a.noise,creatures.fish,x-13,yy-8,26,16);
