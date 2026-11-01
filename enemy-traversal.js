@@ -1,4 +1,4 @@
-import {platforms,WIDTH} from './level.js?v=0.10.0';
+import {platforms,WIDTH} from './level.js?v=0.10.1';
 const GRAVITY=900,IMPULSE=460;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Pick a reachable landing spot that brings the creature closer to Uma's level.

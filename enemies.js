@@ -1,5 +1,5 @@
-import {enemy,WIDTH} from './level.js?v=0.10.0';
-import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.10.0';
+import {enemy,WIDTH} from './level.js?v=0.10.1';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.10.1';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}

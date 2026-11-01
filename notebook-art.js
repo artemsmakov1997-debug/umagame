@@ -1,4 +1,4 @@
-import {rect} from './pixel.js?v=0.10.0';
+import {rect} from './pixel.js?v=0.10.1';
 export function drawNotebook(c,n,time){
  const x=Math.round(n.x),y=Math.round(n.y+Math.sin(time*3+n.x)*2);
  c.save();c.translate(x,y);c.shadowColor='#54dded';c.shadowBlur=8;

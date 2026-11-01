@@ -1,11 +1,11 @@
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X} from './engine.js?v=0.10.0';
-import {rect,text} from './pixel.js?v=0.10.0';
-import {cats,creatures,sprite} from './assets.js?v=0.10.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.10.0';
-import {drawHud} from './hud.js?v=0.10.0';
-import {drawNotebook} from './notebook-art.js?v=0.10.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.10.0';
-import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.10.0';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X} from './engine.js?v=0.10.1';
+import {rect,text} from './pixel.js?v=0.10.1';
+import {cats,creatures,sprite} from './assets.js?v=0.10.1';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.10.1';
+import {drawHud} from './hud.js?v=0.10.1';
+import {drawNotebook} from './notebook-art.js?v=0.10.1';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.10.1';
+import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.10.1';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
