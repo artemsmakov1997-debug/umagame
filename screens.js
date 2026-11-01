@@ -1,6 +1,6 @@
-import {monsters} from './catalog.js?v=0.7.0';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.7.0';
-import {idleFrame} from './menu-animation.js?v=0.7.0';
+import {monsters} from './catalog.js?v=0.8.0';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.8.0';
+import {idleFrame} from './menu-animation.js?v=0.8.0';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
  constructor(assets,onStart,onExit,onQuit=()=>{}){
@@ -35,7 +35,7 @@ export class ScreenManager{
   for(const id of ['menu','library','authors','exit'])$(`${id}-screen`).hidden=id!==view;
   const game=view==='game';$('pause').hidden=!game;$('controls-art').hidden=!game;$('touch-controls').hidden=!game;$('menu-hint').hidden=game;
   if(!game)$('overlay').hidden=true;
-  $('footer-hint').textContent=game?'SHIFT — РЫВОК · ESC — МЕНЮ':'УМА ПРОТИВ ИНФОШУМА';
+  $('footer-hint').textContent=game?'↓ — КРАСТЬСЯ · SHIFT — РЫВОК · ESC — МЕНЮ':'УМА ПРОТИВ ИНФОШУМА';
   if(game&&$('game').height!==480)$('game').height=480;
   if(focus){if(view==='menu')this.menuItems[this.menuIndex].focus({preventScroll:true});else if(view==='library')this.monsterButtons[this.monsterIndex].focus({preventScroll:true});else if(view==='authors')document.querySelector('#authors-screen [data-back]').focus({preventScroll:true});else if(view==='exit')document.querySelector('#exit-screen button').focus({preventScroll:true});else $('game').focus({preventScroll:true});}
  }

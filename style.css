@@ -27,7 +27,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #dff6ff;outline-offset:4p
 .menu-item.selected::before{content:'';position:absolute;left:-36px;top:50%;transform:translateY(-50%)}
 .media-blue{color:#72d8ff}.media-link.selected .media-blue{color:#17679d}.loading{position:absolute;bottom:3%;left:5%;width:90%;text-align:center;color:#bddeee;font-size:12px}
 .menu-hint{height:clamp(30px,4.17cqw,64px);display:flex;align-items:center;justify-content:center;gap:clamp(16px,3cqw,46px);font:clamp(12px,1.75cqw,27px)/1 UmaText,monospace;color:#00cfff;background:#030a1e8c}
-[data-screen="library"] .cabinet{background:url('./assets/library-room.png?v=0.7.0') center/cover}
+[data-screen="library"] .cabinet{background:url('./assets/library-room.png?v=0.8.0') center/cover}
 .section-heading{position:absolute;top:3.7%;left:4.3%;width:91.4%;text-align:center}
 .section-heading h2{margin:0;font:clamp(35px,6.51cqw,100px)/1.04 UmaDisplay,UmaPixel,monospace;color:#ffe6a4;text-shadow:0 6px #a96b23,4px 7px #020816;filter:drop-shadow(-4px 0 #020816) drop-shadow(4px 0 #020816)}
 .section-heading>.ornament{margin-top:0;font-size:clamp(16px,2.6cqw,40px);letter-spacing:clamp(1px,.26cqw,4px)}.section-heading>.ornament span{border:0;padding:0 4px}
@@ -45,7 +45,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #dff6ff;outline-offset:4p
 #monster-card{min-width:0;display:flex;flex-direction:column;padding:clamp(7px,.91cqw,14px) clamp(10px,1.69cqw,26px) clamp(8px,1.17cqw,18px) clamp(10px,1.56cqw,24px);overflow:auto;scrollbar-color:#437391 #061329}
 #monster-title{font:clamp(28px,5.47cqw,84px)/1 UmaDisplay,UmaPixel,monospace;color:#ffebaf;text-transform:uppercase;text-align:left;margin:0;flex-shrink:0;text-shadow:2px 3px #050916}
 #monster-title.long-title{font-size:clamp(24px,3.65cqw,56px);line-height:1.2}
-.portrait-stage{position:relative;flex:1;min-height:clamp(40px,6.51cqw,100px);margin:2px -6px 8px;background:linear-gradient(0deg,#08537d 0 2px,transparent 2px 7px,#03142d 7px 9px,transparent 9px),url('./assets/library-room.png?v=0.7.0') 73% 50% /200%;isolation:isolate}
+.portrait-stage{position:relative;flex:1;min-height:clamp(40px,6.51cqw,100px);margin:2px -6px 8px;background:linear-gradient(0deg,#08537d 0 2px,transparent 2px 7px,#03142d 7px 9px,transparent 9px),url('./assets/library-room.png?v=0.8.0') 73% 50% /200%;isolation:isolate}
 .portrait-stage::before{content:'';position:absolute;inset:0;background:#020e23c9;z-index:-1}
 #monster-art{width:100%;height:100%;object-fit:contain;position:absolute;inset:0}
 #monster-description{font:clamp(14px,2.21cqw,34px)/1.04 UmaText,monospace;color:#fff3d4;margin:0 0 12px;flex-shrink:0}
@@ -250,3 +250,34 @@ footer{display:flex;align-items:center;justify-content:space-between;padding:10p
  #touch-actions{bottom:14px;right:14px}#stick-base{top:calc(100% - 68px)}
  .wake-caption{font-size:20px;padding:4px}.wake-caption button{min-height:32px;font-size:18px;padding:5px}
 }
+/* Compact editor dialogue: portrait fills the window; two actions only. */
+.dialogue-panel{height:280px;display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:1fr;padding:0;gap:0;overflow:hidden}
+#narrator-portrait{width:100%;height:100%;min-height:0;align-self:stretch;object-fit:cover;object-position:50% 40%;margin:0;grid-column:1;grid-row:1;border-right:2px solid #1683a4}
+.dialogue-content{display:grid;grid-column:2;grid-row:1;grid-template-rows:62px minmax(0,1fr)44px;gap:14px;min-width:0;min-height:0;padding:20px 24px}
+.dialogue-heading{display:block;min-height:0;padding:0;grid-column:auto;grid-row:auto}.dialogue-heading h2{font:32px/1.1 UmaText,monospace;white-space:normal;margin:0}.narrator-role{font:22px/1 UmaText,monospace;margin:5px 0 0}
+#dialogue-text{grid-column:auto;grid-row:auto;font:28px/1.2 UmaText,monospace;min-height:0;margin:0;overflow:auto}
+.dialogue-actions{grid-column:auto;grid-row:auto;display:flex;gap:12px;flex-wrap:nowrap}.dialogue-actions .gold-button,.dialogue-actions .dialogue-secondary{grid-column:auto;font:24px/1 UmaText,monospace;min-height:44px;padding:8px 20px}
+#monster-list{gap:5px;padding-top:10px;padding-bottom:10px}.monster-option{font-size:clamp(16px,2.45cqw,38px)}
+@media(max-width:950px){.dialogue-panel{height:260px;grid-template-columns:190px minmax(0,1fr)}.dialogue-content{padding:16px 18px;grid-template-rows:55px minmax(0,1fr)42px;gap:10px}.dialogue-heading h2{font-size:29px}.narrator-role{font-size:20px}#dialogue-text{font-size:25px}.dialogue-actions .gold-button,.dialogue-actions .dialogue-secondary{font-size:22px;padding:7px 14px;min-height:42px}}
+@media(max-width:700px) and (orientation:portrait){
+ .dialogue-panel{height:360px;grid-template-columns:88px minmax(0,1fr);grid-template-rows:1fr;gap:0;padding:0}
+ #narrator-portrait{width:100%;height:100%;grid-column:1;grid-row:1;object-position:53% 40%;align-self:stretch}
+ .dialogue-content{display:grid;grid-column:2;grid-row:1;grid-template-rows:48px minmax(0,1fr)44px;gap:10px;padding:14px 10px}
+ .dialogue-heading{grid-column:auto;grid-row:auto;display:block;padding:0}.dialogue-heading h2{font:27px/1 UmaText,monospace}.narrator-role{font:18px/1 UmaText,monospace;margin-top:5px}
+ #dialogue-text{font:20px/1.17 UmaText,monospace;grid-column:auto;grid-row:auto}
+ .dialogue-actions{display:flex;grid-column:auto;grid-row:auto;gap:6px}.dialogue-actions .gold-button,.dialogue-actions .dialogue-secondary{font:18px/1 UmaText,monospace;min-height:44px;padding:7px 6px;white-space:nowrap}
+ #monster-list{height:390px;gap:4px;padding:4px 4px 10px}.monster-option{font-size:25px}
+}
+@media(max-height:550px) and (orientation:landscape){
+ .dialogue-panel{height:220px;grid-template-columns:155px minmax(0,1fr);padding:0;gap:0;grid-template-rows:1fr}
+ #narrator-portrait{height:100%;width:100%;grid-column:1;grid-row:1;align-self:stretch}
+ .dialogue-content{display:grid;grid-column:2;grid-row:1;padding:12px 16px;grid-template-rows:44px minmax(0,1fr)36px;gap:8px}
+ .dialogue-heading h2{font-size:25px}.narrator-role{font-size:17px;margin-top:4px}#dialogue-text{font-size:22px}
+ .dialogue-actions .gold-button,.dialogue-actions .dialogue-secondary{font-size:20px;min-height:36px;padding:6px 13px}
+ #monster-list{gap:3px;padding-top:5px;padding-bottom:5px}.monster-option{font-size:2.45cqw}
+}
+.library-panel{min-height:0}#monster-list{min-height:0;overflow:hidden}#monster-card{min-height:0;height:100%}.monster-option{grid-template-columns:40% minmax(0,60%);font-size:clamp(16px,2.2cqw,34px);overflow:hidden}.monster-option canvas{min-height:0;max-height:100%;width:100%;object-fit:contain}
+@media(max-width:700px) and (orientation:portrait){#monster-card{height:auto;overflow:visible}.monster-option{grid-template-columns:85px minmax(0,1fr);font-size:25px}}
+@media(max-height:550px) and (orientation:landscape){.monster-option{font-size:2.2cqw}}
+@media(max-height:550px) and (orientation:landscape){.has-touch #app[data-screen="library"]{max-width:none;width:100%}.has-touch #app[data-screen="library"] .game-shell{height:max(600px,100svh);aspect-ratio:auto}}
+#monster-list{overflow:visible}.monster-option{overflow:visible}

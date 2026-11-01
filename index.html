@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030a1e"><meta name="description" content="УМА ПРОТИВ ИНФОШУМА — держи ухо востро. Пиксельная игра про кошку Уму и ожившие новости.">
 <title>УМА ПРОТИВ ИНФОШУМА — держи ухо востро</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.7.0">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.8.0">
 </head>
 <body>
 <main id="app" data-screen="menu">
@@ -36,26 +36,24 @@
 </section>
 <section id="overlay" class="overlay" aria-label="Результат игры" hidden><div class="pixel-panel result-panel"><h2 id="result-title">РЕЗУЛЬТАТ</h2><p id="result-text"></p><button class="gold-button" id="play">Начать заново</button><button class="back-button" id="return-menu">В меню</button></div></section>
 <section id="dialogue" class="dialogue-screen" role="dialog" aria-modal="true" aria-labelledby="dialogue-speaker" aria-describedby="dialogue-text" hidden>
-<div class="pixel-panel dialogue-panel"><img id="narrator-portrait" alt="Портрет Юрия Шмакова" width="160" height="200">
-<div class="dialogue-content"><div class="dialogue-heading"><div><h2 id="dialogue-speaker">ЮРИЙ ШМАКОВ</h2><p class="narrator-role">Журналист · на связи</p></div><span id="dialogue-progress"></span></div>
-<p id="dialogue-scene" class="dialogue-scene"></p><p id="dialogue-text" aria-live="polite"></p>
-<div class="dialogue-actions"><button id="dialogue-next" class="gold-button">Дальше →</button><button id="dialogue-skip" class="dialogue-secondary">Пропустить</button><button id="dialogue-menu" class="dialogue-secondary">В меню</button></div>
-<p class="dialogue-hint"><span class="dialogue-keyboard-hint">Enter / пробел — дальше · Esc — меню</span><span class="dialogue-touch-hint">Игра на паузе. Читай в своём темпе.</span></p></div></div></section>
+<div class="pixel-panel dialogue-panel"><img id="narrator-portrait" alt="Портрет Юрия" width="224" height="280">
+<div class="dialogue-content"><div class="dialogue-heading"><div><h2 id="dialogue-speaker">Юрий</h2><p class="narrator-role">редактор</p></div></div>
+<p id="dialogue-text" aria-live="polite"></p><div class="dialogue-actions"><button id="dialogue-next" class="gold-button">Далее</button><button id="dialogue-skip" class="dialogue-secondary">Пропустить</button></div></div></div></section>
 <div id="wake-caption" class="wake-caption" hidden><span>Ума просыпается…</span><button id="wake-skip" class="dialogue-secondary">Пропустить</button></div>
 <div class="touch-controls" id="touch-controls" aria-label="Управление касанием" hidden><div id="stick-pad" aria-label="Джойстик: движение и лестницы"><div id="stick-base"><i id="stick-knob"></i></div></div><div id="touch-actions"><button data-touch-action="jump" class="touch-jump" aria-label="Прыгнуть">↑</button><button data-touch-action="attack" class="touch-paw" aria-label="Удар лапой">ЛАПА</button><button data-touch-action="dash" class="touch-dash" aria-label="Рывок">РЫВОК<span id="dash-status" aria-hidden="true"></span></button></div></div>
 <section id="pause-menu" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
 <nav id="pause-root" class="pixel-panel pause-panel" aria-label="Меню игры"><h2 id="pause-title">МЕНЮ</h2><div class="pause-options">
 <button class="menu-item selected" data-pause-action="resume">Вернуться</button><button class="menu-item" data-pause-action="restart">Рестарт</button><button class="menu-item" data-pause-action="controls">Управление</button><button class="menu-item" data-pause-action="library">Библиотека</button><a class="menu-item media-link" data-pause-action="media" href="https://media-strazh.ru/" target="_blank" rel="noopener noreferrer"><span>МЕДИА.</span><span class="media-blue">СТРАЖ</span></a><button class="menu-item" data-pause-action="exit">Выход</button>
 </div></nav>
-<article id="controls-panel" class="pixel-panel controls-panel" hidden><h2>УПРАВЛЕНИЕ</h2><dl><div><dt>← → / A D</dt><dd>Бег</dd></div><div><dt>↑ / W</dt><dd>Прыжок · подъём по лестнице</dd></div><div><dt>↓ / S</dt><dd>Спуск по лестнице</dd></div><div><dt>Пробел / X</dt><dd>Лапа</dd></div><div><dt>Shift</dt><dd>Рывок</dd></div><div><dt>Esc</dt><dd>Меню игры</dd></div></dl><p>На телефоне: джойстик слева, действия справа. Касание справа — лапа; взмах вверх — прыжок; в сторону — рывок.</p><p class="controls-note">Рестарт начинает новое прохождение.</p><div class="controls-actions"><button id="fullscreen" class="dialogue-secondary">Во весь экран</button><button id="controls-back" class="gold-button">Назад</button></div></article>
+<article id="controls-panel" class="pixel-panel controls-panel" hidden><h2>УПРАВЛЕНИЕ</h2><dl><div><dt>← → / A D</dt><dd>Бег</dd></div><div><dt>↑ / W</dt><dd>Прыжок · подъём по лестнице</dd></div><div><dt>↓ / S</dt><dd>Красться · спуск по лестнице</dd></div><div><dt>Пробел / X</dt><dd>Лапа</dd></div><div><dt>Shift</dt><dd>Рывок</dd></div><div><dt>Esc</dt><dd>Меню игры</dd></div></dl><p>На телефоне: джойстик слева, действия справа. Джойстик вниз — красться или спуститься. Касание справа — лапа; взмах вверх — прыжок; в сторону — рывок.</p><p class="controls-note">Рестарт начинает новое прохождение.</p><div class="controls-actions"><button id="fullscreen" class="dialogue-secondary">Во весь экран</button><button id="controls-back" class="gold-button">Назад</button></div></article>
 </section>
 <div class="status" id="toast" role="status" aria-live="polite"></div>
 </div>
 <div id="menu-hint" class="menu-hint">↑ ↓ — выбрать <span>Enter — открыть</span><span>Esc — в меню</span></div>
 <canvas id="controls-art" width="768" height="32" aria-hidden="true" hidden></canvas>
-<p class="sr-only">Стрелки или A и D — бег. Вверх или W — прыжок и подъём. Вниз или S — спуск. Пробел или X — лапа. Shift — рывок. Escape — меню игры.</p>
+<p class="sr-only">Стрелки или A и D — бег. Вверх или W — прыжок и подъём. Вниз или S — красться и спуск. Пробел или X — лапа. Shift — рывок. Escape — меню игры.</p>
 </section>
 <footer><button id="sound" aria-label="Включить звук" aria-pressed="false">ЗВУК: ВЫКЛ</button><span id="footer-hint">УМА ПРОТИВ ИНФОШУМА</span></footer>
 <div id="accessible-state" class="sr-only" aria-live="polite"></div>
-</main><script type="module" src="game.js?v=0.7.0"></script>
+</main><script type="module" src="game.js?v=0.8.0"></script>
 </body></html>

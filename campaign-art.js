@@ -1,20 +1,29 @@
-import {rooms,WIDTH} from './level.js?v=0.7.0';
-import {rect,text} from './pixel.js?v=0.7.0';
-import {sprite,idleCats} from './assets.js?v=0.7.0';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.7.0';
+import {rooms,WIDTH} from './level.js?v=0.8.0';
+import {rect,text} from './pixel.js?v=0.8.0';
+import {sprite,idleCats} from './assets.js?v=0.8.0';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.8.0';
 export function sceneLayers(assets){
- return rooms.map((room,i)=>{
-  const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;
-  const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.filter='saturate(.58)';
-  if(i===0)c.drawImage(assets.room,0,0,768,512);
-  else{const sw=assets.journey.width/2,sh=assets.journey.height/2,index=i-1;c.drawImage(assets.journey,(index%2)*sw,Math.floor(index/2)*sh,sw,sh,0,0,768,512);}
-  c.filter='none';rect(c,0,0,768,512,'#03102378');return canvas;
+ return rooms.map(room=>{
+  const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.filter='saturate(.58)';
+  const index={street:0,press:1,studio:2,tower:3}[room.theme];
+  if(room.theme==='archive')c.drawImage(assets.library,0,0,768,512);
+  else if(room.theme==='newsroom')c.drawImage(assets.room,0,0,768,512);
+  else if(room.theme==='dispatch')c.drawImage(assets.library,0,0,768,512);
+  else{const sw=assets.journey.width/2,sh=assets.journey.height/2;c.drawImage(assets.journey,(index%2)*sw,Math.floor(index/2)*sh,sw,sh,0,0,768,512);}
+  c.filter='none';rect(c,0,0,768,512,'#03102388');
+  if(room.theme==='archive'){rect(c,0,0,768,512,'#0b172e24');rect(c,30,260,102,52,'#162439');text(c,'АРХИВ',53,281,'#7a949c',2);}
+  if(room.theme==='dispatch')for(let rack=0;rack<5;rack++){const x=35+rack*150;rect(c,x,100,100,354,'#081426');rect(c,x+3,103,94,349,'#263b50');for(let row=0;row<9;row++){rect(c,x+8,109+row*37,84,29,'#101e31');rect(c,x+14,116+row*37,43,3,'#284e66');rect(c,x+77,117+row*37,3,3,row%3?'#258496':'#bd8b4b');}}
+  return canvas;
  });
+}
+export function drawRoomJoin(c,layers,index){
+ const boundary=index*WIDTH;
+ for(let x=-48;x<48;x+=4){const mix=(x+48)/96,sample=Math.floor(mix*44);c.globalAlpha=1-mix;c.drawImage(layers[index-1],720+sample,48,4,432,boundary+x,48,4,432);c.globalAlpha=mix;c.drawImage(layers[index],sample,48,4,432,boundary+x,48,4,432);}c.globalAlpha=1;
 }
 export function drawSurface(c,a,p,time){
  const x=p.x,y=p.y,w=p.w,theme=rooms[p.room].theme;
  rect(c,x-1,y-2,w+2,16,'#020918');
- if(p.room===0)c.drawImage(a.room,x*2,(y-1)*2,w*2,20,x,y-1,w,10);
+ if(theme==='newsroom')c.drawImage(a.room,(x-p.room*WIDTH)*2,(y-1)*2,w*2,20,x,y-1,w,10);
  else{
   const base=theme==='street'?'#4b3941':theme==='press'?'#5d4a3b':theme==='studio'?'#304b66':'#3f5064';
   rect(c,x,y,w,12,base);rect(c,x+2,y+3,w-4,5,'#0b1b30');
@@ -36,13 +45,24 @@ export function drawPerson(c,a,person,time,scale=1){
  sprite(c,a.journalists,box,person.x-w/2,person.y-h,w,h);
 }
 export function drawCampaignObjects(c,a,g,time){
+ if(g.room===0){
+  rect(c,748,162,20,84,'#101d32');rect(c,752,168,12,74,g.tutorial.complete?'#10728a':'#3c4c5a');rect(c,754,173,2,62,g.tutorial.complete?'#8bebdf':'#71828a');
+  text(c,'В РЕДАКЦИЮ',647,223,'#9cc7cd');
+  for(let i=0;i<3;i++)rect(c,752+i*4,157,2,3,g.tutorial.step>i?'#a8f2b2':'#29465a');
+  text(c,'ПРЫЖОК',190,342,'#a8d8e1');text(c,'↑',440,225,'#ffd38a',2);
+ }
+ for(const portal of g.portals){
+  if(portal.room!==g.room)continue;const grow=portal.cancelled?1-(portal.closeTime||0)/.3:Math.min(1,portal.time/.6),r=25*grow;c.save();c.translate(Math.round(portal.x+24),Math.round(portal.y-2));
+  rect(c,-r,-r*1.6,r*2,r*1.6,'#19104099');for(let i=0;i<18;i++){const angle=i*Math.PI/9+time*2;rect(c,Math.cos(angle)*r,Math.sin(angle)*r*.55-9,3,3,i%3?'#8e8aff':'#68ecf4');}c.restore();
+ }
+
  for(const relay of g.relays){
   const x=relay.x-21,y=relay.y-25;
   if(relay.hp>0){
    rect(c,x,y,98,81,'#092039f2');rect(c,x+2,y+2,94,77,'#315a6d');rect(c,x+5,y+5,88,71,'#091a30');
    text(c,'РЕТРАНСЛЯТОР',x+9,y+13,'#a5e9ff');
    for(let i=0;i<relay.hp;i++)rect(c,x+12+i*23,y+36,15,18,relay.inv>0?'#fff1c9':'#70cadd');
-   if(g.enemies.some(e=>e.room===relay.room&&e.guardian&&!e.dead))text(c,'ПОБЕДИ ИНФОШУМ',x+8,y+64,'#ffdd91');
+   if(g.enemies.some(e=>e.room===relay.room&&e.guardian&&!e.dead))text(c,'УБЕРИ ЗАЩИТНИКА',x+5,y+64,'#ffdd91');
    else text(c,'ТРИ УДАРА ЛАПОЙ',x+7,y+64,'#ffdd91');
    const gate=WIDTH*(relay.room+1)-12;rect(c,gate,48,7,426,'#132c47');for(let yy=50;yy<474;yy+=14)rect(c,gate+1,yy,5,8,Math.sin(time*4)>0?'#71d2e7':'#397fa4');
   }else{rect(c,x,y,98,81,'#0a2638');text(c,'ЖУРНАЛ СИГНАЛА',x+7,y+14,'#b8f5c9');for(let i=0;i<4;i++)rect(c,x+12,y+31+i*8,68-(i%2)*19,2,'#6ba9b6');}
@@ -50,14 +70,12 @@ export function drawCampaignObjects(c,a,g,time){
 }
 export function drawWakeup(c,a,p,elapsed){
  drawEmotion(c,a,wakePose(elapsed).frame,p.x+17,p.y+p.h,76);
- const x=102,y=289;rect(c,x,y,36,14,'#8a6952');rect(c,x+3,y+3,19,8,'#17283b');for(let i=0;i<5;i++)rect(c,x+4+i*3,y+4,1,6,'#627a82');rect(c,x+27,y+5,4,4,'#a8c7c9');rect(c,x+27,y+2,2,2,Math.floor(elapsed*4)%2?'#73e4e8':'#236980');
+ const x=102,y=351;rect(c,x,y,36,14,'#8a6952');rect(c,x+3,y+3,19,8,'#17283b');for(let i=0;i<5;i++)rect(c,x+4+i*3,y+4,1,6,'#627a82');rect(c,x+27,y+5,4,4,'#a8c7c9');rect(c,x+27,y+2,2,2,Math.floor(elapsed*4)%2?'#73e4e8':'#236980');
 }
 export function drawInfection(c,g){
- if(g.room!==0)return;const t=g.wakeTime;
- for(const [i,[x,y,w,h]]of [[73,343,34,31],[386,352,54,35],[627,137,94,102]].entries()){
-  if(t<.7+i*.75)continue;rect(c,x,y,w,h,'#001128ee');
-  for(let row=0;row<7;row++)rect(c,x+2,y+3+row*(h-6)/7,w-4,1,(row+Math.floor((t+g.time)*8))%3?'#1595b2':'#8df2ff');
-  rect(c,x+w*.25,y+h*.38,w*.13,h*.18,'#ff334c');rect(c,x+w*.61,y+h*.38,w*.13,h*.18,'#ff334c');
+ if(g.room!==1||g.truthFound)return;
+ for(const [i,[lx,y,w,h]]of [[73,343,34,31],[386,352,54,35],[627,137,94,102]].entries()){
+  const x=WIDTH+lx;rect(c,x,y,w,h,'#001128ee');for(let row=0;row<7;row++)rect(c,x+2,y+3+row*(h-6)/7,w-4,1,(row+Math.floor(g.time*8))%3?'#1595b2':'#8df2ff');rect(c,x+w*.25,y+h*.38,w*.13,h*.18,'#ff334c');rect(c,x+w*.61,y+h*.38,w*.13,h*.18,'#ff334c');
  }
 }
 export function drawEpilogue(c,a,time,width=768){

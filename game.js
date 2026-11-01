@@ -1,14 +1,14 @@
-import {Game} from './engine.js?v=0.7.0';
-import {Renderer,drawControls} from './render.js?v=0.7.0';
-import {loadAssets} from './assets.js?v=0.7.0';
-import {ScreenManager} from './screens.js?v=0.7.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.7.0';
-import {PauseMenu} from './pause-menu.js?v=0.7.0';
-import {TouchControls} from './touch-controls.js?v=0.7.0';
+import {Game} from './engine.js?v=0.8.0';
+import {Renderer,drawControls} from './render.js?v=0.8.0';
+import {loadAssets} from './assets.js?v=0.8.0';
+import {ScreenManager} from './screens.js?v=0.8.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.8.0';
+import {PauseMenu} from './pause-menu.js?v=0.8.0';
+import {TouchControls} from './touch-controls.js?v=0.8.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
- const game=new Game();drawControls($('controls-art'));
+ const game=new Game();game.touchEnabled=document.documentElement.classList.contains('has-touch');drawControls($('controls-art'));
  const assets=await loadAssets((done,total)=>{$('loading').textContent=`Готовлю редакцию: ${done}/${total}`;}).catch(()=>null);
  if(!assets){$('loading').textContent='Не удалось загрузить рисунки. ';const retry=document.createElement('button');retry.textContent='Повторить загрузку';retry.className='back-button';retry.addEventListener('click',()=>location.reload());$('loading').append(retry);return;}
  $('loading').hidden=true;
@@ -19,7 +19,7 @@ async function boot(){
  function goMain(){pauseMenu.dismiss();game.mode='ready';game.dialogue=null;clearEffects();ui.show('menu');dialogueUI.update(false);}
  function quit(){pauseMenu.dismiss();game.mode='exited';game.dialogue=null;clearEffects();clearInput();ui.show('exit');dialogueUI.update(false);}
  const ui=new ScreenManager(assets,begin,()=>{if(game.mode==='playing')game.mode='paused';clearInput();},quit);
- const dialogueUI=new DialogueUI(game,assets,clearInput,goMain);
+ const dialogueUI=new DialogueUI(game,assets,clearInput);
  const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,onResume:mode=>{dialogueUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
  touch=new TouchControls(document.querySelector('.game-shell'),()=>ui.view==='game'&&game.mode==='playing'&&!pauseMenu.active);
  function updateSound(){$('sound').textContent=`ЗВУК: ${sound?'ВКЛ':'ВЫКЛ'}`;$('sound').setAttribute('aria-pressed',String(sound));$('sound').setAttribute('aria-label',sound?'Выключить звук':'Включить звук');}
@@ -31,7 +31,7 @@ async function boot(){
  function showResult(kind){
   $('overlay').hidden=false;clearInput();const won=kind==='won';
   $('result-title').textContent=won?'ШУМ ОСТАНОВЛЕН':'ПОПРОБУЕМ ЕЩЁ?';
-  $('result-text').textContent=won?`Ума нашла Источник шума и раскрыла причину его появления. Рыбок: ${game.fish}.`:`${game.clock===0?'Время поисков вышло.':'След сигнала ещё не потерян.'} Рыбок: ${game.fish}.`;
+  $('result-text').textContent=won?`Ума остановила Инфошум и раскрыла причину его появления. Рыбок: ${game.fish}.`:`${game.clock===0?'Время поисков вышло.':'След сигнала ещё не потерян.'} Рыбок: ${game.fish}.`;
   $('play').textContent=!won&&game.checkpoint>0?'С чекпоинта':'Начать заново';
   $('accessible-state').textContent=$('result-title').textContent+'. '+$('result-text').textContent;$('play').focus({preventScroll:true});
  }
@@ -58,12 +58,13 @@ async function boot(){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   beep(event.type);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
   if(event.type==='checkpoint')notify(`Новый участок сигнала: чекпоинт и +1 сердечко.`);
-  if(event.type==='guardian')notify('Сигнал защищён. Победи Инфошум с золотой меткой.');
+  if(event.type==='guardian')notify('Сигнал защищён. Победи защитника с золотой меткой.');
   if(event.type==='gate')notify('Отключи ретранслятор тремя ударами лапы.');
   if(event.type==='heal')notify('8 рыбок: +1 сердечко.');
-  if(event.type==='alarm')notify('Паникёр зовёт противников!');
+  if(event.type==='alarm')notify('Паникёр открывает портал!');
+  if(event.type==='portal')notify('Портал открыт! Прерви звон Паникёра.');
   if(event.type==='swallow'){clearInput();notify('Кликбейт! Рыбка с крючком оказалась ловушкой.');}
-  if(event.type==='bossPhase')notify('Источник шума атакует быстрее!');
+  if(event.type==='bossPhase')notify('Инфошум атакует быстрее!');
   if(event.type==='won'||event.type==='lost'){clearTimeout(toastTimer);$('toast').classList.remove('visible');showResult(event.type);}
  }game.events=[];}
  function frame(now){

@@ -1,4 +1,4 @@
-import {sprite} from './assets.js?v=0.7.0';
+import {sprite} from './assets.js?v=0.8.0';
 export const emotionFrames=[
  {box:[48,205,331,269],pivot:[210,474]},
  {box:[449,235,324,239],pivot:[611,474]},
@@ -19,4 +19,23 @@ export function drawEmotion(c,assets,frame,center,feet,height=76,flip=false){
  const {box,pivot}=emotionFrames[frame],s=height/420;
  c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);
  sprite(c,assets.emotions,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();
+}
+export const traversalFrames=[
+ {box:[10,110,389,302],pivot:[205,405]},
+ {box:[411,120,375,292],pivot:[592,405]},
+ {box:[794,121,384,291],pivot:[980,405]},
+ {box:[1197,114,338,298],pivot:[1368,405]},
+ {box:[20,473,330,477],pivot:[200,943]},
+ {box:[419,463,280,484],pivot:[584,943]},
+ {box:[848,463,299,484],pivot:[969,943]},
+ {box:[1229,469,292,481],pivot:[1375,943]}
+];
+export function traversalPose(player){
+ if(player.climbing)return 4+Math.floor(player.climbTime)%4;
+ if(player.sneaking)return Math.abs(player.vx)>1?1+Math.floor(player.sneakTime)%2:0;
+ return null;
+}
+export function drawTraversal(c,assets,player){
+ const index=traversalPose(player);if(index===null)return false;const {box,pivot}=traversalFrames[index],s=index<4?.18:.158;
+ c.save();c.translate(Math.round(player.x+player.w/2),Math.round(player.y+player.h));if(index<4&&player.dir<0)c.scale(-1,1);sprite(c,assets.traversal,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
 }
