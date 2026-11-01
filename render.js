@@ -1,12 +1,11 @@
-import {WIDTH,HEIGHT,WORLD,rooms,MAX_HEALTH,platforms,ladders,FINAL_X} from './engine.js?v=0.8.0';
-import {rect,text,heart} from './pixel.js?v=0.8.0';
-import {cats,creatures,sprite} from './assets.js?v=0.8.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.8.0';
-import {abilityNames} from './boss.js?v=0.8.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,drawRoomJoin} from './campaign-art.js?v=0.8.0';
-import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.8.0';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X} from './engine.js?v=0.9.0';
+import {rect,text} from './pixel.js?v=0.9.0';
+import {cats,creatures,sprite} from './assets.js?v=0.9.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.9.0';
+import {drawHud} from './hud.js?v=0.9.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.9.0';
+import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.9.0';
 const HUD='#030a1e',CREAM='#ffe5a4',CYAN='#9ce7fa';
-function title(c){text(c,'УМА ПРОТИВ ИНФОШУМА',12,10,CREAM,2,1);rect(c,10,28,203,18,'#176185');rect(c,11,29,201,16,HUD);text(c,'ДЕРЖИ УХО ВОСТРО',15,30,CYAN,2);}
 export function drawControls(canvas){const c=canvas.getContext('2d');rect(c,0,0,768,32,HUD);
  const key=(x,label,w=30)=>{rect(c,x,2,w,25,'#7d91b6');rect(c,x+2,4,w-4,21,'#101c38');text(c,label,x+7,8,'#c1d8ee',2);};
  key(14,'');key(51,''); // Arrow shapes are deliberately drawn with square pixels.
@@ -18,20 +17,21 @@ export function drawControls(canvas){const c=canvas.getContext('2d');rect(c,0,0,
  key(607,'ПРОБЕЛ',86);text(c,'-',700,13,'#c1d8ee');text(c,'ЛАПА',711,11,'#c1d8ee',2);
 }
 export class Renderer{
- constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.wakeupStart=null;}
+ constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
  draw(g,dt=0,visualTime=g.time){
   const c=this.c,a=this.assets,bounds=c.canvas.getBoundingClientRect(),vw=Math.max(240,Math.round(HEIGHT*bounds.width/Math.max(1,bounds.height)));
   if(c.canvas.width!==vw)c.canvas.width=vw;if(c.canvas.height!==HEIGHT)c.canvas.height=HEIGHT;
   if(g.viewWidth!==vw){g.viewWidth=vw;g.updateCamera();}
-  const t=g.time,p=g.player,b=g.boss,cam=Math.round(g.camera);
+  const t=g.time,p=g.player,b=g.boss,cam=Math.round(g.camera),opening=g.room===0&&(g.mode==='waking'||g.pausedFrom==='waking'||g.dialogue?.id==='intro');
   if(g.dialogue?.id==='ending'||g.mode==='won'||g.pausedFrom==='won'){c.imageSmoothingEnabled=false;drawEpilogue(c,a,visualTime,vw);return;}
   c.imageSmoothingEnabled=false;c.clearRect(0,0,vw,HEIGHT);c.save();c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
-   if(room.x+WIDTH<cam||room.x>cam+vw)continue;
-   c.drawImage(this.layers[i],room.x,0);drawAmbience(c,room,t);
+   if(room.x+WIDTH+150<cam||room.x-150>cam+vw)continue;
+   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);
   }
-  for(let i=1;i<rooms.length;i++)if(i*WIDTH>cam-60&&i*WIDTH<cam+vw+60)drawRoomJoin(c,this.layers,i);
+  if(cam<WIDTH+150)drawOpening(c,a,g);
+  c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
   for(const platform of platforms){
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
@@ -44,7 +44,7 @@ export class Renderer{
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
   drawCampaignObjects(c,a,g,t);
-  drawInfection(c,g);
+  drawInfection(c,g);c.restore();
   const bx=FINAL_X;if(b.active){rect(c,bx+300,48,3,426,'#a7a3ff70');}
   if(b.hp>0){
    drawMonster(c,a,'infoshum',bx+543,53,221,205,t,false,b);
@@ -58,7 +58,7 @@ export class Renderer{
     if(b.ability==='summon')for(const x of [bx+380,bx+550]){c.strokeStyle='#d5a4ff';c.lineWidth=3;c.strokeRect(x-4,x===bx+380?275:250,50,23);}
    }
   }else{rect(c,bx+627,131,102,110,'#0c4158');text(c,'ЖУРНАЛ',bx+649,143,'#b8f5c9');text(c,'ПРОСМОТРЫ 999',bx+636,165,'#ffe0a4');text(c,'РЕАКЦИИ 999',bx+636,183,'#ffe0a4');text(c,'ПРОВЕРКА ВЫКЛ',bx+633,214,'#ff8193');}
-  for(const f of g.fishes)if(!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
+  for(const f of g.fishes)if(!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
   for(const e of g.enemies)if(e.active&&(!e.dead||e.deathTime>0)&&e.x>cam-140&&e.x<cam+vw+140){
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
@@ -102,7 +102,7 @@ export class Renderer{
    if(p.inv>0&&Math.floor(t*12)%2!==0&&!g.swallow)c.globalAlpha=.6;
    this.wakeupStart=null;
    const pose=p.attack>0?4:!p.grounded&&!p.climbing?3:Math.abs(p.vx)>0?1+Math.floor(t*10)%2:0;
-   const {box,anchor}=cats[pose],progress=g.swallow?1-g.swallow.timer/g.swallow.total:0,scale=g.swallow?Math.max(0,1-progress*1.18):1;
+   const {box,anchor}=cats[pose],progress=g.swallow?1-Math.pow(g.swallow.timer/g.swallow.total,3):0,scale=g.swallow?Math.max(0,1-progress*1.18):1;
    const w=Math.round(box[2]*.195*scale),h=Math.round(box[3]*.195*scale);
    const center=g.swallow?(g.swallow.x+17)*(1-progress)+(g.swallow.targetX+12)*progress:p.x+p.w/2;
    const feet=g.swallow?(g.swallow.y+48)*(1-progress)+(g.swallow.targetY+24)*progress:p.y+p.h;
@@ -114,24 +114,9 @@ export class Renderer{
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   for(let i=1;i<=g.checkpoint;i++){rect(c,WIDTH*i+28,281,3,22,'#accfc7');rect(c,WIDTH*i+31,281,18,10,'#60bd9b');}
   c.restore();
-  const compact=vw<600;rect(c,0,0,vw,48,HUD);
-  if(compact){
-   text(c,'УМА',8,8,CREAM,2);c.save();c.scale(2,2);for(let i=0;i<MAX_HEALTH;i++)heart(c,28+i*9,5,i<g.lives);c.restore();
-   sprite(c,a.noise,creatures.fish,8,30,20,12);text(c,String(g.fish).padStart(2,'0'),34,32,CREAM);text(c,`СЛЕДЫ ${g.evidence.length}/5`,82,32,CYAN);
-  }else{title(c);c.save();c.scale(2,2);for(let i=0;i<MAX_HEALTH;i++)heart(c,169+i*12,10,i<g.lives);c.restore();sprite(c,a.noise,creatures.fish,431,17,31,19);text(c,String(g.fish).padStart(2,'0'),474,17,CREAM,3,1);}
-  const s=Math.ceil(g.clock);if(g.room>0)text(c,`${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`,compact?vw-124:vw-165,compact?10:16,CREAM,compact?2:3,compact?0:1);
-  rect(c,9,54,Math.min(272,vw-18),31,'#030a1ee0');text(c,`${g.room===0?'0':g.room+'/'+(rooms.length-1)} ${rooms[g.room].name}`,15,58,CYAN);text(c,rooms[g.room].objective,15,72,CREAM);
-  if(g.room===0){
-   const tasks=g.touchEnabled?['ДЖОЙСТИК ВПРАВО','КНОПКА ПРЫЖКА - ЧЕРЕЗ РАЗРЫВ','ДЖОЙСТИК ВВЕРХ У ЛЕСТНИЦЫ','ГОТОВО! ИДИ В РЕДАКЦИЮ']:['← → / A D - ПРОЙДИ ВПРАВО','↑ / W - ПЕРЕПРЫГНИ РАЗРЫВ','↑ ↓ / W S - ЛЕСТНИЦА','ГОТОВО! ИДИ В РЕДАКЦИЮ'];
-   rect(c,9,88,Math.min(vw-18,318),38,'#031022ed');text(c,tasks[g.tutorial.step],16,94,'#ffd38a');
-   for(let i=0;i<3;i++){rect(c,17+i*29,110,20,4,g.tutorial.step>i?'#9fe4b7':'#34516a');}
+  drawHud(c,a,g,vw);
+  if(g.mode==='respawning'||g.pausedFrom==='respawning'){
+   const progress=1-g.respawnTime/1.1;c.globalAlpha=Math.max(0,(progress-.25)/.75)*.86;rect(c,0,47,vw,HEIGHT-47,'#030a1e');c.globalAlpha=1;
   }
-  if(!b.active&&!compact&&g.room>0){rect(c,296,54,168,20,'#030a1ee0');text(c,`СЛЕДЫ СИГНАЛА ${g.evidence.length}/5`,303,60,CYAN);}
-  if(b.active&&b.hp>0){const x=compact?9:296,y=compact?88:54,w=compact?vw-18:Math.min(434,vw-310);rect(c,x,y,w,34,'#030a1ee0');text(c,`ИНФОШУМ / ФАЗА ${b.phase}`,x+7,y+4,'#ffbfc4');rect(c,x+7,y+15,w-20,4,'#30364c');rect(c,x+7,y+15,(w-20)*b.hp/b.maxHp,4,'#ff6e85');text(c,b.state==='windup'?abilityNames[b.ability]:b.state==='recover'?'БЕЙ ПАНЕЛЬ ЛАПОЙ!':'ЩИТ',x+7,y+24,b.state==='recover'?'#a9efbf':'#ffe2a8');}
-  const progressWidth=Math.min(200,vw*.44);rect(c,12,468,progressWidth,3,'#10253c');rect(c,12,468,p.x/WORLD*progressWidth,3,CYAN);for(let i=1;i<rooms.length;i++)rect(c,12+progressWidth*i/rooms.length,467,1,5,'#749ab3');
-  if(p.sneaking){rect(c,9,132,112,16,'#102d35e0');text(c,'ТИХИЕ ЛАПЫ',16,137,'#b4eccb');}
-  if(g.transition){const f=g.transition.time/g.transition.duration;c.globalAlpha=Math.sin(Math.PI*f)*.45;rect(c,0,48,vw,HEIGHT-48,'#123552');c.globalAlpha=1;}
-  if(p.powerTime>0){const x=compact?vw-113:242;drawSoup(c,a,x,468,15);text(c,`СУПЕР-МУР ${Math.ceil(p.powerTime)}`,x+13,465,'#ffdd98');}
-  if(!compact){rect(c,vw-148,465,112,11,'#06152ae0');text(c,'РЫВОК',vw-143,467,p.dashCooldown>0?'#5a718f':'#a8e3e9');rect(c,vw-100,469,57*(1-p.dashCooldown/1.5),2,'#8ae5f4');}
  }
 }

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030a1e"><meta name="description" content="УМА ПРОТИВ ИНФОШУМА — держи ухо востро. Пиксельная игра про кошку Уму и ожившие новости.">
 <title>УМА ПРОТИВ ИНФОШУМА — держи ухо востро</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.8.0">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.9.0">
 </head>
 <body>
 <main id="app" data-screen="menu">
@@ -39,7 +39,7 @@
 <div class="pixel-panel dialogue-panel"><img id="narrator-portrait" alt="Портрет Юрия" width="224" height="280">
 <div class="dialogue-content"><div class="dialogue-heading"><div><h2 id="dialogue-speaker">Юрий</h2><p class="narrator-role">редактор</p></div></div>
 <p id="dialogue-text" aria-live="polite"></p><div class="dialogue-actions"><button id="dialogue-next" class="gold-button">Далее</button><button id="dialogue-skip" class="dialogue-secondary">Пропустить</button></div></div></div></section>
-<div id="wake-caption" class="wake-caption" hidden><span>Ума просыпается…</span><button id="wake-skip" class="dialogue-secondary">Пропустить</button></div>
+<div id="wake-caption" class="wake-caption" hidden><button id="wake-skip" class="dialogue-secondary">Пропустить</button></div>
 <div class="touch-controls" id="touch-controls" aria-label="Управление касанием" hidden><div id="stick-pad" aria-label="Джойстик: движение и лестницы"><div id="stick-base"><i id="stick-knob"></i></div></div><div id="touch-actions"><button data-touch-action="jump" class="touch-jump" aria-label="Прыгнуть">↑</button><button data-touch-action="attack" class="touch-paw" aria-label="Удар лапой">ЛАПА</button><button data-touch-action="dash" class="touch-dash" aria-label="Рывок">РЫВОК<span id="dash-status" aria-hidden="true"></span></button></div></div>
 <section id="pause-menu" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
 <nav id="pause-root" class="pixel-panel pause-panel" aria-label="Меню игры"><h2 id="pause-title">МЕНЮ</h2><div class="pause-options">
@@ -54,6 +54,7 @@
 <p class="sr-only">Стрелки или A и D — бег. Вверх или W — прыжок и подъём. Вниз или S — красться и спуск. Пробел или X — лапа. Shift — рывок. Escape — меню игры.</p>
 </section>
 <footer><button id="sound" aria-label="Включить звук" aria-pressed="false">ЗВУК: ВЫКЛ</button><span id="footer-hint">УМА ПРОТИВ ИНФОШУМА</span></footer>
+<div id="hud-status" class="sr-only" aria-live="polite"></div>
 <div id="accessible-state" class="sr-only" aria-live="polite"></div>
-</main><script type="module" src="game.js?v=0.8.0"></script>
+</main><script type="module" src="game.js?v=0.9.0"></script>
 </body></html>

@@ -1,14 +1,14 @@
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup,LAST_ROOM,FINAL_X} from './level.js?v=0.8.0';
-import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.8.0';
-import {stepEnemies,stepPortals} from './enemies.js?v=0.8.0';
-import {scenes,evidence,firstEncounter} from './story.js?v=0.8.0';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,platforms,ladders,ladder,rooms,LAST_ROOM,FINAL_X} from './level.js?v=0.8.0';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,WAKE_DURATION,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup,LAST_ROOM,FINAL_X} from './level.js?v=0.9.0';
+import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.9.0';
+import {stepEnemies,stepPortals} from './enemies.js?v=0.9.0';
+import {scenes,evidence,firstEncounter} from './story.js?v=0.9.0';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,WAKE_DURATION,platforms,ladders,ladder,rooms,LAST_ROOM,FINAL_X} from './level.js?v=0.9.0';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export function playerHeight(p,height){const feet=p.y+p.h;p.h=height;p.y=feet-height;}
 export class Game {
  constructor({story=true}={}){this.overlap=overlap;this.storyEnabled=story;this.reset();}
  reset(){
-  this.mode='ready';delete this.pausedFrom;this.time=0;this.clock=900;this.fish=0;this.kills=0;this.lives=MAX_HEALTH;this.camera=0;this.checkpoint=0;this.room=0;this.gateHint=-1;
+  this.mode='ready';delete this.pausedFrom;this.time=0;this.fish=0;this.kills=0;this.health=MAX_HEALTH;this.lives=START_LIVES;this.respawnTime=0;this.camera=0;this.checkpoint=0;this.room=0;this.gateHint=-1;
   this.dialogue=null;this.seenScenes=new Set();this.evidence=[];this.truthFound=false;this.wakeTime=0;this.viewWidth=this.viewWidth||WIDTH;this.transition=null;
   this.trainingHintShown=false;this.tutorial={step:0,distance:0,jumped:false,climbed:0,complete:false};
   this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,powerTime:0};
@@ -17,7 +17,7 @@ export class Game {
  }
  emit(type,data={}){this.events.push({type,...data});}
  start(){this.reset();this.mode=this.storyEnabled?'waking':'playing';this.emit('start');}
- finishWakeup(){if(this.mode!=='waking')return;this.wakeTime=4.2;this.mode='playing';this.openDialogue('intro');}
+ finishWakeup(){if(this.mode!=='waking')return;this.wakeTime=WAKE_DURATION;this.mode='playing';this.openDialogue('intro');}
  openDialogue(id,after='playing'){
   if(!this.storyEnabled||this.dialogue||this.seenScenes.has(id)||!scenes[id])return false;
   this.seenScenes.add(id);this.dialogue={id,page:0,after};this.mode='dialogue';this.player.attack=0;this.player.vx=0;this.emit('dialogue',{id});return true;
@@ -40,10 +40,13 @@ export class Game {
  }
  finish(){this.truthFound=true;this.bolts=[];this.portals=[];if(this.openDialogue('truth','won')){this.dialogue.next='ending';this.emit('victory');}else{this.mode='won';this.emit('won');}}
  respawn(){this.swallow=null;Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0});this.bolts=[];this.updateCamera();}
- retry(){if(this.mode!=='lost'||this.checkpoint===0){this.start();return;}this.lives=MAX_HEALTH;this.clock=Math.max(180,this.clock);this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(createEnemies().filter(e=>e.room===this.checkpoint));this.portals=[];this.boss=createBoss();this.dialogue=null;this.respawn();this.mode='playing';this.emit('retry');}
+ restoreCheckpoint(){
+  this.health=MAX_HEALTH;this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(createEnemies().filter(e=>e.room===this.checkpoint));this.portals=[];this.boss=createBoss();this.dialogue=null;this.transition=null;this.respawn();this.room=this.checkpoint;this.mode='playing';this.emit('lifeRestored',{lives:this.lives});
+ }
+ retry(){this.start();}
  hurt(fall=false,sourceX=this.player.x+this.player.dir*50){
   const p=this.player;if(this.mode!=='playing'||(!fall&&(p.inv>0||p.dash>0)))return;
-  this.lives--;p.hurtTime=.5;p.sneaking=false;playerHeight(p,48);this.emit('hurt');if(this.lives<=0){this.mode='lost';this.emit('lost');return;}
+  this.health--;p.hurtTime=.5;p.sneaking=false;playerHeight(p,48);this.emit('hurt');if(this.health<=0){this.lives=Math.max(0,this.lives-1);this.swallow=null;if(this.lives===0){this.mode='lost';this.emit('lost');}else{this.mode='respawning';this.respawnTime=1.1;this.emit('lifeLost',{lives:this.lives});}return;}
   p.inv=1.25;p.vy=-170;p.knock=.15;p.vx=sourceX>p.x?-130:130;if(fall)this.respawn();
  }
  updateCamera(dt=0){const width=this.viewWidth||WIDTH,target=Math.max(0,Math.min(WORLD-width,this.player.x-width*.4));this.camera=dt>0?this.camera+(target-this.camera)*(1-Math.exp(-dt*8)):target;}
@@ -64,12 +67,12 @@ export class Game {
   if(q.step===2&&q.climbed>=65&&p.grounded&&p.y+p.h<=246){q.step=3;q.complete=true;this.emit('lesson',{step:3});}
  }
  step(dt,input={}){
-  if(this.mode==='waking'){this.wakeTime=Math.min(4.2,this.wakeTime+Math.min(dt,1/30));if(this.wakeTime>=4.2)this.finishWakeup();return;}
+  if(this.mode==='respawning'){dt=Math.min(dt,1/30);this.respawnTime=Math.max(0,this.respawnTime-dt);this.player.hurtTime=Math.max(0,this.player.hurtTime-dt);if(this.respawnTime===0)this.restoreCheckpoint();return;}
+  if(this.mode==='waking'){const before=this.wakeTime;this.wakeTime=Math.min(WAKE_DURATION,this.wakeTime+Math.min(dt,1/30));if(before<2.7&&this.wakeTime>=2.7)this.emit('infection');if(this.wakeTime>=WAKE_DURATION)this.finishWakeup();return;}
   if(this.mode!=='playing'||this.checkStory())return;dt=Math.min(dt,1/30);this.time+=dt;
   if(this.transition){this.transition.time+=dt;if(this.transition.time>=this.transition.duration)this.transition=null;}
-  if(this.room>0)this.clock=Math.max(0,this.clock-dt);if(this.clock===0){this.mode='lost';this.emit('lost');return;}
   const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);
-  if(this.swallow){this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(this.swallow.timer===0){this.swallow=null;this.hurt(true);this.updateCamera();}return;}
+  if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}this.swallow=null;this.hurt(true);this.updateCamera();}return;}
   for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime'])p[key]=Math.max(0,p[key]-dt);
   const keyboardAxis=(input.right?1:0)-(input.left?1:0),axis=keyboardAxis||Math.max(-1,Math.min(1,input.axisX||0));if(Math.abs(axis)>.05&&p.dash===0)p.dir=axis>0?1:-1;
   const ladder=ladders.find(l=>p.x+p.w>l.x&&p.x<l.x+l.w&&p.y+p.h>=l.y&&p.y<l.y+l.h);
@@ -95,12 +98,12 @@ export class Game {
   if(p.climbing)p.climbTime+=Math.abs(p.y-oldY)/18;if(p.sneaking)p.sneakTime+=Math.abs(p.x-oldX)/14;
   this.room=Math.min(LAST_ROOM,Math.floor((p.x+p.w/2)/WIDTH));this.updateTutorial(p.x-oldX,p.y-oldY,jumped);
   if(this.room!==oldRoom){this.transition={from:oldRoom,to:this.room,time:0,duration:.85};this.emit('room',{room:this.room});}
-  if(this.room>this.checkpoint){this.checkpoint=this.room;this.lives=Math.min(MAX_HEALTH,this.lives+1);this.emit('checkpoint',{room:this.room});}
+  if(this.room>this.checkpoint){this.checkpoint=this.room;this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('checkpoint',{room:this.room});}
   if(this.checkStory()){this.updateCamera(dt);return;}
   const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepEnemies(this,dt,paw,prevBottom);stepPortals(this,dt);
   if(this.mode!=='playing'||this.swallow)return;
-  for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.lives=Math.min(MAX_HEALTH,this.lives+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
-  for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;this.lives=Math.min(MAX_HEALTH,this.lives+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});this.openDialogue('soup');}
+  for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
+  for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;this.health=Math.min(MAX_HEALTH,this.health+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});this.openDialogue('soup');}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
   for(const relay of this.relays){relay.inv=Math.max(0,relay.inv-dt);if(relay.hp>0&&p.attack>0&&relay.inv===0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;if(this.enemies.some(e=>e.room===relay.room&&e.guardian&&!e.dead)){if(!relay.hint){relay.hint=true;this.emit('guardian');}this.emit('blocked',{x:relay.x,y:relay.y+45});continue;}relay.hp--;relay.inv=.35;this.emit('bossHit',{x:relay.x,y:relay.y+45});if(!relay.hp){this.emit('relay',{room:relay.room});this.completeChapter(relay.room);}}}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}

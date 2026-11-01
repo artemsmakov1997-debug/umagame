@@ -1,4 +1,4 @@
-import {scenes} from './story.js?v=0.8.0';
+import {scenes} from './story.js?v=0.9.0';
 const $=id=>document.getElementById(id);
 export class DialogueUI{
  constructor(game,assets,clearInput){this.game=game;this.clearInput=clearInput;this.lastKey=null;$('narrator-portrait').src=assets.yuri.src;$('dialogue-next').addEventListener('click',()=>this.advance());$('dialogue-skip').addEventListener('click',()=>this.advance(true));}

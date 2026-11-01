@@ -1,4 +1,4 @@
-import {sprite} from './assets.js?v=0.8.0';
+import {sprite} from './assets.js?v=0.9.0';
 export const emotionFrames=[
  {box:[48,205,331,269],pivot:[210,474]},
  {box:[449,235,324,239],pivot:[611,474]},
@@ -10,9 +10,9 @@ export const emotionFrames=[
  {box:[1160,730,361,227],pivot:[1340,957]}
 ];
 export function wakePose(time){
- if(time<1.4)return {name:'sleep',frame:Math.floor(time*3)%2};
- if(time<2.9)return {name:'yawn',frame:time<2.05?2:3};
- return {name:'surprise',frame:time<3.55?4:5};
+ if(time<2.2)return {name:'sleep',frame:Math.floor(time*3)%2};
+ if(time<3.45)return {name:'yawn',frame:time<2.8?2:3};
+ return {name:'surprise',frame:time<4.2?4:5};
 }
 export function hurtPose(remaining){return remaining>.26?6:7;}
 export function drawEmotion(c,assets,frame,center,feet,height=76,flip=false){

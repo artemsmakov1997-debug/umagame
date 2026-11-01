@@ -51,3 +51,20 @@ const newFrames={
  informant:[[[12,567,263,342],[140,904]],[[280,568,238,355],[399,918]],[[524,573,244,350],[654,918]],[[769,558,231,351],[878,904]],[[1000,573,282,345],[1118,913]],[[1293,563,243,351],[1416,909]]]
 };
 for(const [id,frames]of Object.entries(newFrames))motion[id]={asset:'newMotion',width:280,height:id==='fakenews'?310:380,frames:frames.map(([box,pivot])=>({box,pivot}))};
+export const baitEmergenceFrames=[
+ {box:[34,240,474,248],pivot:[265,485]},
+ {box:[534,140,468,350],pivot:[759,488]},
+ {box:[1026,10,500,480],pivot:[1271,488]},
+ {box:[10,539,551,426],pivot:[275,963]},
+ {box:[564,579,458,391],pivot:[782,968]},
+ {box:[1036,532,490,438],pivot:[1279,967]}
+];
+export function clickbaitAppearanceFrame(actor){
+ if(actor.hurtTime>0||actor.dead)return null;
+ if(actor.captureTime!==undefined&&actor.captureTime!==null)return actor.captureTime<.28?3:4;
+ if(actor.state==='emerge')return Math.min(2,Math.floor((actor.revealTime||0)/.16*3));
+ if(actor.state==='snap')return actor.timer>.1?3:4;
+ if(actor.attackFlash>.25)return 4;
+ if(actor.revealed&&actor.state==='recover'&&actor.timer>1)return 5;
+ return null;
+}
