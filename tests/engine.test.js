@@ -8,7 +8,7 @@ import {monsters} from '../catalog.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 const enemy=(type,room,x,index=0,extra={})=>makeEnemy(type,room,x,index,{active:true,noticed:true,...extra});
 function stand(g,room=1,index=0,x=45){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,sneaking:false,climbing:false,inv:0,attack:0,cooldown:0,knock:0,dash:0});g.room=room;g.checkpoint=room;g.updateCamera();}
-function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);stand(g,room,index,x);return g;}
+function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);stand(g,room,index,x);return g;}
 function bossGame(){const g=isolated(LAST_ROOM,2,604);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.state='recover';g.boss.timer=2;return g;}
 test('catalogue and roster contain the six revised creatures, with Infoshum only as the boss',()=>{
  assert.deepEqual(monsters.map(m=>m.name),['Фейкньюс','Кликбейт','Раздуватель','Информатор','Паникёр','Инфошум']);assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>m.id!=='infoshum').map(m=>m.id)));assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));for(const m of monsters){assert.ok(m.description.length>30);assert.equal(m.abilities.length,2);assert.ok(m.tip);}
@@ -55,8 +55,8 @@ test('the first Fakenews is weak; one swing cannot damage a tougher one repeated
 test('a revealed Clickbait stays visible, patrols, turns at the edge and never becomes a lure again',()=>{
  const g=isolated(2,1,350),e=enemy('clickbait',2,365,1);g.enemies=[e];tick(g,1);assert.equal(e.revealed,true);assert.equal(e.state,'emerge');g.player.x=2*WIDTH+10;g.player.y=282;tick(g,165);assert.equal(e.state,'patrol');const x=e.x;tick(g,30);assert.notEqual(e.x,x);assert.ok(e.x>=e.origin&&e.x<=e.end);tick(g,300);assert.notEqual(e.state,'lure');assert.equal(e.revealed,true);
 });
-test('Clickbait swallowing locks control, freezes in the menu and loses one heart before respawn',()=>{
- const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.4,revealed:true});g.enemies=[e];tick(g,1);assert.ok(g.swallow);const x=g.player.x;tick(g,10,{right:true,jump:true,attack:true});assert.equal(g.player.x,x);g.mode='paused';const time=g.swallow.timer;tick(g,120);assert.equal(g.swallow.timer,time);g.mode='playing';tick(g,55);assert.equal(g.swallow,null);assert.equal(g.health,3);assert.equal(e.revealed,true);
+test('Clickbait swallowing locks control, freezes in the menu and loses one whole life',()=>{
+ const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.4,revealed:true});g.enemies=[e];tick(g,1);assert.ok(g.swallow);const x=g.player.x;tick(g,10,{right:true,jump:true,attack:true});assert.equal(g.player.x,x);g.mode='paused';const time=g.swallow.timer;tick(g,120);assert.equal(g.swallow.timer,time);g.mode='playing';tick(g,55);assert.equal(g.swallow,null);assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(e.revealed,true);
 });
 test('an early paw hit or protected dash interrupts Clickbait without ingestion',()=>{
  for(const action of ['attack','dash']){const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.3,revealed:true});g.enemies=[e];tick(g,1,{[action]:true});assert.equal(g.swallow,null);assert.equal(g.health,4);}

@@ -1,4 +1,4 @@
-import {WIDTH,WORLD,LAST_ROOM,FINAL_X,enemy,surfaceAt} from './level.js?v=0.9.0';
+import {WIDTH,WORLD,LAST_ROOM,FINAL_X,enemy,surfaceAt} from './level.js?v=0.10.0';
 export const BOSS_HEALTH=24;
 export const abilities=['volley','wave','rain','summon'];
 export const abilityNames={volley:'ПРИЦЕЛЬНЫЙ ЗАЛП',wave:'ВОЛНА — ПРЫГАЙ!',rain:'БУМАЖНЫЙ ДОЖДЬ',summon:'ПРИЗЫВ ПОМЕХ'};

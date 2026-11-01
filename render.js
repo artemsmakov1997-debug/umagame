@@ -1,21 +1,11 @@
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X} from './engine.js?v=0.9.0';
-import {rect,text} from './pixel.js?v=0.9.0';
-import {cats,creatures,sprite} from './assets.js?v=0.9.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.9.0';
-import {drawHud} from './hud.js?v=0.9.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.9.0';
-import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.9.0';
-const HUD='#030a1e',CREAM='#ffe5a4',CYAN='#9ce7fa';
-export function drawControls(canvas){const c=canvas.getContext('2d');rect(c,0,0,768,32,HUD);
- const key=(x,label,w=30)=>{rect(c,x,2,w,25,'#7d91b6');rect(c,x+2,4,w-4,21,'#101c38');text(c,label,x+7,8,'#c1d8ee',2);};
- key(14,'');key(51,''); // Arrow shapes are deliberately drawn with square pixels.
- const arrow=['00011000','00111000','01111111','11111111','01111111','00111000','00011000'];
- for(const [x,flip] of [[29,false],[66,true]])for(let y=0;y<7;y++)for(let i=0;i<8;i++)if(arrow[y][i]==='1')rect(c,x+((flip?7-i:i)-4)*2,7+y*2,2,2,'#c1d8ee');
- text(c,'БЕГ',89,11,'#c1d8ee',2);
- key(157,'');const up=['0001000','0011100','0111110','1111111','0001000','0001000','0001000'];for(let y=0;y<7;y++)for(let x=0;x<7;x++)if(up[y][x]==='1')rect(c,165+x*2,7+y*2,2,2,'#c1d8ee');text(c,'ПРЫЖОК',198,11,'#c1d8ee',2);
- key(330,'ШИФТ',62);text(c,'РЫВОК',406,11,'#c1d8ee',2);
- key(607,'ПРОБЕЛ',86);text(c,'-',700,13,'#c1d8ee');text(c,'ЛАПА',711,11,'#c1d8ee',2);
-}
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X} from './engine.js?v=0.10.0';
+import {rect,text} from './pixel.js?v=0.10.0';
+import {cats,creatures,sprite} from './assets.js?v=0.10.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.10.0';
+import {drawHud} from './hud.js?v=0.10.0';
+import {drawNotebook} from './notebook-art.js?v=0.10.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.10.0';
+import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.10.0';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -60,6 +50,7 @@ export class Renderer{
   }else{rect(c,bx+627,131,102,110,'#0c4158');text(c,'ЖУРНАЛ',bx+649,143,'#b8f5c9');text(c,'ПРОСМОТРЫ 999',bx+636,165,'#ffe0a4');text(c,'РЕАКЦИИ 999',bx+636,183,'#ffe0a4');text(c,'ПРОВЕРКА ВЫКЛ',bx+633,214,'#ff8193');}
   for(const f of g.fishes)if(!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
+  for(const note of g.notebooks)if(!note.taken&&note.readyAt<=g.time&&note.x>cam-30&&note.x<cam+vw+30)drawNotebook(c,note,t);
   for(const e of g.enemies)if(e.active&&(!e.dead||e.deathTime>0)&&e.x>cam-140&&e.x<cam+vw+140){
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
    if(e.spawnTime>0){c.globalAlpha=1-e.spawnTime/.6;for(let i=0;i<8;i++)rect(c,e.x+i*6,e.y+29,3,2,'#83ccf2');}
@@ -71,7 +62,7 @@ export class Renderer{
     if(['windup','casting'].includes(e.state)&&e.shieldBroken===0){c.strokeStyle='#ac92ff';c.lineWidth=2;c.strokeRect(e.x-8,e.y-42,64,70);}
    }
    if(e.type==='inflator')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0,e);
-   if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,false,e);
+   if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,e.dir<0,e);
    if(e.type==='clickbait')drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);
    c.globalAlpha=1;if(e.dead||e.spawnTime>0)continue;
    rect(c,e.x+3,e.y-60,42,3,'#12203b');rect(c,e.x+3,e.y-60,42*Math.max(0,e.hp)/e.maxHp,3,e.guardian?'#ffcf77':'#fc7b88');

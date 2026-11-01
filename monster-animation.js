@@ -27,7 +27,7 @@ export const motion={
 };
 export function monsterFrame(id,time,actor={}){
  const state=actor.state||'patrol',step=Math.floor((actor.walkTime??time)*7)%2;
- if(id==='fakenews'||id==='informant')return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||state==='windup'?3:state==='lunge'||state==='casting'||actor.attackFlash>0?4:actor.moving?1+step:0;
+ if(id==='fakenews'||id==='informant')return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||['windup','jumpWindup','land'].includes(state)?3:state==='lunge'||state==='casting'||actor.attackFlash>0?4:actor.moving?1+step:0;
  if(id==='infoshum')return state==='windup'?2:state==='casting'?3:Math.floor(time*3)%2;
  if(id==='clickbait')return state==='snap'||actor.attackFlash>0?3:state==='windup'?2:step;
  return state==='blast'||state==='alarm'?3:state==='windup'?2:actor.speed===0?0:step;
@@ -67,4 +67,18 @@ export function clickbaitAppearanceFrame(actor){
  if(actor.attackFlash>.25)return 4;
  if(actor.revealed&&actor.state==='recover'&&actor.timer>1)return 5;
  return null;
+}
+// Walking frames articulate both knees and alternate the support foot. Feet have measured pivots.
+const gaits={
+ fakenews:{y:0,h:282,width:256,height:275,feet:[273,273,274,266,273,273],count:4},
+ inflator:{y:282,h:230,width:256,height:222,feet:[501,502,504,504,502,503],count:6},
+ informant:{y:512,h:256,width:256,height:275,feet:[764,760,765,765,762,765],count:6},
+ panicker:{y:772,h:252,width:256,height:240,feet:[1005,1006,1005,999,1006,1005],count:6}
+};
+export function locomotionFrame(id,time,actor={}){
+ const data=gaits[id];if(!data||actor.dead||actor.hurtTime>0||actor.noticeTime>0)return null;
+ const airborne=id==='fakenews'&&actor.jumpPhase==='air';
+ if(!airborne&&!(actor.moving&&actor.state==='patrol'))return null;
+ const index=airborne?(actor.vy<0?4:5):Math.floor((actor.walkTime??time)*7)%data.count;
+ return {asset:'gaits',box:[index*256,data.y,256,data.h],pivot:[index*256+(id==='fakenews'?135:128),data.feet[index]],width:data.width,height:data.height,index};
 }

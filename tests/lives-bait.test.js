@@ -6,7 +6,7 @@ import {touchesBait} from '../enemies.js';
 import {clickbaitAppearanceFrame} from '../monster-animation.js';
 import {backgroundOffset,roomDarkness} from '../campaign-art.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
-function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.room=room;g.checkpoint=room;g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,inv:0,grounded:true});return g;}
+function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.room=room;g.checkpoint=room;g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,inv:0,grounded:true});return g;}
 function waitRespawn(g){for(let i=0;i<100&&g.mode==='respawning';i++)g.step(1/60);}
 test('health and three lives are independent; normal damage consumes only hearts',()=>{
  const g=isolated();assert.equal(g.health,MAX_HEALTH);assert.equal(g.lives,START_LIVES);g.hurt();assert.equal(g.health,3);assert.equal(g.lives,3);assert.equal(g.mode,'playing');
@@ -30,7 +30,7 @@ test('Clickbait emergence and capture advance through different jaw poses and fr
  const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];tick(g,1);const first=clickbaitAppearanceFrame(e);tick(g,4);assert.notEqual(clickbaitAppearanceFrame(e),first);g.mode='paused';const snapshot=JSON.stringify(g);tick(g,60);assert.equal(JSON.stringify(g),snapshot);g.mode='playing';tick(g,7);assert.ok(g.swallow);assert.equal(clickbaitAppearanceFrame(e),3);tick(g,12);assert.equal(clickbaitAppearanceFrame(e),4);
 });
 test('a lethal Clickbait grab consumes one life and cannot repeatedly damage a captured Uma',()=>{
- const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];g.health=1;tick(g,45,{attack:false});assert.equal(g.mode,'respawning');assert.equal(g.lives,2);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.swallow,null);
+ const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];assert.equal(g.health,4);tick(g,45,{attack:false});assert.equal(g.mode,'respawning');assert.equal(g.lives,2);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.swallow,null);
 });
 test('a preemptive paw or dash can defeat the fish trap; it never grants a fish reward',()=>{
  for(const action of ['attack','dash']){const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];tick(g,1,{[action]:true,right:true});tick(g,18,{right:true});assert.equal(g.swallow,null);assert.equal(g.health,4);assert.equal(g.fish,0);assert.equal(e.revealed,true);}

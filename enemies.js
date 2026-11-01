@@ -1,4 +1,5 @@
-import {enemy,WIDTH} from './level.js?v=0.9.0';
+import {enemy,WIDTH} from './level.js?v=0.10.0';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.10.0';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
@@ -29,11 +30,11 @@ export function stepEnemies(g,dt,paw,prevBottom){
   if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);continue;}if(e.room!==g.room)continue;
   if(!e.active){if(p.x-e.room*WIDTH<e.trigger)continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
-  if(g.storyEnabled&&!g.seenScenes.has(e.type))continue;
-  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
+  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   const previousX=e.x,dx=p.x-e.x,dy=p.y+p.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&p.sneaking;
   if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y});}
-  if(e.noticeTime===0&&e.hurtTime===0){
+  const traversing=e.type==='fakenews'&&(stepFakeJump(g,e,dt)||e.noticeTime===0&&beginFakeJump(g,e));
+  if(!traversing&&e.noticeTime===0&&e.hurtTime===0){
    e.timer-=dt;if(e.type==='clickbait'&&e.state==='emerge')e.revealTime+=dt;
    if(e.type==='fakenews'){
     if(e.state==='patrol'){if(e.alert>0)e.dir=dx<0?-1:1;e.x+=e.dir*e.speed*(e.pressureTime>0?1.5:1)*dt;if(Math.abs(dx)<118&&Math.abs(dy)<65&&e.timer<=0){e.dir=dx<0?-1:1;e.state='windup';e.timer=.5;}}
@@ -72,7 +73,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
    }
    if((e.type==='inflator'||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*dt;
   }
-  if(e.x<e.origin||e.x>e.end){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
+  if(!e.jumpPhase&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
   e.moving=Math.abs(e.x-previousX)>.01;e.walkTime+=Math.abs(e.x-previousX)/24;
   if(p.attack>0&&e.lastSwing!==p.swing&&g.overlap(paw,e)){e.lastSwing=p.swing;if(e.type==='clickbait'&&!e.revealed)reveal(g,e,dx);g.hitEnemy(e);}
   if(e.dead)continue;

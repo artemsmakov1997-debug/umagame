@@ -28,7 +28,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  const hp=type==='fakenews'?1:type==='inflator'||type==='informant'?3:2;
  return {id:`${type}-${room}-${x}-${platformIndex}`,type,room,platformIndex,x:rooms[room].x+x,y:s.y-29,w:48,h:29,origin:s.x+12,end:s.x+s.w-60,
  dir:-1,speed:{fakenews:32,clickbait:30,inflator:14,informant:22,panicker:16}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
- active:false,trigger:Math.max(30,x-220),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,...extra};
+  active:false,trigger:Math.max(30,x-220),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,...extra};
 }
 export function createEnemies(){return [
  enemy('fakenews',1,125,0,{trigger:80}),enemy('fakenews',1,365,1,{trigger:260}),enemy('fakenews',1,594,2,{guardian:true,hp:2,maxHp:2,trigger:450}),
@@ -40,4 +40,18 @@ export function createEnemies(){return [
  ];}
 export function createFish(){return rooms.flatMap((r,i)=>(i===0?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:[[114,layouts[i][0][1]-43],[216,228],[253,207],[290,189],[327,176],[365,165],[400,159],[503,221],[181,layouts[i][3][1]-41],[375,368],[570,368]]).map(([x,y])=>({x:x+r.x,y,taken:false})));}
 export function createSoup(){return [2,3,4,5,6].map(room=>({x:WIDTH*room+(room%2?179:560),y:room%2?355:366,taken:false}));}
+// Place the first notebook before each new threat; relay notes are dropped after combat.
+export function createNotebooks(){
+ const entries=[
+  {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews'],unlock:'attack'},
+  {id:'dash',room:2,index:0,x:100,scenes:['arrival2','clickbait'],unlock:'dash'},
+  {id:'soup',room:2,index:3,x:165,scenes:['soup']},
+  {id:'press',room:3,index:0,x:100,scenes:['arrival3','inflator']},
+  {id:'dispatch',room:4,index:0,x:100,scenes:['arrival4','informant']},
+  {id:'stealth',room:5,index:0,x:70,scenes:['arrival5','panicker'],unlock:'sneak'},
+  {id:'tower',room:6,index:0,x:100,scenes:['arrival6','infoshum']},
+  ...Array.from({length:5},(_,i)=>({id:'record'+(i+1),room:i+1,index:2,x:660,scenes:['chapter'+(i+1)],relay:true}))
+ ];
+ return entries.map(n=>({...n,x:n.room*WIDTH+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.relay?Infinity:0}));
+}
 export function surfaceAt(x){const room=Math.max(0,Math.min(LAST_ROOM,Math.floor(x/WIDTH))),local=((x%WIDTH)+WIDTH)%WIDTH;return layouts[room][local<250?0:local<510?1:2][1];}

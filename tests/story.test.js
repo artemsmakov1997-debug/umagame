@@ -10,7 +10,7 @@ import {idleFrame,idlePlacement} from '../menu-animation.js';
 import {stickVector} from '../touch-controls.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function ready(){const g=new Game();g.start();g.finishWakeup();g.advanceDialogue(true);return g;}
-function at(g,room,index=2,x=604){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,climbing:false,knock:0,dash:0,inv:0});g.room=room;g.tutorial.complete=true;g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);}
+function at(g,room,index=2,x=604){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,climbing:false,knock:0,dash:0,inv:0});g.room=room;g.unlockForRoom(room);g.tutorial.complete=true;g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);}
 function training(g){
  for(let i=0;i<300&&g.player.x<165;i++)g.step(1/60,{right:true});g.step(1/60,{right:true,jump:true});for(let i=0;i<150&&g.player.x<420;i++)g.step(1/60,{right:true});for(let i=0;i<130&&!g.tutorial.complete;i++)g.step(1/60,{up:true});
 }
@@ -33,19 +33,19 @@ test('climbing alternates real paw frames by travelled distance and freezes on a
  const g=ready();g.storyEnabled=false;g.player.x=420;g.player.y=317;g.player.grounded=true;tick(g,1,{up:true});const first=traversalPose(g.player);tick(g,12,{up:true});const next=traversalPose(g.player);assert.notEqual(first,next);tick(g,1,{});const pose=traversalPose(g.player),time=g.player.climbTime;tick(g,30,{});assert.equal(g.player.climbTime,time);assert.equal(traversalPose(g.player),pose);assert.equal(traversalFrames.length,8);
 });
 test('creeping selects different low walking poses; damage has its own reaction',()=>{
- const g=ready();tick(g,1,{down:true});assert.equal(traversalPose(g.player),0);tick(g,8,{down:true,right:true});assert.ok([1,2].includes(traversalPose(g.player)));const pose=traversalPose(g.player);tick(g,15,{down:true,right:true});assert.notEqual(traversalPose(g.player),pose);assert.equal(hurtPose(.5),6);assert.equal(hurtPose(.1),7);
+ const g=ready();g.abilities.sneak=true;tick(g,1,{down:true});assert.equal(traversalPose(g.player),0);tick(g,8,{down:true,right:true});assert.ok([1,2].includes(traversalPose(g.player)));const pose=traversalPose(g.player);tick(g,15,{down:true,right:true});assert.notEqual(traversalPose(g.player),pose);assert.equal(hurtPose(.5),6);assert.equal(hurtPose(.1),7);
 });
 test('no enemy activates during training; later enemies wait for their own trigger and warning',()=>{
- const g=ready();training(g);assert.ok(g.enemies.every(e=>!e.active));at(g,1,0,45);g.seenScenes.add('arrival1');tick(g,1);assert.ok(g.enemies.filter(e=>e.room===1).every(e=>!e.active));g.player.x=WIDTH+85;tick(g,1);assert.equal(g.enemies[0].active,true);assert.ok(g.enemies[0].spawnTime>0);assert.equal(g.enemies[1].active,false);tick(g,35);assert.equal(g.dialogue.id,'fakenews');assert.equal(g.enemies[0].timer,1.3);g.advanceDialogue(true);tick(g,1);assert.ok(g.enemies[0].noticeTime>0);
+ const g=ready();training(g);assert.ok(g.enemies.every(e=>!e.active));at(g,1,0,45);tick(g,1);assert.equal(g.dialogue,null);assert.ok(g.enemies.filter(e=>e.room===1).every(e=>!e.active));g.player.x=WIDTH+85;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.ok(g.notebooks.find(n=>n.id==='paw').taken);assert.equal(g.enemies[0].active,false);g.advanceDialogue(true);tick(g,1);assert.equal(g.enemies[0].active,true);assert.ok(g.enemies[0].spawnTime>0);assert.equal(g.enemies[1].active,false);tick(g,35);assert.ok(g.enemies[0].noticed);assert.equal(g.dialogue,null);
 });
 test('dialogues freeze physics, enemies, camera transitions and all game time',()=>{
  const g=new Game();g.start();g.finishWakeup();g.transition={from:0,to:1,time:.2,duration:.85};const before=JSON.stringify(g);tick(g,150,{right:true,jump:true,attack:true});assert.equal(JSON.stringify(g),before);g.advanceDialogue();assert.equal(g.dialogue.page,1);g.advanceDialogue();assert.equal(g.mode,'playing');
 });
-test('chapter arrivals occur once, before combat and without charging the clock',()=>{
- const g=ready();at(g,1,0,45);const time=g.time;tick(g,1);assert.equal(g.dialogue.id,'arrival1');assert.equal(g.time,time);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);assert.equal(g.mode,'playing');
+test('entering a chapter is silent; only picking up its notebook opens Yuri commentary',()=>{
+ const g=ready();at(g,1,0,45);tick(g,1);assert.equal(g.dialogue,null);g.player.x=WIDTH+85;const time=g.time;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.equal(g.time,time);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);assert.equal(g.mode,'playing');
 });
 test('a relay gives one evidence record, and retry preserves its discovery',()=>{
- const g=ready();g.enemies=[];at(g,1);g.seenScenes.add('arrival1');g.relays[0].hp=1;g.step(1/60,{attack:true});assert.equal(g.dialogue.id,'chapter1');assert.equal(g.evidence[0].id,'autopublish');g.completeChapter(1);assert.equal(g.evidence.length,1);g.advanceDialogue(true);g.checkpoint=1;g.health=1;g.player.inv=0;g.hurt();tick(g,70);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.ok(g.seenScenes.has('chapter1'));
+ const g=ready();g.enemies=[];at(g,1);g.relays[0].hp=1;g.step(1/60,{attack:true});assert.equal(g.dialogue,null);assert.equal(g.evidence[0].id,'autopublish');tick(g,40);g.player.x=WIDTH+644;tick(g,1);assert.equal(g.dialogue.id,'notebook:record1');g.completeChapter(1);assert.equal(g.evidence.length,1);g.advanceDialogue(true);g.checkpoint=1;g.health=1;g.player.inv=0;g.hurt();tick(g,70);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.ok(g.seenScenes.has('chapter1'));
 });
 test('printing belts and all other chapters are frozen until Uma enters them',()=>{
  const g=ready(),later=g.enemies.map(e=>[e.x,e.timer,e.active]);tick(g,120);assert.deepEqual(g.enemies.map(e=>[e.x,e.timer,e.active]),later);g.enemies=[];at(g,3,1,325);g.seenScenes.add('arrival3');const x=g.player.x;tick(g,30);assert.ok(g.player.x>x+9&&g.player.x<x+11);g.step(1/60,{jump:true});assert.ok(g.player.vy<0);
@@ -67,8 +67,8 @@ test('the complete route from training to the final tower is traversable by norm
   if(p.grounded&&s&&p.x>s.x+s.w-50&&(s.index===0||s.index===1)){jump=!jumped;jumped=true;}else if(!p.grounded)jumped=false;g.step(1/60,{right:true,jump,attack:true});
  }
  assert.ok(g.player.x>FINAL_X+375);assert.equal(g.evidence.length,5);assert.deepEqual(g.evidence.map(e=>e.id),evidence.map(e=>e.id));assert.ok(g.relays.every(r=>r.hp===0));assert.equal(g.checkpoint,LAST_ROOM);assert.equal(g.health,4);
- for(const id of ['intro',...Array.from({length:5},(_,i)=>'chapter'+(i+1)),...Array.from({length:6},(_,i)=>'arrival'+(i+1))])assert.ok(g.seenScenes.has(id),id);
+ assert.ok(g.seenScenes.has('intro'));for(const note of g.notebooks)for(const id of note.scenes)assert.equal(g.seenScenes.has(id),note.taken,id);
 });
 test('Infoshum is introduced at the tower; human negligence is revealed before the ending',()=>{
- const g=ready();g.enemies=[];at(g,LAST_ROOM);g.relays.forEach(r=>r.hp=0);g.seenScenes.add('arrival6');tick(g,1);assert.equal(g.dialogue.id,'infoshum');g.advanceDialogue(true);g.boss.hp=1;g.boss.cooldown=0;g.boss.state='recover';damageBoss(g,1);assert.equal(g.dialogue.id,'truth');assert.equal(g.truthFound,true);assert.match(scenes.truth.pages.join(' '),/халатности/);assert.match(scenes.truth.pages.join(' '),/просмотров и реакций/);const time=g.time;tick(g,200);assert.equal(g.time,time);g.advanceDialogue(true);assert.equal(g.dialogue.id,'ending');g.advanceDialogue(true);assert.equal(g.mode,'won');g.start();assert.equal(g.mode,'waking');assert.equal(g.evidence.length,0);assert.equal(g.tutorial.complete,false);
+ const g=ready();g.enemies=[];at(g,LAST_ROOM,0,85);g.relays.forEach(r=>r.hp=0);tick(g,1);assert.equal(g.dialogue.id,'notebook:tower');g.advanceDialogue(true);at(g,LAST_ROOM);tick(g,1);assert.equal(g.dialogue,null);assert.equal(g.boss.active,true);g.boss.hp=1;g.boss.cooldown=0;g.boss.state='recover';damageBoss(g,1);assert.equal(g.dialogue.id,'truth');assert.equal(g.truthFound,true);assert.match(scenes.truth.pages.join(' '),/халатности/);assert.match(scenes.truth.pages.join(' '),/просмотров и реакций/);const time=g.time;tick(g,200);assert.equal(g.time,time);g.advanceDialogue(true);assert.equal(g.dialogue.id,'ending');g.advanceDialogue(true);assert.equal(g.mode,'won');g.start();assert.equal(g.mode,'waking');assert.equal(g.evidence.length,0);assert.equal(g.tutorial.complete,false);
 });
