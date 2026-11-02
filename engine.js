@@ -1,8 +1,9 @@
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,WAKE_DURATION,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,LAST_ROOM,FINAL_X} from './level.js?v=0.10.1';
-import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.10.1';
-import {stepEnemies,stepPortals} from './enemies.js?v=0.10.1';
-import {scenes,evidence} from './story.js?v=0.10.1';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,WAKE_DURATION,platforms,ladders,ladder,rooms,LAST_ROOM,FINAL_X} from './level.js?v=0.10.1';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,WAKE_DURATION,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,LAST_ROOM,FINAL_X} from './level.js?v=0.11.0';
+import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.11.0';
+import {stepEnemies,stepPortals} from './enemies.js?v=0.11.0';
+import {cancelInformantTeleport} from './informant-teleport.js?v=0.11.0';
+import {scenes,evidence} from './story.js?v=0.11.0';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,WAKE_DURATION,platforms,ladders,ladder,rooms,LAST_ROOM,FINAL_X} from './level.js?v=0.11.0';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export function playerHeight(p,height){const feet=p.y+p.h;p.h=height;p.y=feet-height;}
 export class Game {
@@ -68,10 +69,11 @@ export class Game {
  updateCamera(dt=0){const width=this.viewWidth||WIDTH,target=Math.max(0,Math.min(WORLD-width,this.player.x-width*.4));this.camera=dt>0?this.camera+(target-this.camera)*(1-Math.exp(-dt*8)):target;}
  push(dir,sourceX){const p=this.player;if(this.mode!=='playing'||p.dash>0)return;p.sneaking=false;playerHeight(p,48);p.knock=.26;p.vx=dir*380;p.vy=-55;p.climbing=false;this.emit('pushed',{x:sourceX,y:p.y});}
  hitEnemy(e,stomp=false,amount=null,{reflected=false}={}){
-  if(e.inv>0||e.dead)return false;
+  if(e.inv>0||e.dead||e.phased)return false;
   if(e.type==='informant'&&e.shieldBroken===0&&['windup','casting'].includes(e.state)&&!reflected){this.emit('blocked',{x:e.x,y:e.y});return false;}
   if(reflected)e.shieldBroken=3;
   e.hp-=amount??(!stomp&&this.player.powerTime>0?2:1);e.inv=.24;e.hurtTime=.28;e.state='recover';e.timer=.7;
+  cancelInformantTeleport(e);
   for(const portal of this.portals)if(portal.ownerId===e.id)portal.cancelled=true;
   this.emit('enemyHit',{x:e.x+24,y:e.y});if(e.hp<=0){e.dead=true;e.deathTime=.28;this.kills++;this.emit('pop',{x:e.x+24,y:e.y});}return true;
  }

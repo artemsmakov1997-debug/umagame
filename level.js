@@ -28,7 +28,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  const hp=type==='fakenews'?1:type==='inflator'||type==='informant'?3:2;
  return {id:`${type}-${room}-${x}-${platformIndex}`,type,room,platformIndex,x:rooms[room].x+x,y:s.y-29,w:48,h:29,origin:s.x+12,end:s.x+s.w-60,
  dir:-1,speed:{fakenews:32,clickbait:30,inflator:14,informant:22,panicker:16}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
-  active:false,trigger:Math.max(30,x-220),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,...extra};
+  active:false,trigger:Math.max(30,x-220),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,...extra};
 }
 export function createEnemies(){return [
  enemy('fakenews',1,125,0,{trigger:80}),enemy('fakenews',1,365,1,{trigger:260}),enemy('fakenews',1,594,2,{guardian:true,hp:2,maxHp:2,trigger:450}),

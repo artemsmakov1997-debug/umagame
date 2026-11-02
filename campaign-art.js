@@ -1,8 +1,8 @@
-import {rooms,WIDTH} from './level.js?v=0.10.1';
-import {rect,text} from './pixel.js?v=0.10.1';
-import {sprite,idleCats} from './assets.js?v=0.10.1';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.10.1';
-import {drawMonster} from './art.js?v=0.10.1';
+import {rooms,WIDTH} from './level.js?v=0.11.0';
+import {rect,text} from './pixel.js?v=0.11.0';
+import {sprite,idleCats} from './assets.js?v=0.11.0';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.11.0';
+import {drawMonster} from './art.js?v=0.11.0';
 export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.filter=room.theme==='cozy'?'none':'saturate(.4) contrast(.78)';

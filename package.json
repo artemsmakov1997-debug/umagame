@@ -1,12 +1,12 @@
 {
   "name": "uma-vs-infoshum",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/engine.test.js && node tests/story.test.js && node tests/lives-bait.test.js && node tests/progression.test.js",
+    "test": "node tests/engine.test.js && node tests/story.test.js && node tests/lives-bait.test.js && node tests/progression.test.js && node tests/teleport.test.js",
     "start": "python3 -m http.server 8000",
-    "test:browser": "node tests/browser.cjs && node tests/story-browser.cjs && node tests/scene-browser.cjs && node tests/interaction-browser.cjs"
+    "test:browser": "node tests/browser.cjs && node tests/story-browser.cjs && node tests/scene-browser.cjs && node tests/interaction-browser.cjs && node tests/teleport-browser.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

@@ -1,11 +1,12 @@
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X} from './engine.js?v=0.10.1';
-import {rect,text} from './pixel.js?v=0.10.1';
-import {cats,creatures,sprite} from './assets.js?v=0.10.1';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.10.1';
-import {drawHud} from './hud.js?v=0.10.1';
-import {drawNotebook} from './notebook-art.js?v=0.10.1';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.10.1';
-import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.10.1';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X} from './engine.js?v=0.11.0';
+import {rect,text} from './pixel.js?v=0.11.0';
+import {cats,creatures,sprite} from './assets.js?v=0.11.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.11.0';
+import {drawHud} from './hud.js?v=0.11.0';
+import {drawNotebook} from './notebook-art.js?v=0.11.0';
+import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.11.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.11.0';
+import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.11.0';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -51,20 +52,21 @@ export class Renderer{
   for(const f of g.fishes)if(!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
   for(const note of g.notebooks)if(!note.taken&&note.readyAt<=g.time&&note.x>cam-30&&note.x<cam+vw+30)drawNotebook(c,note,t);
+  for(const e of g.enemies)if(e.active&&!e.dead&&e.room===g.room&&e.teleport)drawTeleportMarkers(c,e,t);
   for(const e of g.enemies)if(e.active&&(!e.dead||e.deathTime>0)&&e.x>cam-140&&e.x<cam+vw+140){
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
    if(e.spawnTime>0){c.globalAlpha=1-e.spawnTime/.6;for(let i=0;i<8;i++)rect(c,e.x+i*6,e.y+29,3,2,'#83ccf2');}
    else if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}
    if(e.type==='informant'){
-    drawMonster(c,a,e.type,e.x-18,e.y-56,84,85,t,e.dir<0,e);
+    if(!drawTeleportingInformant(c,a,e,t))drawMonster(c,a,e.type,e.x-18,e.y-56,84,85,t,e.dir<0,e);
     if(e.state==='windup'&&e.aim){c.strokeStyle='#d2a6ff';c.setLineDash([3,5]);c.beginPath();c.moveTo(e.x+24,e.y-6);c.lineTo(e.aim.x,e.aim.y);c.stroke();c.setLineDash([]);rect(c,e.aim.x-3,e.aim.y-3,6,6,'#b28ce577');}
     if(['windup','casting'].includes(e.state)&&e.shieldBroken===0){c.strokeStyle='#ac92ff';c.lineWidth=2;c.strokeRect(e.x-8,e.y-42,64,70);}
    }
    if(e.type==='inflator')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0,e);
    if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,e.dir<0,e);
    if(e.type==='clickbait')drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);
-   c.globalAlpha=1;if(e.dead||e.spawnTime>0)continue;
+   c.globalAlpha=1;if(e.dead||e.spawnTime>0||e.phased)continue;
    rect(c,e.x+3,e.y-60,42,3,'#12203b');rect(c,e.x+3,e.y-60,42*Math.max(0,e.hp)/e.maxHp,3,e.guardian?'#ffcf77':'#fc7b88');
    if(e.guardian)text(c,'!',e.x+38,e.y-72,'#ffcf77');if(e.state==='windup')text(c,'!',e.x+19,e.y-78,'#ffcf79',2);
    if(e.type==='inflator'&&['windup','blast'].includes(e.state)){

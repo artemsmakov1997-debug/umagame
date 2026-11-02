@@ -1,6 +1,6 @@
-import {monsters} from './catalog.js?v=0.10.1';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.10.1';
-import {idleFrame} from './menu-animation.js?v=0.10.1';
+import {monsters} from './catalog.js?v=0.11.0';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.11.0';
+import {idleFrame} from './menu-animation.js?v=0.11.0';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
  constructor(assets,onStart,onExit,onQuit=()=>{}){

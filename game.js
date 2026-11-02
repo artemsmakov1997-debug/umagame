@@ -1,10 +1,10 @@
-import {Game} from './engine.js?v=0.10.1';
-import {Renderer} from './render.js?v=0.10.1';
-import {loadAssets} from './assets.js?v=0.10.1';
-import {ScreenManager} from './screens.js?v=0.10.1';
-import {DialogueUI} from './dialogue-ui.js?v=0.10.1';
-import {PauseMenu} from './pause-menu.js?v=0.10.1';
-import {TouchControls} from './touch-controls.js?v=0.10.1';
+import {Game} from './engine.js?v=0.11.0';
+import {Renderer} from './render.js?v=0.11.0';
+import {loadAssets} from './assets.js?v=0.11.0';
+import {ScreenManager} from './screens.js?v=0.11.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.11.0';
+import {PauseMenu} from './pause-menu.js?v=0.11.0';
+import {TouchControls} from './touch-controls.js?v=0.11.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
@@ -26,7 +26,7 @@ async function boot(){
  updateSound();let lastAbilities='';
  function updateControls(){const signature=Object.values(game.abilities).join();if(signature===lastAbilities)return;lastAbilities=signature;for(const el of document.querySelectorAll('[data-ability]'))el.hidden=!game.abilities[el.dataset.ability];}
  function beep(type){
-  const hz={jump:320,fish:900,pop:140,hurt:80,swat:180,bossHit:110,won:660,checkpoint:740,dash:470,parry:1100,enemyHit:180,blocked:95,heal:780,soup:1000,alarm:740,blast:110,pushed:130,swallow:65,infection:65,lifeLost:90}[type];
+  const hz={jump:320,fish:900,pop:140,hurt:80,swat:180,bossHit:110,won:660,checkpoint:740,dash:470,parry:1100,enemyHit:180,blocked:95,heal:780,soup:1000,alarm:740,blast:110,pushed:130,swallow:65,infection:65,lifeLost:90,teleportOut:560,teleportIn:760}[type];
   if(!sound||!hz)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),v=audio.createGain(),now=audio.currentTime;o.type=type==='alarm'?'triangle':'square';o.connect(v);v.connect(audio.destination);o.frequency.setValueAtTime(hz,now);o.frequency.exponentialRampToValueAtTime(type==='fish'||type==='alarm'?hz*1.5:hz*.5,now+.14);v.gain.setValueAtTime(.03,now);v.gain.exponentialRampToValueAtTime(.0001,now+.19);o.start();o.stop(now+.2);}catch{sound=false;updateSound();}
  }
  function notify(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),2800);}
