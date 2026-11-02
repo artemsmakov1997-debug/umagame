@@ -393,3 +393,7 @@ footer{display:flex;align-items:center;justify-content:space-between;padding:10p
 @media(max-width:700px) and (orientation:portrait){#app[data-screen="game"][data-opening="true"] #game{height:min(100svh,120cqw)}#app[data-screen="game"][data-opening="true"][data-dialogue="true"] #game{height:min(120cqw,calc(100svh - 256px))}}
 
 .has-touch #app[data-screen="game"] #pause{top:calc(10% + 8px)}
+
+/* Long names cannot change the implicit grid column width. */
+#monster-card{grid-template-columns:minmax(0,1fr)}
+@media(max-width:350px) and (orientation:portrait){#monster-title,#monster-title.long-title{font-size:21px}}
