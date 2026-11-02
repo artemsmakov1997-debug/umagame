@@ -72,15 +72,15 @@ export function enemy(type,room,x,platformIndex,extra={}){
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
 }
 export function createEnemies(){return [
- enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,365,1),enemy('fakenews',1,180,9,{hp:2,maxHp:2}),enemy('copier',1,420,1,{trigger:280,scanIndex:1,scanStart:18,scanW:145}),
- enemy('censor',1,150,3,{trigger:340}),enemy('fakenews',1,90,3,{trigger:340}),enemy('fakenews',1,850,10),enemy('copier',1,1150,11,{scanIndex:11,scanStart:20}),enemy('fakenews',1,1090,11),
- enemy('censor',1,1230,14),enemy('fakenews',1,1430,12),enemy('fakenews',1,1610,19),enemy('fakenews',1,1920,20,{hp:2,maxHp:2}),enemy('copier',1,1980,20,{scanIndex:20,scanStart:18}),enemy('censor',1,1990,23),
- enemy('informant',3,150,0,{trigger:100}),enemy('inflator',3,425,1,{ledge:true,trigger:310}),enemy('panicker',3,610,2,{trigger:500}),enemy('informant',3,865,10),
- enemy('informant',3,1120,11),enemy('inflator',3,1245,11,{ledge:true}),enemy('panicker',3,1400,12),enemy('informant',3,1660,19),enemy('informant',3,1940,20),enemy('inflator',3,2045,20,{ledge:true}),enemy('panicker',3,2000,23),
- enemy('injection',5,160,0,{trigger:100}),enemy('injection',5,360,1),enemy('splicer',5,610,2,{trigger:470}),enemy('cutter',5,655,8,{trigger:470}),enemy('injection',5,850,12),
+ enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,365,1),enemy('fakenews',1,180,9,{hp:2,maxHp:2}),enemy('copier',1,840,10,{trigger:700,scanIndex:10,scanStart:18,scanW:145}),
+ enemy('censor',1,1250,14,{trigger:1200}),enemy('fakenews',1,90,3,{trigger:340}),enemy('fakenews',1,920,10),enemy('copier',1,1150,11,{scanIndex:11,scanStart:20}),enemy('fakenews',1,1090,11),
+ enemy('censor',1,1700,22),enemy('fakenews',1,1430,12),enemy('fakenews',1,1610,19),enemy('fakenews',1,1920,20,{hp:2,maxHp:2}),enemy('copier',1,1980,20,{scanIndex:20,scanStart:18}),enemy('censor',1,1990,23),
+ enemy('informant',3,150,0,{trigger:100}),enemy('inflator',3,1010,17,{ledge:true,trigger:820}),enemy('panicker',3,1450,12,{trigger:1400}),enemy('informant',3,865,10),
+ enemy('informant',3,1120,11),enemy('inflator',3,1245,11,{ledge:true}),enemy('panicker',3,1980,23),enemy('informant',3,1660,19),enemy('informant',3,1940,20),enemy('inflator',3,2045,20,{ledge:true}),enemy('panicker',3,2000,23),
+ enemy('injection',5,160,0,{trigger:100}),enemy('injection',5,360,1),enemy('splicer',5,1430,14,{trigger:1400}),enemy('cutter',5,1110,13,{trigger:800}),enemy('injection',5,850,12),
  enemy('injection',5,1140,13),enemy('splicer',5,1190,16),enemy('cutter',5,1410,14),enemy('injection',5,1670,21),enemy('injection',5,1930,22),enemy('splicer',5,1990,25),enemy('cutter',5,2070,28),
- enemy('static',7,200,0,{trigger:130}),enemy('echo',7,420,1,{trigger:320}),enemy('clickbait',7,640,2,{trigger:520}),enemy('static',7,870,10),enemy('static',7,1150,11),
- enemy('echo',7,1250,18),enemy('clickbait',7,1430,12),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
+ enemy('static',7,200,0,{trigger:130}),enemy('echo',7,1000,17,{trigger:800}),enemy('clickbait',7,1510,12,{trigger:1400}),enemy('static',7,870,10),enemy('static',7,1150,11),
+ enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];}
 export function createFish(){return rooms.flatMap(r=>{
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
@@ -92,14 +92,14 @@ export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const
 export function createLifePickups(){return [[1,17],[1,22],[2,9],[3,7],[3,22],[4,9],[5,7],[5,24],[6,9],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
- {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews'],unlock:'attack'},
- {id:'copier',room:1,index:1,x:305,scenes:['copier']},{id:'censor',room:1,index:3,x:55,scenes:['censor']},{id:'spreader',room:1,index:12,x:1450,scenes:['spreader']},
- {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','informant'],unlock:'dash'},
- {id:'inflator',room:3,index:1,x:310,scenes:['inflator']},{id:'panicker',room:3,index:2,x:565,scenes:['panicker'],unlock:'sneak'},
+ {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews']},
+ {id:'copier',room:1,index:10,x:805,scenes:['copier']},{id:'censor',room:1,index:14,x:1170,scenes:['censor']},{id:'spreader',room:1,index:12,x:1450,scenes:['spreader']},
+ {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','informant']},
+ {id:'inflator',room:3,index:17,x:950,scenes:['inflator']},{id:'panicker',room:3,index:12,x:1390,scenes:['panicker']},
  {id:'agitator',room:3,index:12,x:1460,scenes:['agitator']},
- {id:'studio',room:5,index:0,x:95,scenes:['arrival3','injection']},{id:'splicer',room:5,index:2,x:570,scenes:['splicer']},{id:'cutter',room:5,index:4,x:550,scenes:['cutter']},
+ {id:'studio',room:5,index:0,x:95,scenes:['arrival3','injection']},{id:'splicer',room:5,index:14,x:1385,scenes:['splicer']},{id:'cutter',room:5,index:12,x:850,scenes:['cutter']},
  {id:'manipulator',room:5,index:14,x:1410,scenes:['manipulator']},
- {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:1,x:310,scenes:['echo']},{id:'clickbait',room:7,index:2,x:575,scenes:['clickbait']},{id:'infoshum',room:7,index:21,x:2195,scenes:['infoshum']},
+ {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:10,x:845,scenes:['echo']},{id:'clickbait',room:7,index:12,x:1410,scenes:['clickbait']},{id:'infoshum',room:7,index:21,x:2195,scenes:['infoshum']},
  ...[2,4,6].map((room,i)=>({id:'record'+(i+1),room,index:4,x:1400,scenes:['chapter'+(i+1)],bossRecord:true}))
  ];
  return entries.map(n=>({...n,x:rooms[n.room].x+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.bossRecord?Infinity:0}));

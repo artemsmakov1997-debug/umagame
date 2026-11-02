@@ -9,19 +9,19 @@ const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function ready(story=true){const g=new Game({story});g.start();if(story){g.finishWakeup();g.advanceDialogue(true);}g.enemies=[];g.fishes=[];g.soups=[];g.tutorial.complete=true;return g;}
 function stand(g,room,index=0,x=45){const s=platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,inv:0,attack:0,cooldown:0,dash:0,sneaking:false});g.room=room;g.checkpoint=room;g.unlockForRoom(room);g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);}
 test('Clickbait takes one stock at every heart count and stays revealed after checkpoint recovery',()=>{
- for(const health of [1,2,3,4]){const g=ready(false);stand(g,7,2,640);g.health=health;g.enemies=[enemy('clickbait',7,640,2,{active:true,noticed:true})];tick(g,45);assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(g.events.filter(e=>e.type==='lifeLost').length,1);tick(g,75);assert.equal(g.mode,'playing');assert.equal(g.health,4);const bait=g.enemies.find(e=>e.type==='clickbait'&&e.platformIndex===2);assert.equal(bait.revealed,true);assert.equal(bait.state,'patrol');}
+ for(const health of [1,2,3,4]){const g=ready(false);stand(g,7,12,1510);g.health=health;g.enemies=[enemy('clickbait',7,1510,12,{active:true,noticed:true})];tick(g,45);assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(g.events.filter(e=>e.type==='lifeLost').length,1);tick(g,75);assert.equal(g.mode,'playing');assert.equal(g.health,4);const bait=g.enemies.find(e=>e.type==='clickbait'&&e.platformIndex===12);assert.equal(bait.revealed,true);assert.equal(bait.state,'patrol');}
 });
 test('the last full-life Clickbait capture ends the game even with all four hearts',()=>{
  const g=ready(false);stand(g,2,1,350);g.lives=1;g.enemies=[enemy('clickbait',2,350,1,{active:true,noticed:true})];tick(g,45);assert.equal(g.mode,'lost');assert.equal(g.lives,0);assert.equal(g.health,0);tick(g,100);assert.equal(g.events.filter(e=>e.type==='lost').length,1);
 });
-test('locked paw, dash and stealth cannot be activated from keyboard, joystick or gesture input',()=>{
- const g=ready(false),x=g.player.x;assert.deepEqual(g.abilities,{attack:false,dash:false,sneak:false});tick(g,10,{attack:true,dash:true,down:true,axisX:.5});assert.equal(g.player.swing,0);assert.equal(g.player.dashCooldown,0);assert.equal(g.player.sneaking,false);assert.equal(g.player.h,48);assert.ok(g.player.x-x<15);
+test('paw, dash and stealth work in the initial quiet room with keyboard and joystick input',()=>{
+ const g=ready(false);assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});g.step(1/60,{attack:true,dash:true});assert.equal(g.player.swing,1);assert.ok(g.player.dash>0);tick(g,40);g.step(1/60,{down:true,axisX:.5});assert.equal(g.player.sneaking,true);assert.equal(g.player.h,26);
 });
-test('abilities cannot be missed by skipping notebooks and unlock before their required encounters',()=>{
- const g=ready(false);stand(g,1,0,160);tick(g,1);assert.deepEqual(g.abilities,{attack:true,dash:false,sneak:false});assert.equal(g.notebooks.find(n=>n.id==='paw').taken,false);stand(g,3,0,160);tick(g,1);assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});assert.equal(g.events.filter(e=>e.type==='ability').length,3);
+test('all abilities remain available when every optional notebook is skipped',()=>{
+ const g=ready(false);for(const room of[0,1,3,5,7]){stand(g,room,0,160);tick(g,1);assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});}assert.equal(g.notebooks.find(n=>n.id==='paw').taken,false);
 });
-test('new skills and read notebooks survive a lost life; restart locks them again',()=>{
- const g=ready();stand(g,3,0,70);tick(g,1);assert.equal(g.dialogue.id,'notebook:roofs');assert.equal(g.abilities.sneak,true);g.advanceDialogue(true);g.unlockForRoom(5);g.loseLife();tick(g,70);assert.equal(g.abilities.sneak,true);assert.equal(g.notebooks.find(n=>n.id==='roofs').taken,true);g.start();assert.deepEqual(g.abilities,{attack:false,dash:false,sneak:false});assert.ok(g.notebooks.every(n=>!n.taken));
+test('new skills and read notebooks survive a lost life; restart keeps all actions available',()=>{
+ const g=ready();stand(g,3,0,70);tick(g,1);assert.equal(g.dialogue.id,'notebook:roofs');assert.equal(g.abilities.sneak,true);g.advanceDialogue(true);g.unlockForRoom(5);g.loseLife();tick(g,70);assert.equal(g.abilities.sneak,true);assert.equal(g.notebooks.find(n=>n.id==='roofs').taken,true);g.start();assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});assert.ok(g.notebooks.every(n=>!n.taken));
 });
 test('every intermediate Yuri comment waits for its notebook; entering a chapter stays silent',()=>{
  const g=ready();for(const room of [1,3,5,7]){stand(g,room,0,215);tick(g,1);assert.equal(g.dialogue,null);}assert.ok(!g.seenScenes.has('informant'));const note=g.notebooks.find(n=>n.id==='dimension');stand(g,7,0,85);tick(g,1);assert.equal(note.taken,true);assert.equal(g.dialogue.id,'notebook:dimension');const snapshot=JSON.stringify(g);tick(g,90,{right:true});assert.equal(JSON.stringify(g),snapshot);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);

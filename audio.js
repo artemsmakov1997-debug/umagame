@@ -1,13 +1,7 @@
-import {rooms} from './level.js?v=0.14.0';
+import {musicScores,sceneMusic} from './music-scores.js?v=0.15.0';
+import {rooms} from './level.js?v=0.15.0';
 // Original chiptune score and procedural Foley. No downloads or external audio.
 const midi=n=>440*Math.pow(2,(n-69)/12);
-const melodies={
- menu:[69,null,72,76,74,null,72,71,69,null,67,64,67,69,72,null,72,76,79,76,74,72,71,null,67,71,74,72,71,67,69,null],
- journey:[69,72,76,null,74,72,71,67,69,null,72,74,76,null,72,69,72,76,79,null,76,74,72,71,67,71,74,76,74,71,69,null],
- studio:[69,76,null,72,69,76,74,null,69,72,76,79,null,76,72,null,72,79,null,76,72,79,76,null,71,74,79,null,74,71,69,null],
- boss:[57,69,60,69,64,69,67,64,57,69,60,69,65,64,60,57,60,72,64,72,67,72,71,67,59,71,62,71,67,62,59,null]
-};
-const chords=[[57,60,64],[53,57,60],[60,64,67],[55,59,62]],bass=[33,29,36,31],tempos={menu:86,journey:108,studio:118,boss:138};
 function preference(){try{return globalThis.localStorage?.getItem('uma-sound')!=='off';}catch{return true;}}
 export class GameAudio{
  constructor({context=null,enabled=preference(),onChange=()=>{}}={}){
@@ -43,8 +37,7 @@ export class GameAudio{
  setHidden(hidden){this.hidden=!!hidden;if(hidden){this.stop();this.next=0;}}
  setScene(view,game){
   const pause=view==='exit'||view==='game'&&['paused','lost','respawning','exited','loading'].includes(game.mode);
-  const ending=game.mode==='won'||game.dialogue?.id==='ending';
-  const theme=view!=='game'||ending||game.room===0?'menu':rooms[game.room]?.arena?'boss':rooms[game.room]?.theme==='studio'?'studio':'journey';
+  const theme=sceneMusic(view,game,rooms);
   this.duck=view==='game'&&['dialogue','waking'].includes(game.mode);
   if(theme!==this.theme||pause!==this.paused){this.stop('music');this.step=0;this.next=0;this.theme=theme;this.paused=pause;}
   if(this.music)this.music.gain.setTargetAtTime(pause||this.hidden?0:this.duck?.12:.42,this.context.currentTime,.08);
@@ -59,20 +52,19 @@ export class GameAudio{
   const voice={source,group};this.voices.add(voice);source.onended=()=>{this.voices.delete(voice);source.disconnect();volume.disconnect();};source.start(at);source.stop(at+duration+.02);return voice;
  }
  scheduleStep(index,start){
-  const step=index%64,theme=this.theme,part=Math.floor(step/16),beat=60/tempos[theme]/2,note=melodies[theme][step%32];
-  if(note!==null)this.voice({frequency:midi(note),duration:beat*.77,gain:theme==='boss'?.043:.034,wave:theme==='menu'?'triangle':'square',start,group:'music',pan:.12});
-  if(step%2===0)this.voice({frequency:midi(bass[part]+(step%8===6?12:0)),duration:beat*1.5,gain:.085,wave:'triangle',start,group:'music',pan:-.12});
-  if(step%8===0)for(const n of chords[part])this.voice({frequency:midi(n),duration:beat*6,gain:.013,wave:'triangle',start,group:'music',pan:-.25});
-  if(theme!=='menu'){
-   if(step%4===0)this.voice({frequency:125,to:42,duration:.13,gain:.09,wave:'sine',start,group:'music'});
-   if(step%8===4)this.voice({duration:.11,gain:.04,start,group:'music',noise:true,filter:2100});
-   if(step%2===0)this.voice({duration:.045,gain:theme==='boss'?.028:.017,start,group:'music',noise:true,filter:6500,pan:.25});
-  }
+  const score=musicScores[this.theme],step=index%64,part=Math.floor(step/16),beat=60/score.bpm/2,note=score.melody[step%score.melody.length],boss=['spreader','agitator','manipulator','infoshum'].includes(this.theme);
+  if(note!==null)this.voice({frequency:midi(note),duration:beat*.77,gain:score.gain??(boss?.043:.034),wave:score.wave,start,group:'music',pan:.12});
+  if(this.theme==='infoshum'&&note!==null&&step%4===0)this.voice({frequency:midi(note+7),duration:beat*.4,gain:.014,wave:'square',start:start+beat*.12,group:'music',pan:-.2});
+  if(step%2===0)this.voice({frequency:midi(score.bass[part]+(step%8===6?12:0)),duration:beat*1.5,gain:boss?.085:.065,wave:'triangle',start,group:'music',pan:-.12});
+  if(step%8===0)for(const n of score.chords[part])this.voice({frequency:midi(n),duration:beat*6,gain:.013,wave:'triangle',start,group:'music',pan:-.25});
+  if(score.drums.includes(step%8))this.voice({duration:.045,gain:boss?.028:.017,start,group:'music',noise:true,filter:score.noise,pan:.25});
+  if(score.drums.length&&step%4===0)this.voice({frequency:boss?125:98,to:42,duration:.13,gain:boss?.09:.06,wave:'sine',start,group:'music'});
+  if(score.drums.length&&step%8===4)this.voice({duration:.11,gain:.04,start,group:'music',noise:true,filter:score.noise*.55});
  }
  tick(){
   const ctx=this.context;if(!ctx||ctx.state!=='running'||!this.enabled||this.hidden||this.paused){this.next=0;return;}
   if(!this.next||this.next<ctx.currentTime-.1)this.next=ctx.currentTime+.035;
-  while(this.next<ctx.currentTime+.17){this.scheduleStep(this.step++,this.next);this.next+=60/tempos[this.theme]/2;}
+  while(this.next<ctx.currentTime+.17){this.scheduleStep(this.step++,this.next);this.next+=60/musicScores[this.theme].bpm/2;}
  }
  play(event,game){
   if(!this.enabled||this.hidden||!this.context||!this.offline&&this.context.state!=='running')return;
@@ -111,7 +103,7 @@ export class GameAudio{
   else if(type==='platformCut'){noise(.11,.12,4500);noise(.08,.08,2700,.12);tone(1000,340,.09,.04);}
   else if(type==='platformRestore')tone(350,660,.15,.035,'triangle');
   else if(type==='bossCast'){tone(90,45,.3,.12,'sawtooth');if(event.ability==='rain')noise(.5,.06,3400);else noise(.2,.06,700);}
-  else if(type==='bossWarning')tone(110,200,.25,.05,'triangle');
+  else if(type==='bossWarning'){const base={spreader:240,agitator:110,manipulator:440,infoshum:75}[event.boss]||110;tone(base,base*1.4,.25,.05,'triangle');}
   else if(type==='arenaPull'||type==='infection'){tone(140,35,.8,.09,'sawtooth');noise(.5,.06,400);}
   else if(type==='bossStart'||type==='arenaEnter'){for(const n of [45,52,57])tone(midi(n),midi(n),.6,.04,'triangle');}
   else if(type==='jump')tone(280,600,.13,.055);

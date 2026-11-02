@@ -1,5 +1,6 @@
-import {rooms,spawns} from './level.js?v=0.14.0';
-import {solidSurfaces} from './terrain.js?v=0.14.0';
+import {actorById} from './boss-actors.js?v=0.15.0';
+import {rooms,spawns} from './level.js?v=0.15.0';
+import {solidSurfaces} from './terrain.js?v=0.15.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function stepAirEnemy(g,e,dt){
  const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+p.h/2-e.y-e.h/2,distance=Math.hypot(dx,dy)||1;
@@ -54,13 +55,13 @@ export function stepSplicer(g,e,dt,dx,dy){
 }
 export function releaseTether(g,ownerId=null){
  if(!g.tether||ownerId&&g.tether.ownerId!==ownerId)return;
- const e=g.enemies.find(e=>e.id===g.tether.ownerId);if(e&&!e.dead){e.state='recover';e.timer=Math.max(1.6,e.timer>5?0:1.6);}
+ const e=actorById(g,g.tether.ownerId);if(e&&!e.dead){e.state='recover';e.timer=Math.max(1.6,e.timer>5?0:1.6);}
  g.tether=null;g.player.pulled=false;g.emit('glueRelease');
 }
 export function stepTether(g,dt){
  const p=g.player;p.pulled=false;if(!g.tether)return;
- const e=g.enemies.find(e=>e.id===g.tether.ownerId&&!e.dead&&e.room===g.room),t=g.tether;
- if(!e||e.state!=='pulling'||p.dash>0||Math.abs(e.x-p.x)>380||Math.abs(e.y+e.h-p.y-p.h)>145){if(p.dash>0)p.glueGrace=1.8;releaseTether(g);return;}
+ const e=actorById(g,g.tether.ownerId),t=g.tether;
+ if(!e||e.dead||e.room!==g.room||!(e.state==='pulling'||e===g.boss&&e.state==='casting'&&e.ability==='splice')||p.dash>0||Math.abs(e.x-p.x)>380||Math.abs(e.y+e.h-p.y-p.h)>145){if(p.dash>0)p.glueGrace=1.8;releaseTether(g);return;}
  t.remaining-=dt;if(t.remaining<=0){releaseTether(g);return;}
  p.pulled=true;p.sleeping=false;p.idleTime=0;p.slideTime=(p.slideTime||0)+dt;
  if(!p.knock)p.vx=clamp(p.vx+Math.sign(e.x+e.w/2-p.x-p.w/2)*175,-260,260);

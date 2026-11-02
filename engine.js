@@ -1,34 +1,34 @@
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.14.0';
-import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.14.0';
-import {stepEnemies,stepPortals} from './enemies.js?v=0.14.0';
-import {cancelInformantTeleport} from './informant-teleport.js?v=0.14.0';
-import {scenes,evidence} from './story.js?v=0.14.0';
-import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.14.0';
-import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.14.0';
-import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.14.0';
-import {cleanCopies} from './tactical-enemies.js?v=0.14.0';
-import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.14.0';
-import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.14.0';
-import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.14.0';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.14.0';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.15.0';
+import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.15.0';
+import {stepEnemies,stepPortals} from './enemies.js?v=0.15.0';
+import {cancelInformantTeleport} from './informant-teleport.js?v=0.15.0';
+import {scenes,evidence} from './story.js?v=0.15.0';
+import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.15.0';
+import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.15.0';
+import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.15.0';
+import {cleanCopies} from './tactical-enemies.js?v=0.15.0';
+import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.15.0';
+import {beginFinale,advanceFinale} from './finale.js?v=0.15.0';
+import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.15.0';
+import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.15.0';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.15.0';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export function playerHeight(p,height){const feet=p.y+p.h;p.h=height;p.y=feet-height;}
 export class Game {
  constructor({story=true}={}){this.overlap=overlap;this.storyEnabled=story;this.reset();}
  reset(){
   this.mode='ready';delete this.pausedFrom;this.time=0;this.fish=0;this.kills=0;this.health=MAX_HEALTH;this.lives=START_LIVES;this.respawnTime=0;this.camera=0;this.checkpoint=0;this.room=0;this.gateHint=-1;
-  this.dialogue=null;this.seenScenes=new Set();this.evidence=[];this.truthFound=false;this.wakeTime=0;this.viewWidth=this.viewWidth||WIDTH;this.transition=null;this.loading=null;this.chapter=0;this.bossesDefeated=new Set();this.roomHistory=new Set([0]);this.visitedPlatforms=new Set(['0:0']);this.safeTrail=[];this.echoImmunity=0;this.echoWarp=null;this.tether=null;
+  this.dialogue=null;this.ending=null;this.finalScore=null;this.encounters={};this.seenScenes=new Set();this.evidence=[];this.truthFound=false;this.wakeTime=0;this.viewWidth=this.viewWidth||WIDTH;this.transition=null;this.loading=null;this.chapter=0;this.bossesDefeated=new Set();this.roomHistory=new Set([0]);this.visitedPlatforms=new Set(['0:0']);this.safeTrail=[];this.echoImmunity=0;this.echoWarp=null;this.tether=null;
   this.trainingHintShown=false;this.tutorial={step:0,distance:0,jumped:false,climbed:0,complete:false};
-  this.abilities={attack:false,dash:false,sneak:false};this.notebooks=createNotebooks();
+  this.abilities={attack:true,dash:true,sneak:true};this.notebooks=createNotebooks();
   this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;this.lifePickups=createLifePickups();
   this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,powerTime:0,glueGrace:0,pulled:false};
   this.swallow=null;this.portals=[];this.portalSerial=0;this.soups=createSoup();this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();
   this.relays=createRelays();this.bolts=[];this.events=[];this.inks=[];this.cuts=[];this.tacticalSerial=0;
  }
  emit(type,data={}){this.events.push({type,...data});}
- unlockForRoom(room){
-  for(const [id,first]of Object.entries({attack:1,dash:3,sneak:3}))if(room>=first&&!this.abilities[id]){this.abilities[id]=true;this.emit('ability',{id});}
- }
+ unlockForRoom(){return this.abilities;}
+
  start(){this.reset();this.mode=this.storyEnabled?'waking':'playing';this.emit('start');}
  enterArena(){return beginArenaEntry(this);}
  leaveRoom(){return beginLocationTransition(this);}
@@ -59,7 +59,8 @@ export class Game {
  }
  bossDefeated(){const b=this.boss;if(!b.id||this.bossesDefeated.has(b.id))return;this.bossesDefeated.add(b.id);b.active=false;this.bolts=[];this.emit('miniBossDefeated',{boss:b.id,x:b.x,y:b.y});if(b.id==='infoshum')this.finish();else this.completeChapter(this.room);}
 
- finish(){this.truthFound=true;this.bolts=[];this.portals=[];if(this.openDialogue('truth','won')){this.dialogue.next='ending';this.emit('victory');}else{this.mode='won';this.emit('won');}}
+ finish(){return beginFinale(this);}
+ advanceEnding(direction=1){return advanceFinale(this,direction);}
  respawn(){this.swallow=null;wakePlayer(this.player);Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0,slipping:false,onInk:false,inkTime:0,slideTime:0});delete this.player.warpScale;this.bolts=[];this.updateCamera();}
  restoreCheckpoint(){
   const revealed=this.enemies.filter(e=>e.room===this.checkpoint&&e.type==='clickbait'&&e.revealed&&!e.dead);
@@ -161,7 +162,7 @@ export class Game {
   for(const relay of this.relays){relay.breakTime=Math.max(0,relay.breakTime-dt);if(relay.hp>0&&p.attack>0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;relay.hp=0;relay.breakTime=.65;this.emit('dishBreak',{x:relay.x+relay.w/2,y:relay.y+25});this.emit('relay',{room:relay.room,id:relay.id});}}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
   const b=this.boss;
-  if(b.active&&b.room===this.room&&b.hp>0){stepBoss(this,dt);if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y});}if(b.state!=='shift'&&overlap(p,b))this.hurt(false,b.x);}
+  if(b.active&&b.room===this.room&&b.hp>0){stepBoss(this,dt);if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y});}bossContact(this);}
   if(this.mode==='playing')stepProjectiles(this,dt,paw);this.updateCamera(dt);
  }
 }

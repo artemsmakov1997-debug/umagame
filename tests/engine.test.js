@@ -112,16 +112,15 @@ test('camera eases through normal rooms and the separate arena is hidden before 
 test('boss shield, recovery, reflected damage and one-damage-per-swing rules remain intact',()=>{
  const g=bossGame();g.boss.state='windup';assert.equal(damageBoss(g,1),false);assert.equal(damageBoss(g,2,true),true);g.boss.cooldown=0;g.boss.state='recover';const hp=g.boss.hp;g.step(1/60,{attack:true});tick(g,8);assert.equal(g.boss.hp,hp-1);
 });
-test('Infoshum has four abilities and second-phase summons combine Static and Echo',()=>{
- const g=bossGame();assert.deepEqual(abilities,['volley','wave','rain','summon']);for(const ability of abilities){g.boss.summonTargets=[{x:FINAL_X+100,y:420,index:0},{x:FINAL_X+400,y:346,index:1}];g.boss.ability=ability;g.boss.aim={x:FINAL_X+450,y:250};g.boss.targets=[FINAL_X+400,FINAL_X+500,FINAL_X+600];castAttack(g);}assert.ok(g.bolts.some(b=>b.kind==='paper'));assert.ok(g.bolts.some(b=>b.kind==='wave'));assert.ok(g.bolts.some(b=>b.kind==='rain'));assert.ok(g.enemies.every(e=>e.type==='static'));
- g.enemies=[];g.boss.phase=2;g.boss.ability='summon';castAttack(g);assert.deepEqual(g.enemies.map(e=>e.type),['static','echo']);castAttack(g);assert.equal(g.enemies.length,3);
+test('Infoshum combines its arsenal with all three native enemy abilities and summons',()=>{
+ const g=bossGame();assert.deepEqual(abilities,['volley','wave','rain','summon','echoPulse','staticRush','lure']);for(const ability of abilities){g.boss.ability=ability;g.boss.aim={x:FINAL_X+450,y:250};g.boss.targets=[FINAL_X+400,FINAL_X+500,FINAL_X+600];castAttack(g);}assert.ok(g.bolts.some(b=>b.kind==='paper'));assert.ok(g.bolts.some(b=>b.kind==='wave'));assert.ok(g.bolts.some(b=>b.kind==='rain'));assert.ok(g.bolts.some(b=>b.kind==='echoOrb'));assert.ok(g.enemies.some(e=>e.type==='clickbait'));assert.ok(g.enemies.every(e=>['echo','clickbait','static'].includes(e.type)));
 });
 test('half health changes phase; only paper and packets are reflectable',()=>{
  const g=bossGame();g.boss.hp=12;stepBoss(g,1/60);assert.equal(g.boss.phase,2);g.player.attack=.18;const x=g.player.x+40,y=g.player.y+10;g.bolts=[{kind:'wave',x,y,w:20,h:12,vx:0,vy:0,ttl:2},{kind:'rain',x,y,w:17,h:26,vx:0,vy:0,ttl:2}];stepProjectiles(g,1/60,{x,y:y-3,w:50,h:50});assert.ok(g.bolts.every(b=>!b.friendly));
 });
 test('victory stops simulation and a long session has no hidden countdown',()=>{
- const g=bossGame();g.boss.hp=1;damageBoss(g,1);assert.equal(g.mode,'won');const time=g.time;tick(g,120,{attack:true,right:true});assert.equal(g.time,time);const t=isolated();t.time=99999;tick(t,1);assert.equal(t.mode,'playing');assert.equal('clock'in t,false);
+ const g=bossGame();g.boss.hp=1;damageBoss(g,1);assert.equal(g.mode,'ending');for(let i=0;i<4;i++)g.advanceEnding();assert.equal(g.mode,'won');const time=g.time;tick(g,120,{attack:true,right:true});assert.equal(g.time,time);const t=isolated();t.time=99999;tick(t,1);assert.equal(t.mode,'playing');assert.equal('clock'in t,false);
 });
 test('Infoshum alternates all attacks and relocates between three distant arena docks in both phases',()=>{
- const g=bossGame(),casts=new Set(),positions=new Set([g.boss.x]);for(let i=0;i<2600;i++){if(i===1000)g.boss.hp=15;stepBoss(g,1/60);positions.add(g.boss.x);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.equal(casts.size,4);assert.equal(positions.size,3);assert.equal(g.boss.phase,2);assert.ok(Math.max(...positions)-Math.min(...positions)>800);assert.equal(g.boss.maxHp,32);
+ const g=bossGame(),casts=new Set(),positions=new Set([g.boss.x]);for(let i=0;i<2600;i++){if(i===1000)g.boss.hp=15;stepBoss(g,1/60);positions.add(g.boss.x);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.equal(casts.size,7);assert.ok(positions.size>3);assert.equal(g.boss.phase,2);assert.ok(Math.max(...positions)-Math.min(...positions)>800);assert.equal(g.boss.maxHp,32);
 });

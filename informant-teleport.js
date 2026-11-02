@@ -1,5 +1,5 @@
-import {solidSurfaces} from './terrain.js?v=0.14.0';
-import {platforms} from './level.js?v=0.14.0';
+import {solidSurfaces} from './terrain.js?v=0.15.0';
+import {platforms} from './level.js?v=0.15.0';
 export const TELEPORT_PHASES={charge:.45,out:.24,blink:.1,in:.32};
 export const TELEPORT_COOLDOWN=4.2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -22,7 +22,8 @@ export function chooseInformantLanding(g,e){
  for(const s of supports){
   const origin=s.x+8,end=s.x+s.w-e.w-8;
   for(const desired of [center-preferred-e.w/2,center+preferred-e.w/2,origin,end]){
-   const x=clamp(desired,origin,end),distance=Math.abs(x+e.w/2-center),base=(g.platforms||platforms).find(base=>base.id===s.id)||s,target={x,y:s.y-e.h,index:s.index,localX:x-base.x,origin,end};
+   const narrow=(g.viewWidth||768)<350,visibleStart=narrow?Math.max(origin,g.camera+6):origin,visibleEnd=narrow?Math.min(end,g.camera+g.viewWidth-e.w-6):end;if(visibleStart>visibleEnd)continue;
+   const x=clamp(desired,visibleStart,visibleEnd),distance=Math.abs(x+e.w/2-center),base=(g.platforms||platforms).find(base=>base.id===s.id)||s,target={x,y:s.y-e.h,index:s.index,localX:x-base.x,origin,end};
    if((g.viewWidth||768)<350&&(x<g.camera+6||x+e.w>g.camera+g.viewWidth-6))continue;
    if(distance<60||distance>320||!teleportLandingClear(g,e,target))continue;
    options.push({...target,score:Math.abs(distance-preferred)+Math.abs(s.y-feet)*1.4+Math.abs(x-e.x)*.03});

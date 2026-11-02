@@ -1,5 +1,5 @@
-import {LAST_ROOM,PORTAL_ROOM,PORTAL_X,MAX_HEALTH,spawns} from './level.js?v=0.14.0';
-import {activateRoom,canLeaveRoom} from './room-transitions.js?v=0.14.0';
+import {LAST_ROOM,PORTAL_ROOM,PORTAL_X,MAX_HEALTH,spawns} from './level.js?v=0.15.0';
+import {activateRoom,canLeaveRoom} from './room-transitions.js?v=0.15.0';
 export const ARENA_ENTRY_DURATION=1.6;
 export function beginArenaEntry(g){
  if(g.mode!=='playing'||g.room!==PORTAL_ROOM||g.arenaEntered||!canLeaveRoom(g))return false;
