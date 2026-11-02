@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {monsterFrame} from '../monster-animation.js';
 import {Game,rooms,chapters,WIDTH,LAST_ROOM,PORTAL_ROOM,PORTAL_X} from '../engine.js';
 import {enemy,createEnemies,createNotebooks} from '../level.js';
 import {activateRoom,canLeaveRoom,remainingAntennas} from '../room-transitions.js';
@@ -47,6 +48,7 @@ test('a protected dash ignores Echo and the Static lunge; Static otherwise damag
 });
 test('Fakenews and Vbros select real detours toward a distant player and never teleport',()=>{
  for(const type of ['fakenews','injection']){const g=ready(type==='fakenews'?1:5),r=g.room,s=g.platforms.find(s=>s.room===r&&s.index===12);Object.assign(g.player,{x:s.x+60,y:s.y-48,supportId:s.id});const e=actor(type,r,100,0,{jumpCooldown:0});g.enemies=[e];const target=chooseFakeLanding(g,e);assert.ok(target);assert.ok(target.platform.x<g.player.x-500);assert.ok(target.walkTarget!==undefined||Math.abs(target.vx)<=250);const x=e.x;tick(g,1);assert.ok(Math.abs(e.x-x)<12);assert.ok(e.navWalkX!==undefined||e.jumpPhase==='prepare');}
+ const g=ready(5),e=actor('injection',5,180,0,{state:'windup',timer:0,aim:{x:g.player.x,y:g.player.y+10}});g.enemies=[e];tick(g,1);assert.ok(g.events.some(e=>e.type==='tickerShot'));assert.equal(monsterFrame('injection',g.time,e),4,'the actual shot displays the attack pose');
 });
 test('all decorated big screens and ladder tops allow a normal jump without frozen input',async()=>{
  const {hauntedScreens}=await import('../campaign-art.js');for(const m of hauntedScreens){const g=ready(m.room),s=g.platforms.find(s=>s.room===m.room&&s.index===2);Object.assign(g.player,{x:s.x+s.w-56,y:s.y-48,grounded:true,supportId:s.id});const y=g.player.y;g.step(1/60,{up:true,jump:true});assert.ok(g.player.vy<0);assert.ok(g.player.y<y);assert.equal(g.player.climbing,false);assert.equal(g.mode,'playing');}

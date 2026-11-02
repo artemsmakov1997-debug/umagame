@@ -50,7 +50,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.65;}
    }else if(e.type==='injection'){
     if(e.state==='patrol'){e.dir=(e.navWalkX??p.x)<e.x?-1:1;e.x+=e.dir*e.speed*dt;if(Math.abs(dx)<270&&Math.abs(dy)<80&&e.timer<=0){e.state='windup';e.timer=.6;e.aim={x:p.x+17,y:p.y+10};g.emit('tickerWarning',{x:e.x,y:e.y});}}
-    else if(e.state==='windup'&&e.timer<=0){const dir=e.aim.x<e.x?-1:1;g.bolts.push({room:e.room,kind:'ticker',x:e.x+24,y:e.aim.y,w:40,h:10,vx:dir*240,vy:0,ttl:2.5,sourceId:e.id});e.state='recover';e.timer=.95;g.emit('tickerShot',{x:e.x,y:e.y});}
+    else if(e.state==='windup'&&e.timer<=0){const dir=e.aim.x<e.x?-1:1;g.bolts.push({room:e.room,kind:'ticker',x:e.x+24,y:e.aim.y,w:40,h:10,vx:dir*240,vy:0,ttl:2.5,sourceId:e.id});e.state='recover';e.timer=.95;e.attackFlash=.22;g.emit('tickerShot',{x:e.x,y:e.y});}
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.7;}
    }else if(e.type==='splicer')stepSplicer(g,e,dt,dx,dy);
    else if(e.type==='informant'){
