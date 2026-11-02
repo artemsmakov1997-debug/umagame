@@ -12,7 +12,9 @@ async function checkLibrary(page){
   await page.getByRole('button',{name,exact:true}).click();assert.equal(await page.locator('#monster-title').textContent(),name);assert.equal(await page.locator('#monster-abilities>div').count(),2);
   const next=await cardShape(page);if(shape)assert.deepEqual(next,shape,'fixed card regions: '+name);else shape=next;
   assert.ok(await page.evaluate(()=>{const card=document.querySelector('#monster-card'),r=card.getBoundingClientRect();return [...card.querySelectorAll('h3,p,dt,dd')].every(e=>{const box=e.getBoundingClientRect();return e.scrollWidth<=e.clientWidth+2&&box.left>=r.left-1&&box.right<=r.right+1;});}),'no clipped text: '+name);
-  assert.ok(await page.evaluate(()=>['#monster-description','#monster-abilities','.tactic'].every(selector=>{const e=document.querySelector(selector);return e.scrollHeight<=e.clientHeight+2;})),'all text visible without inner scrolling: '+name);
+  const overflow=await page.evaluate(()=>['#monster-description','#monster-abilities','.tactic'].map(selector=>{const e=document.querySelector(selector);return {selector,height:e.clientHeight,content:e.scrollHeight};}).filter(e=>e.content>e.height+2));
+  if(overflow.length)await shot(page,'library-overflow-'+page.viewportSize().width);
+  assert.deepEqual(overflow,[],'all text visible without inner scrolling: '+name);
  }
  assert.ok(await page.evaluate(()=>{const rows=[...document.querySelectorAll('.monster-option')].map(e=>Math.round(e.getBoundingClientRect().height));return new Set(rows).size===1;}));
  await page.getByRole('button',{name:'Монтажёр',exact:true}).click();await shot(page,'library-montager-uniform');
