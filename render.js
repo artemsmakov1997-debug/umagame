@@ -1,12 +1,14 @@
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X} from './engine.js?v=0.11.0';
-import {rect,text} from './pixel.js?v=0.11.0';
-import {cats,creatures,sprite} from './assets.js?v=0.11.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.11.0';
-import {drawHud} from './hud.js?v=0.11.0';
-import {drawNotebook} from './notebook-art.js?v=0.11.0';
-import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.11.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.11.0';
-import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.11.0';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.12.0';
+import {rect,text} from './pixel.js?v=0.12.0';
+import {cats,creatures,sprite} from './assets.js?v=0.12.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.12.0';
+import {drawHud} from './hud.js?v=0.12.0';
+import {drawNotebook} from './notebook-art.js?v=0.12.0';
+import {drawMovingRails,drawLifeCaches,drawArenaBoundary,drawArenaTransfer} from './stage-art.js?v=0.12.0';
+import {drawArenaBoss} from './boss-art.js?v=0.12.0';
+import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.12.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.12.0';
+import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.12.0';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -18,17 +20,20 @@ export class Renderer{
   if(g.dialogue?.id==='ending'||g.mode==='won'||g.pausedFrom==='won'){c.imageSmoothingEnabled=false;drawEpilogue(c,a,visualTime,vw);return;}
   c.imageSmoothingEnabled=false;c.clearRect(0,0,vw,HEIGHT);c.save();c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
-   if(room.x+WIDTH+150<cam||room.x-150>cam+vw)continue;
+   if(g.room===LAST_ROOM&&i!==LAST_ROOM)continue;if(room.x+room.width+150<cam||room.x-150>cam+vw)continue;
    drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);
   }
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
-  for(const platform of platforms){
+  drawMovingRails(c,g.platforms.filter(s=>s.room===g.room),t);
+  for(const platform of g.platforms){
+   if(g.room===LAST_ROOM&&platform.room!==LAST_ROOM)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawSurface(c,a,platform,t);
   }
   for(const ladder of ladders){
+   if(g.room===LAST_ROOM)continue;
    if(ladder.x<cam-40||ladder.x>cam+vw)continue;
    rect(c,ladder.x-1,ladder.y+9,ladder.w+2,ladder.h-9,'#050e1e');
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
@@ -36,22 +41,11 @@ export class Renderer{
   }
   drawCampaignObjects(c,a,g,t);
   drawInfection(c,g);c.restore();
-  const bx=FINAL_X;if(b.active){rect(c,bx+300,48,3,426,'#a7a3ff70');}
-  if(b.hp>0){
-   drawMonster(c,a,'infoshum',bx+543,53,221,205,t,false,b);
-   if(b.active&&b.state==='recover')rect(c,b.x,245,b.w-20,7,'#a8ffc2');
-   if(b.active&&b.state!=='recover'){c.strokeStyle='#91dfff';c.lineWidth=2;c.strokeRect(bx+620,123,115,127);}
-   if(b.cooldown>0){c.globalAlpha=.35;rect(c,bx+619,125,114,124,'#d9ffff');c.globalAlpha=1;}
-   if(b.active&&b.state==='windup'){
-    if(b.ability==='rain')for(const x of b.targets){rect(c,x-13,80,26,394,'#ffb95b22');for(let y=85;y<470;y+=20)rect(c,x-1,y,2,9,'#ffd483');}
-    if(b.ability==='wave'){rect(c,bx+300,263,430,12,'#ffb95b55');for(let x=bx+320;x<bx+720;x+=30)text(c,'!',x,250,'#ffda89',2);}
-    if(b.ability==='volley'){c.strokeStyle='#f4bc66';c.setLineDash([4,7]);c.beginPath();c.moveTo(b.x,220);c.lineTo(b.aim.x,b.aim.y);c.stroke();c.setLineDash([]);}
-    if(b.ability==='summon')for(const x of [bx+380,bx+550]){c.strokeStyle='#d5a4ff';c.lineWidth=3;c.strokeRect(x-4,x===bx+380?275:250,50,23);}
-   }
-  }else{rect(c,bx+627,131,102,110,'#0c4158');text(c,'ЖУРНАЛ',bx+649,143,'#b8f5c9');text(c,'ПРОСМОТРЫ 999',bx+636,165,'#ffe0a4');text(c,'РЕАКЦИИ 999',bx+636,183,'#ffe0a4');text(c,'ПРОВЕРКА ВЫКЛ',bx+633,214,'#ff8193');}
+  if(g.room===LAST_ROOM)drawArenaBoundary(c,t);drawArenaBoss(c,a,g,t);
+  drawLifeCaches(c,g,t);
   for(const f of g.fishes)if(!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
-  for(const note of g.notebooks)if(!note.taken&&note.readyAt<=g.time&&note.x>cam-30&&note.x<cam+vw+30)drawNotebook(c,note,t);
+  for(const note of g.notebooks)if(!note.taken&&Number.isFinite(note.readyAt)&&note.readyAt<=g.time+.5&&note.x>cam-30&&note.x<cam+vw+30)drawNotebook(c,note,t);
   for(const e of g.enemies)if(e.active&&!e.dead&&e.room===g.room&&e.teleport)drawTeleportMarkers(c,e,t);
   for(const e of g.enemies)if(e.active&&(!e.dead||e.deathTime>0)&&e.x>cam-140&&e.x<cam+vw+140){
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
@@ -95,11 +89,11 @@ export class Renderer{
    if(p.inv>0&&Math.floor(t*12)%2!==0&&!g.swallow)c.globalAlpha=.6;
    this.wakeupStart=null;
    const pose=p.attack>0?4:!p.grounded&&!p.climbing?3:Math.abs(p.vx)>0?1+Math.floor(t*10)%2:0;
-   const {box,anchor}=cats[pose],progress=g.swallow?1-Math.pow(g.swallow.timer/g.swallow.total,3):0,scale=g.swallow?Math.max(0,1-progress*1.18):1;
+   const {box,anchor}=cats[pose],progress=g.swallow?1-Math.pow(g.swallow.timer/g.swallow.total,3):0,scale=(g.swallow?Math.max(0,1-progress*1.18):1)*(p.warpScale??1);
    const w=Math.round(box[2]*.195*scale),h=Math.round(box[3]*.195*scale);
    const center=g.swallow?(g.swallow.x+17)*(1-progress)+(g.swallow.targetX+12)*progress:p.x+p.w/2;
    const feet=g.swallow?(g.swallow.y+48)*(1-progress)+(g.swallow.targetY+24)*progress:p.y+p.h;
-   if(w>0&&h>0)sprite(c,a.uma,box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);
+   if(w>0&&h>0){c.save();if(p.dash>0){c.shadowColor='#7deaf5';c.shadowBlur=8;}sprite(c,a.uma,box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);c.restore();}
    if(p.powerTime>0)for(let i=0;i<5;i++)rect(c,p.x-13+i*14,p.y-10+Math.sin(t*5+i)*5,2,2,'#ffe6a0');
    c.globalAlpha=1;
   }
@@ -107,7 +101,7 @@ export class Renderer{
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   for(let i=1;i<=g.checkpoint;i++){rect(c,WIDTH*i+28,281,3,22,'#accfc7');rect(c,WIDTH*i+31,281,18,10,'#60bd9b');}
   c.restore();
-  drawHud(c,a,g,vw);
+  drawHud(c,a,g,vw);drawArenaTransfer(c,g,vw);
   if(g.mode==='respawning'||g.pausedFrom==='respawning'){
    const progress=1-g.respawnTime/1.1;c.globalAlpha=Math.max(0,(progress-.25)/.75)*.86;rect(c,0,47,vw,HEIGHT-47,'#030a1e');c.globalAlpha=1;
   }

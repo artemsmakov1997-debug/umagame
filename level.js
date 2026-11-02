@@ -1,57 +1,65 @@
-export const WIDTH=768, HEIGHT=480, MAX_HEALTH=4, START_LIVES=3, WAKE_DURATION=5.6;
+export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const rooms=[
  {name:'ТИХАЯ КОМНАТА',theme:'cozy',objective:'ОСВОЙ ДВИЖЕНИЕ',tutorial:true},
- {name:'РЕДАКЦИЯ',theme:'newsroom',objective:'ПРОВЕРЬ ПЕРВЫЙ КОМПЬЮТЕР'},
- {name:'НОЧНАЯ УЛИЦА',theme:'street',objective:'ПРОСЛЕДИ ПУТЬ ПОМЕХ'},
- {name:'ТИПОГРАФИЯ',theme:'press',objective:'ПРОВЕРЬ ЖУРНАЛ ЗАПУСКА'},
- {name:'АППАРАТНАЯ',theme:'dispatch',objective:'НАЙДИ МАРШРУТ РАССЫЛКИ'},
- {name:'ТЕЛЕСТУДИЯ',theme:'studio',objective:'ОСТАНОВИ ТРЕВОЖНЫЙ ЭФИР'},
- {name:'БАШНЯ ЭФИРА',theme:'tower',objective:'ОСТАНОВИ ИНФОШУМ'}
-].map((r,i)=>({...r,x:i*WIDTH}));
-export const WORLD=WIDTH*rooms.length,LAST_ROOM=rooms.length-1,FINAL_X=LAST_ROOM*WIDTH;
-const desks=[[0,303,204],[301,300,188],[517,275,251],[0,400,244],[301,412,324],[0,474,230],[300,474,468],[0,169,75],[473,204,134]];
+ {name:'РЕДАКЦИЯ',theme:'newsroom',objective:'НАЙДИ АНТЕННУ НА ВЕРХНЕЙ ПОЛКЕ'},
+ {name:'НОЧНАЯ УЛИЦА',theme:'street',objective:'ОТКЛЮЧИ АНТЕННУ НА КРЫШЕ'},
+ {name:'ТИПОГРАФИЯ',theme:'press',objective:'ДОБЕРИСЬ ДО АНТЕННЫ НАД ЛЕНТАМИ'},
+ {name:'АППАРАТНАЯ',theme:'dispatch',objective:'РАЗРУШЬ АНТЕННУ НА ВЕРХНЕМ ЯРУСЕ'},
+ {name:'ТЕЛЕСТУДИЯ',theme:'studio',objective:'ПОДНИМИСЬ К АНТЕННЕ НА ПОДЪЁМНИКЕ'},
+ {name:'БАШНЯ ЭФИРА',theme:'tower',objective:'НАЙДИ ИСТОЧНИК СИГНАЛА'},
+ {name:'ИЗМЕРЕНИЕ ИНФОШУМА',theme:'noise',objective:'ОСТАНОВИ ИНФОШУМ',arena:true}
+].map((r,i)=>({...r,x:i*WIDTH,width:r.arena?ARENA_WIDTH:WIDTH}));
+export const LAST_ROOM=rooms.length-1,FINAL_X=rooms[LAST_ROOM].x,WORLD=FINAL_X+ARENA_WIDTH,PORTAL_ROOM=6,PORTAL_X=WIDTH*PORTAL_ROOM+672;
+const desks=[[0,303,204],[301,300,188],[517,275,251],[0,400,244],[301,412,324],[0,474,230],[300,474,468],[0,169,110],[473,204,134],[160,224,120]];
 export const layouts=[
  [[0,305,208],[266,365,185],[542,245,226],[0,445,248],[266,445,355],[0,474,768],[640,365,128],[0,305,75],[414,245,192]],
  desks,
- [[0,330,220],[285,290,205],[540,265,228],[0,424,250],[310,408,315],[0,474,230],[300,474,468],[0,195,100],[470,185,135]],
- [[0,310,228],[300,290,190],[535,275,233],[0,403,244],[301,412,324],[0,474,230],[300,474,468],[0,182,90],[473,204,134]],
- [[0,322,225],[285,300,215],[540,275,228],[0,419,250],[300,419,330],[0,474,230],[300,474,468],[0,185,90],[460,204,147]],
- [[0,303,220],[285,280,205],[540,250,228],[0,400,244],[301,412,324],[0,474,230],[300,474,468],[0,169,90],[473,184,134]],desks
+ [[0,330,220],[285,290,205],[540,265,228],[0,424,250],[310,408,315],[0,474,230],[300,474,468],[0,195,100],[470,185,135],[160,250,110]],
+ [[0,310,228],[300,290,190],[535,275,233],[0,403,244],[301,412,324],[0,474,230],[300,474,468],[0,182,90],[473,204,134],[153,246,130],[305,112,155]],
+ [[0,322,225],[285,300,215],[540,275,228],[0,419,250],[300,419,330],[0,474,230],[300,474,468],[0,185,100],[460,204,190],[155,252,135]],
+ [[0,303,220],[285,280,205],[540,250,228],[0,400,244],[301,412,324],[0,474,230],[300,474,468],[0,169,100],[602,234,166],[145,234,130],[338,252,150],[525,84,170]],
+ desks.map(p=>[...p]),
+ [[0,420,236],[296,346,232],[616,296,246],[914,374,236],[1256,314,280],[0,474,390],[470,474,320],[870,474,310],[1244,474,292],[120,230,170],[356,166,180],[634,124,224],[964,208,196],[1220,146,230],[20,328,140],[504,244,140],[838,290,100],[1138,260,124]]
 ];
-export const platforms=rooms.flatMap((r,room)=>layouts[room].map(([x,y,w],index)=>({x:x+r.x,y,w,room,index,belt:room===3&&(index===1||index===4)?(index===1?20:-20):0})));
-export const ladders=rooms.map((r,i)=>i===0?{x:430,y:245,w:31,h:200,room:0}:{x:r.x+718,y:layouts[i][2][1],w:31,h:474-layouts[i][2][1],room:i});
+const motions={1:{axis:'x',amplitude:70,period:6.2},10:{axis:'y',amplitude:94,period:5.4}};
+export const platforms=rooms.flatMap((r,room)=>layouts[room].map(([x,y,w],index)=>({id:room+':'+index,x:x+r.x,y,w,room,index,belt:room===3&&(index===1||index===4)?(index===1?20:-20):0,motion:room===5?motions[index]||null:null})));
+export const ladders=rooms.flatMap((r,i)=>i===LAST_ROOM?[]:[i===0?{x:430,y:245,w:31,h:200,room:0}:{x:r.x+718,y:layouts[i][2][1],w:31,h:474-layouts[i][2][1],room:i}]);
 export const ladder=ladders[0];
-export const spawns=rooms.map((r,i)=>({x:r.x+(i===0?78:45),y:layouts[i][0][1]-48}));
+export const spawns=rooms.map((r,i)=>({x:r.x+(i===0?78:i===LAST_ROOM?74:45),y:layouts[i][0][1]-48}));
 export function enemy(type,room,x,platformIndex,extra={}){
  if(!['fakenews','clickbait','inflator','informant','panicker'].includes(type))throw new Error('Unknown enemy type: '+type);
  const s=platforms.find(p=>p.room===room&&p.index===platformIndex);if(!s)throw new Error('Unknown enemy platform');
  const hp=type==='fakenews'?1:type==='inflator'||type==='informant'?3:2;
- return {id:`${type}-${room}-${x}-${platformIndex}`,type,room,platformIndex,x:rooms[room].x+x,y:s.y-29,w:48,h:29,origin:s.x+12,end:s.x+s.w-60,
+ return {id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:rooms[room].x+x,y:s.y-29,w:48,h:29,origin:s.x+12,end:s.x+s.w-60,
  dir:-1,speed:{fakenews:32,clickbait:30,inflator:14,informant:22,panicker:16}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
-  active:false,trigger:Math.max(30,x-220),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,...extra};
+ active:false,trigger:Math.max(30,x-220),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,...extra};
 }
 export function createEnemies(){return [
- enemy('fakenews',1,125,0,{trigger:80}),enemy('fakenews',1,365,1,{trigger:260}),enemy('fakenews',1,594,2,{guardian:true,hp:2,maxHp:2,trigger:450}),
- enemy('clickbait',2,350,1,{trigger:145}),enemy('fakenews',2,594,2,{guardian:true,hp:2,maxHp:2,trigger:450}),
- enemy('inflator',3,365,1,{trigger:170}),enemy('fakenews',3,405,4,{trigger:340}),enemy('clickbait',3,424,1,{trigger:340}),enemy('fakenews',3,600,2,{guardian:true,hp:2,maxHp:2,trigger:470}),
- enemy('informant',4,365,1,{trigger:85,guardian:true}),enemy('fakenews',4,310,1,{trigger:270}),enemy('informant',4,600,2,{trigger:440}),
- enemy('panicker',5,125,0,{trigger:45,dir:1,speed:9}),enemy('panicker',5,360,1,{trigger:300,guardian:true}),enemy('informant',5,580,2,{trigger:450}),
- enemy('inflator',6,365,1,{trigger:100}),enemy('clickbait',6,435,4,{trigger:240}),enemy('panicker',6,345,4,{trigger:300}),enemy('informant',6,570,2,{trigger:400})
+ enemy('fakenews',1,125,0,{trigger:80}),enemy('fakenews',1,365,1,{trigger:260}),enemy('fakenews',1,185,9,{hp:2,maxHp:2,trigger:120}),
+ enemy('clickbait',2,350,1,{trigger:145}),enemy('fakenews',2,500,8,{hp:2,maxHp:2,trigger:400}),
+ enemy('inflator',3,210,9,{trigger:110,ledge:true}),enemy('fakenews',3,405,4,{trigger:340}),enemy('clickbait',3,424,1,{trigger:340}),enemy('fakenews',3,340,10,{hp:2,maxHp:2,trigger:260}),
+ enemy('informant',4,365,1,{trigger:85}),enemy('fakenews',4,310,1,{trigger:270}),enemy('informant',4,570,8,{trigger:410}),
+ enemy('panicker',5,125,0,{trigger:45,dir:1,speed:9}),enemy('panicker',5,360,1,{trigger:300}),enemy('informant',5,580,2,{trigger:450}),
+ enemy('inflator',6,420,1,{trigger:180,ledge:true}),enemy('clickbait',6,435,4,{trigger:240}),enemy('panicker',6,345,4,{trigger:300}),enemy('informant',6,570,2,{trigger:400})
  ];}
-export function createFish(){return rooms.flatMap((r,i)=>(i===0?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:[[114,layouts[i][0][1]-43],[216,228],[253,207],[290,189],[327,176],[365,165],[400,159],[503,221],[181,layouts[i][3][1]-41],[375,368],[570,368]]).map(([x,y])=>({x:x+r.x,y,taken:false})));}
-export function createSoup(){return [2,3,4,5,6].map(room=>({x:WIDTH*room+(room%2?179:560),y:room%2?355:366,taken:false}));}
-// Place the first notebook before each new threat; relay notes are dropped after combat.
+export function createFish(){return rooms.flatMap((r,i)=>{
+ const points=i===0?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:i===LAST_ROOM?[[100,386],[180,198],[360,312],[430,132],[650,264],[750,92],[1030,174],[1300,112],[1450,280]]:[[114,layouts[i][0][1]-43],[216,228],[253,207],[290,189],[327,176],[365,165],[400,159],[503,221],[181,layouts[i][3][1]-41],[375,368],[570,368]];
+ return points.map(([x,y])=>({x:x+r.x,y,taken:false}));
+ });}
+export function createSoup(){return [2,3,4,5,6,LAST_ROOM].map(room=>({x:WIDTH*room+(room===LAST_ROOM?150:room%2?179:560),y:room===LAST_ROOM?396:room%2?355:366,taken:false}));}
+export function createRelays(){return [[1,7],[2,8],[3,10],[4,8],[5,11]].map(([room,index])=>{const s=platforms.find(p=>p.room===room&&p.index===index);return {room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:1,inv:0,lastSwing:-1,breakTime:0,kind:'dish'};});}
+export function createLifePickups(){return [[1,8],[2,7],[3,7],[4,7],[5,7],[6,8],[LAST_ROOM,9],[LAST_ROOM,13]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return {id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
-  {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews'],unlock:'attack'},
-  {id:'dash',room:2,index:0,x:100,scenes:['arrival2','clickbait'],unlock:'dash'},
-  {id:'soup',room:2,index:3,x:165,scenes:['soup']},
-  {id:'press',room:3,index:0,x:100,scenes:['arrival3','inflator']},
-  {id:'dispatch',room:4,index:0,x:100,scenes:['arrival4','informant']},
-  {id:'stealth',room:5,index:0,x:70,scenes:['arrival5','panicker'],unlock:'sneak'},
-  {id:'tower',room:6,index:0,x:100,scenes:['arrival6','infoshum']},
-  ...Array.from({length:5},(_,i)=>({id:'record'+(i+1),room:i+1,index:2,x:660,scenes:['chapter'+(i+1)],relay:true}))
+ {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews'],unlock:'attack'},
+ {id:'dash',room:2,index:0,x:100,scenes:['arrival2','clickbait'],unlock:'dash'},
+ {id:'soup',room:2,index:3,x:165,scenes:['soup']},
+ {id:'press',room:3,index:0,x:100,scenes:['arrival3','inflator']},
+ {id:'dispatch',room:4,index:0,x:100,scenes:['arrival4','informant']},
+ {id:'stealth',room:5,index:0,x:70,scenes:['arrival5','panicker'],unlock:'sneak'},
+ {id:'tower',room:6,index:0,x:100,scenes:['arrival6','infoshum']},
+ ...createRelays().map(r=>({id:'record'+r.room,room:r.room,index:r.platformIndex,x:r.x+r.w/2-r.room*WIDTH,scenes:['chapter'+r.room],relay:true}))
  ];
  return entries.map(n=>({...n,x:n.room*WIDTH+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.relay?Infinity:0}));
 }
-export function surfaceAt(x){const room=Math.max(0,Math.min(LAST_ROOM,Math.floor(x/WIDTH))),local=((x%WIDTH)+WIDTH)%WIDTH;return layouts[room][local<250?0:local<510?1:2][1];}
+export function surfaceAt(x,list=platforms){const room=Math.max(0,Math.min(LAST_ROOM,Math.floor(x/WIDTH))),covered=list.filter(p=>p.room===room&&x>=p.x&&x<=p.x+p.w);return covered.sort((a,b)=>a.y-b.y)[0]?.y??474;}

@@ -1,6 +1,6 @@
-import {enemy,WIDTH} from './level.js?v=0.11.0';
-import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.11.0';
-import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.11.0';
+import {enemy,WIDTH} from './level.js?v=0.12.0';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.12.0';
+import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.12.0';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
@@ -18,7 +18,7 @@ export function stepPortals(g,dt){
   if(portal.spawned<2&&portal.time>=.9+portal.spawned*.95){
    portal.spawned++;const count=g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===portal.room).length;if(count>=3)continue;
    let x=portal.x;const p=g.player;if(Math.abs(x-p.x)<60)x=p.x<=(owner.origin+owner.end)/2?owner.end:owner.origin;
-   const e=enemy('fakenews',portal.room,x-portal.room*WIDTH,portal.platformIndex,{id:`portal-${portal.id}-${portal.spawned}`,active:true,spawnTime:.45,portalMinion:true,hp:1,maxHp:1,dir:p.x<x?-1:1,noticed:true});g.enemies.push(e);g.emit('portalSpawn',{x:e.x,y:e.y});
+   const e=enemy('fakenews',portal.room,x-portal.room*WIDTH,portal.platformIndex,{id:`portal-${portal.id}-${portal.spawned}`,active:true,spawnTime:.45,portalMinion:true,hp:1,maxHp:1,dir:p.x<x?-1:1,noticed:true});const surface=g.platforms?.find(s=>s.room===e.room&&s.index===e.platformIndex);if(surface){e.y=surface.y-e.h;e.origin=surface.x+12;e.end=surface.x+surface.w-60;}g.enemies.push(e);g.emit('portalSpawn',{x:e.x,y:e.y});
   }
  }
  g.portals=g.portals.filter(p=>p.cancelled?(p.closeTime||0)<.3:p.time<2.8);

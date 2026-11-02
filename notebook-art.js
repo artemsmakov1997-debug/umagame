@@ -1,6 +1,6 @@
-import {rect} from './pixel.js?v=0.11.0';
+import {rect} from './pixel.js?v=0.12.0';
 export function drawNotebook(c,n,time){
- const x=Math.round(n.x),y=Math.round(n.y+Math.sin(time*3+n.x)*2);
+ const x=Math.round(n.x),y=Math.round(n.y+Math.sin(time*3+n.x)*2-18*Math.pow(Math.max(0,Math.min(1,(n.readyAt-time)/.5)),2));
  c.save();c.translate(x,y);c.shadowColor='#54dded';c.shadowBlur=8;
  rect(c,-10,-13,21,27,'#030c20');rect(c,-9,-12,19,24,'#ffe3a2');c.shadowBlur=0;
  rect(c,-7,-10,15,20,'#177eaa');rect(c,-5,-8,11,16,'#0b395b');rect(c,8,-10,3,21,'#c79850');

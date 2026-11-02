@@ -1,10 +1,10 @@
-import {Game} from './engine.js?v=0.11.0';
-import {Renderer} from './render.js?v=0.11.0';
-import {loadAssets} from './assets.js?v=0.11.0';
-import {ScreenManager} from './screens.js?v=0.11.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.11.0';
-import {PauseMenu} from './pause-menu.js?v=0.11.0';
-import {TouchControls} from './touch-controls.js?v=0.11.0';
+import {Game} from './engine.js?v=0.12.0';
+import {Renderer} from './render.js?v=0.12.0';
+import {loadAssets} from './assets.js?v=0.12.0';
+import {ScreenManager} from './screens.js?v=0.12.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.12.0';
+import {PauseMenu} from './pause-menu.js?v=0.12.0';
+import {TouchControls} from './touch-controls.js?v=0.12.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
@@ -26,7 +26,7 @@ async function boot(){
  updateSound();let lastAbilities='';
  function updateControls(){const signature=Object.values(game.abilities).join();if(signature===lastAbilities)return;lastAbilities=signature;for(const el of document.querySelectorAll('[data-ability]'))el.hidden=!game.abilities[el.dataset.ability];}
  function beep(type){
-  const hz={jump:320,fish:900,pop:140,hurt:80,swat:180,bossHit:110,won:660,checkpoint:740,dash:470,parry:1100,enemyHit:180,blocked:95,heal:780,soup:1000,alarm:740,blast:110,pushed:130,swallow:65,infection:65,lifeLost:90,teleportOut:560,teleportIn:760}[type];
+  const hz={jump:320,fish:900,pop:140,hurt:80,swat:180,bossHit:110,won:660,checkpoint:740,dash:470,parry:1100,enemyHit:180,blocked:95,heal:780,soup:1000,alarm:740,blast:110,pushed:130,swallow:65,infection:65,lifeLost:90,teleportOut:560,teleportIn:760,dishBreak:870,lifePickup:1250,arenaPull:100,arenaEnter:550}[type];
   if(!sound||!hz)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),v=audio.createGain(),now=audio.currentTime;o.type=type==='alarm'?'triangle':'square';o.connect(v);v.connect(audio.destination);o.frequency.setValueAtTime(hz,now);o.frequency.exponentialRampToValueAtTime(type==='fish'||type==='alarm'?hz*1.5:hz*.5,now+.14);v.gain.setValueAtTime(.03,now);v.gain.exponentialRampToValueAtTime(.0001,now+.19);o.start();o.stop(now+.2);}catch{sound=false;updateSound();}
  }
  function notify(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),2800);}
@@ -53,17 +53,17 @@ async function boot(){
   if((event.code==='ShiftLeft'||event.code==='ShiftRight')&&!keys.has(event.code))dash=true;keys.add(event.code);
  });
  window.addEventListener('keyup',event=>keys.delete(event.code));
- function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning'].includes(game.mode))pauseMenu.open();}
+ function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena'].includes(game.mode))pauseMenu.open();}
  window.addEventListener('blur',blur);document.addEventListener('visibilitychange',()=>{if(document.hidden)blur();});
  function events(){for(const event of game.events){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
-  if(['lifeLost','lifeRestored'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
+  if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
   if(event.type==='notebook'){updateControls();renderer.burst(event.x,event.y,'#ffe0a0');}
-  beep(event.type);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
+  beep(event.type);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
-  if(event.type==='guardian')notify('Сигнал защищён. Победи защитника с золотой меткой.');
-  if(event.type==='gate')notify('Отключи ретранслятор тремя ударами лапы.');
+  if(event.type==='gate')notify('Найди спутниковую антенну наверху. Один удар откроет проход.');
 
+  if(event.type==='lifePickup')notify('+1 жизнь!');
   if(event.type==='alarm')notify('Паникёр открывает портал!');
   if(event.type==='portal')notify('Портал открыт! Прерви звон Паникёра.');
   if(event.type==='swallow'){clearInput();notify('Кликбейт! Поглощение отнимает целую жизнь.');}

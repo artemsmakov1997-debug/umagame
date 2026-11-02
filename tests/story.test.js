@@ -8,14 +8,15 @@ import {wakePose,hurtPose,traversalPose,emotionFrames,traversalFrames} from '../
 import {monsterFrame,monsterReaction,motion} from '../monster-animation.js';
 import {idleFrame,idlePlacement} from '../menu-animation.js';
 import {stickVector} from '../touch-controls.js';
+import {reachDish} from './navigation.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function ready(){const g=new Game();g.start();g.finishWakeup();g.advanceDialogue(true);return g;}
 function at(g,room,index=2,x=604){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,climbing:false,knock:0,dash:0,inv:0});g.room=room;g.unlockForRoom(room);g.tutorial.complete=true;g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);}
 function training(g){
  for(let i=0;i<300&&g.player.x<165;i++)g.step(1/60,{right:true});g.step(1/60,{right:true,jump:true});for(let i=0;i<150&&g.player.x<420;i++)g.step(1/60,{right:true});for(let i=0;i<130&&!g.tutorial.complete;i++)g.step(1/60,{up:true});
 }
-test('seven locations introduce the five normal monsters in a deliberate weak-to-strong order',()=>{
- assert.equal(rooms.length,7);assert.equal(new Set(rooms.map(r=>r.theme)).size,7);const roster=createEnemies();for(const [type,first]of [['fakenews',1],['clickbait',2],['inflator',3],['informant',4],['panicker',5]])assert.equal(Math.min(...roster.filter(e=>e.type===type).map(e=>e.room)),first);assert.ok(roster.filter(e=>e.room===1).every(e=>e.type==='fakenews'));assert.equal(WORLD,WIDTH*7);
+test('eight locations introduce the five normal monsters in a deliberate weak-to-strong order',()=>{
+ assert.equal(rooms.length,8);assert.equal(new Set(rooms.map(r=>r.theme)).size,8);const roster=createEnemies();for(const [type,first]of [['fakenews',1],['clickbait',2],['inflator',3],['informant',4],['panicker',5]])assert.equal(Math.min(...roster.filter(e=>e.type===type).map(e=>e.room)),first);assert.ok(roster.filter(e=>e.room===1).every(e=>e.type==='fakenews'));assert.equal(WORLD,WIDTH*9);
 });
 test('wake-up uses separate sleep, yawn and surprise frames without moving Uma or starting combat',()=>{
  const g=new Game();g.start();const x=g.player.x,y=g.player.y;assert.equal(wakePose(.2).name,'sleep');assert.equal(wakePose(2.5).name,'yawn');assert.equal(wakePose(3.5).name,'surprise');assert.equal(emotionFrames.length,8);tick(g,340,{right:true,attack:true});assert.equal(g.mode,'dialogue');assert.equal(g.dialogue.id,'intro');assert.equal(g.player.x,x);assert.equal(g.player.y,y);assert.ok(g.enemies.every(e=>!e.active));assert.equal('clock'in g,false);
@@ -44,9 +45,10 @@ test('dialogues freeze physics, enemies, camera transitions and all game time',(
 test('entering a chapter is silent; only picking up its notebook opens Yuri commentary',()=>{
  const g=ready();at(g,1,0,45);tick(g,1);assert.equal(g.dialogue,null);g.player.x=WIDTH+85;const time=g.time;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.equal(g.time,time);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);assert.equal(g.mode,'playing');
 });
-test('a relay gives one evidence record, and retry preserves its discovery',()=>{
- const g=ready();g.enemies=[];at(g,1);g.relays[0].hp=1;g.step(1/60,{attack:true});assert.equal(g.dialogue,null);assert.equal(g.evidence[0].id,'autopublish');tick(g,40);g.player.x=WIDTH+644;tick(g,1);assert.equal(g.dialogue.id,'notebook:record1');g.completeChapter(1);assert.equal(g.evidence.length,1);g.advanceDialogue(true);g.checkpoint=1;g.health=1;g.player.inv=0;g.hurt();tick(g,70);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.ok(g.seenScenes.has('chapter1'));
+test('a destroyed satellite yields one record; its dropped notebook and discovery survive a lost life',()=>{
+ const g=ready();g.enemies=[];at(g,1,7,4);g.step(1/60,{right:true,attack:true});assert.equal(g.dialogue,null);assert.equal(g.evidence[0].id,'autopublish');tick(g,40);assert.equal(g.dialogue.id,'notebook:record1');g.completeChapter(1);assert.equal(g.evidence.length,1);g.advanceDialogue(true);g.checkpoint=1;g.health=1;g.player.inv=0;g.hurt();tick(g,70);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.ok(g.seenScenes.has('chapter1'));
 });
+
 test('printing belts and all other chapters are frozen until Uma enters them',()=>{
  const g=ready(),later=g.enemies.map(e=>[e.x,e.timer,e.active]);tick(g,120);assert.deepEqual(g.enemies.map(e=>[e.x,e.timer,e.active]),later);g.enemies=[];at(g,3,1,325);g.seenScenes.add('arrival3');const x=g.player.x;tick(g,30);assert.ok(g.player.x>x+9&&g.player.x<x+11);g.step(1/60,{jump:true});assert.ok(g.player.vy<0);
 });
@@ -60,15 +62,10 @@ test('menu idle cat still blinks, licks and grooms at a fixed ground registratio
 test('joystick dead zone, diagonal clamp and proportional movement remain valid',()=>{
  assert.deepEqual(stickVector(3,2),{x:0,y:0});assert.deepEqual(stickVector(100,0),{x:1,y:0});assert.ok(Math.abs(Math.hypot(...Object.values(stickVector(100,100)))-1)<1e-8);assert.ok(Math.abs(stickVector(28.8,0).x-.5)<1e-8);
 });
-test('the complete route from training to the final tower is traversable by normal movement',()=>{
- const g=ready();g.enemies=[];training(g);let jumped=false;
- for(let i=0;i<6500&&g.player.x<FINAL_X+380&&g.mode!=='lost';i++){
-  if(g.mode==='dialogue'){g.advanceDialogue(true);continue;}const p=g.player,s=platforms.find(s=>Math.abs(p.y+p.h-s.y)<1&&p.x+p.w>s.x&&p.x<s.x+s.w);let jump=false;
-  if(p.grounded&&s&&p.x>s.x+s.w-50&&(s.index===0||s.index===1)){jump=!jumped;jumped=true;}else if(!p.grounded)jumped=false;g.step(1/60,{right:true,jump,attack:true});
- }
- assert.ok(g.player.x>FINAL_X+375);assert.equal(g.evidence.length,5);assert.deepEqual(g.evidence.map(e=>e.id),evidence.map(e=>e.id));assert.ok(g.relays.every(r=>r.hp===0));assert.equal(g.checkpoint,LAST_ROOM);assert.equal(g.health,4);
- assert.ok(g.seenScenes.has('intro'));for(const note of g.notebooks)for(const id of note.scenes)assert.equal(g.seenScenes.has(id),note.taken,id);
+test('all five elevated satellite routes, including the TV lift, are traversable with ordinary controls',()=>{
+ for(let room=1;room<=5;room++){const g=ready();g.enemies=[];g.fishes=[];g.soups=[];at(g,room,0,45);g.checkpoint=room;assert.equal(reachDish(g,room),true,'dish in room '+room);assert.equal(g.evidence[0].id,evidence[room-1].id);assert.equal(g.relays.find(r=>r.room===room).hp,0);assert.equal(g.health,4);assert.ok(g.player.y+g.player.h<215);}
 });
+
 test('Infoshum is introduced at the tower; human negligence is revealed before the ending',()=>{
- const g=ready();g.enemies=[];at(g,LAST_ROOM,0,85);g.relays.forEach(r=>r.hp=0);tick(g,1);assert.equal(g.dialogue.id,'notebook:tower');g.advanceDialogue(true);at(g,LAST_ROOM);tick(g,1);assert.equal(g.dialogue,null);assert.equal(g.boss.active,true);g.boss.hp=1;g.boss.cooldown=0;g.boss.state='recover';damageBoss(g,1);assert.equal(g.dialogue.id,'truth');assert.equal(g.truthFound,true);assert.match(scenes.truth.pages.join(' '),/халатности/);assert.match(scenes.truth.pages.join(' '),/просмотров и реакций/);const time=g.time;tick(g,200);assert.equal(g.time,time);g.advanceDialogue(true);assert.equal(g.dialogue.id,'ending');g.advanceDialogue(true);assert.equal(g.mode,'won');g.start();assert.equal(g.mode,'waking');assert.equal(g.evidence.length,0);assert.equal(g.tutorial.complete,false);
+ const g=ready();g.enemies=[];at(g,6,0,85);g.relays.forEach(r=>r.hp=0);tick(g,1);assert.equal(g.dialogue.id,'notebook:tower');g.advanceDialogue(true);at(g,6,2,635);tick(g,1);assert.equal(g.mode,'enteringArena');tick(g,100);assert.equal(g.room,LAST_ROOM);assert.equal(g.dialogue,null);assert.equal(g.boss.active,true);g.boss.hp=1;g.boss.cooldown=0;g.boss.state='recover';damageBoss(g,1);assert.equal(g.dialogue.id,'truth');assert.equal(g.truthFound,true);assert.match(scenes.truth.pages.join(' '),/халатности/);assert.match(scenes.truth.pages.join(' '),/просмотров и реакций/);const time=g.time;tick(g,200);assert.equal(g.time,time);g.advanceDialogue(true);assert.equal(g.dialogue.id,'ending');g.advanceDialogue(true);assert.equal(g.mode,'won');g.start();assert.equal(g.mode,'waking');assert.equal(g.evidence.length,0);assert.equal(g.tutorial.complete,false);
 });

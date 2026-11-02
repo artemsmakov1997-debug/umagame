@@ -1,4 +1,4 @@
-import {platforms} from './level.js?v=0.11.0';
+import {platforms} from './level.js?v=0.12.0';
 export const TELEPORT_PHASES={charge:.45,out:.24,blink:.1,in:.32};
 export const TELEPORT_COOLDOWN=4.2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -14,12 +14,12 @@ export function teleportLandingClear(g,e,target){
 export function chooseInformantLanding(g,e){
  const p=g.player;if(!p.grounded||p.climbing)return null;
  const feet=p.y+p.h,center=p.x+p.w/2;
- const supports=platforms.filter(s=>s.room===e.room&&s.index<7&&s.index!==e.platformIndex&&s.w>=150&&Math.abs(s.y-feet)<2&&p.x+p.w>s.x&&p.x<s.x+s.w);
+ const supports=(g.platforms||platforms).filter(s=>s.room===e.room&&s.index!==e.platformIndex&&s.w>=150&&Math.abs(s.y-feet)<2&&p.x+p.w>s.x&&p.x<s.x+s.w);
  const options=[];
  for(const s of supports){
   const origin=s.x+8,end=s.x+s.w-e.w-8;
   for(const desired of [center-160-e.w/2,center+160-e.w/2,origin,end]){
-   const x=clamp(desired,origin,end),distance=Math.abs(x+e.w/2-center),target={x,y:s.y-e.h,index:s.index,origin,end};
+   const x=clamp(desired,origin,end),distance=Math.abs(x+e.w/2-center),target={x,y:s.y-e.h,index:s.index,localX:x-s.x,origin,end};
    if(distance<60||distance>320||!teleportLandingClear(g,e,target))continue;
    options.push({...target,score:Math.abs(distance-160)+Math.abs(x-e.x)*.03});
   }
@@ -29,7 +29,7 @@ export function chooseInformantLanding(g,e){
 export function beginInformantTeleport(g,e){
  if(e.type!=='informant'||e.teleport||e.teleportCooldown>0||!e.noticed||e.noticeTime>0||e.hurtTime>0||!['patrol','recover'].includes(e.state))return false;
  const target=chooseInformantLanding(g,e);if(!target)return false;
- e.teleport={phase:'charge',elapsed:0,source:{x:e.x,y:e.y},target};e.state='teleportCharge';e.phased=false;e.aim=null;e.attackFlash=0;e.moving=false;
+ e.teleport={phase:'charge',elapsed:0,source:{x:e.x,y:e.y,index:e.platformIndex},target};e.state='teleportCharge';e.phased=false;e.aim=null;e.attackFlash=0;e.moving=false;
  g.emit('teleportStart',{x:e.x+24,y:e.y,targetX:target.x+24,targetY:target.y+e.h});return true;
 }
 export function cancelInformantTeleport(e){

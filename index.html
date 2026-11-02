@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030a1e"><meta name="description" content="УМА ПРОТИВ ИНФОШУМА — держи ухо востро. Пиксельная игра про кошку Уму и ожившие новости.">
 <title>УМА ПРОТИВ ИНФОШУМА — держи ухо востро</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.11.0">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.12.0">
 </head>
 <body>
 <main id="app" data-screen="menu">
@@ -45,7 +45,7 @@
 <nav id="pause-root" class="pixel-panel pause-panel" aria-label="Меню игры"><h2 id="pause-title">МЕНЮ</h2><div class="pause-options">
 <button class="menu-item selected" data-pause-action="resume">Вернуться</button><button class="menu-item" data-pause-action="restart">Рестарт</button><button class="menu-item" data-pause-action="controls">Управление</button><button class="menu-item" data-pause-action="library">Библиотека</button><button id="pause-sound" class="menu-item" data-pause-action="sound" aria-pressed="false">Звук: выключен</button><a class="menu-item media-link" data-pause-action="media" href="https://media-strazh.ru/" target="_blank" rel="noopener noreferrer"><span>МЕДИА.</span><span class="media-blue">СТРАЖ</span></a><button class="menu-item" data-pause-action="exit">Выход</button>
 </div></nav>
-<article id="controls-panel" class="pixel-panel controls-panel" hidden><h2>УПРАВЛЕНИЕ</h2><dl><div><dt>← → / A D</dt><dd>Бег</dd></div><div><dt>↑ / W</dt><dd>Прыжок · подъём по лестнице</dd></div><div><dt>↓ / S</dt><dd><span data-ability="sneak" hidden>Красться · </span>спуск по лестнице</dd></div><div data-ability="attack" hidden><dt>Пробел / X</dt><dd>Лапа</dd></div><div data-ability="dash" hidden><dt>Shift</dt><dd>Рывок</dd></div><div><dt>Esc</dt><dd>Меню игры</dd></div></dl><p>На телефоне: джойстик слева, действия справа. Вверх и вниз — лестницы. Взмах вверх — прыжок.<span data-ability="attack" hidden> Касание справа — лапа.</span><span data-ability="dash" hidden> Взмах в сторону — рывок.</span><span data-ability="sneak" hidden> Джойстик вниз — красться.</span></p><p class="controls-note">Рестарт начинает новое прохождение.</p><div class="controls-actions"><button id="fullscreen" class="dialogue-secondary">Во весь экран</button><button id="controls-back" class="gold-button">Назад</button></div></article>
+<article id="controls-panel" class="pixel-panel controls-panel" hidden><h2>УПРАВЛЕНИЕ</h2><dl><div><dt>← → / A D</dt><dd>Бег</dd></div><div><dt>↑ / W</dt><dd>Прыжок · подъём по лестнице</dd></div><div><dt>↓ / S</dt><dd><span data-ability="sneak" hidden>Красться · </span>спуск по лестнице</dd></div><div data-ability="attack" hidden><dt>Пробел / X</dt><dd>Лапа</dd></div><div data-ability="dash" hidden><dt>Shift</dt><dd>Рывок · неуязвимость</dd></div><div><dt>Esc</dt><dd>Меню игры</dd></div></dl><p>На телефоне: джойстик слева, действия справа. Вверх и вниз — лестницы. Взмах вверх — прыжок.<span data-ability="attack" hidden> Касание справа — лапа.</span><span data-ability="dash" hidden> Взмах в сторону — рывок.</span><span data-ability="sneak" hidden> Джойстик вниз — красться.</span></p><p>В боковых тайниках спрятаны мордочки кошки. Они восстанавливают жизнь. При трёх жизнях тайник остаётся нетронутым.</p><p class="controls-note">Рестарт начинает новое прохождение.</p><div class="controls-actions"><button id="fullscreen" class="dialogue-secondary">Во весь экран</button><button id="controls-back" class="gold-button">Назад</button></div></article>
 </section>
 <div class="status" id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -62,5 +62,5 @@
 
 <div id="hud-status" class="sr-only" aria-live="polite"></div>
 <div id="accessible-state" class="sr-only" aria-live="polite"></div>
-</main><script type="module" src="game.js?v=0.11.0"></script>
+</main><script type="module" src="game.js?v=0.12.0"></script>
 </body></html>

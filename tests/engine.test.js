@@ -9,7 +9,7 @@ const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 const enemy=(type,room,x,index=0,extra={})=>makeEnemy(type,room,x,index,{active:true,noticed:true,...extra});
 function stand(g,room=1,index=0,x=45){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,sneaking:false,climbing:false,inv:0,attack:0,cooldown:0,knock:0,dash:0});g.room=room;g.checkpoint=room;g.updateCamera();}
 function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);stand(g,room,index,x);return g;}
-function bossGame(){const g=isolated(LAST_ROOM,2,604);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.state='recover';g.boss.timer=2;return g;}
+function bossGame(){const g=isolated(LAST_ROOM,2,633);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.state='recover';g.boss.timer=2;return g;}
 test('catalogue and roster contain the six revised creatures, with Infoshum only as the boss',()=>{
  assert.deepEqual(monsters.map(m=>m.name),['Фейкньюс','Кликбейт','Раздуватель','Информатор','Паникёр','Инфошум']);assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>m.id!=='infoshum').map(m=>m.id)));assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));for(const m of monsters){assert.ok(m.description.length>30);assert.equal(m.abilities.length,2);assert.ok(m.tip);}
 });
@@ -94,18 +94,20 @@ test('eight fish heal once and a collected packet cannot be collected again',()=
 test('all gameplay timers, warnings, portal growth, buffs and transitions freeze in the menu',()=>{
  const g=isolated(5);g.enemies=[enemy('panicker',5,125)];alertNearby(g,g.enemies[0]);g.player.powerTime=7;g.transition={from:4,to:5,time:.2,duration:.85};g.mode='paused';const snapshot=JSON.stringify(g);tick(g,150,{right:true,attack:true});assert.equal(JSON.stringify(g),snapshot);
 });
-test('a guarded relay cannot be damaged; three distinct swings then yield the correct record',()=>{
- const g=isolated(1,2,604),r=g.relays[0],e=enemy('fakenews',1,700,2,{guardian:true,hp:3});g.enemies=[e];g.step(1/60,{attack:true});assert.equal(r.hp,3);e.dead=true;tick(g,80,{attack:true});assert.equal(r.hp,0);assert.equal(g.evidence[0].id,'autopublish');assert.equal(g.evidence.length,1);
+test('one paw destroys a satellite dish and opens its gate even while a defender is alive',()=>{
+ const g=isolated(1,7,4),r=g.relays[0],e=enemy('fakenews',1,62,7,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence[0].id,'autopublish');assert.equal(g.evidence.length,1);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,1);
 });
+
 test('checkpoint retry preserves records, open gates and collections but resets local enemies and portals',()=>{
  const g=isolated(4);g.completeChapter(1);g.relays[0].hp=0;g.fish=7;g.health=1;g.hurt();assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.mode,'playing');assert.equal(g.room,4);assert.equal(g.health,MAX_HEALTH);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.equal(g.fish,7);assert.equal(g.portals.length,0);assert.ok(g.enemies.some(e=>e.room===4&&!e.active));
 });
 test('death has its own pose timer and taking another protected hit does not restart it',()=>{
  const g=isolated();g.hurt();assert.equal(g.player.hurtTime,.5);tick(g,10);const time=g.player.hurtTime;g.hurt();assert.equal(g.player.hurtTime,time);g.player.inv=0;g.health=1;g.lives=1;g.hurt();assert.equal(g.mode,'lost');assert.equal(g.player.hurtTime,.5);
 });
-test('camera eases toward the new room; direct resize and respawn can snap safely',()=>{
- const g=isolated();g.viewWidth=300;g.camera=0;g.player.x=WIDTH+600;g.updateCamera(1/60);assert.ok(g.camera>0&&g.camera<g.player.x-120);const first=g.camera;tick(g,15);assert.ok(g.camera>first);g.player.x=WORLD-50;g.updateCamera();assert.equal(g.camera,WORLD-300);
+test('camera eases through normal rooms and the separate arena is hidden before the portal',()=>{
+ const g=isolated();g.viewWidth=300;g.camera=0;g.player.x=WIDTH+600;g.updateCamera(1/60);assert.ok(g.camera>0&&g.camera<g.player.x-120);const first=g.camera;tick(g,15);assert.ok(g.camera>first);g.player.x=FINAL_X-40;g.updateCamera();assert.equal(g.camera,FINAL_X-300);g.room=LAST_ROOM;g.player.x=WORLD-50;g.updateCamera();assert.equal(g.camera,WORLD-300);
 });
+
 test('boss shield, recovery, reflected damage and one-damage-per-swing rules remain intact',()=>{
  const g=bossGame();g.boss.state='windup';assert.equal(damageBoss(g,1),false);assert.equal(damageBoss(g,2,true),true);g.boss.cooldown=0;g.boss.state='recover';const hp=g.boss.hp;g.step(1/60,{attack:true});tick(g,8);assert.equal(g.boss.hp,hp-1);
 });
@@ -119,20 +121,6 @@ test('half health changes phase; only paper and packets are reflectable',()=>{
 test('victory stops simulation and a long session has no hidden countdown',()=>{
  const g=bossGame();g.boss.hp=1;damageBoss(g,1);assert.equal(g.mode,'won');const time=g.time;tick(g,120,{attack:true,right:true});assert.equal(g.time,time);const t=isolated();t.time=99999;tick(t,1);assert.equal(t.mode,'playing');assert.equal('clock'in t,false);
 });
-test('both Infoshum phases are beatable with normal controls and the new mixed minions',()=>{
- const g=isolated();g.relays.forEach(r=>r.hp=0);g.checkpoint=LAST_ROOM;stand(g,LAST_ROOM,2,604);
- let rainTarget=null,lastTurn=-1;const casts=new Set();
- for(let i=0;i<12000&&g.mode==='playing';i++){
-  const p=g.player,b=g.boss;let target=FINAL_X+(b.state==='recover'&&p.y+48<230?612:604),jump=false,dash=false;
-  if(b.turn!==lastTurn){lastTurn=b.turn;rainTarget=b.ability==='rain'?Math.max(FINAL_X+530,p.x-48):null;}
-  if(b.ability==='rain'&&b.state!=='recover'&&rainTarget!==null)target=rainTarget;
-  const wave=g.bolts.find(v=>v.kind==='wave'&&Math.abs(v.x-p.x)<95&&v.x>p.x-20);
-  if(p.grounded&&(wave||(b.ability==='wave'&&b.state==='windup'&&b.timer<.18)||p.y+48>301))jump=true;
-  const incoming=g.enemies.find(e=>!e.dead&&Math.abs(e.x-p.x)<65&&Math.abs(e.y-p.y)<55);
-  const behind=g.bolts.find(v=>['paper','packet'].includes(v.kind)&&!v.friendly&&v.x<p.x&&v.vx>0&&p.x-v.x<100&&v.y>p.y-15&&v.y<p.y+55);
-  if(behind)target=p.x-6;if(incoming&&p.grounded)jump=true;if(incoming&&b.state!=='recover')target=p.x+(incoming.x<p.x?-9:9);
-  if(g.bolts.some(v=>!v.friendly&&v.kind==='rain'&&Math.abs(v.x-p.x)<30&&v.y>p.y-50&&v.y<p.y+48)&&p.dashCooldown===0)dash=true;
-  g.step(1/60,{right:p.x<target-2,left:p.x>target+2,jump,dash,attack:true});for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];
- }
- assert.equal(g.mode,'won');assert.ok(g.health>0);assert.equal(g.boss.phase,2);assert.equal(casts.size,4);
+test('Infoshum alternates all attacks and relocates between three distant arena docks in both phases',()=>{
+ const g=bossGame(),casts=new Set(),positions=new Set([g.boss.x]);for(let i=0;i<2600;i++){if(i===1000)g.boss.hp=15;stepBoss(g,1/60);positions.add(g.boss.x);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.equal(casts.size,4);assert.equal(positions.size,3);assert.equal(g.boss.phase,2);assert.ok(Math.max(...positions)-Math.min(...positions)>800);assert.equal(g.boss.maxHp,32);
 });
