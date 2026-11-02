@@ -53,7 +53,7 @@ test('Manipulator ticker bursts and physical hops differ from the other bosses',
  const g=game(6),b=prepare(g,'ticker');castAttack(g);for(let i=0;i<60;i++)stepBoss(g,1/60);assert.equal(g.bolts.filter(b=>b.kind==='ticker').length,3);b.state='shift';b.timer=1.15;b.shiftFrom={x:b.x,y:b.y};b.nextDock=0;const y=b.y;for(let i=0;i<30;i++)stepBoss(g,1/60);assert.ok(b.y<y-15);assert.notEqual(b.x,b.docks[0].x);
 });
 test('Infoshum Echo attack warps Uma back without draining hearts; dash protects her',()=>{
- for(const dash of[0,.2]){const g=game(8);g.echoImmunity=0;g.player.dash=dash;g.bolts=[{kind:'echoOrb',x:g.player.x,y:g.player.y,w:28,h:28,vx:0,vy:0,ttl:2}];stepProjectiles(g,1/60,{x:0,y:0,w:0,h:0});assert.equal(g.mode,dash?'playing':'echoWarp');assert.equal(g.health,4);}
+ for(const dash of[0,.2]){const g=game(8);g.echoImmunity=0;g.player.dash=dash;g.bolts=[{kind:'echoOrb',type:'echo',room:8,state:'pulling',timer:2,x:g.player.x,y:g.player.y,w:28,h:28,vx:0,vy:0,ttl:2}];stepProjectiles(g,1/60,{x:0,y:0,w:0,h:0});assert.equal(g.mode,dash?'playing':'echoWarp');assert.equal(g.health,4);}
 });
 test('Infoshum Static attack pushes down, and its Clickbait remains immortal and unique',()=>{
  const g=game(8),b=g.boss;b.state='casting';b.ability='staticRush';Object.assign(g.player,{x:b.x+10,y:b.y+30});bossContact(g);assert.equal(g.health,3);assert.equal(g.player.vy,150);for(let i=0;i<4;i++){prepare(g,'lure');castAttack(g);}const traps=g.enemies.filter(e=>e.type==='clickbait');assert.equal(traps.length,1);assert.equal(g.hitEnemy(traps[0],false,99),false);

@@ -1,18 +1,19 @@
-import {drawExitArrow} from './navigation-art.js?v=0.15.0';
-import {drawFinaleBackdrop} from './ending-ui.js?v=0.15.0';
-import {solidSurfaces} from './terrain.js?v=0.15.0';
-import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.15.0';
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.15.0';
-import {rect,text} from './pixel.js?v=0.15.0';
-import {cats,creatures,sprite} from './assets.js?v=0.15.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.15.0';
-import {drawHud} from './hud.js?v=0.15.0';
-import {drawNotebook} from './notebook-art.js?v=0.15.0';
-import {drawMovingRails,drawLifeCaches,drawArenaBoundary,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.15.0';
-import {drawArenaBoss} from './boss-art.js?v=0.15.0';
-import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.15.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.15.0';
-import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.15.0';
+import {drawExitArrow} from './navigation-art.js?v=0.15.1';
+import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.15.1';
+import {drawFinaleBackdrop} from './ending-ui.js?v=0.15.1';
+import {solidSurfaces} from './terrain.js?v=0.15.1';
+import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.15.1';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.15.1';
+import {rect,text} from './pixel.js?v=0.15.1';
+import {cats,creatures,sprite} from './assets.js?v=0.15.1';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.15.1';
+import {drawHud} from './hud.js?v=0.15.1';
+import {drawNotebook} from './notebook-art.js?v=0.15.1';
+import {drawMovingRails,drawLifeCaches,drawArenaBoundary,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.15.1';
+import {drawArenaBoss} from './boss-art.js?v=0.15.1';
+import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.15.1';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.15.1';
+import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.15.1';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -44,7 +45,7 @@ export class Renderer{
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
   drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
-  drawInfection(c,g,a);c.restore();
+  drawInfection(c,g,a);drawEnemySources(c,g,t);c.restore();
   if(rooms[g.room].arena)drawArenaBoundary(c,t,rooms[g.room]);drawArenaBoss(c,a,g,t);
   drawLifeCaches(c,g,t);
   for(const f of g.fishes)if(f.room===g.room&&!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
@@ -53,11 +54,13 @@ export class Renderer{
   for(const e of g.enemies)if(e.active&&!e.dead&&e.room===g.room&&e.teleport)drawTeleportMarkers(c,e,t);
   for(const e of g.enemies)if(e.room===g.room&&e.active&&(!e.dead||e.deathTime>0)&&e.x>cam-140&&e.x<cam+vw+140){
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
-   if(e.spawnTime>0){c.globalAlpha=1-e.spawnTime/.6;for(let i=0;i<8;i++)rect(c,e.x+i*6,e.y+29,3,2,'#83ccf2');}
+   c.save();if(e.type==='echo')drawEchoVortex(c,e,t);
+   if(e.spawnTime>0){const progress=Math.max(0,Math.min(1,(1-e.spawnTime/(e.arrivalDuration||.55)-.12)/.88));c.beginPath();c.rect(e.x-140,e.y-170,328,e.h+170);c.clip();c.translate(0,(1-progress)*78);c.globalAlpha=progress>.01?1:0;}
    else if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
    if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
    if(['censor','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
-   if(['echo','static'].includes(e.type))drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
+   if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
+   if(e.type==='echo'){const squeeze=e.state==='windup'?.65+.35*Math.max(0,Math.min(1,e.timer/.65)):e.state==='pulling'?.8+Math.sin(t*12)*.06:1;c.save();c.translate(e.x+20,e.y+19);c.scale(squeeze,1);drawMonster(c,a,e.type,-37,-43,74,66,t,false,e);c.restore();}
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}
    if(e.type==='informant'){
     if(!drawTeleportingInformant(c,a,e,t))drawMonster(c,a,e.type,e.x-18,e.y-56,84,85,t,e.dir<0,e);
@@ -66,7 +69,7 @@ export class Renderer{
    if(e.type==='inflator')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0,e);
    if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,e.dir<0,e);
    if(e.type==='clickbait')drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);
-   c.filter='none';c.globalAlpha=1;if(e.dead||e.spawnTime>0||e.phased)continue;
+   c.restore();c.filter='none';c.globalAlpha=1;if(e.dead||e.spawnTime>0||e.phased)continue;
    drawEnemyDefense(c,e,t);
    if(e.guardian)text(c,'!',e.x+38,e.y-72,'#ffcf77');if(e.state==='windup')text(c,'!',e.x+19,e.y-78,'#ffcf79',2);
    if(e.type==='inflator'&&['windup','blast'].includes(e.state)){
@@ -76,7 +79,7 @@ export class Renderer{
    if(e.type==='panicker'&&['windup','alarm'].includes(e.state)){const radius=e.state==='alarm'?35+(t*70)%90:35;for(let i=0;i<12;i++){const angle=i*Math.PI/6;rect(c,e.x+24+Math.cos(angle)*radius,e.y-9+Math.sin(angle)*radius,3,5,'#ffb777');}}
   }
   for(const bolt of g.bolts){
-   if(bolt.kind==='echoOrb'){drawMonster(c,a,'echo',bolt.x-8,bolt.y-10,48,48,t,false,{flying:true});continue;}
+   if(bolt.kind==='echoOrb'){drawEchoVortex(c,bolt,t);drawMonster(c,a,'echo',bolt.x-8,bolt.y-10,48,48,t,false,{...bolt,flying:true});continue;}
    if(bolt.kind==='wave'){for(let i=0;i<5;i++)rect(c,bolt.x+i*6,bolt.y+(i%2)*3,5,bolt.h,'#b5efff');continue;}
    if(bolt.kind==='ticker'||bolt.kind==='frame'){rect(c,bolt.x,bolt.y,bolt.w,bolt.h,bolt.friendly?'#8ef3da':'#ef5673');rect(c,bolt.x+2,bolt.y+3,bolt.w-4,3,'#ffe8b2');continue;}
    if(bolt.kind==='packet'){rect(c,bolt.x,bolt.y,16,12,bolt.friendly?'#b7ffe4':'#67ddff');rect(c,bolt.x+2,bolt.y+2,12,8,'#153a69');for(let i=0;i<6;i++)rect(c,bolt.x+2+i*2,bolt.y+2+Math.min(i,5-i),2,1,'#b6eeff');continue;}

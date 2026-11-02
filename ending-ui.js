@@ -1,4 +1,4 @@
-import {endingSlides} from './finale.js?v=0.15.0';
+import {endingSlides} from './finale.js?v=0.15.1';
 const $=id=>document.getElementById(id);
 export class EndingUI{
  constructor(game,assets,clearInput){this.game=game;this.assets=assets;this.clearInput=clearInput;this.lastIndex=null;

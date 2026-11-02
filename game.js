@@ -1,13 +1,13 @@
-import {EndingUI} from './ending-ui.js?v=0.15.0';
-import {scoreBreakdown,projectPurpose} from './finale.js?v=0.15.0';
-import {Game} from './engine.js?v=0.15.0';
-import {Renderer} from './render.js?v=0.15.0';
-import {loadAssets} from './assets.js?v=0.15.0';
-import {ScreenManager} from './screens.js?v=0.15.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.15.0';
-import {PauseMenu} from './pause-menu.js?v=0.15.0';
-import {TouchControls} from './touch-controls.js?v=0.15.0';
-import {GameAudio} from './audio.js?v=0.15.0';
+import {EndingUI} from './ending-ui.js?v=0.15.1';
+import {scoreBreakdown,projectPurpose} from './finale.js?v=0.15.1';
+import {Game} from './engine.js?v=0.15.1';
+import {Renderer} from './render.js?v=0.15.1';
+import {loadAssets} from './assets.js?v=0.15.1';
+import {ScreenManager} from './screens.js?v=0.15.1';
+import {DialogueUI} from './dialogue-ui.js?v=0.15.1';
+import {PauseMenu} from './pause-menu.js?v=0.15.1';
+import {TouchControls} from './touch-controls.js?v=0.15.1';
+import {GameAudio} from './audio.js?v=0.15.1';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);

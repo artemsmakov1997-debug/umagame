@@ -1,8 +1,9 @@
-import {enemy,rooms,chapters} from './level.js?v=0.15.0';
-import {solidSurfaces} from './terrain.js?v=0.15.0';
-import {stampInk} from './tactical-enemies.js?v=0.15.0';
-import {alertNearby} from './enemies.js?v=0.15.0';
-import {bossProxy,bossActorId} from './boss-actors.js?v=0.15.0';
+import {enemy,rooms,chapters} from './level.js?v=0.15.1';
+import {solidSurfaces} from './terrain.js?v=0.15.1';
+import {stampInk} from './tactical-enemies.js?v=0.15.1';
+import {alertNearby} from './enemies.js?v=0.15.1';
+import {bossProxy,bossActorId} from './boss-actors.js?v=0.15.1';
+import {releaseEchoPull} from './echo-pull.js?v=0.15.1';
 export const bossTroops=Object.fromEntries(chapters.map(c=>[c.boss,c.monsters]));
 export function summonPlaces(g,count=3){
  const b=g.boss,p=g.player,choices=solidSurfaces(g).filter(s=>s.room===g.room&&s.w>=120).sort((a,c)=>Math.abs(a.x+a.w/2-p.x)+Math.abs(a.y-p.y-p.h)-Math.abs(c.x+c.w/2-p.x)-Math.abs(c.y-p.y-p.h)),result=[];
@@ -37,5 +38,5 @@ export function castInherited(g,ability){
 export function clearBossHelpers(g){
  const b=g.boss;for(const e of g.enemies)if(e.bossOwnerId===b.id||e.portalOwnerId===bossActorId(b)){e.dead=true;e.hp=0;e.deathTime=.28;}
  for(const p of g.portals)if(p.ownerId===bossActorId(b))p.cancelled=true;
- g.tether=null;g.player.pulled=false;g.inks=[];g.cuts=[];
+ releaseEchoPull(g);g.tether=null;g.player.pulled=false;g.inks=[];g.cuts=[];
 }
