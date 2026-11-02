@@ -1,10 +1,11 @@
-import {platforms,WIDTH,rooms} from './level.js?v=0.12.0';
+import {solidSurfaces} from './terrain.js?v=0.13.0';
+import {platforms,WIDTH,rooms} from './level.js?v=0.13.0';
 const GRAVITY=900,IMPULSE=460;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Pick a reachable landing spot that brings the creature closer to Uma's level.
 export function chooseFakeLanding(g,e){
  const p=g.player,feet=e.y+e.h,targetFeet=p.y+p.h,currentScore=Math.abs(e.x-p.x)+Math.abs(feet-targetFeet)*1.8;
- const candidates=(g.platforms||platforms).filter(s=>s.room===e.room&&s.index!==e.platformIndex&&s.w>=90);
+ const candidates=solidSurfaces(g).filter(s=>s.room===e.room&&s.index!==e.platformIndex&&s.w>=90);
  return candidates.map(s=>{
   const dy=s.y-feet,disc=IMPULSE*IMPULSE+2*GRAVITY*dy;
   if(dy < -110||dy>145||disc<=0)return null;
@@ -38,7 +39,7 @@ export function stepFakeJump(g,e,dt){
  const oldBottom=e.y+e.h;e.x+=e.jumpVx*dt;e.vy=Math.min(580,e.vy+GRAVITY*dt);e.y+=e.vy*dt;
  e.x=clamp(e.x,e.room*WIDTH+12,rooms[e.room].x+rooms[e.room].width-60);
  if(e.vy>=0){
-  const surfaces=(g.platforms||platforms).filter(s=>s.room===e.room&&e.x+e.w>s.x+2&&e.x<s.x+s.w-2&&oldBottom<=(s.prevY??s.y)+1&&e.y+e.h>=s.y).sort((a,b)=>a.y-b.y);
+  const surfaces=solidSurfaces(g).filter(s=>s.room===e.room&&e.x+e.w>s.x+2&&e.x<s.x+s.w-2&&oldBottom<=(s.prevY??s.y)+1&&e.y+e.h>=s.y).sort((a,b)=>a.y-b.y);
   if(surfaces.length){land(e,surfaces[0]);g.emit('fakeLand',{x:e.x,y:e.y+e.h});}
  }
  return true;

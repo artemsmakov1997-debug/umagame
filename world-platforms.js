@@ -1,4 +1,4 @@
-import {platforms} from './level.js?v=0.12.0';
+import {platforms} from './level.js?v=0.13.0';
 export function createWorldPlatforms(){return platforms.map(s=>({...s,baseX:s.x,baseY:s.y,prevX:s.x,prevY:s.y,dx:0,dy:0}));}
 export function alignEnemyToPlatform(g,e){
  const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex),base=platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);if(!s||!base)return e;
@@ -16,7 +16,7 @@ export function stepWorldPlatforms(g,dt){
  for(const e of g.enemies){
   if(e.room!==g.room||e.dead)continue;
   const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);
-  if(s&&e.jumpPhase!=='air'){e.x+=s.dx;e.y+=s.dy;e.origin+=s.dx;e.end+=s.dx;}
+  if(s&&e.jumpPhase!=='air'&&!e.terrainFall){e.x+=s.dx;e.y+=s.dy;e.origin+=s.dx;e.end+=s.dx;}
   if(e.teleport)for(const key of ['source','target']){
    const mark=e.teleport[key],surface=g.platforms.find(s=>s.room===e.room&&s.index===(mark.index??e.platformIndex));if(!surface)continue;
    mark.localX??=mark.x-surface.prevX;mark.x=surface.x+mark.localX;mark.y=surface.y-e.h;

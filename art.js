@@ -1,8 +1,8 @@
-import {creatures,newCreatures,sprite} from './assets.js?v=0.12.0';
-import {rect} from './pixel.js?v=0.12.0';
-import {idlePlacement} from './menu-animation.js?v=0.12.0';
-import {drawMonitorEyes,drawPortraitMonitor} from './menu-monitor.js?v=0.12.0';
-import {motion,monsterFrame,monsterReaction,previewActor,clickbaitAppearanceFrame,baitEmergenceFrames,locomotionFrame} from './monster-animation.js?v=0.12.0';
+import {creatures,newCreatures,sprite} from './assets.js?v=0.13.0';
+import {rect} from './pixel.js?v=0.13.0';
+import {idlePlacement} from './menu-animation.js?v=0.13.0';
+import {drawMonitorEyes,drawPortraitMonitor} from './menu-monitor.js?v=0.13.0';
+import {motion,monsterFrame,monsterReaction,previewActor,clickbaitAppearanceFrame,baitEmergenceFrames,locomotionFrame} from './monster-animation.js?v=0.13.0';
 export function drawCrt(c,x,y,w,h,time=0){
  rect(c,x,y,w,h,'#080f22');rect(c,x+2,y+2,w-4,h-5,'#8792ab');rect(c,x+5,y+5,w-10,h-15,'#303f61');rect(c,x+9,y+9,w-18,h-23,'#062c51');
  for(let i=0;i<9;i++){const yy=y+12+i*(h-30)/9;rect(c,x+12,yy,w-24,2,'#0b658b');for(let j=0;j<6;j++)if((i*3+j+Math.floor(time*7))%4===0)rect(c,x+13+j*(w-28)/6,yy,Math.max(2,w/14),2,'#77ecff');}
@@ -18,7 +18,10 @@ export function drawMonster(c,a,id,x,y,w,h,time=0,flip=false,actor={}){
 }
 export function drawLure(c,a,x,y,time){
  const yy=Math.round(y+Math.sin(time*3)*2);sprite(c,a.noise,creatures.fish,x-13,yy-8,26,16);
- rect(c,x+5,yy-14,1,6,'#b7e5ed');rect(c,x+5,yy-14,7,1,'#b7e5ed');rect(c,x+11,yy-13,1,4,'#b7e5ed');rect(c,x+9,yy-10,3,1,'#f2f5eb');
+ // A dark silhouette and a broad bright J keep the hook legible at phone scale.
+ rect(c,x+6,yy-26,4,19,'#010817');rect(c,x+6,yy-12,12,5,'#010817');rect(c,x+14,yy-18,4,9,'#010817');
+ rect(c,x+7,yy-25,2,15,'#a8e8f8');rect(c,x+9,yy-11,6,2,'#e7eff3');rect(c,x+14,yy-16,2,6,'#f8e5ad');rect(c,x+12,yy-17,4,2,'#ffe4a3');
+ rect(c,x+7,yy-28,2,3,'#5899bd');
 }
 export function drawSoup(c,a,x,y,h=30){const b=newCreatures.soup,w=h*b[2]/b[3];sprite(c,a.monsters,b,x-w/2,y-h/2,w,h);}
 export function drawMenuScene(c,a,time,cat=true){

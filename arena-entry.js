@@ -1,4 +1,4 @@
-import {LAST_ROOM,PORTAL_ROOM,PORTAL_X,MAX_HEALTH,spawns} from './level.js?v=0.12.0';
+import {LAST_ROOM,PORTAL_ROOM,PORTAL_X,MAX_HEALTH,spawns} from './level.js?v=0.13.0';
 export const ARENA_ENTRY_DURATION=1.6;
 export function beginArenaEntry(g){
  if(g.mode!=='playing'||g.room!==PORTAL_ROOM||g.arenaEntered)return false;

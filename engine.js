@@ -1,11 +1,14 @@
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.12.0';
-import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.12.0';
-import {stepEnemies,stepPortals} from './enemies.js?v=0.12.0';
-import {cancelInformantTeleport} from './informant-teleport.js?v=0.12.0';
-import {scenes,evidence} from './story.js?v=0.12.0';
-import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.12.0';
-import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.12.0';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.12.0';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.13.0';
+import {createBoss,stepBoss,damageBoss,stepProjectiles} from './boss.js?v=0.13.0';
+import {stepEnemies,stepPortals} from './enemies.js?v=0.13.0';
+import {cancelInformantTeleport} from './informant-teleport.js?v=0.13.0';
+import {scenes,evidence} from './story.js?v=0.13.0';
+import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.13.0';
+import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.13.0';
+import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.13.0';
+import {cleanCopies} from './tactical-enemies.js?v=0.13.0';
+import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.13.0';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.13.0';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export function playerHeight(p,height){const feet=p.y+p.h;p.h=height;p.y=feet-height;}
 export class Game {
@@ -18,7 +21,7 @@ export class Game {
   this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;this.lifePickups=createLifePickups();
   this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,powerTime:0};
   this.swallow=null;this.portals=[];this.portalSerial=0;this.soups=createSoup();this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();
-  this.relays=createRelays();this.bolts=[];this.events=[];
+  this.relays=createRelays();this.bolts=[];this.events=[];this.inks=[];this.cuts=[];this.tacticalSerial=0;
  }
  emit(type,data={}){this.events.push({type,...data});}
  unlockForRoom(room){
@@ -51,37 +54,41 @@ export class Game {
   const note=this.notebooks.find(n=>n.relay&&n.room===room);if(note&&note.readyAt===Infinity)note.readyAt=this.time+.5;
  }
  finish(){this.truthFound=true;this.bolts=[];this.portals=[];if(this.openDialogue('truth','won')){this.dialogue.next='ending';this.emit('victory');}else{this.mode='won';this.emit('won');}}
- respawn(){this.swallow=null;Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0});delete this.player.warpScale;this.bolts=[];this.updateCamera();}
+ respawn(){this.swallow=null;wakePlayer(this.player);Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0,slipping:false,onInk:false,inkTime:0,slideTime:0});delete this.player.warpScale;this.bolts=[];this.updateCamera();}
  restoreCheckpoint(){
   const revealed=this.enemies.filter(e=>e.room===this.checkpoint&&e.type==='clickbait'&&e.revealed&&!e.dead);
   const local=createEnemies().filter(e=>e.room===this.checkpoint).map(e=>alignEnemyToPlatform(this,e)).map(e=>{
    const old=revealed.find(old=>e.type==='clickbait'&&old.platformIndex===e.platformIndex);
    return old?{...e,revealed:true,active:true,noticed:true,state:'patrol',timer:1,x:Math.max(e.origin,Math.min(e.end,old.x)),walkTime:old.walkTime}:e;
   });
-  this.health=MAX_HEALTH;this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(local);this.portals=[];this.boss=createBoss();this.dialogue=null;this.transition=null;this.arenaEntry=null;this.room=this.checkpoint;this.respawn();if(this.room===LAST_ROOM){this.boss.active=true;this.boss.state='recover';this.boss.timer=2;}this.mode='playing';this.emit('lifeRestored',{lives:this.lives});
+  this.health=MAX_HEALTH;this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(local);this.inks=this.inks.filter(i=>i.room!==this.checkpoint);this.cuts=this.cuts.filter(c=>c.room!==this.checkpoint);cleanCopies(this);this.portals=[];this.boss=createBoss();this.dialogue=null;this.transition=null;this.arenaEntry=null;this.room=this.checkpoint;this.respawn();if(this.room===LAST_ROOM){this.boss.active=true;this.boss.state='recover';this.boss.timer=2;}this.mode='playing';this.emit('lifeRestored',{lives:this.lives});
  }
  retry(){this.start();}
  loseLife(reason='damage'){
-  if(this.mode!=='playing')return;this.health=0;this.lives=Math.max(0,this.lives-1);this.swallow=null;this.player.hurtTime=.5;this.player.attack=0;this.player.sneaking=false;
+  if(this.mode!=='playing')return;wakePlayer(this.player);this.health=0;this.lives=Math.max(0,this.lives-1);this.swallow=null;this.player.hurtTime=.5;this.player.attack=0;this.player.sneaking=false;
   if(this.lives===0){this.mode='lost';this.emit('lost',{reason});}else{this.mode='respawning';this.respawnTime=1.1;this.emit('lifeLost',{lives:this.lives,reason});}
  }
  hurt(fall=false,sourceX=this.player.x+this.player.dir*50){
   const p=this.player;if(this.mode!=='playing')return;
   if(p.dash>0){if(fall)this.respawn();return;}
   if(!fall&&p.inv>0)return;
-  this.health--;p.hurtTime=.5;p.sneaking=false;playerHeight(p,48);this.emit('hurt');if(this.health<=0){this.loseLife();return;}
+  wakePlayer(p);this.health--;p.hurtTime=.5;p.sneaking=false;playerHeight(p,48);this.emit('hurt');if(this.health<=0){this.loseLife();return;}
   p.inv=1.25;p.vy=-170;p.knock=.15;p.vx=sourceX>p.x?-130:130;if(fall)this.respawn();
  }
  updateCamera(dt=0){const width=this.viewWidth||WIDTH,min=this.room===LAST_ROOM?FINAL_X:0,end=this.room===LAST_ROOM?WORLD:FINAL_X,target=Math.max(min,Math.min(Math.max(min,end-width),this.player.x-width*.4));this.camera=dt>0?this.camera+(target-this.camera)*(1-Math.exp(-dt*8)):target;}
- push(dir,sourceX){const p=this.player;if(this.mode!=='playing'||p.dash>0)return;p.sneaking=false;playerHeight(p,48);p.knock=.26;p.vx=dir*380;p.vy=-55;p.climbing=false;this.emit('pushed',{x:sourceX,y:p.y});}
- hitEnemy(e,stomp=false,amount=null,{reflected=false}={}){
+ push(dir,sourceX){const p=this.player;if(this.mode!=='playing'||p.dash>0)return;wakePlayer(p);p.sneaking=false;playerHeight(p,48);p.knock=.26;p.vx=dir*640;p.vy=-65;p.climbing=false;this.emit('pushed',{x:sourceX,y:p.y});}
+ hitEnemy(e,stomp=false,amount=null,{reflected=false,sourceX=this.player.x+this.player.w/2}={}){
   if(e.inv>0||e.dead||e.phased)return false;
+  if(e.type==='clickbait'||e.type==='inflator'&&(sourceX-e.x-e.w/2)*e.dir>=-6||e.type==='copier'&&!['printing','recover'].includes(e.state)){
+   this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
+  }
   if(e.type==='informant'&&e.shieldBroken===0&&['windup','casting'].includes(e.state)&&!reflected){this.emit('blocked',{x:e.x,y:e.y});return false;}
   if(reflected)e.shieldBroken=3;
   e.hp-=amount??(!stomp&&this.player.powerTime>0?2:1);e.inv=.24;e.hurtTime=.28;e.state='recover';e.timer=.7;
   cancelInformantTeleport(e);
   for(const portal of this.portals)if(portal.ownerId===e.id)portal.cancelled=true;
-  this.emit('enemyHit',{x:e.x+24,y:e.y});if(e.hp<=0){e.dead=true;e.deathTime=.28;this.kills++;this.emit('pop',{x:e.x+24,y:e.y});}return true;
+  if(!stomp&&!reflected&&e.type==='fakenews'&&!e.jumpPhase&&!e.terrainFall)e.x=Math.max(e.origin,Math.min(e.end,e.x+this.player.dir*18));
+  this.emit('enemyHit',{x:e.x+24,y:e.y,enemyType:e.type});if(e.hp<=0){e.dead=true;e.deathTime=.28;this.kills++;this.emit('pop',{x:e.x+24,y:e.y,enemyType:e.type});cleanCopies(this);}return true;
  }
  updateTutorial(dx,dy,jumped){
   if(this.room!==0||this.tutorial.complete)return;const q=this.tutorial,p=this.player;
@@ -99,6 +106,7 @@ export class Game {
   const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);
   if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}this.loseLife('clickbait');this.updateCamera();}return;}
   stepWorldPlatforms(this,dt);
+  stepTacticalTerrain(this,dt);
   for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime'])p[key]=Math.max(0,p[key]-dt);
   const keyboardAxis=(input.right?1:0)-(input.left?1:0),axis=keyboardAxis||Math.max(-1,Math.min(1,input.axisX||0));if(Math.abs(axis)>.05&&p.dash===0)p.dir=axis>0?1:-1;
   const ladder=ladders.find(l=>p.x+p.w>l.x&&p.x<l.x+l.w&&p.y+p.h>=l.y&&p.y<l.y+l.h);
@@ -107,7 +115,7 @@ export class Game {
   p.sneaking=!!(this.abilities.sneak&&input.down&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&p.attack===0&&!canAttack&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
   p.coyote=p.grounded?.1:Math.max(0,p.coyote-dt);p.jumpBuffer=input.jump?.13:Math.max(0,p.jumpBuffer-dt);
   if(canDash&&p.dashCooldown===0){p.dash=.2;p.dashCooldown=1.5;p.climbing=false;p.knock=0;p.hurtTime=0;p.vy=0;this.emit('dash');}
-  if(!p.knock)p.vx=p.dash>0?p.dir*430:axis*(p.sneaking?62:155);
+  playerHorizontal(this,axis,dt);
   if(useLadder){p.climbing=true;p.vy=(input.down?1:-1)*110;p.jumpBuffer=0;p.vx=0;}else if(!ladder||axis||p.dash>0)p.climbing=false;
   let jumped=false;if(p.jumpBuffer>0&&(p.coyote>0||p.climbing)){p.vy=-500;p.grounded=false;p.coyote=0;p.jumpBuffer=0;p.climbing=false;jumped=true;this.emit('jump');}
   if(canAttack&&p.cooldown===0){p.attack=.19;p.cooldown=.36;p.swing++;this.emit('swat');}
@@ -120,9 +128,10 @@ export class Game {
    if(input.up&&p.y+p.h<=ladder.y+3){p.y=ladder.y-p.h;p.vy=0;p.grounded=true;p.climbing=false;}
    else if(input.down&&p.y+p.h>=ladder.y+ladder.h){p.y=ladder.y+ladder.h-p.h;p.vy=0;p.grounded=true;p.climbing=false;}
   }
-  if(p.vy>=0&&!p.climbing){const surface=this.platforms.filter(s=>p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=(s.id===carriedSupport?s.y:s.prevY)+1&&p.y+p.h>=s.y).sort((a,b)=>a.y-b.y)[0];if(surface){p.y=surface.y-p.h;p.vy=0;p.grounded=true;p.supportId=surface.id;}}
+  if(p.vy>=0&&!p.climbing){const surface=solidSurfaces(this).filter(s=>p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=(s.id===carriedSupport?s.y:s.prevY)+1&&p.y+p.h>=s.y).sort((a,b)=>a.y-b.y)[0];if(surface){p.y=surface.y-p.h;p.vy=0;p.grounded=true;p.supportId=surface.id;}}
   if(p.y>HEIGHT+30){this.hurt(true);return;}
   if(p.climbing)p.climbTime+=Math.abs(p.y-oldY)/18;if(p.sneaking)p.sneakTime+=Math.abs(p.x-oldX)/14;
+  stepPlayerRest(this,input,dt);
   this.room=Math.min(LAST_ROOM,Math.floor((p.x+p.w/2)/WIDTH));this.unlockForRoom(this.room);this.updateTutorial(p.x-oldX,p.y-oldY,jumped);
   if(this.room!==oldRoom){this.transition={from:oldRoom,to:this.room,time:0,duration:.85};this.emit('room',{room:this.room});}
   if(this.room>this.checkpoint){this.checkpoint=this.room;this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('checkpoint',{room:this.room});}

@@ -1,4 +1,4 @@
-import {sprite} from './assets.js?v=0.12.0';
+import {sprite} from './assets.js?v=0.13.0';
 export const emotionFrames=[
  {box:[48,205,331,269],pivot:[210,474]},
  {box:[449,235,324,239],pivot:[611,474]},
@@ -38,4 +38,24 @@ export function traversalPose(player){
 export function drawTraversal(c,assets,player){
  const index=traversalPose(player);if(index===null)return false;const {box,pivot}=traversalFrames[index],s=index<4?.18:.158;
  c.save();c.translate(Math.round(player.x+player.w/2),Math.round(player.y+player.h));if(index<4&&player.dir<0)c.scale(-1,1);sprite(c,assets.traversal,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
+}
+const restFrames=[
+ {box:[60,160,320,310],pivot:[224,463]},
+ {box:[434,235,308,230],pivot:[596,459]},
+ {box:[783,240,345,226],pivot:[954,460]},
+ {box:[1090,120,445,350],pivot:[1360,461]},
+ {box:[24,580,356,360],pivot:[218,936]},
+ {box:[398,630,382,310],pivot:[604,934]},
+ {box:[775,588,407,352],pivot:[986,934]},
+ {box:[1180,589,340,358],pivot:[1367,939]}
+];
+export function restPose(p){
+ if(p.sleeping)return p.sleepTime<.6?0:1+Math.floor((p.sleepTime-.6)/1.4)%2;
+ if(p.slipping)return 4+Math.floor((p.slideTime||0)*8)%3;
+ return null;
+}
+export function drawRest(c,assets,p){
+ const index=restPose(p);if(index===null)return false;const {box,pivot}=restFrames[index],s=.184;
+ c.save();c.translate(Math.round(p.x+p.w/2),Math.round(p.y+p.h));if(p.dir<0)c.scale(-1,1);
+ sprite(c,assets.rest,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
 }

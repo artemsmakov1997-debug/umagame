@@ -32,8 +32,8 @@ test('Clickbait emergence and capture advance through different jaw poses and fr
 test('a lethal Clickbait grab consumes one life and cannot repeatedly damage a captured Uma',()=>{
  const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];assert.equal(g.health,4);tick(g,45,{attack:false});assert.equal(g.mode,'respawning');assert.equal(g.lives,2);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.swallow,null);
 });
-test('a preemptive paw or dash can defeat the fish trap; it never grants a fish reward',()=>{
- for(const action of ['attack','dash']){const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];tick(g,1,{[action]:true,right:true});tick(g,18,{right:true});assert.equal(g.swallow,null);assert.equal(g.health,4);assert.equal(g.fish,0);assert.equal(e.revealed,true);}
+test('a dash escapes the immortal fish trap and never grants a fish reward',()=>{
+ const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];tick(g,1,{dash:true,right:true});tick(g,18,{right:true});assert.equal(g.swallow,null);assert.equal(g.health,4);assert.equal(g.fish,0);assert.equal(e.revealed,true);assert.equal(e.hp,e.maxHp);assert.equal(e.dead,false);
 });
 test('the opening is peaceful before the screen is infected, then darkens with one alarm and no combat',()=>{
  const g=new Game();g.start();assert.equal(rooms[0].theme,'cozy');assert.equal(g.player.y+g.player.h,305);tick(g,120);assert.equal(roomDarkness(g.wakeTime),0);tick(g,70);assert.equal(roomDarkness(g.wakeTime),1);assert.ok(g.enemies.every(e=>!e.active));assert.equal(g.events.filter(e=>e.type==='infection').length,1);tick(g,180);assert.equal(g.mode,'dialogue');assert.equal(g.wakeTime,WAKE_DURATION);

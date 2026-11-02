@@ -1,6 +1,6 @@
-import {monsters} from './catalog.js?v=0.12.0';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.12.0';
-import {idleFrame} from './menu-animation.js?v=0.12.0';
+import {monsters} from './catalog.js?v=0.13.0';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.13.0';
+import {idleFrame} from './menu-animation.js?v=0.13.0';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
  constructor(assets,onStart,onExit,onQuit=()=>{}){
@@ -25,10 +25,10 @@ export class ScreenManager{
  selectMonster(index,focus=false){
   this.monsterIndex=(index+monsters.length)%monsters.length;const monster=monsters[this.monsterIndex];
   this.monsterButtons.forEach((button,i)=>{button.classList.toggle('selected',i===this.monsterIndex);button.setAttribute('aria-pressed',String(i===this.monsterIndex));});
-  $('monster-title').textContent=monster.name;$('monster-title').classList.toggle('long-title',monster.name.length>11);$('monster-description').textContent=monster.description;$('monster-tip').textContent=monster.tip;
+  $('monster-card').dataset.monster=monster.id;$('monster-title').textContent=monster.name;$('monster-description').textContent=monster.description;$('monster-tip').textContent=monster.tip;
   const abilities=$('monster-abilities');abilities.replaceChildren();
   for(const [i,[label,value]] of monster.abilities.entries()){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd'),icon=document.createElement('i');icon.className=i===0?'sound-icon':'danger-icon';icon.setAttribute('aria-hidden','true');dt.append(icon,document.createTextNode(label));dd.textContent=value;row.append(dt,dd);abilities.append(row);}
-  drawPortrait($('monster-art'),this.assets,monster.id);if(focus)this.monsterButtons[this.monsterIndex].focus({preventScroll:true});
+  drawPortrait($('monster-art'),this.assets,monster.id);if(focus){this.monsterButtons[this.monsterIndex].focus({preventScroll:true});this.monsterButtons[this.monsterIndex].scrollIntoView({block:'nearest',inline:'nearest'});}
  }
  show(view,focus=true){
   if(this.view==='game'&&view!=='game')this.onExit();this.view=view;$('app').dataset.screen=view;
