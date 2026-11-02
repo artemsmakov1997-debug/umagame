@@ -318,7 +318,7 @@ footer{display:flex;align-items:center;justify-content:space-between;padding:10p
 @media(max-width:700px) and (orientation:portrait){
  #app[data-screen="library"] .game-shell,#library-screen{min-height:1380px}
  #monster-list{height:390px;flex:0 0 390px;overflow-y:auto;padding:4px 5px 8px}.monster-option{flex-basis:68px;min-height:68px;max-height:68px;grid-template-columns:85px minmax(0,1fr);font-size:25px}
- #monster-card{height:850px;flex:0 0 850px;grid-template-rows:45px 180px 115px 260px 215px;padding:16px 7px 8px;overflow:hidden}
+ #monster-card{height:880px;flex:0 0 880px;grid-template-rows:45px 180px 145px 260px 215px;padding:16px 7px 8px;overflow:hidden}
  #monster-title,#monster-title.long-title{font-size:29px;text-align:center;white-space:nowrap}.portrait-stage{height:auto;min-height:0;margin:0 0 6px}
  #monster-description{font-size:22px;line-height:1.14;margin:8px 0}
  #monster-abilities>div{grid-template-columns:1fr;grid-template-rows:32px 1fr;gap:4px;align-items:start;padding:8px 0}#monster-abilities dt{font-size:22px;overflow-wrap:normal}#monster-abilities dd{font-size:21px;line-height:1.15;padding-left:30px}
