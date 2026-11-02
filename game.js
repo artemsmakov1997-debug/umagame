@@ -1,11 +1,11 @@
-import {Game} from './engine.js?v=0.13.0';
-import {Renderer} from './render.js?v=0.13.0';
-import {loadAssets} from './assets.js?v=0.13.0';
-import {ScreenManager} from './screens.js?v=0.13.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.13.0';
-import {PauseMenu} from './pause-menu.js?v=0.13.0';
-import {TouchControls} from './touch-controls.js?v=0.13.0';
-import {GameAudio} from './audio.js?v=0.13.0';
+import {Game} from './engine.js?v=0.14.0';
+import {Renderer} from './render.js?v=0.14.0';
+import {loadAssets} from './assets.js?v=0.14.0';
+import {ScreenManager} from './screens.js?v=0.14.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.14.0';
+import {PauseMenu} from './pause-menu.js?v=0.14.0';
+import {TouchControls} from './touch-controls.js?v=0.14.0';
+import {GameAudio} from './audio.js?v=0.14.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
@@ -30,14 +30,16 @@ async function boot(){
  function updateControls(){const signature=Object.values(game.abilities).join();if(signature===lastAbilities)return;lastAbilities=signature;for(const el of document.querySelectorAll('[data-ability]'))el.hidden=!game.abilities[el.dataset.ability];}
  function notify(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),2800);}
  function showResult(kind){
-  $('overlay').hidden=false;clearInput();const won=kind==='won';
+  $('overlay').hidden=false;clearInput();const won=kind==='won';$('retry-location').hidden=won;$('result-library').hidden=won;
   $('result-title').textContent=won?'ШУМ ОСТАНОВЛЕН':'ПОПРОБУЕМ ЕЩЁ?';
   $('result-text').textContent=won?`Ума остановила Инфошум и раскрыла причину его появления. Рыбок: ${game.fish}.`:`Жизни закончились. Рыбок: ${game.fish}.`;
   $('play').textContent='Начать заново';
-  $('accessible-state').textContent=$('result-title').textContent+'. '+$('result-text').textContent;$('play').focus({preventScroll:true});
+  $('accessible-state').textContent=$('result-title').textContent+'. '+$('result-text').textContent;$(won?'play':'retry-location').focus({preventScroll:true});
  }
  $('pause').addEventListener('click',()=>pauseMenu.open());
  $('play').addEventListener('click',begin);
+ $('retry-location').addEventListener('click',()=>{game.retryLocation();clearEffects();clearInput();$('overlay').hidden=true;$('game').focus({preventScroll:true});});
+ $('result-library').addEventListener('click',()=>ui.showLibrary(()=>{ui.show('game');showResult('lost');}));
  $('return-menu').addEventListener('click',goMain);$('wake-skip').addEventListener('click',()=>{clearInput();game.finishWakeup();dialogueUI.update(true);});
  const controls=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyS','Space','KeyA','KeyD','KeyW','KeyX','ShiftLeft','ShiftRight'];
  window.addEventListener('keydown',event=>{
@@ -52,21 +54,21 @@ async function boot(){
   if((event.code==='ShiftLeft'||event.code==='ShiftRight')&&!keys.has(event.code))dash=true;keys.add(event.code);
  });
  window.addEventListener('keyup',event=>keys.delete(event.code));
- function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena'].includes(game.mode))pauseMenu.open();}
+ function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp'].includes(game.mode))pauseMenu.open();}
  window.addEventListener('blur',blur);document.addEventListener('visibilitychange',()=>{audio.setHidden(document.hidden);if(document.hidden)blur();});
  function events(){for(const event of game.events){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
-  if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
+  if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady','locationExit','locationEnter','locationReady','echoTeleport','echoArrive','echoReady'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
   if(event.type==='notebook'){updateControls();renderer.burst(event.x,event.y,'#ffe0a0');}
   audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
-  if(event.type==='gate')notify('Найди спутниковую антенну наверху. Один удар откроет проход.');
+  if(event.type==='gate')notify(event.boss?'Победи хозяина арены и разбей антенны.':'Разбей все антенны локации. Блокноты можно пропустить.');
 
   if(event.type==='lifePickup')notify('+1 жизнь!');
   if(event.type==='alarm')notify('Паникёр открывает портал!');
   if(event.type==='portal')notify('Портал открыт! Прерви звон Паникёра.');
   if(event.type==='swallow'){clearInput();notify('Кликбейт! Поглощение отнимает целую жизнь.');}
-  if(event.type==='bossPhase')notify('Инфошум атакует быстрее!');
+  if(event.type==='bossPhase')notify('Противник атакует быстрее!');
   if(event.type==='won'||event.type==='lost'){clearTimeout(toastTimer);$('toast').classList.remove('visible');showResult(event.type);}
  }game.events=[];}
  function frame(now){

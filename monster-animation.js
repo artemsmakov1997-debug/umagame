@@ -27,7 +27,7 @@ export const motion={
 };
 export function monsterFrame(id,time,actor={}){
  const state=actor.state||'patrol',step=Math.floor((actor.walkTime??time)*7)%2;
- if(['censor','copier','montager'].includes(id))return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||state==='windup'||id==='copier'&&state==='recover'?3:['stamping','printing','cutting','casting'].includes(state)||actor.attackFlash>0?4:actor.moving?1+step:0;
+ if(['censor','copier','cutter','splicer','injection','echo','static','spreader','agitator','manipulator'].includes(id))return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||state==='windup'||id==='copier'&&state==='recover'?3:['stamping','printing','cutting','casting','pulling','strike','lunge','swoop','broadcast'].includes(state)||actor.attackFlash>0?4:actor.moving||['echo','static','spreader'].includes(id)?1+step:0;
  if(id==='fakenews'||id==='informant')return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||['windup','jumpWindup','land'].includes(state)?3:state==='lunge'||state==='casting'||actor.attackFlash>0?4:actor.moving?1+step:0;
  if(id==='infoshum')return state==='windup'?2:state==='casting'?3:Math.floor(time*3)%2;
  if(id==='clickbait')return state==='snap'||actor.attackFlash>0?3:state==='windup'?2:step;
@@ -52,7 +52,7 @@ const newFrames={
  informant:[[[12,567,263,342],[140,904]],[[280,568,238,355],[399,918]],[[524,573,244,350],[654,918]],[[769,558,231,351],[878,904]],[[1000,573,282,345],[1118,913]],[[1293,563,243,351],[1416,909]]]
 };
 for(const [id,frames]of Object.entries(newFrames))motion[id]={asset:'newMotion',width:280,height:id==='fakenews'?310:380,frames:frames.map(([box,pivot])=>({box,pivot}))};
-for(const [id,top,h,feet,height]of [['censor',90,255,339,256],['copier',350,310,644,310],['montager',675,285,925,260]]){
+for(const [id,top,h,feet,height]of [['censor',90,255,339,256],['copier',350,310,644,310],['cutter',675,285,925,260]]){
  motion[id]={asset:'tactics',width:256,height,frames:Array.from({length:6},(_,i)=>({box:[i*256,top,256,h],pivot:[i*256+128,feet]}))};
 }
 export const baitEmergenceFrames=[
@@ -85,4 +85,13 @@ export function locomotionFrame(id,time,actor={}){
  if(!airborne&&!(actor.moving&&actor.state==='patrol'))return null;
  const index=airborne?(actor.vy<0?4:5):Math.floor((actor.walkTime??time)*7)%data.count;
  return {asset:'gaits',box:[index*256,data.y,256,data.h],pivot:[index*256+(id==='fakenews'?135:128),data.feet[index]],width:data.width,height:data.height,index};
+}
+
+// Stable pivots keep feet fixed while limbs, paper wings and attack poses move.
+for(const [id,row,feet,height]of [['echo',0,247,250],['static',1,225,205],['splicer',2,218,195],['injection',3,214,195]]){
+ motion[id]={asset:'campaign',width:256,height,frames:Array.from({length:6},(_,i)=>({box:[i*256,row*256,256,256],pivot:[i*256+128,row*256+feet]}))};
+}
+for(const [id,row,feet]of [['spreader',0,305],['agitator',1,288],['manipulator',2,269]]){
+ const top=Math.floor(row*1024/3),bottom=Math.floor((row+1)*1024/3);
+ motion[id]={asset:'minibosses',width:256,height:270,frames:Array.from({length:6},(_,i)=>({box:[i*256,top,256,bottom-top],pivot:[i*256+128,top+feet]}))};
 }

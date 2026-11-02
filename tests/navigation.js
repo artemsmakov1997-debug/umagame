@@ -1,3 +1,4 @@
+import {rooms as campaignRooms} from '../level.js';
 // Test pilot: supplies only ordinary movement/jump inputs to the live game model.
 export function supportOf(g){const p=g.player;return g.platforms.find(s=>s.room===g.room&&Math.abs(s.y-p.y-p.h)<1&&p.x+p.w>s.x&&p.x<s.x+s.w);}
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -37,10 +38,4 @@ export function jumpTo(g,room,index,max=1800){
  }
  return false;
 }
-export const dishRoutes={1:[9,7],2:[1,8],3:[1,8,10],4:[1,8],5:[1,10,11]};
-export function reachDish(g,room){
- for(const index of dishRoutes[room]){if(room===5&&index===10){for(let i=0;i<650;i++){const lift=g.platforms.find(s=>s.room===5&&s.index===10);if(lift.dy<0&&lift.y>300)break;tick(g,{});}}if(!jumpTo(g,room,index))return false;}
- const d=g.relays.find(d=>d.room===room),s=supportOf(g);if(!d||!s)return false;
- const goal=clamp(d.x-g.player.w-3,s.x+4,s.x+s.w-g.player.w-4);if(!walkTo(g,goal))return false;
- g.step(1/60,{right:true,attack:true});return d.hp===0;
-}
+export const antennaRoutes={1:[9,7,9,1,2,10,17,18,11,12,19,25,26],3:[1,8,1,2,10,17,18,11,12,19,25,26],5:[1,10,11,8,12,19,20,13,14,21,27,28],7:[1,8,1,2,10,17,18,11,12,19,25,26]};

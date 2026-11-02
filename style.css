@@ -27,7 +27,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #dff6ff;outline-offset:4p
 .menu-item.selected::before{content:'';position:absolute;left:-36px;top:50%;transform:translateY(-50%)}
 .media-blue{color:#72d8ff}.media-link.selected .media-blue{color:#17679d}.loading{position:absolute;bottom:3%;left:5%;width:90%;text-align:center;color:#bddeee;font-size:12px}
 .menu-hint{height:clamp(30px,4.17cqw,64px);display:flex;align-items:center;justify-content:center;gap:clamp(16px,3cqw,46px);font:clamp(12px,1.75cqw,27px)/1 UmaText,monospace;color:#00cfff;background:#030a1e8c}
-[data-screen="library"] .cabinet{background:url('./assets/library-room.png?v=0.13.0') center/cover}
+[data-screen="library"] .cabinet{background:url('./assets/library-room.png?v=0.14.0') center/cover}
 .section-heading{position:absolute;top:3.7%;left:4.3%;width:91.4%;text-align:center}
 .section-heading h2{margin:0;font:clamp(35px,6.51cqw,100px)/1.04 UmaDisplay,UmaPixel,monospace;color:#ffe6a4;text-shadow:0 6px #a96b23,4px 7px #020816;filter:drop-shadow(-4px 0 #020816) drop-shadow(4px 0 #020816)}
 .section-heading>.ornament{margin-top:0;font-size:clamp(16px,2.6cqw,40px);letter-spacing:clamp(1px,.26cqw,4px)}.section-heading>.ornament span{border:0;padding:0 4px}
@@ -45,7 +45,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #dff6ff;outline-offset:4p
 #monster-card{min-width:0;display:flex;flex-direction:column;padding:clamp(7px,.91cqw,14px) clamp(10px,1.69cqw,26px) clamp(8px,1.17cqw,18px) clamp(10px,1.56cqw,24px);overflow:auto;scrollbar-color:#437391 #061329}
 #monster-title{font:clamp(28px,5.47cqw,84px)/1 UmaDisplay,UmaPixel,monospace;color:#ffebaf;text-transform:uppercase;text-align:left;margin:0;flex-shrink:0;text-shadow:2px 3px #050916}
 #monster-title.long-title{font-size:clamp(24px,3.65cqw,56px);line-height:1.2}
-.portrait-stage{position:relative;flex:1;min-height:clamp(40px,6.51cqw,100px);margin:2px -6px 8px;background:linear-gradient(0deg,#08537d 0 2px,transparent 2px 7px,#03142d 7px 9px,transparent 9px),url('./assets/library-room.png?v=0.13.0') 73% 50% /200%;isolation:isolate}
+.portrait-stage{position:relative;flex:1;min-height:clamp(40px,6.51cqw,100px);margin:2px -6px 8px;background:linear-gradient(0deg,#08537d 0 2px,transparent 2px 7px,#03142d 7px 9px,transparent 9px),url('./assets/library-room.png?v=0.14.0') 73% 50% /200%;isolation:isolate}
 .portrait-stage::before{content:'';position:absolute;inset:0;background:#020e23c9;z-index:-1}
 #monster-art{width:100%;height:100%;object-fit:contain;position:absolute;inset:0}
 #monster-description{font:clamp(14px,2.21cqw,34px)/1.04 UmaText,monospace;color:#fff3d4;margin:0 0 12px;flex-shrink:0}
@@ -327,4 +327,76 @@ footer{display:flex;align-items:center;justify-content:space-between;padding:10p
 @media(max-height:550px) and (orientation:landscape){
  .monster-option{flex-basis:52px;min-height:52px;max-height:52px;font-size:2.15cqw}#monster-card{grid-template-rows:11% 29% 14% 23% 23%;padding:7px 10px}
  #monster-title,#monster-title.long-title{font-size:3.8cqw}#monster-description{font-size:1.95cqw;margin:4px 0}.tactic strong{font-size:1.65cqw}.tactic p{font-size:1.75cqw}
+}
+/* Four complete chapter collections, four equal entries in each collection. */
+#library-chapters{position:absolute;left:11.3%;top:19.6%;width:77.3%;height:6.5%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#library-chapters button{min-width:0;border:2px solid #167da1;background:#04142c;color:#a3d7e4;font:clamp(17px,1.8cqw,28px)/1 UmaText,monospace;padding:5px}
+#library-chapters button.selected{color:#15223a;background:#ffdb83;border-color:#ffeab0}
+.library-panel{top:27.8%;height:66.5%}
+#monster-list{overflow:hidden;gap:8px;display:grid;grid-template-rows:repeat(4,minmax(0,1fr));padding:10px 8px 10px 11px}
+.monster-option{height:100%;min-height:0;max-height:none;font-size:clamp(18px,2cqw,31px)}
+#monster-title,#monster-title.long-title{font-size:clamp(23px,2.9cqw,44px)}
+#monster-description{overflow:hidden}#monster-abilities,.tactic{overflow:hidden}
+#monster-abilities>div{grid-template-columns:34% minmax(0,66%)}
+#monster-abilities dt{font-size:clamp(15px,1.75cqw,27px)}#monster-abilities dd{font-size:clamp(15px,1.7cqw,26px)}
+.result-actions{display:flex;flex-direction:column;gap:10px;margin:20px auto 0;width:min(100%,340px)}
+.result-actions .gold-button,.result-actions .back-button{width:100%;margin:0;min-height:46px;font:26px/1.1 UmaText,monospace;padding:10px}
+.result-panel p{font:24px/1.2 UmaText,monospace}.result-panel{max-height:95%;overflow:auto}
+#app[data-dialogue="true"] .controls-bar{display:none}
+@media(max-width:700px) and (orientation:portrait){
+ #app[data-screen="library"] .game-shell,#library-screen{min-height:0}
+ #library-screen{padding:238px 0 24px}
+ #library-chapters{top:150px;left:5%;width:90%;height:76px;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ #library-chapters button{font-size:21px;padding:6px}
+ .library-panel{top:auto;height:auto}
+ #monster-list{height:280px;flex:0 0 280px;gap:5px;padding:5px;border-bottom:3px double #14ccf0}
+ .monster-option{height:100%;min-height:0;max-height:none;font-size:23px;grid-template-columns:83px minmax(0,1fr)}
+ #monster-card{height:640px;flex:0 0 640px;grid-template-rows:44px 155px 82px 180px 151px;padding:12px 8px 8px}
+ #monster-title,#monster-title.long-title{font-size:25px;white-space:nowrap}
+ #monster-description{font-size:22px;line-height:1.14}
+ #monster-abilities>div{grid-template-columns:1fr;grid-template-rows:29px minmax(0,1fr);padding:6px 0}
+ #monster-abilities dt{font-size:22px}#monster-abilities dd{font-size:21px;line-height:1.14}
+ .tactic strong{font-size:21px}.tactic p{font-size:22px;line-height:1.14}
+ /* Yuri occupies the former lower hint area while the world stays visible above. */
+ #app[data-screen="game"] .game-shell,#app[data-screen="game"][data-opening="true"] .game-shell,#app[data-screen="game"][data-dialogue="true"] .game-shell,#app[data-screen="game"][data-opening="true"][data-dialogue="true"] .game-shell{height:100svh;aspect-ratio:auto}
+ #app[data-screen="game"] #game,#app[data-screen="game"][data-opening="true"] #game{height:100%;width:100%}
+ #app[data-screen="game"][data-dialogue="true"] #game{height:calc(100svh - 236px)}
+ .dialogue-screen{position:absolute;inset:auto 5px 5px;padding:0;background:none;filter:none}
+ .dialogue-panel{height:226px;grid-template-columns:78px minmax(0,1fr)}
+ .dialogue-content{padding:10px;grid-template-rows:42px minmax(0,1fr)44px;gap:7px}
+ .dialogue-heading h2{font-size:26px}.narrator-role{font-size:18px;margin-top:4px}
+ #dialogue-text{font:22px/1.1 UmaText,monospace;overflow:hidden}
+ .dialogue-actions{gap:6px}.dialogue-actions .gold-button,.dialogue-actions .dialogue-secondary{font-size:20px;padding:7px 8px;min-height:44px}
+ .menu-hint{display:none}
+}
+@media(max-width:350px) and (orientation:portrait){
+ #app[data-screen="game"][data-dialogue="true"] #game{height:calc(100svh - 270px)}
+ .dialogue-panel{height:260px;grid-template-columns:64px minmax(0,1fr)}
+ .dialogue-content{padding:10px 8px}.dialogue-actions .gold-button,.dialogue-actions .dialogue-secondary{font-size:18px;padding:6px}
+ #monster-title,#monster-title.long-title{font-size:22px}.monster-option{font-size:21px}
+}
+@media(max-height:550px) and (orientation:landscape){
+ #library-chapters{top:19.6%;height:7.5%}.library-panel{top:29%;height:66%}
+ #monster-list{height:auto;gap:5px}.monster-option{height:100%;min-height:0;max-height:none;font-size:2cqw}
+ #monster-title,#monster-title.long-title{font-size:2.9cqw}
+ .has-touch #app[data-screen="game"][data-dialogue="true"] #game{height:calc(100svh - 160px)}
+ .dialogue-screen{inset:auto 1% 4px}.dialogue-panel{height:154px;grid-template-columns:100px minmax(0,1fr)}
+ .dialogue-content{padding:8px 12px;grid-template-rows:35px minmax(0,1fr)38px;gap:4px}
+ .dialogue-heading h2{font-size:23px}.narrator-role{font-size:16px;margin-top:2px}#dialogue-text{font:22px/1.1 UmaText,monospace}
+ .dialogue-actions .gold-button,.dialogue-actions .dialogue-secondary{font-size:20px;min-height:38px;padding:6px 12px}
+}
+.monster-option span{min-width:0;overflow-wrap:anywhere;line-height:1.08}
+
+@media(max-width:700px) and (orientation:portrait){.dialogue-panel{height:246px}#app[data-screen="game"][data-dialogue="true"] #game{height:calc(100svh - 256px)}#dialogue-text{font:21px/1.1 UmaText,monospace}}
+@media(max-width:350px) and (orientation:portrait){.dialogue-panel{height:260px}#app[data-screen="game"][data-dialogue="true"] #game{height:calc(100svh - 270px)}#dialogue-text{font-size:20px}}
+
+@media(max-width:700px) and (orientation:portrait){#app[data-screen="game"][data-opening="true"] #game{height:min(100svh,120cqw)}#app[data-screen="game"][data-opening="true"][data-dialogue="true"] #game{height:min(120cqw,calc(100svh - 256px))}}
+
+.has-touch #app[data-screen="game"] #pause{top:calc(10% + 8px)}
+
+/* Long names cannot change the implicit grid column width. */
+#monster-card{grid-template-columns:minmax(0,1fr)}
+@media(max-width:350px) and (orientation:portrait){#monster-title,#monster-title.long-title{font-size:21px}}
+@media(min-width:701px) and (min-height:551px){
+ #monster-card{grid-template-rows:11% 29% 14% 26% 20%}
 }

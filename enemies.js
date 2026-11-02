@@ -1,15 +1,17 @@
-import {enemy,WIDTH} from './level.js?v=0.13.0';
-import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.13.0';
-import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.13.0';
-import {stepEnemyFall} from './terrain.js?v=0.13.0';
-import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.13.0';
+import {solidSurfaces} from './terrain.js?v=0.14.0';
+import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.14.0';
+import {enemy,rooms} from './level.js?v=0.14.0';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.14.0';
+import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.14.0';
+import {stepEnemyFall} from './terrain.js?v=0.14.0';
+import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.14.0';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
  g.emit('alarm',{x:caller.x+24,y:caller.y,attracted:targets.length});
- if(!g.portals.some(p=>p.ownerId===caller.id&&!p.cancelled)&&g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===caller.room).length<3){
+ if(!g.portals.some(p=>p.ownerId===caller.id&&!p.cancelled)&&g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===caller.room).length<12){
   const preferred=caller.x+caller.dir*75,x=Math.max(caller.origin,Math.min(caller.end,preferred));
-  g.portals.push({id:++g.portalSerial,ownerId:caller.id,room:caller.room,platformIndex:caller.platformIndex,x,y:caller.y+29,time:0,spawned:0,cancelled:false});g.emit('portal',{x,y:caller.y});
+  g.portals.push({id:++g.portalSerial,ownerId:caller.id,room:caller.room,platformIndex:caller.platformIndex,x,y:caller.y+29,time:0,spawned:0,targetCount:3,cancelled:false});g.emit('portal',{x,y:caller.y});
  }
 }
 export function stepPortals(g,dt){
@@ -17,10 +19,10 @@ export function stepPortals(g,dt){
   if(portal.room!==g.room)continue;const owner=g.enemies.find(e=>e.id===portal.ownerId);
   if(!owner||owner.dead)portal.cancelled=true;
   if(portal.cancelled){portal.closeTime=(portal.closeTime||0)+dt;continue;}portal.time+=dt;
-  if(portal.spawned<2&&portal.time>=.9+portal.spawned*.95){
-   portal.spawned++;const count=g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===portal.room).length;if(count>=3)continue;
+  if(portal.spawned<3&&portal.time>=.7+portal.spawned*.5){
+   portal.spawned++;const count=g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===portal.room).length;if(count>=12||g.enemies.filter(e=>e.portalOwnerId===portal.ownerId&&!e.dead).length>=6)continue;
    let x=portal.x;const p=g.player;if(Math.abs(x-p.x)<60)x=p.x<=(owner.origin+owner.end)/2?owner.end:owner.origin;
-   const e=enemy('fakenews',portal.room,x-portal.room*WIDTH,portal.platformIndex,{id:`portal-${portal.id}-${portal.spawned}`,active:true,spawnTime:.45,portalMinion:true,hp:1,maxHp:1,dir:p.x<x?-1:1,noticed:true});const surface=g.platforms?.find(s=>s.room===e.room&&s.index===e.platformIndex);if(surface){e.y=surface.y-e.h;e.origin=surface.x+12;e.end=surface.x+surface.w-60;}g.enemies.push(e);g.emit('portalSpawn',{x:e.x,y:e.y});
+   const e=enemy('fakenews',portal.room,x-rooms[portal.room].x,portal.platformIndex,{id:`portal-${portal.id}-${portal.spawned}`,active:true,spawnTime:.45,portalMinion:true,portalOwnerId:portal.ownerId,hp:1,maxHp:1,dir:p.x<x?-1:1,noticed:true});const surface=g.platforms?.find(s=>s.room===e.room&&s.index===e.platformIndex);if(surface){e.y=surface.y-e.h;e.origin=surface.x+12;e.end=surface.x+surface.w-60;}g.enemies.push(e);g.emit('portalSpawn',{x:e.x,y:e.y});
   }
  }
  g.portals=g.portals.filter(p=>p.cancelled?(p.closeTime||0)<.3:p.time<2.8);
@@ -31,21 +33,27 @@ export function stepEnemies(g,dt,paw,prevBottom){
  const p=g.player;cleanCopies(g);
  for(const e of g.enemies){
   if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);continue;}if(e.room!==g.room)continue;
-  if(!e.active){if(p.x-e.room*WIDTH<e.trigger)continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
+  if(!e.active){if(p.x-rooms[e.room].x<e.trigger)continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
-  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
+  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   updateEnemyInk(g,e);
   const previousX=e.x,dx=p.x-e.x,dy=p.y+p.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&(p.sneaking||e.muffled);
   if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y,enemyType:e.type});}
-  const traversing=stepEnemyFall(g,e,dt)||e.type==='fakenews'&&(stepFakeJump(g,e,dt)||e.noticeTime===0&&beginFakeJump(g,e))||e.type==='informant'&&(stepInformantTeleport(g,e,dt)||beginInformantTeleport(g,e));
+  const traversing=stepEnemyFall(g,e,dt)||['fakenews','injection'].includes(e.type)&&(stepFakeJump(g,e,dt)||e.noticeTime===0&&beginFakeJump(g,e))||e.type==='informant'&&(stepInformantTeleport(g,e,dt)||beginInformantTeleport(g,e));
   if(!traversing&&e.noticeTime===0&&e.hurtTime===0){
-   e.timer-=dt;if(e.type==='clickbait'&&e.state==='emerge')e.revealTime+=dt;
-   if(e.type==='fakenews'){
-    if(e.state==='patrol'){if(e.alert>0)e.dir=dx<0?-1:1;e.x+=e.dir*e.speed*(e.inkSlow||1)*(e.pressureTime>0?1.5:1)*dt;if(Math.abs(dx)<118&&Math.abs(dy)<65&&e.timer<=0){e.dir=dx<0?-1:1;e.state='windup';e.timer=.5;}}
+   if(!e.flying)e.timer-=dt;if(e.type==='clickbait'&&e.state==='emerge')e.revealTime+=dt;
+   if(e.flying)stepAirEnemy(g,e,dt);
+   else if(e.type==='fakenews'){
+    if(e.state==='patrol'){if(e.navWalkX!==undefined)e.dir=e.navWalkX<e.x?-1:1;else if(e.noticed||e.alert>0)e.dir=dx<0?-1:1;e.x+=e.dir*e.speed*(e.inkSlow||1)*(e.pressureTime>0?1.5:1)*dt;if(Math.abs(dx)<118&&Math.abs(dy)<65&&e.timer<=0){e.dir=dx<0?-1:1;e.state='windup';e.timer=.5;}}
     else if(e.state==='windup'&&e.timer<=0){e.state='lunge';e.timer=.32;g.emit('fakeLunge',{x:e.x,y:e.y});}
     else if(e.state==='lunge'){e.x+=e.dir*(e.inkSlow||1)*(e.pressureTime>0?270:210)*dt;if(e.timer<=0){e.state='recover';e.timer=.85;}}
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.65;}
-   }else if(e.type==='informant'){
+   }else if(e.type==='injection'){
+    if(e.state==='patrol'){e.dir=(e.navWalkX??p.x)<e.x?-1:1;e.x+=e.dir*e.speed*dt;if(Math.abs(dx)<270&&Math.abs(dy)<80&&e.timer<=0){e.state='windup';e.timer=.6;e.aim={x:p.x+17,y:p.y+10};g.emit('tickerWarning',{x:e.x,y:e.y});}}
+    else if(e.state==='windup'&&e.timer<=0){const dir=e.aim.x<e.x?-1:1;g.bolts.push({room:e.room,kind:'ticker',x:e.x+24,y:e.aim.y,w:40,h:10,vx:dir*240,vy:0,ttl:2.5,sourceId:e.id});e.state='recover';e.timer=.95;e.attackFlash=.22;g.emit('tickerShot',{x:e.x,y:e.y});}
+    else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.7;}
+   }else if(e.type==='splicer')stepSplicer(g,e,dt,dx,dy);
+   else if(e.type==='informant'){
     if(e.state==='patrol'){
      if(Math.abs(dx)<135)e.x+=(dx<0?1:-1)*e.speed*(e.inkSlow||1)*dt;
      if(near&&e.timer<=0){e.dir=dx<0?-1:1;e.aim={x:p.x+p.w/2,y:p.y+(p.sneaking?p.h/2:8)};e.state='windup';e.timer=.9;}
@@ -61,10 +69,10 @@ export function stepEnemies(g,dt,paw,prevBottom){
     else if(e.state==='recover'&&e.timer<=0)e.state='patrol';
     if(e.state==='blast'&&!e.blastHit){const beam={x:e.dir>0?e.x+40:e.x-360,y:e.y-6,w:360,h:42};if(g.overlap(p,beam)){e.blastHit=true;if(p.dash===0)g.push(e.dir,e.x);}}
    }else if(e.type==='panicker'){
-    if(e.state==='patrol'&&!silent&&Math.abs(dx)<215&&Math.abs(dy)<110){e.state='windup';e.timer=.6;}
+    if(e.state==='patrol'&&e.alarmCooldown===0&&!silent&&(e.alertedOnce||Math.abs(dx)<215&&Math.abs(dy)<110)){e.state='windup';e.timer=.6;}
     else if(e.state==='windup'&&silent){e.state='patrol';e.timer=.6;e.noticed=false;}
-    else if(e.state==='windup'&&e.timer<=0){e.state='alarm';e.timer=1.25;alertNearby(g,e);}
-    else if(e.state==='alarm'&&e.timer<=0){e.state='recover';e.timer=3.5;}
+    else if(e.state==='windup'&&e.timer<=0){e.state='alarm';e.timer=1.25;e.alarmCooldown=9.4;e.alertedOnce=true;alertNearby(g,e);}
+    else if(e.state==='alarm'&&e.timer<=0){e.state='recover';e.timer=Math.max(.5,e.alarmCooldown);}
     else if(e.state==='recover'&&e.timer<=0)e.state='patrol';
    }else if(TACTICAL_TYPES.includes(e.type))stepTacticalEnemy(g,e,dt,dx,dy);
    else if(e.type==='clickbait'){
@@ -78,15 +86,16 @@ export function stepEnemies(g,dt,paw,prevBottom){
    }
    if((e.type==='inflator'||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*(e.inkSlow||1)*dt;
   }
-  if(!e.jumpPhase&&!e.terrainFall&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
+  if(!e.flying&&!e.jumpPhase&&!e.terrainFall&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
   e.moving=!e.teleport&&Math.abs(e.x-previousX)>.01;if(e.moving)e.walkTime+=Math.abs(e.x-previousX)/24;
   if(!e.phased&&p.attack>0&&e.lastSwing!==p.swing&&g.overlap(paw,e)){e.lastSwing=p.swing;if(e.type==='clickbait'&&!e.revealed)reveal(g,e,dx);g.hitEnemy(e);}
   if(e.dead||e.phased)continue;
-  if(e.type==='clickbait'){
+  if(e.flying){handleFlyingContact(g,e);if(g.mode!=='playing')return;}
+  else if(e.type==='clickbait'){
    const mouth={x:e.dir>0?e.x+2:e.x-40,y:e.y-30,w:88,h:72};
    if(e.state==='snap'&&g.overlap(p,mouth)&&p.dash>0){e.state='recover';e.timer=1.4;}
    else if(e.state==='snap'&&p.inv===0&&g.overlap(p,mouth)){g.swallow={enemyId:e.id,x:p.x,y:p.y,targetX:e.x+12,targetY:e.y-14,timer:.48,total:.48};p.attack=0;p.vx=0;p.vy=0;e.state='recover';e.timer=2;e.attackFlash=.48;e.captureTime=0;g.emit('swallow',{x:e.x,y:e.y});return;}
-  }else if(g.overlap(p,e)&&!(e.type==='panicker'&&p.sneaking&&e.state!=='alarm')&&!(e.type==='fakenews'&&e.state==='recover')){
+  }else if(g.overlap(p,e)&&!(e.type==='panicker'&&p.sneaking&&e.state!=='alarm')&&!(['fakenews','injection'].includes(e.type)&&e.state==='recover')){
    if(p.vy>0&&prevBottom<e.y+12){g.hitEnemy(e,true);p.vy=-330;}else g.hurt(false,e.x);
   }
  }

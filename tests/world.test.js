@@ -1,3 +1,4 @@
+import {rooms as campaignRooms} from '../level.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Game,WIDTH,WORLD,HEIGHT,FINAL_X,LAST_ROOM,ARENA_WIDTH,PORTAL_X,platforms} from '../engine.js';
@@ -7,15 +8,15 @@ import {stepWorldPlatforms} from '../world-platforms.js';
 import {alertNearby} from '../enemies.js';
 import {jumpTo,supportOf,walkTo} from './navigation.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
-function setup(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};g.enemies=[];g.fishes=[];g.soups=[];g.room=room;g.checkpoint=room;g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);const s=g.platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,grounded:true,supportId:s.id});return g;}
+function setup(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};g.enemies=[];g.fishes=[];g.soups=[];g.room=room;g.checkpoint=room;g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);const s=g.platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,grounded:true,supportId:s.id});return g;}
 test('the boss dimension occupies two full screens and has multiple complete platform routes',()=>{
  const g=setup(LAST_ROOM),stage=g.platforms.filter(s=>s.room===LAST_ROOM);assert.equal(ARENA_WIDTH,WIDTH*2);assert.equal(WORLD-FINAL_X,ARENA_WIDTH);assert.ok(stage.length>=16);assert.ok(new Set(stage.map(s=>s.y)).size>=8);assert.ok(stage.every(s=>s.x>=FINAL_X&&s.x+s.w<=WORLD));assert.ok(Math.max(...bossDocks.map(d=>d.x))-Math.min(...bossDocks.map(d=>d.x))>800);
 });
 test('the tower portal actually pulls Uma into a separate checkpoint and starts the boss after the transition',()=>{
- const g=setup(6,2,600);g.health=1;g.lives=2;tick(g,4,{right:true});assert.equal(g.mode,'enteringArena');const x=g.player.x;tick(g,25,{left:true,jump:true,attack:true});assert.ok(g.player.x>x);assert.ok(g.player.warpScale<1);tick(g,80);assert.equal(g.mode,'playing');assert.equal(g.room,LAST_ROOM);assert.equal(g.checkpoint,LAST_ROOM);assert.equal(g.lives,2);assert.equal(g.health,4);assert.equal(g.boss.active,true);assert.ok(g.camera>=FINAL_X);assert.equal(g.events.filter(e=>e.type==='arenaEnter').length,1);tick(g,80,{left:true});assert.ok(g.player.x>=FINAL_X+4);assert.ok(g.player.x<FINAL_X+100);
+ const g=setup(7,21,2140);g.relays.filter(d=>d.room===7).forEach(d=>d.hp=0);g.health=1;g.lives=2;tick(g,4,{right:true});assert.equal(g.mode,'enteringArena');const x=g.player.x;tick(g,25,{left:true,jump:true,attack:true});assert.ok(g.player.x>x);assert.ok(g.player.warpScale<1);tick(g,80);assert.equal(g.mode,'playing');assert.equal(g.room,LAST_ROOM);assert.equal(g.checkpoint,LAST_ROOM);assert.equal(g.lives,2);assert.equal(g.health,4);assert.equal(g.boss.active,true);assert.ok(g.camera>=FINAL_X);assert.equal(g.events.filter(e=>e.type==='arenaEnter').length,1);tick(g,80,{left:true});assert.ok(g.player.x>=FINAL_X+4);assert.ok(g.player.x<FINAL_X+100);
 });
 test('Esc freezes the portal pull and resumes the same transition without duplicating entry',()=>{
- const g=setup(6,2,630);tick(g,1);tick(g,20);g.pausedFrom=g.mode;g.mode='paused';const snapshot=JSON.stringify(g);tick(g,200,{right:true});assert.equal(JSON.stringify(g),snapshot);g.mode=g.pausedFrom;delete g.pausedFrom;tick(g,100);assert.equal(g.room,LAST_ROOM);assert.equal(g.events.filter(e=>e.type==='arenaEnter').length,1);
+ const g=setup(7,21,2140);g.relays.filter(d=>d.room===7).forEach(d=>d.hp=0);tick(g,1,{right:true});tick(g,20);g.pausedFrom=g.mode;g.mode='paused';const snapshot=JSON.stringify(g);tick(g,200,{right:true});assert.equal(JSON.stringify(g),snapshot);g.mode=g.pausedFrom;delete g.pausedFrom;tick(g,100);assert.equal(g.room,LAST_ROOM);assert.equal(g.events.filter(e=>e.type==='arenaEnter').length,1);
 });
 test('both lower and upper arena routes are reachable through actual jumping and walking',()=>{
  for(const route of [[1,2,3,4],[14,9,10,11,12,13]]){const g=setup(LAST_ROOM,0,74);Object.assign(g.boss,{active:true,timer:9999,x:WORLD+999,state:'idle'});for(const index of route)assert.equal(jumpTo(g,LAST_ROOM,index),true,'arena platform '+index);assert.equal(g.health,4);assert.ok(g.player.x>FINAL_X+1200);}
@@ -35,8 +36,8 @@ test('a hidden cat-face cache restores one life, leaves hearts unchanged and can
 test('full lives leave a cache available; consumed caches stay spent after death and reset on restart',()=>{
  const g=setup(1,8,530),life=g.lifePickups.find(l=>l.room===1);Object.assign(g.player,{x:life.x-17,y:life.y-24});tick(g,1);assert.equal(life.taken,false);g.lives=2;tick(g,1);assert.equal(life.taken,true);g.loseLife();tick(g,70);assert.equal(life.taken,true);assert.equal(g.lives,2);g.start();assert.ok(g.lifePickups.every(l=>!l.taken));
 });
-test('life caches are off the main route and each campaign cache has a reachable side path',()=>{
- const routes={1:[1,8],2:[9,7],3:[9,7],4:[9,7],5:[9,7],6:[1,8]};for(const[roomText,route]of Object.entries(routes)){const room=Number(roomText),g=setup(room);for(const index of route)assert.equal(jumpTo(g,room,index),true,'cache route '+room+':'+index);const life=g.lifePickups.find(l=>l.room===room);assert.ok(life.platformIndex>=7);g.lives=2;assert.equal(walkTo(g,life.x-17),true);tick(g,2);assert.equal(life.taken,true);assert.equal(g.lives,3);assert.equal(g.health,4);}
+test('each arena has an accessible side cache and every chapter has two optional caches',()=>{
+ for(const room of campaignRooms.filter(r=>r.index>0)){const g=setup(room.index),caches=g.lifePickups.filter(l=>l.room===room.index);assert.equal(caches.length,room.arena?1:2);for(const life of caches){const s=g.platforms.find(s=>s.room===room.index&&s.index===life.platformIndex);assert.ok(life.x>s.x&&life.x<s.x+s.w);assert.equal(life.y,s.y-24);}if(room.arena){for(const index of [14,9])assert.equal(jumpTo(g,room.index,index),true);g.lives=2;assert.equal(walkTo(g,caches[0].x-17),true);tick(g,2);assert.equal(caches[0].taken,true);assert.equal(g.lives,3);}}
 });
 test('TV horizontal platforms carry Uma and their passengers without fake walking or sliding',()=>{
  const g=setup(5,1,340),s=g.platforms.find(s=>s.room===5&&s.index===1),e=enemy('panicker',5,430,1,{active:true,noticed:true,state:'recover',timer:999});g.enemies=[e];const px=g.player.x-s.x,ex=e.x-s.x,x=s.x;tick(g,60);assert.ok(Math.abs(s.x-x)>30);assert.ok(Math.abs(g.player.x-s.x-px)<.001);assert.ok(Math.abs(e.x-s.x-ex)<.001);assert.equal(g.player.grounded,true);assert.equal(e.walkTime,0);assert.equal(g.health,4);
@@ -48,8 +49,8 @@ test('portal minions on a travelling studio platform inherit its current positio
  const g=setup(5),owner=enemy('panicker',5,360,1,{active:true,noticed:true,state:'alarm',timer:999});g.enemies=[owner];alertNearby(g,owner);tick(g,70);const s=g.platforms.find(s=>s.room===5&&s.index===1),minion=g.enemies.find(e=>e.portalMinion);assert.ok(minion);assert.equal(minion.y+minion.h,s.y);assert.ok(minion.x>=s.x+12&&minion.x<=s.x+s.w-60);assert.equal(minion.origin,s.x+12);assert.equal(minion.end,s.x+s.w-60);
 });
 test('Inflators occupy narrow ledges and their wave really knocks Uma onto a lower level',()=>{
- const g=setup(3,9,165),e=enemy('inflator',3,210,9,{active:true,noticed:true,state:'blast',timer:.3,dir:-1});g.enemies=[e];const high=g.player.y+g.player.h;tick(g,1);assert.ok(g.player.knock>0);tick(g,40);assert.ok(g.player.x<3*WIDTH+153);assert.ok(g.player.y+g.player.h>high+40);assert.equal(g.health,4);for(const m of new Game().enemies.filter(e=>e.type==='inflator')){const s=platforms.find(s=>s.room===m.room&&s.index===m.platformIndex);assert.ok(s.w<205);assert.ok(s.x+s.w-(m.x+m.w)<35);}
+ const g=setup(3,9,165),e=enemy('inflator',3,210,9,{active:true,noticed:true,state:'blast',timer:.3,dir:-1});g.enemies=[e];const high=g.player.y+g.player.h;tick(g,1);assert.ok(g.player.knock>0);tick(g,40);assert.ok(g.player.x<campaignRooms[3].x+153);assert.ok(g.player.y+g.player.h>high+40);assert.equal(g.health,4);for(const m of new Game().enemies.filter(e=>e.type==='inflator')){const s=platforms.find(s=>s.room===m.room&&s.index===m.platformIndex);assert.ok(s.w<=224);assert.ok(s.x+s.w-(m.x+m.w)<35);}
 });
 test('satellites are on high platforms, open from one swing, and no three-hit relay remains',()=>{
- const dishes=createRelays();assert.equal(dishes.length,5);for(const d of dishes){assert.equal(d.hp,1);assert.equal(d.kind,'dish');const s=platforms.find(s=>s.room===d.room&&s.index===d.platformIndex);assert.equal(d.y+d.h,s.y);assert.ok(s.y<=204);assert.ok(d.platformIndex>=7);}
+ const dishes=createRelays();assert.equal(dishes.length,17);for(const d of dishes){assert.equal(d.hp,1);assert.equal(d.kind,'dish');const s=platforms.find(s=>s.room===d.room&&s.index===d.platformIndex);assert.equal(d.y+d.h,s.y);assert.ok(s.y<=204);assert.ok(d.platformIndex>=7);}
 });

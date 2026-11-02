@@ -1,4 +1,4 @@
-import {platforms} from './level.js?v=0.13.0';
+import {platforms} from './level.js?v=0.14.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function solidSurfaces(g){
  const all=g.platforms||platforms;if(!g.cuts?.some(c=>c.phase==='gap'))return all;
@@ -24,16 +24,16 @@ export function stepTacticalTerrain(g,dt){
  for(const cut of g.cuts){
   if(cut.room!==g.room)continue;
   const surface=g.platforms.find(s=>s.id===cut.platformId);if(surface){cut.x=surface.x+cut.localX+cut.w/2;cut.y=surface.y;}
-  const owner=g.enemies.find(e=>e.id===cut.ownerId&&!e.dead);
+  const owner=cut.ownerId==='boss:'+g.boss.id&&g.boss.active&&g.boss.hp>0?g.boss:g.enemies.find(e=>e.id===cut.ownerId&&!e.dead);
   if(cut.phase==='warning'&&(!owner||owner.hurtTime>0)){cut.time=0;continue;}
   cut.time-=dt;
-  if(cut.phase==='warning'&&cut.time<=0){cut.phase='gap';cut.time=3;g.emit('platformCut',{x:cut.x,y:cut.y,enemyType:'montager'});}
+  if(cut.phase==='warning'&&cut.time<=0){cut.phase='gap';cut.time=3;g.emit('platformCut',{x:cut.x,y:cut.y,enemyType:'cutter'});}
   else if(cut.phase==='gap'&&cut.time<=0)g.emit('platformRestore',{x:cut.x,y:cut.y});
  }
  g.cuts=g.cuts.filter(c=>c.time>0);
 }
 export function stepEnemyFall(g,e,dt){
- if(e.phased||e.teleport||e.jumpPhase==='air')return false;
+ if(e.flying||e.phased||e.teleport||e.jumpPhase==='air')return false;
  const surfaces=solidSurfaces(g),feet=e.y+e.h;
  if(!e.terrainFall){
   const base=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);

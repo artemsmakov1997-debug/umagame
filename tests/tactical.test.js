@@ -1,3 +1,4 @@
+import {rooms as campaignRooms} from '../level.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Game,WIDTH} from '../engine.js';
@@ -12,10 +13,10 @@ const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 const actor=(type,room,x,index,extra={})=>enemy(type,room,x,index,{active:true,noticed:true,...extra});
 function setup(room=1,index=0,x=45){
  const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.room=g.checkpoint=room;g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];g.relays.forEach(d=>d.hp=0);
- const s=g.platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,h:48,grounded:true,supportId:s.id,inv:0});return g;
+ const s=g.platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,h:48,grounded:true,supportId:s.id,inv:0});return g;
 }
 test('new small enemies are introduced gradually, have their own notebooks and do not invade training',()=>{
- const roster=createEnemies();for(const [id,first]of [['censor',3],['copier',4],['montager',5]]){assert.equal(Math.min(...roster.filter(e=>e.type===id).map(e=>e.room)),first);assert.ok(createNotebooks().some(n=>n.id===id));assert.ok(roster.filter(e=>e.type===id).every(e=>e.h===29&&e.w===48));}assert.ok(roster.every(e=>e.room>0));
+ const roster=createEnemies();for(const [id,first]of [['censor',1],['copier',1],['cutter',5]]){assert.equal(Math.min(...roster.filter(e=>e.type===id).map(e=>e.room)),first);assert.ok(createNotebooks().some(n=>n.id===id));assert.ok(roster.filter(e=>e.type===id).every(e=>e.h===29&&e.w===48));}assert.ok(roster.every(e=>e.room>0));
 });
 test('Clickbait is immune to paws, stomps, soup damage and reflected projectiles from either side',()=>{
  const g=setup(2,1,295),e=actor('clickbait',2,365,1,{revealed:true,state:'patrol'});g.enemies=[e];g.player.powerTime=10;
@@ -33,7 +34,7 @@ test('Censor stamps a bounded patch on its actual platform, with warning and a f
  const g=setup(3,3,20),e=actor('censor',3,125,3,{timer:0,speed:0});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');assert.equal(g.inks.length,0);tick(g,32);assert.equal(g.inks.length,1);const ink=g.inks[0],s=g.platforms.find(s=>s.id===ink.platformId);assert.ok(ink.localX>=0&&ink.localX+ink.w<=s.w);g.enemies=[];tick(g,560);assert.equal(g.inks.length,0);
 });
 test('ink slows Fakenews patrols and lunges but does not slow Censor',()=>{
- const distance=(type,ink,state='patrol')=>{const g=setup(3,3,10),e=actor(type,3,140,3,{dir:1,timer:99,jumpCooldown:99,state});g.enemies=[e];if(ink)stampInk(g,actor('censor',3,140,3));const x=e.x;tick(g,12);return e.x-x;};
+ const distance=(type,ink,state='patrol')=>{const g=setup(3,3,10),e=actor(type,3,140,3,{dir:1,timer:99,jumpCooldown:99,state});g.enemies=[e];if(ink)stampInk(g,actor('censor',3,140,3));const x=e.x;tick(g,12);return Math.abs(e.x-x);};
  assert.ok(distance('fakenews',true)<distance('fakenews',false)*.5);assert.ok(distance('fakenews',true,'lunge')<distance('fakenews',false,'lunge')*.5);assert.ok(Math.abs(distance('censor',true)-distance('censor',false))<.01);
 });
 test('Uma has real ink inertia after releasing movement and distinct slipping animation poses',()=>{
@@ -50,7 +51,7 @@ test('Copier scans an original on its lit platform and prints a real one-health 
  const {g,c,original}=copierSetup();assert.equal(scanSource(g,c),original);tick(g,1);assert.equal(c.state,'windup');tick(g,56);const copy=g.enemies.find(e=>e.copyOwnerId===c.id);assert.ok(copy);assert.equal(copy.type,'fakenews');assert.equal(copy.hp,1);assert.ok(copy.spawnTime>0);assert.ok(Math.abs(copy.x-g.player.x)>62);assert.equal(copy.copyOf,original.id);assert.ok(!g.enemies.some(other=>other!==copy&&!other.dead&&g.overlap(copy,other)));
 });
 test('moving the original off the scan patch prevents duplication and copies cannot copy themselves',()=>{
- const {g,c,original}=copierSetup();tick(g,1);original.x=4*WIDTH+460;tick(g,60);assert.equal(g.enemies.filter(e=>e.copyOwnerId).length,0);assert.equal(c.state,'printing');original.x=4*WIDTH+340;original.copyOwnerId=c.id;assert.equal(scanSource(g,c),null);
+ const {g,c,original}=copierSetup();tick(g,1);original.x=campaignRooms[4].x+460;tick(g,60);assert.equal(g.enemies.filter(e=>e.copyOwnerId).length,0);assert.equal(c.state,'printing');original.x=campaignRooms[4].x+340;original.copyOwnerId=c.id;assert.equal(scanSource(g,c),null);
 });
 test('Copier remains vulnerable periodically even with an empty scanner or a full copy limit',()=>{
  const {g,c,original}=copierSetup();g.enemies=[c];assert.equal(g.hitEnemy(c),false);tick(g,58);assert.equal(c.state,'printing');assert.equal(g.hitEnemy(c),true);assert.equal(c.hp,2);assert.equal(g.enemies.some(e=>e.id===original.id),false);
@@ -59,16 +60,16 @@ test('copies are capped and destroying their Copier dissolves every owned duplic
  const {g,c}=copierSetup();tick(g,1500);const copies=g.enemies.filter(e=>e.copyOwnerId===c.id&&!e.dead);assert.equal(copies.length,2);assert.ok(g.enemies.filter(e=>e.copyOwnerId&&!e.dead).length<=3);c.state='printing';c.inv=0;assert.equal(g.hitEnemy(c,false,99),true);assert.ok(copies.every(e=>e.dead));
 });
 test('Montager warns before removing only a middle span; permanent supports and antenna roofs survive',()=>{
- const g=setup(5,1,365),e=actor('montager',5,655,2,{timer:99,speed:0});g.enemies=[e];assert.equal(planCut(g,e),true);const cut=g.cuts[0],s=g.platforms.find(s=>s.id===cut.platformId);assert.equal(s.index,1);assert.ok(cut.localX>=44&&s.w-cut.localX-cut.w>=44);tick(g,100);assert.equal(cut.phase,'warning');assert.equal(solidSurfaces(g).filter(p=>p.id===s.id).length,1);tick(g,10);assert.equal(cut.phase,'gap');const pieces=solidSurfaces(g).filter(p=>p.id===s.id);assert.equal(pieces.length,2);assert.equal(pieces.reduce((sum,p)=>sum+p.w,0),s.w-cut.w);assert.ok(!g.platforms.find(s=>s.id==='5:11').cuttable);
+ const g=setup(5,1,365),e=actor('cutter',5,655,2,{timer:99,speed:0});g.enemies=[e];assert.equal(planCut(g,e),true);const cut=g.cuts[0],s=g.platforms.find(s=>s.id===cut.platformId);assert.equal(s.index,1);assert.ok(cut.localX>=44&&s.w-cut.localX-cut.w>=44);tick(g,100);assert.equal(cut.phase,'warning');assert.equal(solidSurfaces(g).filter(p=>p.id===s.id).length,1);tick(g,10);assert.equal(cut.phase,'gap');const pieces=solidSurfaces(g).filter(p=>p.id===s.id);assert.equal(pieces.length,2);assert.equal(pieces.reduce((sum,p)=>sum+p.w,0),s.w-cut.w);assert.ok(!g.platforms.find(s=>s.id==='5:11').cuttable);
 });
 test('the same temporary cut drops Uma and a Fakenews through actual collision geometry',()=>{
- const g=setup(5,1,365),e=actor('montager',5,655,2,{timer:99,speed:0}),fake=actor('fakenews',5,365,1,{timer:999,speed:0,jumpCooldown:999});g.enemies=[e,fake];g.player.inv=999;planCut(g,e);const s=g.platforms.find(s=>s.id===g.cuts[0].platformId);let catFell=false,fakeFell=false;for(let i=0;i<140;i++){tick(g,1);catFell||=g.player.y+g.player.h>s.y+15;fakeFell||=fake.y+fake.h>s.y+15;}assert.ok(catFell);assert.ok(fakeFell);assert.ok(g.events.some(e=>e.type==='enemyFall'));tick(g,170);assert.equal(g.cuts.length,0);assert.equal(solidSurfaces(g).filter(p=>p.id===s.id).length,1);
+ const g=setup(5,1,365),e=actor('cutter',5,655,2,{timer:99,speed:0}),fake=actor('fakenews',5,365,1,{timer:999,speed:0,jumpCooldown:999});g.enemies=[e,fake];g.player.inv=999;planCut(g,e);const s=g.platforms.find(s=>s.id===g.cuts[0].platformId);let catFell=false,fakeFell=false;for(let i=0;i<140;i++){tick(g,1);catFell||=g.player.y+g.player.h>s.y+15;fakeFell||=fake.y+fake.h>s.y+15;}assert.ok(catFell);assert.ok(fakeFell);assert.ok(g.events.some(e=>e.type==='enemyFall'));tick(g,170);assert.equal(g.cuts.length,0);assert.equal(solidSurfaces(g).filter(p=>p.id===s.id).length,1);
 });
 test('a paw interrupts the pending cut; moving cut markers follow the actual platform',()=>{
- const g=setup(5,1,365),e=actor('montager',5,655,2,{timer:99,speed:0});g.enemies=[e];planCut(g,e);const cut=g.cuts[0],x=cut.x;tick(g,30);assert.notEqual(cut.x,x);assert.equal(g.hitEnemy(e),true);tick(g,1);assert.equal(g.cuts.length,0);
+ const g=setup(5,1,365),e=actor('cutter',5,655,2,{timer:99,speed:0});g.enemies=[e];planCut(g,e);const cut=g.cuts[0],x=cut.x;tick(g,30);assert.notEqual(cut.x,x);assert.equal(g.hitEnemy(e),true);tick(g,1);assert.equal(g.cuts.length,0);
 });
 test('Informant refuses to teleport into a newly cut hole',()=>{
- const g=setup(5,1,365),e=actor('informant',5,150,0),m=actor('montager',5,655,2,{timer:99});g.enemies=[e,m];planCut(g,m);const cut=g.cuts[0],s=g.platforms.find(s=>s.id===cut.platformId);cut.phase='gap';cut.time=3;const x=s.x+cut.localX+20;assert.equal(teleportLandingClear(g,e,{x,y:s.y-e.h,index:s.index}),false);const target=chooseInformantLanding(g,e);if(target)assert.ok(solidSurfaces(g).some(s=>s.index===target.index&&target.x>=s.x&&target.x+e.w<=s.x+s.w));
+ const g=setup(5,1,365),e=actor('informant',5,150,0),m=actor('cutter',5,655,2,{timer:99});g.enemies=[e,m];planCut(g,m);const cut=g.cuts[0],s=g.platforms.find(s=>s.id===cut.platformId);cut.phase='gap';cut.time=3;const x=s.x+cut.localX+20;assert.equal(teleportLandingClear(g,e,{x,y:s.y-e.h,index:s.index}),false);const target=chooseInformantLanding(g,e);if(target)assert.ok(solidSurfaces(g).some(s=>s.index===target.index&&target.x>=s.x&&target.x+e.w<=s.x+s.w));
 });
 test('checkpoint recovery clears local ink, cuts and copies and preserves collected life stocks',()=>{
  const {g,c}=copierSetup();g.lives=2;stampInk(g,actor('censor',4,340,1));g.cuts=[{room:4,platformId:'4:1',phase:'gap',time:2,localX:60,w:80}];g.enemies.push(actor('fakenews',4,350,1,{copyOwnerId:c.id}));g.loseLife();tick(g,70);assert.equal(g.mode,'playing');assert.equal(g.inks.length,0);assert.equal(g.cuts.length,0);assert.ok(g.enemies.every(e=>!e.copyOwnerId));assert.equal(g.lives,1);

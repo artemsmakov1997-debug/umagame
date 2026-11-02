@@ -1,7 +1,7 @@
-import {enemy,WIDTH} from './level.js?v=0.13.0';
-import {inkAt,solidSurfaces} from './terrain.js?v=0.13.0';
+import {enemy,rooms} from './level.js?v=0.14.0';
+import {inkAt,solidSurfaces} from './terrain.js?v=0.14.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export const TACTICAL_TYPES=['censor','copier','montager'];
+export const TACTICAL_TYPES=['censor','copier','cutter'];
 export function scanArea(g,e){
  const s=g.platforms.find(s=>s.room===e.room&&s.index===(e.scanIndex??e.platformIndex));if(!s)return null;
  const w=Math.min(e.scanW||136,s.w-24),localX=clamp(e.scanStart??32,12,s.w-w-12);return {x:s.x+localX,y:s.y-52,w,h:54,surface:s};
@@ -31,7 +31,7 @@ function copyEnemy(g,e){
  const supports=solidSurfaces(g).filter(s=>s.id===area.surface.id&&s.w>=92),s=supports.find(s=>e.x>=s.x&&e.x<s.x+s.w)||supports[0];if(!s)return false;
  const start=s.x+4,end=s.x+s.w-52,options=[e.x+e.dir*66,start,end,s.x+s.w*.25,s.x+s.w*.75];
  const x=options.map(x=>clamp(x,start,end)).find(x=>Math.abs(x-g.player.x)>62&&!g.enemies.some(other=>other.active&&!other.dead&&!other.phased&&other.room===e.room&&other.platformIndex===s.index&&x+50>other.x&&x-2<other.x+other.w));if(x===undefined)return false;
- const copy=enemy(original.type,e.room,x-e.room*WIDTH,s.index,{id:'copy-'+(++g.tacticalSerial),copyOwnerId:e.id,copyOf:original.id,active:true,noticed:true,spawnTime:.65,hp:1,maxHp:1,dir:g.player.x<x?-1:1,shieldBroken:2});
+ const copy=enemy(original.type,e.room,x-rooms[e.room].x,s.index,{id:'copy-'+(++g.tacticalSerial),copyOwnerId:e.id,copyOf:original.id,active:true,noticed:true,spawnTime:.65,hp:1,maxHp:1,dir:g.player.x<x?-1:1,shieldBroken:2});
  copy.y=s.y-copy.h;copy.origin=start;copy.end=end;g.enemies.push(copy);g.emit('copySpawn',{x:copy.x,y:copy.y,enemyType:e.type});return true;
 }
 export function planCut(g,e){
@@ -55,7 +55,7 @@ export function stepTacticalEnemy(g,e,dt,dx,dy){
   }else if(e.state==='windup'&&e.timer<=0){e.state='printing';e.timer=.55;copyEnemy(g,e);}
   else if(e.state==='printing'&&e.timer<=0){e.state='recover';e.timer=1.1;}
   else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=2.4;}
- }else if(e.type==='montager'){
+ }else if(e.type==='cutter'){
   if(e.state==='patrol'){
    e.x+=e.dir*e.speed*dt;
    if(e.timer<=0&&Math.abs(dx)<500&&planCut(g,e)){e.state='windup';e.timer=1.8;}
@@ -68,6 +68,6 @@ export function updateEnemyInk(g,e){
  const ink=e.type!=='censor'&&inkAt(g,e);e.inkSlow=ink?.38:1;
  if(e.type==='panicker'){
   const was=e.muffled;e.muffled=!!ink;
-  if(ink){if(!was)g.emit('alarmMuffled',{x:e.x,y:e.y,enemyType:e.type});e.state='patrol';e.timer=Math.max(e.timer,.65);e.noticed=false;for(const portal of g.portals)if(portal.ownerId===e.id)portal.cancelled=true;}
+  if(ink){e.alertedOnce=false;if(!was)g.emit('alarmMuffled',{x:e.x,y:e.y,enemyType:e.type});e.state='patrol';e.timer=Math.max(e.timer,.65);e.noticed=false;for(const portal of g.portals)if(portal.ownerId===e.id)portal.cancelled=true;}
  }
 }

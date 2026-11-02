@@ -1,8 +1,8 @@
-import {creatures,newCreatures,sprite} from './assets.js?v=0.13.0';
-import {rect} from './pixel.js?v=0.13.0';
-import {idlePlacement} from './menu-animation.js?v=0.13.0';
-import {drawMonitorEyes,drawPortraitMonitor} from './menu-monitor.js?v=0.13.0';
-import {motion,monsterFrame,monsterReaction,previewActor,clickbaitAppearanceFrame,baitEmergenceFrames,locomotionFrame} from './monster-animation.js?v=0.13.0';
+import {creatures,newCreatures,sprite} from './assets.js?v=0.14.0';
+import {rect} from './pixel.js?v=0.14.0';
+import {idlePlacement} from './menu-animation.js?v=0.14.0';
+import {drawMonitorEyes,drawPortraitMonitor} from './menu-monitor.js?v=0.14.0';
+import {motion,monsterFrame,monsterReaction,previewActor,clickbaitAppearanceFrame,baitEmergenceFrames,locomotionFrame} from './monster-animation.js?v=0.14.0';
 export function drawCrt(c,x,y,w,h,time=0){
  rect(c,x,y,w,h,'#080f22');rect(c,x+2,y+2,w-4,h-5,'#8792ab');rect(c,x+5,y+5,w-10,h-15,'#303f61');rect(c,x+9,y+9,w-18,h-23,'#062c51');
  for(let i=0;i<9;i++){const yy=y+12+i*(h-30)/9;rect(c,x+12,yy,w-24,2,'#0b658b');for(let j=0;j<6;j++)if((i*3+j+Math.floor(time*7))%4===0)rect(c,x+13+j*(w-28)/6,yy,Math.max(2,w/14),2,'#77ecff');}
@@ -36,4 +36,10 @@ export function drawPortrait(canvas,a,id,time=0){
  const big=canvas.width>200,pad=big?8:3,actor=previewActor(time),cast=actor.state==='casting';
  if(cast){actor.state=id==='inflator'?'blast':id==='panicker'?'alarm':id==='clickbait'?'snap':'casting';actor.attackFlash=1;}
  drawMonster(c,a,id,pad,pad,canvas.width-pad*2,canvas.height-pad*2,time,false,actor);
+}
+
+export function drawHauntedMonitor(c,a,x,y,w,h,time=0,portal=false){
+ const cycle=time%6,index=portal?5:cycle>5.6?2:cycle>5.4?1:Math.floor(time*2)%9===7?3:0;
+ const left=index%3*512+85,top=Math.floor(index/3)*512+91;
+ sprite(c,a.monitors,[left,top,342,341],x,y,w,h);
 }
