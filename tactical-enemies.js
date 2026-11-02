@@ -1,5 +1,6 @@
-import {enemy,rooms} from './level.js?v=0.14.0';
-import {inkAt,solidSurfaces} from './terrain.js?v=0.14.0';
+import {actorById} from './boss-actors.js?v=0.15.0';
+import {enemy,rooms} from './level.js?v=0.15.0';
+import {inkAt,solidSurfaces} from './terrain.js?v=0.15.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const TACTICAL_TYPES=['censor','copier','cutter'];
 export function scanArea(g,e){
@@ -13,7 +14,7 @@ export function scanSource(g,e){
 export function cleanCopies(g){
  for(const copy of g.enemies){
   if(!copy.copyOwnerId||copy.dead)continue;
-  if(!g.enemies.some(e=>e.id===copy.copyOwnerId&&!e.dead)){
+  const owner=actorById(g,copy.copyOwnerId);if(!owner||owner.dead||owner.hp<=0){
    copy.dead=true;copy.hp=0;copy.deathTime=.28;g.emit('copyDissolve',{x:copy.x,y:copy.y,enemyType:copy.type});
   }
  }

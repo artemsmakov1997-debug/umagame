@@ -1,10 +1,12 @@
-import {solidSurfaces} from './terrain.js?v=0.14.0';
-import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.14.0';
-import {enemy,rooms} from './level.js?v=0.14.0';
-import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.14.0';
-import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.14.0';
-import {stepEnemyFall} from './terrain.js?v=0.14.0';
-import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.14.0';
+import {canActivateEnemy} from './encounters.js?v=0.15.0';
+import {actorById,bossProxy} from './boss-actors.js?v=0.15.0';
+import {solidSurfaces} from './terrain.js?v=0.15.0';
+import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.15.0';
+import {enemy,rooms} from './level.js?v=0.15.0';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.15.0';
+import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.15.0';
+import {stepEnemyFall} from './terrain.js?v=0.15.0';
+import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.15.0';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
@@ -16,7 +18,7 @@ export function alertNearby(g,caller){
 }
 export function stepPortals(g,dt){
  for(const portal of g.portals){
-  if(portal.room!==g.room)continue;const owner=g.enemies.find(e=>e.id===portal.ownerId);
+  if(portal.room!==g.room)continue;const found=actorById(g,portal.ownerId),owner=found===g.boss?bossProxy(g):found;
   if(!owner||owner.dead)portal.cancelled=true;
   if(portal.cancelled){portal.closeTime=(portal.closeTime||0)+dt;continue;}portal.time+=dt;
   if(portal.spawned<3&&portal.time>=.7+portal.spawned*.5){
@@ -33,7 +35,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
  const p=g.player;cleanCopies(g);
  for(const e of g.enemies){
   if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);continue;}if(e.room!==g.room)continue;
-  if(!e.active){if(p.x-rooms[e.room].x<e.trigger)continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
+  if(!e.active){if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
   for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   updateEnemyInk(g,e);

@@ -26,7 +26,7 @@ export const motion={
  ]}
 };
 export function monsterFrame(id,time,actor={}){
- const state=actor.state||'patrol',step=Math.floor((actor.walkTime??time)*7)%2;
+ const state=actor.state||'patrol',step=Math.floor((actor.flying?time:(actor.walkTime??time))*7)%2;
  if(['censor','copier','cutter','splicer','injection','echo','static','spreader','agitator','manipulator'].includes(id))return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||state==='windup'||id==='copier'&&state==='recover'?3:['stamping','printing','cutting','casting','pulling','strike','lunge','swoop','broadcast'].includes(state)||actor.attackFlash>0?4:actor.moving||['echo','static','spreader'].includes(id)?1+step:0;
  if(id==='fakenews'||id==='informant')return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||['windup','jumpWindup','land'].includes(state)?3:state==='lunge'||state==='casting'||actor.attackFlash>0?4:actor.moving?1+step:0;
  if(id==='infoshum')return state==='windup'?2:state==='casting'?3:Math.floor(time*3)%2;
@@ -83,7 +83,7 @@ export function locomotionFrame(id,time,actor={}){
  const data=gaits[id];if(!data||actor.dead||actor.hurtTime>0||actor.noticeTime>0)return null;
  const airborne=id==='fakenews'&&actor.jumpPhase==='air';
  if(!airborne&&!(actor.moving&&actor.state==='patrol'))return null;
- const index=airborne?(actor.vy<0?4:5):Math.floor((actor.walkTime??time)*7)%data.count;
+ const index=airborne?(actor.vy<0?4:5):Math.floor((actor.flying?time:(actor.walkTime??time))*7)%data.count;
  return {asset:'gaits',box:[index*256,data.y,256,data.h],pivot:[index*256+(id==='fakenews'?135:128),data.feet[index]],width:data.width,height:data.height,index};
 }
 

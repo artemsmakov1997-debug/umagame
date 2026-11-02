@@ -1,11 +1,13 @@
-import {Game} from './engine.js?v=0.14.0';
-import {Renderer} from './render.js?v=0.14.0';
-import {loadAssets} from './assets.js?v=0.14.0';
-import {ScreenManager} from './screens.js?v=0.14.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.14.0';
-import {PauseMenu} from './pause-menu.js?v=0.14.0';
-import {TouchControls} from './touch-controls.js?v=0.14.0';
-import {GameAudio} from './audio.js?v=0.14.0';
+import {EndingUI} from './ending-ui.js?v=0.15.0';
+import {scoreBreakdown,projectPurpose} from './finale.js?v=0.15.0';
+import {Game} from './engine.js?v=0.15.0';
+import {Renderer} from './render.js?v=0.15.0';
+import {loadAssets} from './assets.js?v=0.15.0';
+import {ScreenManager} from './screens.js?v=0.15.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.15.0';
+import {PauseMenu} from './pause-menu.js?v=0.15.0';
+import {TouchControls} from './touch-controls.js?v=0.15.0';
+import {GameAudio} from './audio.js?v=0.15.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
@@ -23,7 +25,8 @@ async function boot(){
  function quit(){pauseMenu.dismiss();game.mode='exited';game.dialogue=null;clearEffects();clearInput();ui.show('exit');dialogueUI.update(false);}
  const ui=new ScreenManager(assets,begin,()=>{if(game.mode==='playing')game.mode='paused';clearInput();},quit);
  const dialogueUI=new DialogueUI(game,assets,clearInput);
- const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,toggleSound:()=>{audio.setEnabled(!audio.enabled);if(audio.enabled)audio.play({type:'fish'});},onResume:mode=>{dialogueUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
+ const endingUI=new EndingUI(game,assets,clearInput);
+ const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,toggleSound:()=>{audio.setEnabled(!audio.enabled);if(audio.enabled)audio.play({type:'fish'});},onResume:mode=>{dialogueUI.update(true);endingUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
  touch=new TouchControls(document.querySelector('.game-shell'),()=>ui.view==='game'&&game.mode==='playing'&&!pauseMenu.active);
  function updateSound(){$('pause-sound').textContent=`Звук: ${audio.enabled?'включён':'выключен'}`;$('pause-sound').setAttribute('aria-pressed',String(audio.enabled));}
  updateSound();let lastAbilities='';
@@ -33,7 +36,9 @@ async function boot(){
   $('overlay').hidden=false;clearInput();const won=kind==='won';$('retry-location').hidden=won;$('result-library').hidden=won;
   $('result-title').textContent=won?'ШУМ ОСТАНОВЛЕН':'ПОПРОБУЕМ ЕЩЁ?';
   $('result-text').textContent=won?`Ума остановила Инфошум и раскрыла причину его появления. Рыбок: ${game.fish}.`:`Жизни закончились. Рыбок: ${game.fish}.`;
-  $('play').textContent='Начать заново';
+  $('play').textContent='Начать заново';$('result-media').hidden=!won;$('result-purpose').hidden=!won;$('result-score').hidden=!won;
+  $('result-purpose').textContent=projectPurpose;const score=game.finalScore||scoreBreakdown(game);$('result-points').textContent=score.total.toLocaleString('ru-RU');$('result-breakdown').textContent=score.items.map(i=>`${i.label==='Побеждённые враги'?'Враги':i.label}: ${i.count}`).join(' · ');
+  if(won){$('result-title').textContent='СПАСИБО ЗА ИГРУ';$('result-text').textContent='Ума вернулась домой. Держи ухо востро!';}
   $('accessible-state').textContent=$('result-title').textContent+'. '+$('result-text').textContent;$(won?'play':'retry-location').focus({preventScroll:true});
  }
  $('pause').addEventListener('click',()=>pauseMenu.open());
@@ -47,18 +52,18 @@ async function boot(){
   if(ui.view!=='game'){ui.key(event);return;}
   if(event.code==='Escape'||event.code==='KeyP'){event.preventDefault();if(!event.repeat)pauseMenu.open();return;}
   if(game.mode==='waking'&&['Enter','Space'].includes(event.code)){event.preventDefault();if(!event.repeat)game.finishWakeup();return;}
-  if(dialogueUI.key(event))return;
+  if(endingUI.key(event)||dialogueUI.key(event))return;
   if(game.mode!=='playing'||!controls.includes(event.code))return;event.preventDefault();
   if((event.code==='ArrowUp'||event.code==='KeyW')&&!keys.has(event.code))jump=true;
   if(event.code==='Space'||event.code==='KeyX')attack=true;
   if((event.code==='ShiftLeft'||event.code==='ShiftRight')&&!keys.has(event.code))dash=true;keys.add(event.code);
  });
  window.addEventListener('keyup',event=>keys.delete(event.code));
- function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp'].includes(game.mode))pauseMenu.open();}
+ function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp','ending'].includes(game.mode))pauseMenu.open();}
  window.addEventListener('blur',blur);document.addEventListener('visibilitychange',()=>{audio.setHidden(document.hidden);if(document.hidden)blur();});
  function events(){for(const event of game.events){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
-  if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady','locationExit','locationEnter','locationReady','echoTeleport','echoArrive','echoReady'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
+  if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady','locationExit','locationEnter','locationReady','echoTeleport','echoArrive','echoReady','endingSlide','victory'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
   if(event.type==='notebook'){updateControls();renderer.burst(event.x,event.y,'#ffe0a0');}
   audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
@@ -76,9 +81,10 @@ async function boot(){
   if(ui.view==='game'){
    accumulator+=dt;while(accumulator>=1/60){const mobile=touch.snapshot();game.step(1/60,{...mobile,left:keys.has('ArrowLeft')||keys.has('KeyA'),right:keys.has('ArrowRight')||keys.has('KeyD'),up:keys.has('ArrowUp')||keys.has('KeyW')||mobile.up,down:keys.has('ArrowDown')||keys.has('KeyS')||mobile.down,jump:jump||mobile.jump,dash:dash||mobile.dash,attack:attack||keys.has('Space')||keys.has('KeyX')||mobile.attack});jump=false;dash=false;attack=false;touch.consume();accumulator-=1/60;events();}renderer.draw(game,game.mode==='playing'?dt:0,clock);
   }else{accumulator=0;ui.draw($('game'),clock);}
-  audio.setScene(ui.view,game);dialogueUI.update(ui.view==='game'&&!pauseMenu.active);
+  audio.setScene(ui.view,game);dialogueUI.update(ui.view==='game'&&!pauseMenu.active);endingUI.update(ui.view==='game'&&!pauseMenu.active);
+  $('app').dataset.boss=String(ui.view==='game'&&game.mode==='playing'&&game.boss.active&&game.boss.hp>0);
   $('app').dataset.opening=String(ui.view==='game'&&(game.mode==='waking'||game.pausedFrom==='waking'||game.dialogue?.id==='intro'));
-  $('pause').hidden=!game.touchEnabled||ui.view!=='game'||pauseMenu.active;$('wake-caption').hidden=ui.view!=='game'||game.mode!=='waking'||pauseMenu.active;
+  $('pause').hidden=!game.touchEnabled||ui.view!=='game'||pauseMenu.active||['won','lost'].includes(game.mode);$('wake-caption').hidden=ui.view!=='game'||game.mode!=='waking'||pauseMenu.active;
   updateControls();
   $('touch-controls').hidden=ui.view!=='game'||game.mode!=='playing'||pauseMenu.active;
   const hudText=`Здоровье: ${game.health}. Рыбки: ${game.fish}. Жизни: ${game.lives}.`;if($('hud-status').textContent!==hudText)$('hud-status').textContent=hudText;

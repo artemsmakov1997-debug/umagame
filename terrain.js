@@ -1,4 +1,4 @@
-import {platforms} from './level.js?v=0.14.0';
+import {platforms} from './level.js?v=0.15.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function solidSurfaces(g){
  const all=g.platforms||platforms;if(!g.cuts?.some(c=>c.phase==='gap'))return all;
