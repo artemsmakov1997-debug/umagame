@@ -1,8 +1,9 @@
-import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.15.0';
-import {solidSurfaces} from './terrain.js?v=0.15.0';
-import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v=0.15.0';
-import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.15.0';
-export {bossTroops} from './boss-abilities.js?v=0.15.0';
+import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.15.1';
+import {solidSurfaces} from './terrain.js?v=0.15.1';
+import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v=0.15.1';
+import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.15.1';
+import {stepEcho} from './echo-pull.js?v=0.15.1';
+export {bossTroops} from './boss-abilities.js?v=0.15.1';
 export const BOSS_HEALTH=32;
 export const abilities=['volley','wave','rain','summon','echoPulse','staticRush','lure'];
 export const bossPatterns={spreader:['scatter','summon','ink','copy','swoop'],agitator:['telecast','summon','pressure','alarm','broadcast'],manipulator:['ticker','summon','cut','splice','spotlight'],infoshum:abilities};
@@ -29,7 +30,7 @@ export function castAttack(g){
   else if(['rain','spotlight'].includes(b.ability))for(const x of b.targets)paper(g,x-8,12,0,335*fast,{kind:b.ability==='spotlight'?'frame':'rain',w:20,h:27,ttl:2});
   else if(b.ability==='swoop'||b.ability==='staticRush'){b.swoopFrom={x:b.x,y:b.y};b.swoopTo={x:clamp(b.aim.x-b.w/2,r.x+24,r.end-b.w-24),y:clamp(b.aim.y-b.h/2,70,400-b.h)};}
   else if(b.ability==='telecast'){b.telecastMoved=false;b.phased=false;g.emit('teleportOut',{x:b.x,y:b.y,enemyType:'informant'});}
-  else if(b.ability==='echoPulse'){const dx=b.aim.x-b.x-b.w/2,dy=b.aim.y-b.y-55,len=Math.hypot(dx,dy)||1;paper(g,b.x+b.w/2,b.y+55,dx/len*155,dy/len*155,{kind:'echoOrb',w:28,h:28,ttl:7});}
+  else if(b.ability==='echoPulse')paper(g,clamp(b.aim.x-20,r.x+24,r.end-64),clamp(b.aim.y-19,60,400),0,0,{kind:'echoOrb',type:'echo',id:'boss-echo-'+(++g.tacticalSerial),w:40,h:38,ttl:6,state:'windup',timer:.65,warpCooldown:0});
  }
  b.state='casting';b.timer=b.ability==='splice'?5:['swoop','staticRush'].includes(b.ability)?.8:b.ability==='scatter'?1.5:b.ability==='telecast'?1.25:b.phase===1?1.15:.9;g.emit('bossCast',{ability:b.ability,boss:b.id,x:b.x,y:b.y});
 }
@@ -60,11 +61,11 @@ export function damageBoss(g,amount,reflected=false,sourceX=g.player.x+g.player.
 }
 export function bossContact(g){const b=g.boss,p=g.player;if(b.state==='shift'||b.phased||!g.overlap(p,b))return;const before=g.health;g.hurt(false,b.x);if(b.id==='infoshum'&&b.ability==='staticRush'&&b.state==='casting'&&g.mode==='playing'&&g.health<before){p.vx=(p.x>b.x?1:-1)*280;p.vy=150;p.knock=.24;p.grounded=false;g.emit('staticPush',{x:b.x,y:b.y});}}
 export function stepProjectiles(g,dt,paw){
- for(const bolt of g.bolts){if(bolt.room!==undefined&&bolt.room!==g.room)continue;if(bolt.kind==='echoOrb'){const dx=g.player.x+17-bolt.x,dy=g.player.y+24-bolt.y,len=Math.hypot(dx,dy)||1,blend=Math.min(1,dt*2);bolt.vx+=(dx/len*155-bolt.vx)*blend;bolt.vy+=(dy/len*155-bolt.vy)*blend;}bolt.ttl-=dt;bolt.x+=bolt.vx*dt;bolt.y+=bolt.vy*dt;
+ for(const bolt of g.bolts){if(bolt.room!==undefined&&bolt.room!==g.room)continue;if(bolt.kind==='echoOrb'){bolt.id??='boss-echo-'+(++g.tacticalSerial);bolt.state??='windup';bolt.timer??=.65;bolt.warpCooldown=Math.max(0,(bolt.warpCooldown||0)-dt);bolt.vx=0;bolt.vy=0;stepEcho(g,bolt,dt);}bolt.ttl-=dt;bolt.x+=bolt.vx*dt;bolt.y+=bolt.vy*dt;
   if(bolt.kind==='wave'&&!bolt.fixedY)bolt.y=surfaceAt(bolt.x,g.platforms||platforms)-bolt.h;
   if(!bolt.friendly&&['paper','packet','frame','ticker'].includes(bolt.kind)&&g.player.attack>0&&g.overlap(paw,bolt)){bolt.friendly=true;const b=g.boss,owner=g.enemies.find(e=>!e.dead&&e.id===bolt.sourceId),target=owner?{x:owner.x+24,y:owner.y+14}:b.active?{x:b.x+b.w/2,y:b.y+b.h*.65}:{x:bolt.x-(Math.sign(bolt.vx)||g.player.dir)*300,y:bolt.y},dx=target.x-bolt.x,dy=target.y-bolt.y,len=Math.hypot(dx,dy)||1;bolt.vx=dx/len*350;bolt.vy=dy/len*350;bolt.ttl=7;g.emit('parry',{x:bolt.x,y:bolt.y});}
   if(bolt.friendly){if(g.boss.active&&g.boss.state!=='shift'&&!g.boss.phased&&g.overlap(bolt,g.boss)){if(!damageBoss(g,2,true,bolt.x+bolt.w/2-Math.sign(bolt.vx)*20))g.emit('blocked',{x:bolt.x,y:bolt.y});bolt.dead=true;}else for(const e of g.enemies)if(!e.dead&&!e.phased&&g.overlap(bolt,e)){g.hitEnemy(e,false,2,{reflected:true,sourceX:bolt.x+bolt.w/2-Math.sign(bolt.vx)*20});bolt.dead=true;break;}}
-  else if(g.overlap(g.player,bolt)){if(bolt.kind==='echoOrb')handleFlyingContact(g,{...bolt,type:'echo',id:'boss-echo',warpCooldown:0});else{const safe=g.player.dash>0;g.hurt(false,bolt.x);if(bolt.push&&!safe&&g.mode==='playing')g.push(Math.sign(bolt.vx),bolt.x);}bolt.dead=true;}
+  else if(g.overlap(g.player,bolt)){if(bolt.kind==='echoOrb'){if(bolt.state==='pulling')handleFlyingContact(g,{...bolt,type:'echo'});}else{const safe=g.player.dash>0;g.hurt(false,bolt.x);if(bolt.push&&!safe&&g.mode==='playing')g.push(Math.sign(bolt.vx),bolt.x);bolt.dead=true;}}
  }
  const r=rooms[g.room];g.bolts=g.bolts.filter(v=>!v.dead&&v.ttl>0&&v.x>r.x-50&&v.x<r.end+50&&v.y<530&&(v.room===undefined||v.room===g.room)).slice(-90);
 }

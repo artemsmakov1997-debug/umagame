@@ -1,14 +1,13 @@
-import {actorById} from './boss-actors.js?v=0.15.0';
-import {rooms,spawns} from './level.js?v=0.15.0';
-import {solidSurfaces} from './terrain.js?v=0.15.0';
+import {actorById} from './boss-actors.js?v=0.15.1';
+import {rooms,spawns} from './level.js?v=0.15.1';
+import {solidSurfaces} from './terrain.js?v=0.15.1';
+import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.15.1';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function stepAirEnemy(g,e,dt){
  const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+p.h/2-e.y-e.h/2,distance=Math.hypot(dx,dy)||1;
+ if(e.type==='echo'){stepEcho(g,e,dt);return;}
  e.timer-=dt;
- if(e.type==='echo'){
-  if(e.state==='recover'){if(e.timer<=0){e.state='patrol';e.timer=.5;}return;}
-  if(e.noticed){e.x+=dx/distance*e.speed*dt;e.y+=dy/distance*e.speed*.78*dt+Math.sin(g.time*3+e.x*.01)*9*dt;}
- }else{
+ {
   if(e.state==='patrol'){
    if(e.noticed){e.x+=dx/distance*e.speed*dt;e.y+=dy/distance*e.speed*.7*dt;}
    if(distance<160&&e.timer<=0){e.state='windup';e.timer=.55;e.charge={vx:dx/distance*270,vy:dy/distance*230};g.emit('staticWarning',{x:e.x,y:e.y,enemyType:e.type});}
@@ -33,7 +32,7 @@ export function handleFlyingContact(g,e){
  const p=g.player;if(!g.overlap(p,e))return;
  if(e.type==='echo'){
   if(e.warpCooldown>0||g.echoImmunity>0||p.dash>0||p.inv>0||g.echoWarp)return;
-  g.echoWarp={from:{x:p.x,y:p.y},to:warpLanding(g),time:0,duration:.5,transferred:false,ownerId:e.id};g.mode='echoWarp';e.warpCooldown=7.5;e.attackFlash=.5;e.state='recover';e.timer=1.6;p.vx=0;p.vy=0;p.attack=0;p.sleeping=false;g.emit('echoTeleport',{x:e.x,y:e.y});
+  releaseEchoPull(g);g.echoWarp={from:{x:p.x,y:p.y},to:warpLanding(g),time:0,duration:.5,transferred:false,ownerId:e.id};g.mode='echoWarp';e.warpCooldown=7.5;e.attackFlash=.5;e.state='recover';e.timer=1.6;p.vx=0;p.vy=0;p.attack=0;p.sleeping=false;g.emit('echoTeleport',{x:e.x,y:e.y});
  }else if(e.state==='lunge'&&!e.strikeHit&&p.dash===0&&p.inv===0){
   e.strikeHit=true;const before=g.health;g.hurt(false,e.x);if(g.mode==='playing'&&g.health<before){p.vx=(p.x>e.x?1:-1)*280;p.vy=150;p.knock=.24;p.grounded=false;p.climbing=false;g.emit('staticPush',{x:e.x,y:e.y});}
  }
@@ -41,7 +40,9 @@ export function handleFlyingContact(g,e){
 export function stepEchoWarp(g,dt){
  const warp=g.echoWarp;if(!warp)return;warp.time=Math.min(warp.duration,warp.time+Math.min(dt,1/30));
  if(warp.time>=.24&&!warp.transferred){
-  warp.transferred=true;Object.assign(g.player,warp.to,{h:48,vx:0,vy:0,grounded:true,climbing:false,sneaking:false,knock:0,dash:0,inv:1.2,hurtTime:0,slipping:false,inkTime:0});g.echoImmunity=2.2;g.updateCamera();g.emit('echoArrive',{x:g.player.x,y:g.player.y});
+  warp.transferred=true;g.lives=Math.max(0,g.lives-1);Object.assign(g.player,warp.to,{h:48,vx:0,vy:0,grounded:true,climbing:false,sneaking:false,knock:0,dash:0,inv:1.2,hurtTime:.5,slipping:false,inkTime:0});g.echoImmunity=2.2;g.updateCamera();g.emit('echoArrive',{x:g.player.x,y:g.player.y});
+  if(g.lives===0){g.health=0;g.echoWarp=null;g.mode='lost';g.emit('lost',{reason:'echo'});return;}
+  g.emit('lifeLost',{lives:g.lives,reason:'echo'});
  }
  if(warp.time>=warp.duration){g.echoWarp=null;g.mode='playing';g.emit('echoReady');}
 }
