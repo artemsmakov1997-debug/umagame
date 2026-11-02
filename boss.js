@@ -1,4 +1,4 @@
-import {WORLD,LAST_ROOM,FINAL_X,ARENA_WIDTH,enemy,platforms,surfaceAt} from './level.js?v=0.12.0';
+import {WORLD,LAST_ROOM,FINAL_X,ARENA_WIDTH,enemy,platforms,surfaceAt} from './level.js?v=0.13.0';
 export const BOSS_HEALTH=32;
 export const abilities=['volley','wave','rain','summon'];
 export const abilityNames={volley:'ПРИЦЕЛЬНЫЙ ЗАЛП',wave:'ВОЛНА — ПРЫГАЙ!',rain:'БУМАЖНЫЙ ДОЖДЬ',summon:'ПРИЗЫВ ПОМЕХ'};
@@ -60,7 +60,7 @@ export function stepProjectiles(g,dt,paw){
    bolt.friendly=true;const b=g.boss,owner=g.enemies.find(e=>!e.dead&&e.id===bolt.sourceId),target=owner?{x:owner.x+24,y:owner.y+14}:{x:b.x+b.w/2,y:b.y+b.h*.65},dx=target.x-bolt.x,dy=target.y-bolt.y,len=Math.hypot(dx,dy)||1;
    bolt.vx=dx/len*350;bolt.vy=dy/len*350;bolt.ttl=7;g.emit('parry',{x:bolt.x,y:bolt.y});
   }
-  if(bolt.friendly){if(g.boss.active&&g.boss.state!=='shift'&&g.overlap(bolt,g.boss)){damageBoss(g,2,true);bolt.dead=true;}else for(const e of g.enemies)if(!e.dead&&!e.phased&&g.overlap(bolt,e)){g.hitEnemy(e,false,2,{reflected:true});bolt.dead=true;break;}}
+  if(bolt.friendly){if(g.boss.active&&g.boss.state!=='shift'&&g.overlap(bolt,g.boss)){damageBoss(g,2,true);bolt.dead=true;}else for(const e of g.enemies)if(!e.dead&&!e.phased&&g.overlap(bolt,e)){g.hitEnemy(e,false,2,{reflected:true,sourceX:bolt.x+bolt.w/2-Math.sign(bolt.vx)*20});bolt.dead=true;break;}}
   else if(g.overlap(g.player,bolt)){g.hurt(false,bolt.x);bolt.dead=true;}
  }
  g.bolts=g.bolts.filter(v=>!v.dead&&v.ttl>0&&v.x>-50&&v.x<WORLD+50&&v.y<530).slice(-80);

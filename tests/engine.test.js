@@ -10,8 +10,8 @@ const enemy=(type,room,x,index=0,extra={})=>makeEnemy(type,room,x,index,{active:
 function stand(g,room=1,index=0,x=45){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,sneaking:false,climbing:false,inv:0,attack:0,cooldown:0,knock:0,dash:0});g.room=room;g.checkpoint=room;g.updateCamera();}
 function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);stand(g,room,index,x);return g;}
 function bossGame(){const g=isolated(LAST_ROOM,2,633);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.state='recover';g.boss.timer=2;return g;}
-test('catalogue and roster contain the six revised creatures, with Infoshum only as the boss',()=>{
- assert.deepEqual(monsters.map(m=>m.name),['Фейкньюс','Кликбейт','Раздуватель','Информатор','Паникёр','Инфошум']);assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>m.id!=='infoshum').map(m=>m.id)));assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));for(const m of monsters){assert.ok(m.description.length>30);assert.equal(m.abilities.length,2);assert.ok(m.tip);}
+test('catalogue and roster contain nine creatures, with Infoshum only as the boss and no Echo',()=>{
+ assert.deepEqual(monsters.map(m=>m.name),['Фейкньюс','Кликбейт','Раздуватель','Цензор','Информатор','Копир','Паникёр','Монтажёр','Инфошум']);assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>m.id!=='infoshum').map(m=>m.id)));assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));assert.throws(()=>enemy('echo',1,100));for(const m of monsters){assert.ok(m.description.length>30);assert.equal(m.abilities.length,2);assert.ok(m.tip);}
 });
 test('training is physically separate, has no enemies, relays, soup or time pressure',()=>{
  const g=new Game({story:false});g.start();assert.equal(g.room,0);assert.equal(rooms[0].tutorial,true);assert.ok(g.enemies.every(e=>e.room>0&&!e.active));assert.ok(g.relays.every(r=>r.room>0));assert.ok(g.soups.every(s=>s.x>=WIDTH));tick(g,120);assert.equal('clock'in g,false);assert.equal(g.health,4);assert.equal(g.bolts.length,0);
@@ -58,11 +58,11 @@ test('a revealed Clickbait stays visible, patrols, turns at the edge and never b
 test('Clickbait swallowing locks control, freezes in the menu and loses one whole life',()=>{
  const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.4,revealed:true});g.enemies=[e];tick(g,1);assert.ok(g.swallow);const x=g.player.x;tick(g,10,{right:true,jump:true,attack:true});assert.equal(g.player.x,x);g.mode='paused';const time=g.swallow.timer;tick(g,120);assert.equal(g.swallow.timer,time);g.mode='playing';tick(g,55);assert.equal(g.swallow,null);assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(e.revealed,true);
 });
-test('an early paw hit or protected dash interrupts Clickbait without ingestion',()=>{
- for(const action of ['attack','dash']){const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.3,revealed:true});g.enemies=[e];tick(g,1,{[action]:true});assert.equal(g.swallow,null);assert.equal(g.health,4);}
+test('Clickbait ignores an early paw; a protected dash avoids ingestion',()=>{
+ for(const action of ['attack','dash']){const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.3,revealed:true});g.enemies=[e];tick(g,1,{[action]:true});assert.equal(!!g.swallow,action==='attack');assert.equal(e.hp,e.maxHp);assert.equal(e.dead,false);assert.equal(g.health,4);}
 });
-test('Inflator retains the 0.8-second telegraph and pushes without direct damage',()=>{
- const g=isolated(1,0,20),e=enemy('inflator',1,125);g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');tick(g,45);assert.equal(e.state,'windup');const x=g.player.x;tick(g,7);assert.equal(e.state,'blast');assert.ok(g.player.x<x);assert.equal(g.health,4);
+test('Inflator gives a shorter readable telegraph and a stronger push without direct damage',()=>{
+ const g=isolated(1,0,20),e=enemy('inflator',1,125);g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');tick(g,28);assert.equal(e.state,'windup');const x=g.player.x;tick(g,7);assert.equal(e.state,'blast');assert.ok(g.player.x<x);assert.ok(Math.abs(g.player.vx)>=600);assert.equal(g.health,4);
 });
 test('Uma behind the Inflator is safe; jumping or dashing avoids the wave',()=>{
  for(const avoid of ['behind','jump','dash']){const g=isolated(1,0,20),e=enemy('inflator',1,125,0,{state:'blast',timer:.3,dir:-1});g.enemies=[e];if(avoid==='behind')g.player.x=WIDTH+185;else if(avoid==='jump'){g.player.y-=90;g.player.grounded=false;}else g.player.dash=.2;const x=g.player.x;tick(g,1);assert.equal(g.player.knock,0,avoid);if(avoid!=='dash')assert.equal(g.player.x,x,avoid);}

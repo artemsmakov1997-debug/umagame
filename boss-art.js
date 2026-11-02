@@ -1,7 +1,7 @@
-import {rect,text} from './pixel.js?v=0.12.0';
-import {drawMonster} from './art.js?v=0.12.0';
-import {bossDocks} from './boss.js?v=0.12.0';
-import {FINAL_X,ARENA_WIDTH,LAST_ROOM} from './level.js?v=0.12.0';
+import {rect,text} from './pixel.js?v=0.13.0';
+import {drawMonster} from './art.js?v=0.13.0';
+import {bossDocks} from './boss.js?v=0.13.0';
+import {FINAL_X,ARENA_WIDTH,LAST_ROOM} from './level.js?v=0.13.0';
 export function drawArenaBoss(c,a,g,time){
  if(g.room!==LAST_ROOM)return;const b=g.boss;
  for(const d of bossDocks){rect(c,d.x-9,d.y+138,146,3,'#3e4a79');rect(c,d.x+12,d.y+138,104,2,b.x===d.x?'#b199ec':'#536680');}

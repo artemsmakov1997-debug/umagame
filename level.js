@@ -22,16 +22,16 @@ export const layouts=[
  [[0,420,236],[296,346,232],[616,296,246],[914,374,236],[1256,314,280],[0,474,390],[470,474,320],[870,474,310],[1244,474,292],[120,230,170],[356,166,180],[634,124,224],[964,208,196],[1220,146,230],[20,328,140],[504,244,140],[838,290,100],[1138,260,124]]
 ];
 const motions={1:{axis:'x',amplitude:70,period:6.2},10:{axis:'y',amplitude:94,period:5.4}};
-export const platforms=rooms.flatMap((r,room)=>layouts[room].map(([x,y,w],index)=>({id:room+':'+index,x:x+r.x,y,w,room,index,belt:room===3&&(index===1||index===4)?(index===1?20:-20):0,motion:room===5?motions[index]||null:null})));
+export const platforms=rooms.flatMap((r,room)=>layouts[room].map(([x,y,w],index)=>({id:room+':'+index,x:x+r.x,y,w,room,index,cuttable:(room===5||room===6)&&[1,4].includes(index),belt:room===3&&(index===1||index===4)?(index===1?20:-20):0,motion:room===5?motions[index]||null:null})));
 export const ladders=rooms.flatMap((r,i)=>i===LAST_ROOM?[]:[i===0?{x:430,y:245,w:31,h:200,room:0}:{x:r.x+718,y:layouts[i][2][1],w:31,h:474-layouts[i][2][1],room:i}]);
 export const ladder=ladders[0];
 export const spawns=rooms.map((r,i)=>({x:r.x+(i===0?78:i===LAST_ROOM?74:45),y:layouts[i][0][1]-48}));
 export function enemy(type,room,x,platformIndex,extra={}){
- if(!['fakenews','clickbait','inflator','informant','panicker'].includes(type))throw new Error('Unknown enemy type: '+type);
+ if(!['fakenews','clickbait','inflator','informant','panicker','censor','copier','montager'].includes(type))throw new Error('Unknown enemy type: '+type);
  const s=platforms.find(p=>p.room===room&&p.index===platformIndex);if(!s)throw new Error('Unknown enemy platform');
- const hp=type==='fakenews'?1:type==='inflator'||type==='informant'?3:2;
+ const hp=type==='fakenews'?1:['inflator','informant','copier'].includes(type)?3:2;
  return {id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:rooms[room].x+x,y:s.y-29,w:48,h:29,origin:s.x+12,end:s.x+s.w-60,
- dir:-1,speed:{fakenews:32,clickbait:30,inflator:14,informant:22,panicker:16}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
+ dir:-1,speed:{fakenews:32,clickbait:30,inflator:14,informant:22,panicker:16,censor:20,copier:10,montager:13}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
  active:false,trigger:Math.max(30,x-220),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,...extra};
 }
 export function createEnemies(){return [
@@ -40,7 +40,11 @@ export function createEnemies(){return [
  enemy('inflator',3,210,9,{trigger:110,ledge:true}),enemy('fakenews',3,405,4,{trigger:340}),enemy('clickbait',3,424,1,{trigger:340}),enemy('fakenews',3,340,10,{hp:2,maxHp:2,trigger:260}),
  enemy('informant',4,365,1,{trigger:85}),enemy('fakenews',4,310,1,{trigger:270}),enemy('informant',4,570,8,{trigger:410}),
  enemy('panicker',5,125,0,{trigger:45,dir:1,speed:9}),enemy('panicker',5,360,1,{trigger:300}),enemy('informant',5,580,2,{trigger:450}),
- enemy('inflator',6,420,1,{trigger:180,ledge:true}),enemy('clickbait',6,435,4,{trigger:240}),enemy('panicker',6,345,4,{trigger:300}),enemy('informant',6,570,2,{trigger:400})
+ enemy('inflator',6,420,1,{trigger:180,ledge:true}),enemy('clickbait',6,435,4,{trigger:240}),enemy('panicker',6,345,4,{trigger:300}),enemy('informant',6,570,2,{trigger:400}),
+ enemy('censor',3,125,3,{trigger:170}),enemy('fakenews',3,70,3,{trigger:170}),
+ enemy('copier',4,420,1,{trigger:280,scanIndex:1,scanStart:18,scanW:145}),
+ enemy('censor',5,410,1,{trigger:380}),enemy('montager',5,655,2,{trigger:450}),
+ enemy('censor',6,475,4,{trigger:320}),enemy('copier',6,350,1,{trigger:350,scanIndex:1,scanStart:20,scanW:145}),enemy('montager',6,645,2,{trigger:500})
  ];}
 export function createFish(){return rooms.flatMap((r,i)=>{
  const points=i===0?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:i===LAST_ROOM?[[100,386],[180,198],[360,312],[430,132],[650,264],[750,92],[1030,174],[1300,112],[1450,280]]:[[114,layouts[i][0][1]-43],[216,228],[253,207],[290,189],[327,176],[365,165],[400,159],[503,221],[181,layouts[i][3][1]-41],[375,368],[570,368]];
@@ -58,6 +62,9 @@ export function createNotebooks(){
  {id:'dispatch',room:4,index:0,x:100,scenes:['arrival4','informant']},
  {id:'stealth',room:5,index:0,x:70,scenes:['arrival5','panicker'],unlock:'sneak'},
  {id:'tower',room:6,index:0,x:100,scenes:['arrival6','infoshum']},
+ {id:'censor',room:3,index:3,x:55,scenes:['censor']},
+ {id:'copier',room:4,index:0,x:180,scenes:['copier']},
+ {id:'montager',room:5,index:4,x:550,scenes:['montager']},
  ...createRelays().map(r=>({id:'record'+r.room,room:r.room,index:r.platformIndex,x:r.x+r.w/2-r.room*WIDTH,scenes:['chapter'+r.room],relay:true}))
  ];
  return entries.map(n=>({...n,x:n.room*WIDTH+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.relay?Infinity:0}));

@@ -1,14 +1,16 @@
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.12.0';
-import {rect,text} from './pixel.js?v=0.12.0';
-import {cats,creatures,sprite} from './assets.js?v=0.12.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.12.0';
-import {drawHud} from './hud.js?v=0.12.0';
-import {drawNotebook} from './notebook-art.js?v=0.12.0';
-import {drawMovingRails,drawLifeCaches,drawArenaBoundary,drawArenaTransfer} from './stage-art.js?v=0.12.0';
-import {drawArenaBoss} from './boss-art.js?v=0.12.0';
-import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.12.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.12.0';
-import {drawEmotion,hurtPose,drawTraversal} from './cat-animation.js?v=0.12.0';
+import {solidSurfaces} from './terrain.js?v=0.13.0';
+import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.13.0';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.13.0';
+import {rect,text} from './pixel.js?v=0.13.0';
+import {cats,creatures,sprite} from './assets.js?v=0.13.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.13.0';
+import {drawHud} from './hud.js?v=0.13.0';
+import {drawNotebook} from './notebook-art.js?v=0.13.0';
+import {drawMovingRails,drawLifeCaches,drawArenaBoundary,drawArenaTransfer} from './stage-art.js?v=0.13.0';
+import {drawArenaBoss} from './boss-art.js?v=0.13.0';
+import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.13.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.13.0';
+import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.13.0';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -27,7 +29,7 @@ export class Renderer{
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
   drawMovingRails(c,g.platforms.filter(s=>s.room===g.room),t);
-  for(const platform of g.platforms){
+  for(const platform of solidSurfaces(g)){
    if(g.room===LAST_ROOM&&platform.room!==LAST_ROOM)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawSurface(c,a,platform,t);
@@ -39,7 +41,7 @@ export class Renderer{
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
-  drawCampaignObjects(c,a,g,t);
+  drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
   drawInfection(c,g);c.restore();
   if(g.room===LAST_ROOM)drawArenaBoundary(c,t);drawArenaBoss(c,a,g,t);
   drawLifeCaches(c,g,t);
@@ -51,6 +53,8 @@ export class Renderer{
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
    if(e.spawnTime>0){c.globalAlpha=1-e.spawnTime/.6;for(let i=0;i<8;i++)rect(c,e.x+i*6,e.y+29,3,2,'#83ccf2');}
    else if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
+   if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
+   if(['censor','copier','montager'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}
    if(e.type==='informant'){
     if(!drawTeleportingInformant(c,a,e,t))drawMonster(c,a,e.type,e.x-18,e.y-56,84,85,t,e.dir<0,e);
@@ -60,12 +64,12 @@ export class Renderer{
    if(e.type==='inflator')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0,e);
    if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,e.dir<0,e);
    if(e.type==='clickbait')drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);
-   c.globalAlpha=1;if(e.dead||e.spawnTime>0||e.phased)continue;
-   rect(c,e.x+3,e.y-60,42,3,'#12203b');rect(c,e.x+3,e.y-60,42*Math.max(0,e.hp)/e.maxHp,3,e.guardian?'#ffcf77':'#fc7b88');
+   c.filter='none';c.globalAlpha=1;if(e.dead||e.spawnTime>0||e.phased)continue;
+   if(e.type!=='clickbait'){rect(c,e.x+3,e.y-60,42,3,'#12203b');rect(c,e.x+3,e.y-60,42*Math.max(0,e.hp)/e.maxHp,3,e.guardian?'#ffcf77':'#fc7b88');}drawEnemyDefense(c,e,t);
    if(e.guardian)text(c,'!',e.x+38,e.y-72,'#ffcf77');if(e.state==='windup')text(c,'!',e.x+19,e.y-78,'#ffcf79',2);
    if(e.type==='inflator'&&['windup','blast'].includes(e.state)){
-    const start=e.dir>0?e.x+40:e.x-300;if(e.state==='windup'){for(let x=start;x<start+300;x+=14)rect(c,x,e.y+13,6,1,'#e7ad63');}
-    else for(let wave=0;wave<3;wave++)for(let yy=-17;yy<=17;yy+=3){const dx=Math.round(Math.sqrt(17*17-yy*yy)*.65),dist=35+wave*75+(t*125)%50;rect(c,e.x+24+e.dir*(dist+dx),e.y+13+yy,3,3,'#98eaff');}
+    const start=e.dir>0?e.x+40:e.x-360;if(e.state==='windup'){for(let x=start;x<start+360;x+=14)rect(c,x,e.y+13,6,1,'#e7ad63');}
+    else for(let wave=0;wave<3;wave++)for(let yy=-17;yy<=17;yy+=3){const dx=Math.round(Math.sqrt(17*17-yy*yy)*.65),dist=24+wave*105+(t*850)%100;rect(c,e.x+24+e.dir*(dist+dx),e.y+13+yy,3,3,'#98eaff');}
    }
    if(e.type==='panicker'&&['windup','alarm'].includes(e.state)){const radius=e.state==='alarm'?35+(t*70)%90:35;for(let i=0;i<12;i++){const angle=i*Math.PI/6;rect(c,e.x+24+Math.cos(angle)*radius,e.y-9+Math.sin(angle)*radius,3,5,'#ffb777');}}
   }
@@ -83,6 +87,9 @@ export class Renderer{
    drawWakeup(c,a,p,g.wakeTime);
   }else if(p.hurtTime>0){
    drawEmotion(c,a,hurtPose(p.hurtTime),p.x+p.w/2,p.y+p.h,76,p.dir>0);
+  }else if((p.sleeping||p.slipping)&&drawRest(c,a,p)){
+   if(p.sleeping&&p.sleepTime>1){const z=Math.floor(t*1.4)%3;rect(c,p.x+32+z*4,p.y+5-z*7,4,2,'#a4cede');rect(c,p.x+34+z*4,p.y+7-z*7,2,3,'#a4cede');rect(c,p.x+32+z*4,p.y+10-z*7,4,2,'#a4cede');}
+   if(p.slipping)for(let i=0;i<3;i++)rect(c,p.x-p.dir*(i*8+5),p.y+p.h-2,5,2,'#b27edc');
   }else if((p.climbing||p.sneaking)&&drawTraversal(c,a,p)){
    if(p.sneaking)rect(c,p.x+10,p.y-5,14,2,'#a9eac977');
   }else{
