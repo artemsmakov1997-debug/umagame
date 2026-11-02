@@ -1,72 +1,107 @@
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
-export const rooms=[
- {name:'ТИХАЯ КОМНАТА',theme:'cozy',objective:'ОСВОЙ ДВИЖЕНИЕ',tutorial:true},
- {name:'РЕДАКЦИЯ',theme:'newsroom',objective:'НАЙДИ АНТЕННУ НА ВЕРХНЕЙ ПОЛКЕ'},
- {name:'НОЧНАЯ УЛИЦА',theme:'street',objective:'ОТКЛЮЧИ АНТЕННУ НА КРЫШЕ'},
- {name:'ТИПОГРАФИЯ',theme:'press',objective:'ДОБЕРИСЬ ДО АНТЕННЫ НАД ЛЕНТАМИ'},
- {name:'АППАРАТНАЯ',theme:'dispatch',objective:'РАЗРУШЬ АНТЕННУ НА ВЕРХНЕМ ЯРУСЕ'},
- {name:'ТЕЛЕСТУДИЯ',theme:'studio',objective:'ПОДНИМИСЬ К АНТЕННЕ НА ПОДЪЁМНИКЕ'},
- {name:'БАШНЯ ЭФИРА',theme:'tower',objective:'НАЙДИ ИСТОЧНИК СИГНАЛА'},
- {name:'ИЗМЕРЕНИЕ ИНФОШУМА',theme:'noise',objective:'ОСТАНОВИ ИНФОШУМ',arena:true}
-].map((r,i)=>({...r,x:i*WIDTH,width:r.arena?ARENA_WIDTH:WIDTH}));
-export const LAST_ROOM=rooms.length-1,FINAL_X=rooms[LAST_ROOM].x,WORLD=FINAL_X+ARENA_WIDTH,PORTAL_ROOM=6,PORTAL_X=WIDTH*PORTAL_ROOM+672;
-const desks=[[0,303,204],[301,300,188],[517,275,251],[0,400,244],[301,412,324],[0,474,230],[300,474,468],[0,169,110],[473,204,134],[160,224,120]];
-export const layouts=[
- [[0,305,208],[266,365,185],[542,245,226],[0,445,248],[266,445,355],[0,474,768],[640,365,128],[0,305,75],[414,245,192]],
- desks,
- [[0,330,220],[285,290,205],[540,265,228],[0,424,250],[310,408,315],[0,474,230],[300,474,468],[0,195,100],[470,185,135],[160,250,110]],
- [[0,310,228],[300,290,190],[535,275,233],[0,403,244],[301,412,324],[0,474,230],[300,474,468],[0,182,90],[473,204,134],[153,246,130],[305,112,155]],
- [[0,322,225],[285,300,215],[540,275,228],[0,419,250],[300,419,330],[0,474,230],[300,474,468],[0,185,100],[460,204,190],[155,252,135]],
- [[0,303,220],[285,280,205],[540,250,228],[0,400,244],[301,412,324],[0,474,230],[300,474,468],[0,169,100],[602,234,166],[145,234,130],[338,252,150],[525,84,170]],
- desks.map(p=>[...p]),
- [[0,420,236],[296,346,232],[616,296,246],[914,374,236],[1256,314,280],[0,474,390],[470,474,320],[870,474,310],[1244,474,292],[120,230,170],[356,166,180],[634,124,224],[964,208,196],[1220,146,230],[20,328,140],[504,244,140],[838,290,100],[1138,260,124]]
+export const chapters=[
+ {id:'newsroom',name:'РЕДАКЦИЯ',room:1,arena:2,monsters:['fakenews','copier','censor'],boss:'spreader'},
+ {id:'roofs',name:'КРЫШИ УЛИЦ',room:3,arena:4,monsters:['informant','inflator','panicker'],boss:'agitator'},
+ {id:'studio',name:'СТУДИЯ',room:5,arena:6,monsters:['injection','cutter','splicer'],boss:'manipulator'},
+ {id:'dimension',name:'ИЗМЕРЕНИЕ',room:7,arena:8,monsters:['echo','clickbait','static'],boss:'infoshum'}
 ];
-const motions={1:{axis:'x',amplitude:70,period:6.2},10:{axis:'y',amplitude:94,period:5.4}};
-export const platforms=rooms.flatMap((r,room)=>layouts[room].map(([x,y,w],index)=>({id:room+':'+index,x:x+r.x,y,w,room,index,cuttable:(room===5||room===6)&&[1,4].includes(index),belt:room===3&&(index===1||index===4)?(index===1?20:-20):0,motion:room===5?motions[index]||null:null})));
-export const ladders=rooms.flatMap((r,i)=>i===LAST_ROOM?[]:[i===0?{x:430,y:245,w:31,h:200,room:0}:{x:r.x+718,y:layouts[i][2][1],w:31,h:474-layouts[i][2][1],room:i}]);
+const definitions=[
+ {name:'ТИХАЯ КОМНАТА',theme:'cozy',chapter:0,tutorial:true,width:WIDTH},
+ {name:'РЕДАКЦИЯ',theme:'newsroom',chapter:1,width:WIDTH*3},
+ {name:'ПРОЛЁТ РАСПРОСТРАНИТЕЛЯ',theme:'newsroom',chapter:1,arena:true,boss:'spreader',width:ARENA_WIDTH},
+ {name:'КРЫШИ УЛИЦ',theme:'roofs',chapter:2,width:WIDTH*3},
+ {name:'МАЧТА АГИТАТОРА',theme:'roofs',chapter:2,arena:true,boss:'agitator',width:ARENA_WIDTH},
+ {name:'СТУДИЯ',theme:'studio',chapter:3,width:WIDTH*3},
+ {name:'ПУЛЬТ МАНИПУЛЯТОРА',theme:'studio',chapter:3,arena:true,boss:'manipulator',width:ARENA_WIDTH},
+ {name:'ИЗМЕРЕНИЕ',theme:'noise',chapter:4,width:WIDTH*3},
+ {name:'СЕРДЦЕ ИНФОШУМА',theme:'noise',chapter:4,arena:true,boss:'infoshum',width:ARENA_WIDTH}
+];
+let cursor=0;
+export const rooms=definitions.map((r,index)=>{const room={...r,index,x:cursor,end:cursor+r.width};cursor+=r.width;return room;});
+export const LAST_ROOM=rooms.length-1,FINAL_X=rooms[LAST_ROOM].x,WORLD=cursor,PORTAL_ROOM=7,PORTAL_X=rooms[PORTAL_ROOM].end-96;
+export function roomAt(x){return rooms.find(r=>x>=r.x&&x<r.end)?.index??(x<0?0:LAST_ROOM);}
+export const layouts=[];
+layouts[0]=[[0,305,208],[266,365,185],[542,245,226],[0,445,248],[266,445,355],[0,474,768],[640,365,128],[0,305,75],[414,245,192]];
+// Upper, middle and lower routes connect the whole three-screen chapter.
+layouts[1]=[
+ [0,303,224],[286,300,218],[570,275,236],[0,404,238],[295,412,290],[0,474,244],[300,474,485],[0,169,112],[470,203,158],[158,224,132],
+ [780,305,228],[1062,272,214],[1336,300,230],[796,410,248],[1096,412,300],[784,474,470],[1308,474,260],[908,194,174],[1190,166,174],
+ [1570,314,236],[1850,278,208],[2114,252,190],[1540,414,292],[1880,404,260],[1560,474,744],[1700,208,196],[1990,164,166]
+];
+layouts[3]=[
+ [0,330,230],[290,290,208],[560,264,240],[0,424,252],[312,414,310],[0,474,240],[300,474,488],[0,194,112],[460,184,166],[150,250,132],
+ [810,312,218],[1090,268,224],[1370,300,220],[790,414,264],[1100,414,270],[784,474,490],[1330,474,254],[930,202,154],[1200,164,174],
+ [1618,298,218],[1894,266,218],[2164,244,140],[1558,412,280],[1900,414,270],[1560,474,744],[1750,190,170],[2020,156,166]
+];
+layouts[5]=[
+ [0,303,224],[285,280,205],[560,250,240],[0,400,244],[301,412,324],[0,474,240],[300,474,490],[0,168,110],[602,230,166],[145,234,130],[338,252,150],[525,84,170],
+ [810,300,214],[1090,266,206],[1356,302,230],[800,412,252],[1100,412,276],[790,474,490],[1334,474,250],[920,190,184],[1210,158,170],
+ [1610,310,224],[1894,274,204],[2160,244,144],[1568,412,278],[1900,412,270],[1560,474,744],[1738,204,184],[2024,156,170],[1782,322,145]
+];
+layouts[7]=[
+ [0,360,228],[290,292,216],[558,252,242],[0,450,246],[302,418,308],[0,474,232],[304,474,486],[0,222,112],[452,184,170],[150,276,132],
+ [814,308,224],[1090,256,220],[1372,298,218],[800,414,260],[1100,414,282],[792,474,494],[1338,474,254],[930,196,170],[1210,154,178],
+ [1622,306,218],[1898,264,210],[2160,244,144],[1572,414,270],[1900,414,274],[1560,474,744],[1752,198,170],[2024,150,176]
+];
+const arenaBase=[
+ [0,420,236],[296,346,232],[616,296,246],[914,374,236],[1256,314,280],[0,474,390],[470,474,320],[870,474,310],[1244,474,292],
+ [120,230,170],[356,166,180],[634,124,224],[964,208,196],[1220,146,230],[20,328,140],[504,244,140],[838,290,100],[1138,260,124]
+];
+for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>[x,index===2&&[1,3,4].includes(i)?y-14:index===4&&i===2?y+10:y,w]);
+const motions={
+ '5:1':{axis:'x',amplitude:68,period:6.2},'5:10':{axis:'y',amplitude:94,period:5.4},'5:13':{axis:'x',amplitude:62,period:5.8},'5:29':{axis:'y',amplitude:86,period:5.2},
+ '6:1':{axis:'x',amplitude:46,period:5.6},'6:3':{axis:'y',amplitude:46,period:6},'7:13':{axis:'x',amplitude:38,period:7.2}
+};
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,cuttable:r.theme==='studio'&&[1,4,13,16,22,25].includes(index),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):0,motion:motions[r.index+':'+index]||null})));
+export const ladders=rooms.flatMap(r=>{
+ if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
+ if(r.arena)return [];
+ return [r.x+730,r.x+1498,r.end-50].map((x,i)=>{const s=platforms.find(p=>p.room===r.index&&p.index===[2,12,21][i]);return{x,y:s.y,w:31,h:474-s.y,room:r.index};});
+});
 export const ladder=ladders[0];
-export const spawns=rooms.map((r,i)=>({x:r.x+(i===0?78:i===LAST_ROOM?74:45),y:layouts[i][0][1]-48}));
+export const spawns=rooms.map(r=>({x:r.x+(r.tutorial?78:r.arena?74:45),y:layouts[r.index][0][1]-48}));
+export const enemyTypes=['fakenews','clickbait','inflator','informant','panicker','censor','copier','cutter','splicer','injection','echo','static'];
 export function enemy(type,room,x,platformIndex,extra={}){
- if(!['fakenews','clickbait','inflator','informant','panicker','censor','copier','montager'].includes(type))throw new Error('Unknown enemy type: '+type);
+ if(type==='montager')type='cutter';
+ if(!enemyTypes.includes(type))throw new Error('Unknown enemy type: '+type);
  const s=platforms.find(p=>p.room===room&&p.index===platformIndex);if(!s)throw new Error('Unknown enemy platform');
- const hp=type==='fakenews'?1:['inflator','informant','copier'].includes(type)?3:2;
- return {id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:rooms[room].x+x,y:s.y-29,w:48,h:29,origin:s.x+12,end:s.x+s.w-60,
- dir:-1,speed:{fakenews:32,clickbait:30,inflator:14,informant:22,panicker:16,censor:20,copier:10,montager:13}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
- active:false,trigger:Math.max(30,x-220),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,...extra};
+ const hp=['fakenews','injection'].includes(type)?1:['inflator','informant','copier','splicer'].includes(type)?3:2;
+ const r=rooms[room],flying=['echo','static'].includes(type);
+ return {id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:r.x+x,y:s.y-(flying?100:29),w:flying?40:48,h:flying?38:29,origin:s.x+12,end:s.x+s.w-60,
+ dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,panicker:16,censor:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
+ active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
 }
 export function createEnemies(){return [
- enemy('fakenews',1,125,0,{trigger:80}),enemy('fakenews',1,365,1,{trigger:260}),enemy('fakenews',1,185,9,{hp:2,maxHp:2,trigger:120}),
- enemy('clickbait',2,350,1,{trigger:145}),enemy('fakenews',2,500,8,{hp:2,maxHp:2,trigger:400}),
- enemy('inflator',3,210,9,{trigger:110,ledge:true}),enemy('fakenews',3,405,4,{trigger:340}),enemy('clickbait',3,424,1,{trigger:340}),enemy('fakenews',3,340,10,{hp:2,maxHp:2,trigger:260}),
- enemy('informant',4,365,1,{trigger:85}),enemy('fakenews',4,310,1,{trigger:270}),enemy('informant',4,570,8,{trigger:410}),
- enemy('panicker',5,125,0,{trigger:45,dir:1,speed:9}),enemy('panicker',5,360,1,{trigger:300}),enemy('informant',5,580,2,{trigger:450}),
- enemy('inflator',6,420,1,{trigger:180,ledge:true}),enemy('clickbait',6,435,4,{trigger:240}),enemy('panicker',6,345,4,{trigger:300}),enemy('informant',6,570,2,{trigger:400}),
- enemy('censor',3,125,3,{trigger:170}),enemy('fakenews',3,70,3,{trigger:170}),
- enemy('copier',4,420,1,{trigger:280,scanIndex:1,scanStart:18,scanW:145}),
- enemy('censor',5,410,1,{trigger:380}),enemy('montager',5,655,2,{trigger:450}),
- enemy('censor',6,475,4,{trigger:320}),enemy('copier',6,350,1,{trigger:350,scanIndex:1,scanStart:20,scanW:145}),enemy('montager',6,645,2,{trigger:500})
+ enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,365,1),enemy('fakenews',1,180,9,{hp:2,maxHp:2}),enemy('copier',1,420,1,{trigger:280,scanIndex:1,scanStart:18,scanW:145}),
+ enemy('censor',1,150,3,{trigger:340}),enemy('fakenews',1,90,3,{trigger:340}),enemy('fakenews',1,850,10),enemy('copier',1,1150,11,{scanIndex:11,scanStart:20}),enemy('fakenews',1,1090,11),
+ enemy('censor',1,1230,14),enemy('fakenews',1,1430,12),enemy('fakenews',1,1610,19),enemy('fakenews',1,1920,20,{hp:2,maxHp:2}),enemy('copier',1,1980,20,{scanIndex:20,scanStart:18}),enemy('censor',1,1990,23),
+ enemy('informant',3,150,0,{trigger:100}),enemy('inflator',3,425,1,{ledge:true,trigger:310}),enemy('panicker',3,610,2,{trigger:500}),enemy('informant',3,865,10),
+ enemy('informant',3,1120,11),enemy('inflator',3,1245,11,{ledge:true}),enemy('panicker',3,1400,12),enemy('informant',3,1660,19),enemy('informant',3,1940,20),enemy('inflator',3,2045,20,{ledge:true}),enemy('panicker',3,2000,23),
+ enemy('injection',5,160,0,{trigger:100}),enemy('injection',5,360,1),enemy('splicer',5,610,2,{trigger:470}),enemy('cutter',5,655,8,{trigger:470}),enemy('injection',5,850,12),
+ enemy('injection',5,1140,13),enemy('splicer',5,1190,16),enemy('cutter',5,1410,14),enemy('injection',5,1670,21),enemy('injection',5,1930,22),enemy('splicer',5,1990,25),enemy('cutter',5,2070,28),
+ enemy('static',7,200,0,{trigger:130}),enemy('echo',7,420,1,{trigger:320}),enemy('clickbait',7,640,2,{trigger:520}),enemy('static',7,870,10),enemy('static',7,1150,11),
+ enemy('echo',7,1250,18),enemy('clickbait',7,1430,12),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];}
-export function createFish(){return rooms.flatMap((r,i)=>{
- const points=i===0?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:i===LAST_ROOM?[[100,386],[180,198],[360,312],[430,132],[650,264],[750,92],[1030,174],[1300,112],[1450,280]]:[[114,layouts[i][0][1]-43],[216,228],[253,207],[290,189],[327,176],[365,165],[400,159],[503,221],[181,layouts[i][3][1]-41],[375,368],[570,368]];
- return points.map(([x,y])=>({x:x+r.x,y,taken:false}));
- });}
-export function createSoup(){return [2,3,4,5,6,LAST_ROOM].map(room=>({x:WIDTH*room+(room===LAST_ROOM?150:room%2?179:560),y:room===LAST_ROOM?396:room%2?355:366,taken:false}));}
-export function createRelays(){return [[1,7],[2,8],[3,10],[4,8],[5,11]].map(([room,index])=>{const s=platforms.find(p=>p.room===room&&p.index===index);return {room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:1,inv:0,lastSwing:-1,breakTime:0,kind:'dish'};});}
-export function createLifePickups(){return [[1,8],[2,7],[3,7],[4,7],[5,7],[6,8],[LAST_ROOM,9],[LAST_ROOM,13]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return {id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createFish(){return rooms.flatMap(r=>{
+ const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
+ return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
+});}
+export function createSoup(){return rooms.filter(r=>!r.tutorial).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+const antennaPlaces=[[1,7],[1,18],[1,26],[2,13],[3,8],[3,18],[3,26],[4,13],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
+export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:1,lastSwing:-1,breakTime:0,kind:'dish'};});}
+export function createLifePickups(){return [[1,17],[1,22],[2,9],[3,7],[3,22],[4,9],[5,7],[5,24],[6,9],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews'],unlock:'attack'},
- {id:'dash',room:2,index:0,x:100,scenes:['arrival2','clickbait'],unlock:'dash'},
- {id:'soup',room:2,index:3,x:165,scenes:['soup']},
- {id:'press',room:3,index:0,x:100,scenes:['arrival3','inflator']},
- {id:'dispatch',room:4,index:0,x:100,scenes:['arrival4','informant']},
- {id:'stealth',room:5,index:0,x:70,scenes:['arrival5','panicker'],unlock:'sneak'},
- {id:'tower',room:6,index:0,x:100,scenes:['arrival6','infoshum']},
- {id:'censor',room:3,index:3,x:55,scenes:['censor']},
- {id:'copier',room:4,index:0,x:180,scenes:['copier']},
- {id:'montager',room:5,index:4,x:550,scenes:['montager']},
- ...createRelays().map(r=>({id:'record'+r.room,room:r.room,index:r.platformIndex,x:r.x+r.w/2-r.room*WIDTH,scenes:['chapter'+r.room],relay:true}))
+ {id:'copier',room:1,index:1,x:305,scenes:['copier']},{id:'censor',room:1,index:3,x:55,scenes:['censor']},{id:'spreader',room:1,index:12,x:1450,scenes:['spreader']},
+ {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','informant'],unlock:'dash'},
+ {id:'inflator',room:3,index:1,x:310,scenes:['inflator']},{id:'panicker',room:3,index:2,x:565,scenes:['panicker'],unlock:'sneak'},
+ {id:'agitator',room:3,index:12,x:1460,scenes:['agitator']},
+ {id:'studio',room:5,index:0,x:95,scenes:['arrival3','injection']},{id:'splicer',room:5,index:2,x:570,scenes:['splicer']},{id:'cutter',room:5,index:4,x:550,scenes:['cutter']},
+ {id:'manipulator',room:5,index:14,x:1410,scenes:['manipulator']},
+ {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:1,x:310,scenes:['echo']},{id:'clickbait',room:7,index:2,x:575,scenes:['clickbait']},{id:'infoshum',room:7,index:21,x:2195,scenes:['infoshum']},
+ ...[2,4,6].map((room,i)=>({id:'record'+(i+1),room,index:4,x:1400,scenes:['chapter'+(i+1)],bossRecord:true}))
  ];
- return entries.map(n=>({...n,x:n.room*WIDTH+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.relay?Infinity:0}));
+ return entries.map(n=>({...n,x:rooms[n.room].x+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.bossRecord?Infinity:0}));
 }
-export function surfaceAt(x,list=platforms){const room=Math.max(0,Math.min(LAST_ROOM,Math.floor(x/WIDTH))),covered=list.filter(p=>p.room===room&&x>=p.x&&x<=p.x+p.w);return covered.sort((a,b)=>a.y-b.y)[0]?.y??474;}
+export function surfaceAt(x,list=platforms){const room=roomAt(x),covered=list.filter(p=>p.room===room&&x>=p.x&&x<=p.x+p.w);return covered.sort((a,b)=>a.y-b.y)[0]?.y??474;}

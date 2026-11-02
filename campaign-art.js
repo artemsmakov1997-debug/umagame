@@ -1,20 +1,24 @@
-import {rooms,WIDTH} from './level.js?v=0.13.0';
-import {rect,text} from './pixel.js?v=0.13.0';
-import {sprite,idleCats} from './assets.js?v=0.13.0';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.13.0';
-import {drawMonster} from './art.js?v=0.13.0';
-import {drawDish,drawTowerPortal} from './stage-art.js?v=0.13.0';
+import {rooms,WIDTH} from './level.js?v=0.14.0';
+import {rect,text} from './pixel.js?v=0.14.0';
+import {sprite,idleCats} from './assets.js?v=0.14.0';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.14.0';
+import {drawMonster,drawHauntedMonitor} from './art.js?v=0.14.0';
+import {drawDish,drawTowerPortal} from './stage-art.js?v=0.14.0';
 export function sceneLayers(assets){
  return rooms.map(room=>{
-  const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.filter=room.theme==='cozy'?'none':'saturate(.4) contrast(.78)';
-  const index={street:0,press:1,studio:2,tower:3}[room.theme];
-  if(room.theme==='noise')c.drawImage(assets.dimension,0,0,canvas.width,512);
-  else if(room.theme==='cozy')c.drawImage(assets.cozy,0,0,768,512);
-  else if(room.theme==='newsroom')c.drawImage(assets.room,0,0,768,512);
-  else if(room.theme==='dispatch')c.drawImage(assets.library,0,0,768,512);
-  else{const sw=assets.journey.width/2,sh=assets.journey.height/2;c.drawImage(assets.journey,(index%2)*sw,Math.floor(index/2)*sh,sw,sh,0,0,768,512);}
-  c.filter='none';if(room.theme!=='cozy')rect(c,0,0,canvas.width,512,room.theme==='noise'?'#03091a99':'#031023ac');
-  if(room.theme==='dispatch')for(let rack=0;rack<5;rack++){const x=35+rack*150;rect(c,x,100,100,354,'#081426');rect(c,x+3,103,94,349,'#263b50');for(let row=0;row<9;row++){rect(c,x+8,109+row*37,84,29,'#101e31');rect(c,x+14,116+row*37,43,3,'#284e66');rect(c,x+77,117+row*37,3,3,row%3?'#258496':'#bd8b4b');}}
+  const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
+  if(room.tutorial){c.drawImage(assets.cozy,0,0,768,512);return canvas;}
+  const index={newsroom:0,roofs:1,studio:2,noise:3}[room.theme],sw=assets.backdrops.width/2,sh=assets.backdrops.height/2;
+  c.filter='saturate(.62) brightness(.65)';
+  for(let offset=0;offset<room.width;offset+=768){
+   c.save();c.translate(offset,0);if(offset===768){c.translate(768,0);c.scale(-1,1);}
+   c.drawImage(assets.backdrops,(index%2)*sw,Math.floor(index/2)*sh,sw,sh,0,0,768,512);c.restore();
+  }
+  c.filter='none';rect(c,0,0,canvas.width,512,room.arena?'#030c2338':'#03102340');
+  // Distant editorial and broadcast machinery varies the three-screen route.
+  if(room.theme==='newsroom')for(let i=0;i<9;i++){const x=58+i*258;rect(c,x,375,120,90,'#122139');rect(c,x+3,377,114,4,'#4a5666');for(let k=0;k<4;k++)rect(c,x+8,387+k*16,104,2,'#30465a');}
+  if(room.arena&&room.theme==='roofs')for(const x of [room.width*.25,room.width*.73]){rect(c,x,54,8,350,'#26374f');for(let y=60;y<400;y+=28){rect(c,x-16,y,40,3,'#344d63');}}
+  if(room.arena&&room.theme==='studio')for(let i=0;i<5;i++){const x=110+i*285;rect(c,x,25,75,26,'#284255');rect(c,x+6,30,63,15,'#597286');}
   return canvas;
  });
 }
@@ -34,7 +38,7 @@ export function drawSurface(c,a,p,time){
  if(p.room===0&&p.index===7)return;
  const bed=p.room===0&&p.index===0,x=bed?160:p.x,y=p.y,w=bed?p.w-160:p.w,theme=rooms[p.room].theme;
  rect(c,x+3,y+9,w,15,'#010714c9');rect(c,x-2,y-4,w+4,19,'#020611');
- const base=p.motion?'#397187':theme==='noise'?'#51456e':theme==='cozy'?'#876440':theme==='press'?'#896341':theme==='street'?'#576579':'#556a7c';
+ const base=p.motion?'#397187':theme==='noise'?'#51456e':theme==='cozy'?'#876440':theme==='press'?'#896341':theme==='roofs'?'#8d665c':'#556a7c';
  rect(c,x,y,w,13,base);rect(c,x+2,y+4,w-4,6,'#21394c');
  for(let xx=x+9;xx<x+w-7;xx+=28){rect(c,xx,y+5,11,2,'#a1bdc4');rect(c,xx,y+8,2,2,'#0a1424');}
  rect(c,x,y-3,w,3,p.motion?'#9cf7f0':theme==='noise'?'#cfb5ff':'#ffe6a3');rect(c,x,y,Math.max(0,w-1),1,'#c88e44');rect(c,x+1,y+11,w-2,2,'#16334a');
@@ -42,8 +46,8 @@ export function drawSurface(c,a,p,time){
  if(p.belt){c.save();c.beginPath();c.rect(x+2,y+2,w-4,9);c.clip();const offset=((time*p.belt)%22+22)%22;for(let xx=x-22+offset;xx<x+w+22;xx+=22){rect(c,xx,y+3,9,2,'#f2ce83');rect(c,xx+3,y+5,9,2,'#b98a51');}c.restore();}
 }
 export function drawAmbience(c,room,time){
- if(room.theme==='street')for(let i=0;i<45;i++){const x=room.x+(i*79+Math.floor(time*17))%768,y=55+(i*47+Math.floor(time*95))%410;rect(c,x,y,1,4,'#69a1c338');}
- if(room.theme==='studio')for(let i=0;i<3;i++){const x=room.x+100+i*270,shift=Math.sin(time*.4+i)*35;c.fillStyle='#34628a22';c.beginPath();c.moveTo(x,70);c.lineTo(x-55+shift,390);c.lineTo(x+65+shift,390);c.closePath();c.fill();}
+ if(room.theme==='roofs')for(let i=0;i<45;i++){const x=room.x+(i*79+Math.floor(time*17))%room.width,y=55+(i*47+Math.floor(time*95))%410;rect(c,x,y,1,4,'#69a1c338');}
+ if(room.theme==='studio')for(let i=0;i<Math.ceil(room.width/270);i++){const x=room.x+100+i*270,shift=Math.sin(time*.4+i)*35;c.fillStyle='#34628a22';c.beginPath();c.moveTo(x,70);c.lineTo(x-55+shift,390);c.lineTo(x+65+shift,390);c.closePath();c.fill();}
  if(room.theme==='noise')for(let i=0;i<40;i++){const xx=room.x+(i*119+Math.floor(time*8))%room.width,yy=40+(i*47+Math.floor(time*4))%425;rect(c,xx,yy,2,2,i%3?'#72b8e832':'#b8a7ef40');}
  if(room.theme==='tower')for(let i=0;i<4;i++)rect(c,room.x+70+i*181,115+(i%2)*70,3,3,Math.floor(time*2+i)%2?'#ef795c77':'#1c243d');
 }
@@ -67,8 +71,9 @@ export function drawCampaignObjects(c,a,g,time){
   rect(c,-r,-r*1.6,r*2,r*1.6,'#19104099');for(let i=0;i<18;i++){const angle=i*Math.PI/9+time*2;rect(c,Math.cos(angle)*r,Math.sin(angle)*r*.55-9,3,3,i%3?'#8e8aff':'#68ecf4');}c.restore();
  }
 
- for(const dish of g.relays)drawDish(c,a,dish,time);
- drawTowerPortal(c,g,time);
+ for(const dish of g.relays)if(dish.room===g.room)drawDish(c,a,dish,time);
+ const room=rooms[g.room];if(g.room>0&&g.room!==7&&g.room!==8){const locked=g.relays.some(d=>d.room===g.room&&d.hp>0)||room.arena&&!g.bossesDefeated.has(room.boss),x=room.end-15;rect(c,x-3,44,15,430,'#071226');for(let y=48;y<470;y+=14)rect(c,x,y,4,7,locked?'#e3945e':'#6ed3bb');if(locked)for(let i=0;i<g.relays.filter(d=>d.room===g.room).length;i++)rect(c,x-7-i*8,53,5,5,g.relays.filter(d=>d.room===g.room)[i].hp>0?'#f2c371':'#6bcdb4');}
+ drawTowerPortal(c,g,time,a);
 }
 export function drawWakeup(c,a,p,elapsed){drawEmotion(c,a,wakePose(elapsed).frame,p.x+17,p.y+p.h,76);}
 export function roomDarkness(time){return Math.max(0,Math.min(1,(time-2.7)/.45));}
@@ -80,11 +85,10 @@ export function drawOpening(c,a,g){
  if(g.wakeTime>=2.7){const progress=Math.min(1,(g.wakeTime-2.7)/.35);c.globalAlpha=progress;drawMonster(c,a,'infoshum',screen.x-4,screen.y+8+(1-progress)*90,screen.w+8,screen.h-8,g.wakeTime+g.time,false,{state:g.mode==='waking'?'casting':'idle',projection:true});}
  c.restore();
 }
-export function drawInfection(c,g){
- if(g.room!==1||g.truthFound)return;
- for(const [i,[lx,y,w,h]]of [[73,343,34,31],[386,352,54,35],[627,137,94,102]].entries()){
-  const x=WIDTH+lx;rect(c,x,y,w,h,'#001128ee');for(let row=0;row<7;row++)rect(c,x+2,y+3+row*(h-6)/7,w-4,1,(row+Math.floor(g.time*8))%3?'#1595b2':'#8df2ff');rect(c,x+w*.25,y+h*.38,w*.13,h*.18,'#ff334c');rect(c,x+w*.61,y+h*.38,w*.13,h*.18,'#ff334c');
- }
+// These screens are scenery only; their rectangles never enter collision geometry.
+export const hauntedScreens=[{room:1,lx:620,y:112,w:108,h:108},{room:1,lx:1510,y:225,w:94,h:94},{room:3,lx:680,y:108,w:108,h:108},{room:5,lx:630,y:115,w:108,h:108}];
+export function drawInfection(c,g,a){
+ for(const m of hauntedScreens)if(m.room===g.room)drawHauntedMonitor(c,a,rooms[m.room].x+m.lx,m.y,m.w,m.h,g.time);
 }
 export function drawEpilogue(c,a,time,width=768){
  const backgroundWidth=Math.max(768,width);c.drawImage(a.menu,(width-backgroundWidth)/2,0,backgroundWidth,backgroundWidth*2/3);rect(c,0,0,width,70,'#030a1eea');const compact=width<768;

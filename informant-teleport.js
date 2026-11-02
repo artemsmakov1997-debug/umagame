@@ -1,5 +1,5 @@
-import {solidSurfaces} from './terrain.js?v=0.13.0';
-import {platforms} from './level.js?v=0.13.0';
+import {solidSurfaces} from './terrain.js?v=0.14.0';
+import {platforms} from './level.js?v=0.14.0';
 export const TELEPORT_PHASES={charge:.45,out:.24,blink:.1,in:.32};
 export const TELEPORT_COOLDOWN=4.2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -15,15 +15,17 @@ export function teleportLandingClear(g,e,target){
 }
 export function chooseInformantLanding(g,e){
  const p=g.player;if(!p.grounded||p.climbing)return null;
- const feet=p.y+p.h,center=p.x+p.w/2;
- const supports=solidSurfaces(g).filter(s=>s.room===e.room&&s.index!==e.platformIndex&&s.w>=150&&Math.abs(s.y-feet)<2&&p.x+p.w>s.x&&p.x<s.x+s.w);
+ const current=(g.platforms||platforms).find(s=>s.room===e.room&&s.index===e.platformIndex);if(current&&Math.abs(p.y+p.h-current.y)<2&&p.x+p.w>current.x&&p.x<current.x+current.w)return null;
+ const feet=p.y+p.h,center=p.x+p.w/2,preferred=Math.max(72,Math.min(160,(g.viewWidth||768)*.36));
+ const supports=solidSurfaces(g).filter(s=>s.room===e.room&&s.index!==e.platformIndex&&s.w>=110&&Math.abs(s.y-feet)<135&&Math.abs(s.x+s.w/2-center)<450);
  const options=[];
  for(const s of supports){
   const origin=s.x+8,end=s.x+s.w-e.w-8;
-  for(const desired of [center-160-e.w/2,center+160-e.w/2,origin,end]){
+  for(const desired of [center-preferred-e.w/2,center+preferred-e.w/2,origin,end]){
    const x=clamp(desired,origin,end),distance=Math.abs(x+e.w/2-center),base=(g.platforms||platforms).find(base=>base.id===s.id)||s,target={x,y:s.y-e.h,index:s.index,localX:x-base.x,origin,end};
+   if((g.viewWidth||768)<350&&(x<g.camera+6||x+e.w>g.camera+g.viewWidth-6))continue;
    if(distance<60||distance>320||!teleportLandingClear(g,e,target))continue;
-   options.push({...target,score:Math.abs(distance-160)+Math.abs(x-e.x)*.03});
+   options.push({...target,score:Math.abs(distance-preferred)+Math.abs(s.y-feet)*1.4+Math.abs(x-e.x)*.03});
   }
  }
  return options.sort((a,b)=>a.score-b.score)[0]||null;

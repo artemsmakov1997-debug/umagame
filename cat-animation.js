@@ -1,4 +1,4 @@
-import {sprite} from './assets.js?v=0.13.0';
+import {sprite} from './assets.js?v=0.14.0';
 export const emotionFrames=[
  {box:[48,205,331,269],pivot:[210,474]},
  {box:[449,235,324,239],pivot:[611,474]},
@@ -51,7 +51,7 @@ const restFrames=[
 ];
 export function restPose(p){
  if(p.sleeping)return p.sleepTime<.6?0:1+Math.floor((p.sleepTime-.6)/1.4)%2;
- if(p.slipping)return 4+Math.floor((p.slideTime||0)*8)%3;
+ if(p.slipping||p.pulled&&p.grounded)return 4+Math.floor((p.slideTime||0)*8)%3;
  return null;
 }
 export function drawRest(c,assets,p){

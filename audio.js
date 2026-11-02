@@ -1,3 +1,4 @@
+import {rooms} from './level.js?v=0.14.0';
 // Original chiptune score and procedural Foley. No downloads or external audio.
 const midi=n=>440*Math.pow(2,(n-69)/12);
 const melodies={
@@ -41,9 +42,9 @@ export class GameAudio{
  }
  setHidden(hidden){this.hidden=!!hidden;if(hidden){this.stop();this.next=0;}}
  setScene(view,game){
-  const pause=view==='exit'||view==='game'&&['paused','lost','respawning','exited'].includes(game.mode);
+  const pause=view==='exit'||view==='game'&&['paused','lost','respawning','exited','loading'].includes(game.mode);
   const ending=game.mode==='won'||game.dialogue?.id==='ending';
-  const theme=view!=='game'||ending||game.room===0?'menu':game.room===7?'boss':game.room===5?'studio':'journey';
+  const theme=view!=='game'||ending||game.room===0?'menu':rooms[game.room]?.arena?'boss':rooms[game.room]?.theme==='studio'?'studio':'journey';
   this.duck=view==='game'&&['dialogue','waking'].includes(game.mode);
   if(theme!==this.theme||pause!==this.paused){this.stop('music');this.step=0;this.next=0;this.theme=theme;this.paused=pause;}
   if(this.music)this.music.gain.setTargetAtTime(pause||this.hidden?0:this.duck?.12:.42,this.context.currentTime,.08);
@@ -81,9 +82,17 @@ export class GameAudio{
   const tone=(frequency,to,duration=.15,gain=.07,wave='square',delay=0)=>this.voice({frequency,to,duration,gain:gain*level,wave,pan,start:now+.006+delay});
   const noise=(duration=.12,gain=.07,filter=2000,delay=0)=>this.voice({noise:true,duration,gain:gain*level,filter,pan,start:now+.006+delay});
   if(type==='enemyNoticed'){
-   const pitches={fakenews:260,clickbait:100,inflator:145,informant:920,panicker:740,censor:180,copier:460,montager:1100};tone(pitches[enemyType]||280,(pitches[enemyType]||280)*1.25,.08,.035,'triangle');return;
+   const pitches={fakenews:260,clickbait:100,inflator:145,informant:920,panicker:740,censor:180,copier:460,cutter:1100,splicer:320,injection:580,echo:660,static:190};tone(pitches[enemyType]||280,(pitches[enemyType]||280)*1.25,.08,.035,'triangle');return;
   }
-  if(type==='fakeLunge'||type==='fakeJump'){noise(.13,.09,3200);tone(260,100,.09,.03);}
+  if(type==='echoTeleport'){tone(880,140,.35,.06,'triangle');tone(660,100,.38,.035,'sine');}
+  else if(type==='echoArrive')tone(160,660,.2,.06,'triangle');
+  else if(type==='staticWarning')noise(.3,.045,4500);
+  else if(type==='staticStrike'){noise(.16,.09,6200);tone(180,65,.13,.05,'sawtooth');}
+  else if(type==='glueWarning')tone(280,350,.28,.04,'triangle');
+  else if(type==='gluePull'){noise(.25,.055,1200);tone(340,170,.35,.035,'sawtooth');}
+  else if(type==='glueRelease')tone(600,100,.1,.04);
+  else if(type==='tickerShot'){tone(540,110,.15,.05);noise(.08,.04,3200);}
+  else if(type==='fakeLunge'||type==='fakeJump'){noise(.13,.09,3200);tone(260,100,.09,.03);}
   else if(type==='baitReveal'){tone(80,500,.16,.11,'sawtooth');noise(.09,.08,900);}
   else if(type==='swallow'){tone(150,35,.38,.13,'triangle');noise(.2,.06,250,.08);}
   else if(type==='inflatorWarning')tone(100,210,.28,.04,'sawtooth');

@@ -1,3 +1,4 @@
+import {rooms as campaignRooms} from '../level.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Game,WIDTH,WORLD,HEIGHT,MAX_HEALTH,LAST_ROOM,FINAL_X,platforms,ladders,rooms} from '../engine.js';
@@ -7,11 +8,11 @@ import {abilities,castAttack,stepBoss,damageBoss,stepProjectiles} from '../boss.
 import {monsters} from '../catalog.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 const enemy=(type,room,x,index=0,extra={})=>makeEnemy(type,room,x,index,{active:true,noticed:true,...extra});
-function stand(g,room=1,index=0,x=45){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:room*WIDTH+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,sneaking:false,climbing:false,inv:0,attack:0,cooldown:0,knock:0,dash:0});g.room=room;g.checkpoint=room;g.updateCamera();}
+function stand(g,room=1,index=0,x=45){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,sneaking:false,climbing:false,inv:0,attack:0,cooldown:0,knock:0,dash:0});g.room=room;g.checkpoint=room;g.updateCamera();}
 function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);stand(g,room,index,x);return g;}
 function bossGame(){const g=isolated(LAST_ROOM,2,633);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.state='recover';g.boss.timer=2;return g;}
-test('catalogue and roster contain nine creatures, with Infoshum only as the boss and no Echo',()=>{
- assert.deepEqual(monsters.map(m=>m.name),['Фейкньюс','Кликбейт','Раздуватель','Цензор','Информатор','Копир','Паникёр','Монтажёр','Инфошум']);assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>m.id!=='infoshum').map(m=>m.id)));assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));assert.throws(()=>enemy('echo',1,100));for(const m of monsters){assert.ok(m.description.length>30);assert.equal(m.abilities.length,2);assert.ok(m.tip);}
+test('catalogue has four equal groups of three regular enemies and one boss',()=>{
+ assert.equal(monsters.length,16);for(let chapter=0;chapter<4;chapter++){const group=monsters.filter(m=>m.chapter===chapter);assert.equal(group.length,4);assert.equal(group.filter(m=>m.boss).length,1);}assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>!m.boss).map(m=>m.id)));for(const m of monsters){assert.ok(m.description.length>20);assert.equal(m.abilities.length,2);assert.ok(m.tip);}assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));
 });
 test('training is physically separate, has no enemies, relays, soup or time pressure',()=>{
  const g=new Game({story:false});g.start();assert.equal(g.room,0);assert.equal(rooms[0].tutorial,true);assert.ok(g.enemies.every(e=>e.room>0&&!e.active));assert.ok(g.relays.every(r=>r.room>0));assert.ok(g.soups.every(s=>s.x>=WIDTH));tick(g,120);assert.equal('clock'in g,false);assert.equal(g.health,4);assert.equal(g.bolts.length,0);
@@ -31,8 +32,8 @@ test('jump, paw and dash break stealth instead of silently attacking',()=>{
 test('Uma can creep through an unalarmed Panicker without contact damage or a portal',()=>{
  const g=isolated(5,0,45),e=enemy('panicker',5,125,0,{noticed:false,dir:1,speed:9});g.enemies=[e];tick(g,155,{down:true,right:true});assert.ok(g.player.x>e.x+e.w);assert.equal(g.health,4);assert.equal(e.noticed,false);assert.equal(e.state,'patrol');assert.equal(g.portals.length,0);assert.equal(g.enemies.length,1);
 });
-test('ordinary movement triggers Panicker and a visible delayed portal with two Fakenews',()=>{
- const g=isolated(5,0,20),e=enemy('panicker',5,125);g.enemies=[e];tick(g,40);assert.equal(e.state,'alarm');assert.equal(g.portals.length,1);assert.equal(g.enemies.length,1);tick(g,120);assert.equal(g.enemies.filter(e=>e.portalMinion).length,2);assert.ok(g.enemies.filter(e=>e.portalMinion).every(e=>e.type==='fakenews'&&e.active));
+test('ordinary movement triggers Panicker and a visible delayed portal with three Fakenews',()=>{
+ const g=isolated(5,0,20),e=enemy('panicker',5,125);g.enemies=[e];tick(g,40);assert.equal(e.state,'alarm');assert.equal(g.portals.length,1);assert.equal(g.enemies.length,1);tick(g,120);assert.equal(g.enemies.filter(e=>e.portalMinion).length,3);assert.ok(g.enemies.filter(e=>e.portalMinion).every(e=>e.type==='fakenews'&&e.active));
 });
 test('crouching before the bell rings cancels its preparation',()=>{
  const g=isolated(5,0,20),e=enemy('panicker',5,125,0,{state:'windup',timer:.3});g.enemies=[e];tick(g,50,{down:true});assert.equal(e.state,'patrol');assert.equal(g.portals.length,0);
@@ -41,7 +42,7 @@ test('hitting or killing the portal owner closes the portal before new enemies a
  for(const lethal of [false,true]){const g=isolated(5,0,20),e=enemy('panicker',5,125,0,{hp:3});g.enemies=[e];alertNearby(g,e);assert.equal(g.portals.length,1);g.hitEnemy(e,false,lethal?9:1);tick(g,70);assert.equal(g.enemies.length,1);assert.equal(g.portals.length,0);}
 });
 test('portal minions are capped, spawn inside their platform and do not spawn inside Uma',()=>{
- const g=isolated(5,0,20),e=enemy('panicker',5,125);g.enemies=[e];for(let i=0;i<6;i++){alertNearby(g,e);for(let n=0;n<180;n++)stepPortals(g,1/60);}const spawned=g.enemies.filter(e=>e.portalMinion);assert.equal(spawned.length,3);for(const m of spawned){assert.ok(m.x>=m.origin&&m.x<=m.end);assert.ok(Math.abs(m.x-g.player.x)>=60);}
+ const g=isolated(5,0,20),e=enemy('panicker',5,125);g.enemies=[e];for(let i=0;i<6;i++){alertNearby(g,e);for(let n=0;n<180;n++)stepPortals(g,1/60);}const spawned=g.enemies.filter(e=>e.portalMinion);assert.equal(spawned.length,6);for(const m of spawned){assert.ok(m.x>=m.origin&&m.x<=m.end);assert.ok(Math.abs(m.x-g.player.x)>=60);}
 });
 test('Panicker alerts only active nearby enemies and does not redirect a prepared wave',()=>{
  const g=isolated(5,0,20),caller=enemy('panicker',5,125),fake=enemy('fakenews',5,400,1),wave=enemy('inflator',5,420,4,{state:'windup',dir:1}),far=enemy('fakenews',6,125),hidden=enemy('informant',5,440,4,{active:false});g.enemies=[caller,fake,wave,far,hidden];alertNearby(g,caller);assert.ok(fake.alert>0);assert.equal(wave.dir,1);assert.equal(far.alert,0);assert.equal(hidden.alert,0);
@@ -53,7 +54,7 @@ test('the first Fakenews is weak; one swing cannot damage a tougher one repeated
  const g=isolated(1,0,45),weak=enemy('fakenews',1,100),tough=enemy('fakenews',1,100,0,{hp:4,maxHp:4});g.enemies=[weak];g.step(1/60,{attack:true});assert.equal(weak.dead,true);g.enemies=[tough];g.player.cooldown=0;tick(g,12,{attack:true});assert.equal(tough.hp,3);
 });
 test('a revealed Clickbait stays visible, patrols, turns at the edge and never becomes a lure again',()=>{
- const g=isolated(2,1,350),e=enemy('clickbait',2,365,1);g.enemies=[e];tick(g,1);assert.equal(e.revealed,true);assert.equal(e.state,'emerge');g.player.x=2*WIDTH+10;g.player.y=282;tick(g,165);assert.equal(e.state,'patrol');const x=e.x;tick(g,30);assert.notEqual(e.x,x);assert.ok(e.x>=e.origin&&e.x<=e.end);tick(g,300);assert.notEqual(e.state,'lure');assert.equal(e.revealed,true);
+ const g=isolated(2,1,350),e=enemy('clickbait',2,365,1);g.enemies=[e];tick(g,1);assert.equal(e.revealed,true);assert.equal(e.state,'emerge');g.player.x=campaignRooms[2].x+10;g.player.y=282;tick(g,165);assert.equal(e.state,'patrol');const x=e.x;tick(g,30);assert.notEqual(e.x,x);assert.ok(e.x>=e.origin&&e.x<=e.end);tick(g,300);assert.notEqual(e.state,'lure');assert.equal(e.revealed,true);
 });
 test('Clickbait swallowing locks control, freezes in the menu and loses one whole life',()=>{
  const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.4,revealed:true});g.enemies=[e];tick(g,1);assert.ok(g.swallow);const x=g.player.x;tick(g,10,{right:true,jump:true,attack:true});assert.equal(g.player.x,x);g.mode='paused';const time=g.swallow.timer;tick(g,120);assert.equal(g.swallow.timer,time);g.mode='playing';tick(g,55);assert.equal(g.swallow,null);assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(e.revealed,true);
@@ -71,7 +72,7 @@ test('an Inflator wave temporarily strengthens nearby Fakenews and expires norma
  const g=isolated(3,0,20),e=enemy('inflator',3,125,0,{state:'windup',timer:.01}),fake=enemy('fakenews',3,365,1,{timer:99}),far=enemy('fakenews',4,400,1);g.enemies=[e,fake,far];tick(g,1);assert.ok(fake.pressureTime>3.9);assert.equal(far.pressureTime,0);g.enemies=[fake];fake.speed=0;fake.timer=999;stand(g,3,0,20);tick(g,250);assert.equal(fake.pressureTime,0);
 });
 test('Informer locks its aim, emits two real long-range packets and opens a recovery window',()=>{
- const g=isolated(4,0,20),e=enemy('informant',4,150,0,{timer:0});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');const aim={...e.aim};g.player.x=WIDTH*4;tick(g,20);assert.deepEqual(e.aim,aim);tick(g,53);assert.equal(g.events.filter(e=>e.type==='enemyShot').length,2);assert.equal(e.state,'recover');assert.ok(g.bolts.every(b=>b.kind==='packet'&&b.sourceId===e.id));
+ const g=isolated(4,0,20),e=enemy('informant',4,150,0,{timer:0});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');const aim={...e.aim};g.player.x=campaignRooms[4].x;tick(g,20);assert.deepEqual(e.aim,aim);tick(g,53);assert.equal(g.events.filter(e=>e.type==='enemyShot').length,2);assert.equal(e.state,'recover');assert.ok(g.bolts.every(b=>b.kind==='packet'&&b.sourceId===e.id));
 });
 test('crouching after an Informer fixes a standing aim lets its packets pass overhead',()=>{
  const g=isolated(4,0,20),e=enemy('informant',4,150,0,{timer:0});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');tick(g,145,{down:true});assert.equal(g.health,4);assert.equal(g.player.sneaking,true);assert.ok(g.events.some(e=>e.type==='enemyShot'));
@@ -80,7 +81,7 @@ test('Informer shields preparation; a reflected packet breaks the shield and dea
  const g=isolated(4,0,20),e=enemy('informant',4,150,0,{state:'windup',timer:.8});g.enemies=[e];assert.equal(g.hitEnemy(e),false);assert.equal(e.hp,3);assert.equal(g.hitEnemy(e,false,2,{reflected:true}),true);assert.equal(e.hp,1);assert.equal(e.shieldBroken,3);assert.equal(e.state,'recover');
 });
 test('a packet can be parried into its owner even when the final boss is active',()=>{
- const g=isolated(4,0,45),e=enemy('informant',4,150,0,{state:'windup',timer:1});g.enemies=[e];g.boss.active=true;g.player.attack=.18;g.bolts=[{kind:'packet',sourceId:e.id,x:WIDTH*4+90,y:270,w:16,h:12,vx:-100,vy:0,ttl:3}];const paw={x:WIDTH*4+60,y:250,w:60,h:65};stepProjectiles(g,1/60,paw);assert.equal(g.bolts[0].friendly,true);assert.ok(g.bolts[0].vx>0);for(let i=0;i<40;i++)stepProjectiles(g,1/60,paw);assert.equal(e.hp,1);assert.ok(e.shieldBroken>0);
+ const g=isolated(4,0,45),e=enemy('informant',4,150,0,{state:'windup',timer:1});g.enemies=[e];g.boss.active=true;g.player.attack=.18;g.bolts=[{kind:'packet',sourceId:e.id,x:campaignRooms[4].x+90,y:270,w:16,h:12,vx:-100,vy:0,ttl:3}];const paw={x:campaignRooms[4].x+60,y:250,w:60,h:65};stepProjectiles(g,1/60,paw);assert.equal(g.bolts[0].friendly,true);assert.ok(g.bolts[0].vx>0);for(let i=0;i<40;i++)stepProjectiles(g,1/60,paw);assert.equal(e.hp,1);assert.ok(e.shieldBroken>0);
 });
 test('dash protects Uma and cannot restart during its cooldown',()=>{
  const g=isolated();g.step(1/60,{dash:true});const lives=g.health;g.hurt();assert.equal(g.health,lives);tick(g,20,{dash:true});assert.equal(g.player.dash,0);assert.ok(g.player.dashCooldown>0);
@@ -95,25 +96,25 @@ test('all gameplay timers, warnings, portal growth, buffs and transitions freeze
  const g=isolated(5);g.enemies=[enemy('panicker',5,125)];alertNearby(g,g.enemies[0]);g.player.powerTime=7;g.transition={from:4,to:5,time:.2,duration:.85};g.mode='paused';const snapshot=JSON.stringify(g);tick(g,150,{right:true,attack:true});assert.equal(JSON.stringify(g),snapshot);
 });
 test('one paw destroys a satellite dish and opens its gate even while a defender is alive',()=>{
- const g=isolated(1,7,4),r=g.relays[0],e=enemy('fakenews',1,62,7,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence[0].id,'autopublish');assert.equal(g.evidence.length,1);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,1);
+ const g=isolated(1,7,4),r=g.relays[0],e=enemy('fakenews',1,62,7,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence.length,0);assert.equal(g.relays.filter(d=>d.room===1&&d.hp>0).length,2);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,0);
 });
 
 test('checkpoint retry preserves records, open gates and collections but resets local enemies and portals',()=>{
- const g=isolated(4);g.completeChapter(1);g.relays[0].hp=0;g.fish=7;g.health=1;g.hurt();assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.mode,'playing');assert.equal(g.room,4);assert.equal(g.health,MAX_HEALTH);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.equal(g.fish,7);assert.equal(g.portals.length,0);assert.ok(g.enemies.some(e=>e.room===4&&!e.active));
+ const g=isolated(3);g.completeChapter(2);g.relays[0].hp=0;g.fish=7;g.health=1;g.hurt();assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.mode,'playing');assert.equal(g.room,3);assert.equal(g.health,MAX_HEALTH);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.equal(g.fish,7);assert.equal(g.portals.length,0);assert.ok(g.enemies.some(e=>e.room===3&&!e.active));
 });
 test('death has its own pose timer and taking another protected hit does not restart it',()=>{
  const g=isolated();g.hurt();assert.equal(g.player.hurtTime,.5);tick(g,10);const time=g.player.hurtTime;g.hurt();assert.equal(g.player.hurtTime,time);g.player.inv=0;g.health=1;g.lives=1;g.hurt();assert.equal(g.mode,'lost');assert.equal(g.player.hurtTime,.5);
 });
 test('camera eases through normal rooms and the separate arena is hidden before the portal',()=>{
- const g=isolated();g.viewWidth=300;g.camera=0;g.player.x=WIDTH+600;g.updateCamera(1/60);assert.ok(g.camera>0&&g.camera<g.player.x-120);const first=g.camera;tick(g,15);assert.ok(g.camera>first);g.player.x=FINAL_X-40;g.updateCamera();assert.equal(g.camera,FINAL_X-300);g.room=LAST_ROOM;g.player.x=WORLD-50;g.updateCamera();assert.equal(g.camera,WORLD-300);
+ const g=isolated();g.viewWidth=300;g.camera=0;g.player.x=WIDTH+600;g.updateCamera(1/60);assert.ok(g.camera>0&&g.camera<g.player.x-120);const first=g.camera;tick(g,15);assert.ok(g.camera>first);g.room=7;g.player.x=FINAL_X-40;g.updateCamera();assert.equal(g.camera,FINAL_X-300);g.room=LAST_ROOM;g.player.x=WORLD-50;g.updateCamera();assert.equal(g.camera,WORLD-300);
 });
 
 test('boss shield, recovery, reflected damage and one-damage-per-swing rules remain intact',()=>{
  const g=bossGame();g.boss.state='windup';assert.equal(damageBoss(g,1),false);assert.equal(damageBoss(g,2,true),true);g.boss.cooldown=0;g.boss.state='recover';const hp=g.boss.hp;g.step(1/60,{attack:true});tick(g,8);assert.equal(g.boss.hp,hp-1);
 });
-test('Infoshum has four abilities and second-phase summons combine melee and ranged minions',()=>{
- const g=bossGame();assert.deepEqual(abilities,['volley','wave','rain','summon']);for(const ability of abilities){g.boss.ability=ability;g.boss.aim={x:FINAL_X+450,y:250};g.boss.targets=[FINAL_X+400,FINAL_X+500,FINAL_X+600];castAttack(g);}assert.ok(g.bolts.some(b=>b.kind==='paper'));assert.ok(g.bolts.some(b=>b.kind==='wave'));assert.ok(g.bolts.some(b=>b.kind==='rain'));assert.ok(g.enemies.every(e=>e.type==='fakenews'));
- g.enemies=[];g.boss.phase=2;g.boss.ability='summon';castAttack(g);assert.deepEqual(g.enemies.map(e=>e.type),['fakenews','informant']);castAttack(g);assert.equal(g.enemies.length,3);
+test('Infoshum has four abilities and second-phase summons combine Static and Echo',()=>{
+ const g=bossGame();assert.deepEqual(abilities,['volley','wave','rain','summon']);for(const ability of abilities){g.boss.summonTargets=[{x:FINAL_X+100,y:420,index:0},{x:FINAL_X+400,y:346,index:1}];g.boss.ability=ability;g.boss.aim={x:FINAL_X+450,y:250};g.boss.targets=[FINAL_X+400,FINAL_X+500,FINAL_X+600];castAttack(g);}assert.ok(g.bolts.some(b=>b.kind==='paper'));assert.ok(g.bolts.some(b=>b.kind==='wave'));assert.ok(g.bolts.some(b=>b.kind==='rain'));assert.ok(g.enemies.every(e=>e.type==='static'));
+ g.enemies=[];g.boss.phase=2;g.boss.ability='summon';castAttack(g);assert.deepEqual(g.enemies.map(e=>e.type),['static','echo']);castAttack(g);assert.equal(g.enemies.length,3);
 });
 test('half health changes phase; only paper and packets are reflectable',()=>{
  const g=bossGame();g.boss.hp=12;stepBoss(g,1/60);assert.equal(g.boss.phase,2);g.player.attack=.18;const x=g.player.x+40,y=g.player.y+10;g.bolts=[{kind:'wave',x,y,w:20,h:12,vx:0,vy:0,ttl:2},{kind:'rain',x,y,w:17,h:26,vx:0,vy:0,ttl:2}];stepProjectiles(g,1/60,{x,y:y-3,w:50,h:50});assert.ok(g.bolts.every(b=>!b.friendly));

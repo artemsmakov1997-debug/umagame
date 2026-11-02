@@ -1,10 +1,10 @@
 {
   "name": "uma-vs-infoshum",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/engine.test.js && node tests/story.test.js && node tests/lives-bait.test.js && node tests/progression.test.js && node tests/teleport.test.js && node tests/world.test.js && node tests/tactical.test.js",
+    "test": "node tests/engine.test.js && node tests/story.test.js && node tests/lives-bait.test.js && node tests/progression.test.js && node tests/teleport.test.js && node tests/world.test.js && node tests/tactical.test.js && node tests/campaign.test.js",
     "start": "python3 -m http.server 8000",
     "test:browser": "node tests/browser.cjs && node tests/story-browser.cjs && node tests/scene-browser.cjs && node tests/interaction-browser.cjs && node tests/teleport-browser.cjs && node tests/world-browser.cjs && node tests/tactical-browser.cjs"
   },
