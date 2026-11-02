@@ -55,7 +55,7 @@ export function stepBoss(g,dt){
 export function damageBoss(g,amount,reflected=false,sourceX=g.player.x+g.player.w/2){
  const b=g.boss;if(!b.active||b.hp<=0||b.cooldown>0||b.state==='shift'||b.phased||bossShielded(g))return false;
  if(b.id==='agitator'&&(sourceX-b.x-b.w/2)*b.dir>=-6&&!b.shieldBroken){if(reflected){b.shieldBroken=2;b.state='recover';b.timer=1.4;}else return false;}
- if(!reflected){const exposed=b.id==='spreader'?b.ability!=='swoop':b.id==='agitator'?true:b.id==='manipulator'?b.state==='recover'||b.state==='casting'&&b.ability==='splice':b.state==='recover';if(!exposed)return false;}
+ if(!reflected){const exposed=b.id==='spreader'?b.state==='recover'||b.ability!=='swoop':b.id==='agitator'?true:b.id==='manipulator'?b.state==='recover'||b.state==='casting'&&b.ability==='splice':b.state==='recover';if(!exposed)return false;}
  b.hp=Math.max(0,b.hp-amount);b.cooldown=.22;b.hurtTime=.28;releaseTether(g,'boss:'+b.id);for(const p of g.portals)if(p.ownerId==='boss:'+b.id)p.cancelled=true;g.emit('bossHit',{x:b.x+b.w/2,y:b.y+b.h-14,boss:b.id});if(b.hp===0){clearBossHelpers(g);g.bossDefeated();}return true;
 }
 export function bossContact(g){const b=g.boss,p=g.player;if(b.state==='shift'||b.phased||!g.overlap(p,b))return;const before=g.health;g.hurt(false,b.x);if(b.id==='infoshum'&&b.ability==='staticRush'&&b.state==='casting'&&g.mode==='playing'&&g.health<before){p.vx=(p.x>b.x?1:-1)*280;p.vy=150;p.knock=.24;p.grounded=false;g.emit('staticPush',{x:b.x,y:b.y});}}
