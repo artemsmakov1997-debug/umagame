@@ -1,5 +1,4 @@
-import {monsterGuides} from './monster-guides.js?v=0.17.0';
-import {rooms} from './level.js?v=0.17.0';
+import {rooms} from './level.js?v=0.18.0';
 // Introduce one species at a time; optional notebooks never gate encounters.
 export const introductionOrder={1:['fakenews','copier','censor'],3:['informant','inflator','panicker'],5:['injection','cutter','splicer'],7:['static','echo','clickbait']};
 export const introductionDistance={1:[90,700,1200],3:[100,820,1400],5:[100,800,1400],7:[130,800,1400]};
@@ -11,5 +10,7 @@ export function canActivateEnemy(g,e){
  if(known)return known.firstId===e.id||g.time-known.time>=FIRST_ENCOUNTER_GRACE;
  if(g.player.x-rooms[e.room].x<introductionDistance[e.room][index])return false;
  if(index>0){const previous=record.types[order[index-1]];if(!previous||g.time-previous.time<SPECIES_GAP)return false;}
- record.types[e.type]={time:g.time,firstId:e.id};g.emit('enemyIntroduction',{enemyType:e.type,room:e.room});if(g.cinematic&&g.openDialogue('sighting:'+e.type,'playing',monsterGuides[e.type]))return false;return true;
+ record.types[e.type]={time:g.time,firstId:e.id};
+ g.seenScenes.add('sighting:'+e.type);g.emit('enemyIntroduction',{enemyType:e.type,room:e.room});
+ return true;
 }

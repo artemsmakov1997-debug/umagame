@@ -1,5 +1,5 @@
-import {solidSurfaces} from './terrain.js?v=0.17.0';
-import {rooms} from './level.js?v=0.17.0';
+import {solidSurfaces} from './terrain.js?v=0.18.0';
+import {rooms} from './level.js?v=0.18.0';
 const GRAVITY=900,IMPULSE=460;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function flight(dy){const disc=IMPULSE*IMPULSE+2*GRAVITY*dy;return dy< -115||dy>170||disc<=0?0:(IMPULSE+Math.sqrt(disc))/GRAVITY;}

@@ -1,6 +1,6 @@
-import {phasePlans} from './boss-phases.js?v=0.17.0';
-import {drawMonster} from './art.js?v=0.17.0';
-import {rect} from './pixel.js?v=0.17.0';
+import {phasePlans} from './boss-phases.js?v=0.18.0';
+import {drawMonster} from './art.js?v=0.18.0';
+import {rect} from './pixel.js?v=0.18.0';
 export const bossStyles={
  spreader:{name:'Распространитель',edge:'#dcb87b',fill:'#f0d7a7',dark:'#47384a',portrait:'#17273b',kind:'paper'},
  agitator:{name:'Агитатор',edge:'#e69258',fill:'#f06361',dark:'#4b2237',portrait:'#281f35',kind:'broadcast'},

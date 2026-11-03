@@ -1,7 +1,7 @@
-import {chapters} from './level.js?v=0.17.0';
-import {monsters} from './catalog.js?v=0.17.0';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.17.0';
-import {idleFrame} from './menu-animation.js?v=0.17.0';
+import {chapters} from './level.js?v=0.18.0';
+import {monsters} from './catalog.js?v=0.18.0';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.18.0';
+import {idleFrame} from './menu-animation.js?v=0.18.0';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
  constructor(assets,onStart,onExit,onQuit=()=>{}){

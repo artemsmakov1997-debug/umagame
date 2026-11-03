@@ -1,6 +1,6 @@
-import {rooms} from './level.js?v=0.17.0';
-import {rect,text} from './pixel.js?v=0.17.0';
-import {sectionNames} from './chapter-routes.js?v=0.17.0';
+import {rooms} from './level.js?v=0.18.0';
+import {rect,text} from './pixel.js?v=0.18.0';
+import {sectionNames} from './chapter-routes.js?v=0.18.0';
 const columns={server:0,power:1,console:2,anchor:3};
 export function drawMapProps(c,a,g,t){
  if(!a.destructibles)return;
