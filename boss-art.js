@@ -1,7 +1,7 @@
-import {rect,text} from './pixel.js?v=0.18.1';
-import {drawMonster} from './art.js?v=0.18.1';
-import {bossShielded} from './boss.js?v=0.18.1';
-import {rooms} from './level.js?v=0.18.1';
+import {rect,text} from './pixel.js?v=0.19.0';
+import {drawMonster} from './art.js?v=0.19.0';
+import {bossShielded} from './boss.js?v=0.19.0';
+import {rooms} from './level.js?v=0.19.0';
 export function drawArenaBoss(c,a,g,time){
  const b=g.boss;if(!rooms[g.room].arena||b.room!==g.room||b.hp<=0)return;const room=rooms[g.room],final=b.id==='infoshum';
  for(const d of b.docks){rect(c,d.x-9,d.y+b.h+2,b.w+18,3,'#3e4a79');rect(c,d.x+12,d.y+b.h+2,b.w-24,2,b.x===d.x?'#b199ec':'#536680');}
@@ -10,7 +10,8 @@ export function drawArenaBoss(c,a,g,time){
  const shield=bossShielded(g,b);
  if(shield){c.save();c.strokeStyle='#8d98d4';c.setLineDash([3,5]);c.strokeRect(b.x-7,b.y-12,b.w+14,b.h+18);for(const d of g.relays.filter(d=>d.room===g.room&&d.hp>0)){c.beginPath();c.moveTo(b.x+b.w/2,b.y+20);c.lineTo(d.x+20,d.y+25);c.stroke();}c.restore();}
 
- if(b.state==='recover'||b.id==='manipulator'&&b.ability==='splice'&&b.state==='casting'||b.id==='spreader'&&['ink','copy'].includes(b.ability)&&b.state==='casting'){rect(c,b.x+8,b.y+b.h-14,b.w-16,6,'#a9ffd3');rect(c,b.x+14,b.y+b.h-12,b.w-28,2,'#e8ffe9');}
+ // Small corner marks show an opening to attack; the health gauge lives in the HUD.
+ if(b.state==='recover'||b.id==='manipulator'&&b.ability==='splice'&&b.state==='casting'||b.id==='spreader'&&['ink','copy'].includes(b.ability)&&b.state==='casting')for(const xx of[b.x+5,b.x+b.w-8]){rect(c,xx,b.y+b.h-18,2,10,'#a9ffd3');rect(c,xx-2,b.y+b.h-18,6,2,'#e8ffe9');rect(c,xx-2,b.y+b.h-10,6,2,'#a9ffd3');}
  if(b.id==='agitator'){const xx=b.dir>0?b.x+b.w:b.x-5;rect(c,xx,b.y+5,5,b.h-10,b.shieldBroken?'#68647a':'#e9ba73');}
  if(b.ability==='pressure'&&b.state==='casting')for(let i=0;i<5;i++){const distance=30+(i*80+time*500)%480;rect(c,b.x+b.w/2+b.dir*distance,b.y+b.h-26,15,3,'#8fdae8');}
  if(b.state==='shift'){const d=b.docks[b.nextDock];if(d)for(let i=0;i<20;i++){const angle=i*Math.PI/10+time*2;rect(c,d.x+b.w/2+Math.cos(angle)*71,d.y+b.h/2+Math.sin(angle)*75,3,6,'#ad9cec');}return;}

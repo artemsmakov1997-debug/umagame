@@ -472,3 +472,49 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
  #app:is([data-story="interlude"],[data-story="ending"]) .ending-actions{grid-column:2;grid-row:3}
  #app:is([data-story="interlude"],[data-story="ending"]) .ending-actions button{min-width:0;padding:12px 18px}
 }
+
+/* The instrument panel has its own space; level pixels begin below its frame. */
+#app[data-screen="game"]{--hud-height:94px}
+#app[data-screen="game"] #game{position:absolute;inset:var(--hud-height) 0 0;height:calc(100% - var(--hud-height))!important}
+.game-hud{position:absolute;inset:0 0 auto;height:var(--hud-height);z-index:2;background:#10253b;pointer-events:none}
+#hud{width:100%;height:100%}
+.has-touch #app[data-screen="game"] #pause{top:calc(var(--hud-height) + 8px)}
+#app[data-screen="game"][data-ending="true"] #game{inset:0;height:100%!important}
+#app[data-screen="game"][data-hud="false"] #game{inset:0;height:100%!important}
+#app[data-screen="game"][data-ending="true"] .game-hud{display:none}
+@media(max-width:699px){#app[data-screen="game"]{--hud-height:64px}#app[data-screen="game"][data-boss="true"]{--hud-height:148px}}
+@media(max-height:550px) and (min-width:700px){#app[data-screen="game"]{--hud-height:64px}#app[data-screen="game"][data-boss="true"]{--hud-height:94px}}
+
+/* The prologue reads as illustrated sentences, without chapter headings or counters. */
+#app[data-story="prologue"] .ending-panel{grid-template-rows:minmax(0,1fr)auto auto}
+@media(max-width:700px) and (orientation:portrait){#app[data-story="prologue"] .ending-panel{grid-template-rows:auto auto 48px}}
+@media(max-height:550px) and (orientation:landscape){
+ #app[data-story="prologue"] .ending-panel{grid-template-rows:minmax(0,1fr)44px}
+ #app[data-story="prologue"] #ending-art{grid-row:1/3}
+ #app[data-story="prologue"] #ending-caption{grid-row:1}
+ #app[data-story="prologue"] .ending-actions{grid-row:2}
+}
+
+/* A dedicated defeat composition: Infoshum, outcome, then four equal actions. */
+#overlay[data-result="lost"]{padding:12px;background:radial-gradient(ellipse at 50% 25%,#153749f0,#03091cf5 68%)}
+#overlay[data-result="lost"] .result-panel{display:flex;flex-direction:column;align-items:center;width:min(540px,96%);max-width:none;max-height:calc(100dvh - 24px);padding:14px 26px 24px;gap:12px;overflow:auto;background:#06162cf5}
+#defeat-art{width:100%;height:min(30dvh,260px);object-fit:contain;flex:0 0 auto}
+#overlay[data-result="lost"] #result-title{font:clamp(27px,3vw,38px)/1.15 UmaDisplay,monospace;color:#ffe3b2;text-align:center;margin:0;text-shadow:2px 3px #422339}
+#overlay[data-result="lost"] .result-actions{width:100%;display:flex;flex-direction:column;gap:9px;margin:4px 0 0}
+#overlay[data-result="lost"] .result-actions button{width:100%;min-height:48px;margin:0;font:27px/1 UmaText,monospace;padding:11px 12px}
+@media(max-width:700px){#overlay[data-result="lost"] .result-panel{padding:12px 18px 20px}#overlay[data-result="lost"] .result-actions button{font-size:25px}}
+@media(max-height:550px) and (orientation:landscape){
+ #overlay[data-result="lost"] .result-panel{width:min(550px,96%);padding:8px 22px 12px;gap:5px}
+ #defeat-art{height:22dvh}
+ #overlay[data-result="lost"] #result-title{font-size:26px}
+ #overlay[data-result="lost"] .result-actions{gap:5px;margin:0}
+ #overlay[data-result="lost"] .result-actions button{min-height:40px;font-size:23px;padding:7px 12px}
+}
+@media(max-width:700px) and (orientation:portrait){#app[data-screen="menu"] .menu-panel{top:25%;height:39%}}
+@media(max-width:700px) and (orientation:portrait){
+ #app[data-screen="menu"] .menu-panel{left:3%;top:25%;width:54%;height:44%;padding:12px 8px 16px}
+ #app[data-screen="menu"] .menu-panel h2{font-size:23px;margin-bottom:12px}
+ #app[data-screen="menu"] .menu-options{height:calc(100% - 40px);gap:8px}
+ #app[data-screen="menu"] .menu-item{font-size:24px;padding:7px 2px;min-height:44px}
+ #app[data-screen="menu"] .menu-item.selected::before{left:-18px;width:20px;height:22px}
+}

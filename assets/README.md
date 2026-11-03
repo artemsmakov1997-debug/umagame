@@ -83,3 +83,11 @@ Opening atlas `opening-slides.png`: four original pixel illustrations generated 
 The untouched generated originals are retained in `/workspace/generated_images`. In-game rendering crops the atlas cells; the interactive review page is `docs/props-preview.html`.
 
 0.18.1: `chapter-barriers.png`, original ImageGen RGBA atlas, 1536×1024, four media-themed gateway columns and two rows (closed/open). Matched to the existing ending art: newsroom rolling gate, rooftop storm barrier, studio acoustic doors and a dimensional CRT arch. Original retained at `/workspace/generated_images/exec-77ef94e3-fac8-455d-802a-8fba6922770e.png`.
+
+### Интерфейс 0.19.0
+
+- `menu-monster-pile.png` — новый фон главного меню с поверженными прислужниками. Кошка в фон не вписана: поверх используются исходные кадры `uma-idle.png`.
+- `infoshum-defeat.png` — отдельная иллюстрация Инфошума с объёмной пиксельной светотенью для поражения.
+- `quiet-room-wings.png` — продолжение тихой комнаты по краям широкого экрана; без кошки, лежанки, портретов и монитора.
+
+Новые иллюстрации подготовлены генерацией изображений по существующим игровым рисункам. Исходные файлы сохранены без изменений. Контуры разрушаемых предметов строятся в коде по прозрачности их настоящих спрайтов.
