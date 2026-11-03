@@ -53,7 +53,7 @@ const arenaOffsets={
  2:{1:[-14,-14],3:[12,-14],4:[-12,-14],10:[8,8],12:[-10,6]},
  4:{1:[-10,-28],2:[0,-20],4:[-15,-24],9:[12,-18],10:[-6,-24],13:[0,-28]},
  6:{1:[-10,8],3:[12,-16],4:[-8,-4],10:[8,-16],11:[10,12],13:[-14,6],16:[0,-10]},
- 8:{1:[-16,-18],2:[-12,2],3:[16,-18],4:[-12,-20],9:[4,-20],10:[-8,-26],12:[-10,6],13:[10,-14],16:[12,-8]}
+ 8:{1:[-16,-18],2:[-12,2],3:[16,-18],4:[-12,-20],10:[-8,-26],12:[-10,6],13:[10,-14],16:[12,-8]}
 };
 for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>{
  const [dx,dy]=arenaOffsets[index][i]||[0,0];return[x+dx,y+dy,w];
@@ -62,7 +62,7 @@ const motions={
  '5:1':{axis:'x',amplitude:68,period:6.2},'5:10':{axis:'y',amplitude:94,period:5.4},'5:13':{axis:'x',amplitude:62,period:5.8},'5:29':{axis:'y',amplitude:86,period:5.2},
  '6:1':{axis:'x',amplitude:46,period:5.6},'6:3':{axis:'y',amplitude:46,period:6},'6:10':{axis:'y',amplitude:30,period:5.8},
  '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
- '8:9':{axis:'x',amplitude:38,period:7},'8:13':{axis:'y',amplitude:26,period:5.6}
+ '8:13':{axis:'y',amplitude:26,period:5.6}
 };
 export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,motion:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
