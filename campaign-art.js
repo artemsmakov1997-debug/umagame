@@ -1,9 +1,9 @@
-import {rooms,WIDTH} from './level.js?v=0.16.0';
-import {rect,text} from './pixel.js?v=0.16.0';
-import {sprite,idleCats} from './assets.js?v=0.16.0';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.16.0';
-import {drawMonster,drawHauntedMonitor} from './art.js?v=0.16.0';
-import {drawDish,drawTowerPortal} from './stage-art.js?v=0.16.0';
+import {rooms,WIDTH} from './level.js?v=0.17.0';
+import {rect,text} from './pixel.js?v=0.17.0';
+import {sprite,idleCats} from './assets.js?v=0.17.0';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.17.0';
+import {drawMonster,drawHauntedMonitor} from './art.js?v=0.17.0';
+import {drawDish,drawTowerPortal} from './stage-art.js?v=0.17.0';
 export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
@@ -15,7 +15,11 @@ export function sceneLayers(assets){
    c.drawImage(assets.backdrops,(index%2)*sw,Math.floor(index/2)*sh,sw,sh,0,0,768,512);c.restore();
   }
   c.filter='none';rect(c,0,0,canvas.width,512,room.arena?'#030c2338':'#03102340');
-  // Distant editorial and broadcast machinery varies the three-screen route.
+  // Subareas retain a shared newsroom world but have different machinery and light.
+ if(!room.arena)for(let section=0;section<3;section++){
+  const x=section*768;c.save();c.globalAlpha=.12;rect(c,x,0,768,512,[['#16425c','#453921','#1e1949'],['#192a50','#4e2145','#133c4a'],['#312745','#155151','#452c2c'],['#211843','#123451','#41204a']][{newsroom:0,roofs:1,studio:2,noise:3}[room.theme]][section]);c.restore();
+ }
+ // Distant editorial and broadcast machinery varies the three-screen route.
   if(room.theme==='newsroom')for(let i=0;i<9;i++){const x=58+i*258;rect(c,x,375,120,90,'#122139');rect(c,x+3,377,114,4,'#4a5666');for(let k=0;k<4;k++)rect(c,x+8,387+k*16,104,2,'#30465a');}
   if(room.arena&&room.theme==='roofs')for(const x of [room.width*.25,room.width*.73]){rect(c,x,54,8,350,'#26374f');for(let y=60;y<400;y+=28){rect(c,x-16,y,40,3,'#344d63');}}
   if(room.arena&&room.theme==='studio')for(let i=0;i<5;i++){const x=110+i*285;rect(c,x,25,75,26,'#284255');rect(c,x+6,30,63,15,'#597286');}
@@ -58,7 +62,7 @@ export function drawPerson(c,a,person,time,scale=1){
 }
 export function drawCampaignObjects(c,a,g,time){
  if(g.room===0){
-  rect(c,748,162,20,84,'#101d32');rect(c,752,168,12,74,g.tutorial.complete?'#10728a':'#3c4c5a');rect(c,754,173,2,62,g.tutorial.complete?'#8bebdf':'#71828a');
+  rect(c,748,162,20,84,'#101d32');rect(c,752,168,12,74,'#10728a');rect(c,754,173,2,62,'#8bebdf');
   text(c,'В РЕДАКЦИЮ',647,223,'#9cc7cd');
   for(let i=0;i<3;i++)rect(c,752+i*4,157,2,3,g.tutorial.step>i?'#a8f2b2':'#29465a');
   if(g.mode==='playing'){

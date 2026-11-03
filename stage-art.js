@@ -1,9 +1,9 @@
-import {rect} from './pixel.js?v=0.16.0';
-import {sprite} from './assets.js?v=0.16.0';
-import {drawHauntedMonitor} from './art.js?v=0.16.0';
-import {text} from './pixel.js?v=0.16.0';
-import {catLife} from './hud.js?v=0.16.0';
-import {rooms,WIDTH,PORTAL_X,PORTAL_ROOM,FINAL_X,ARENA_WIDTH} from './level.js?v=0.16.0';
+import {rect} from './pixel.js?v=0.17.0';
+import {sprite} from './assets.js?v=0.17.0';
+import {drawHauntedMonitor} from './art.js?v=0.17.0';
+import {text} from './pixel.js?v=0.17.0';
+import {catLife} from './hud.js?v=0.17.0';
+import {rooms,WIDTH,PORTAL_X,PORTAL_ROOM,FINAL_X,ARENA_WIDTH} from './level.js?v=0.17.0';
 const dishFrames=[
  {box:[0,0,512,512],pivot:[318,480]}, {box:[512,0,512,512],pivot:[830,480]}, {box:[1024,0,512,512],pivot:[1335,480]},
  {box:[0,512,512,512],pivot:[318,988]}, {box:[512,512,512,512],pivot:[811,988]}, {box:[1024,512,512,512],pivot:[1328,988]}

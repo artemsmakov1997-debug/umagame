@@ -45,7 +45,7 @@ test('Agitator forward pressure pushes only its own line and respects a protecte
  for(const dash of[0,.2]){const g=game(4),b=prepare(g,'pressure');b.dir=1;castAttack(g);Object.assign(g.player,{x:b.x+b.w+20,y:b.y+b.h-48,dash,inv:0});stepBoss(g,1/60);assert.equal(g.player.knock>0,!dash);if(!dash)assert.equal(g.player.vx,640);}
 });
 test('Manipulator combines real cuts with a five-second pull; Shift and hitting the reel break its tape',()=>{
- const g=game(6),b=g.boss;b.turn=bossPatterns.manipulator.indexOf('cut');planAttack(g);assert.ok(g.cuts.length);assert.ok(g.cuts.every(c=>c.ownerId==='boss:manipulator'&&c.phase==='warning'));
+ const g=game(6),b=g.boss;b.phase=2;b.hp=9;b.turn=0;planAttack(g);assert.ok(g.cuts.length);assert.ok(g.cuts.every(c=>c.ownerId==='boss:manipulator'&&c.phase==='warning'));
  prepare(g,'splice');castAttack(g);assert.equal(g.tether.remaining,5);Object.assign(g.player,{x:b.x-120,y:b.y+b.h-48});stepTether(g,1/60);assert.equal(g.player.pulled,true);g.player.dash=.2;stepTether(g,1/60);assert.equal(g.tether,null);assert.equal(b.state,'recover');
  g.player.dash=0;prepare(g,'splice');castAttack(g);g.relays.forEach(d=>d.hp=0);b.cooldown=0;assert.equal(damageBoss(g,1),true);assert.equal(g.tether,null);
 });

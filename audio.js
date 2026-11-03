@@ -1,5 +1,5 @@
-import {musicScores,sceneMusic} from './music-scores.js?v=0.16.0';
-import {rooms} from './level.js?v=0.16.0';
+import {musicScores,sceneMusic} from './music-scores.js?v=0.17.0';
+import {rooms} from './level.js?v=0.17.0';
 // Original chiptune score and procedural Foley. No downloads or external audio.
 const midi=n=>440*Math.pow(2,(n-69)/12);
 function preference(){try{return globalThis.localStorage?.getItem('uma-sound')!=='off';}catch{return true;}}
@@ -115,7 +115,7 @@ export class GameAudio{
   else if(type==='pop'){noise(.12,.07,1800);tone(300,60,.13,.05);}
   else if(type==='bossHit'){tone(170,75,.2,.09,'sawtooth');noise(.13,.08,1300);}
   else if(['fish','heal','soup','checkpoint','lifePickup','dishBreak','parry'].includes(type)){
-   const freq=type==='lifePickup'?1046:type==='parry'?1320:784;tone(freq,freq,.1,.06,'triangle');tone(freq*1.25,freq*1.25,.13,.05,'triangle',.09);if(type==='dishBreak')noise(.24,.09,3600);
+   const freq=type==='lifePickup'?1046:type==='parry'?1320:784;tone(freq,freq,.1,.06,'triangle');tone(freq*1.25,freq*1.25,.13,.05,'triangle',.09);if((type==='dishBreak'||type==='controlBreak'))noise(.24,.09,3600);
   }else if(type==='won')for(const [i,n]of [69,72,76,81].entries())tone(midi(n),midi(n),.35,.06,'triangle',i*.14);
  }
  destroy(){clearInterval(this.interval);this.interval=null;this.stop();if(this.context&&!this.offline)this.context.close().catch(()=>{});}

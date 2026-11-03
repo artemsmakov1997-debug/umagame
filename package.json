@@ -1,12 +1,12 @@
 {
   "name": "uma-vs-infoshum",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/engine.test.js && node tests/story.test.js && node tests/lives-bait.test.js && node tests/progression.test.js && node tests/teleport.test.js && node tests/world.test.js && node tests/tactical.test.js && node tests/campaign.test.js && node tests/finale-bosses.test.js && node tests/arrivals-echo.test.js && node tests/prologue-drop.test.js",
+    "test": "node tests/engine.test.js && node tests/story.test.js && node tests/lives-bait.test.js && node tests/progression.test.js && node tests/teleport.test.js && node tests/world.test.js && node tests/tactical.test.js && node tests/campaign.test.js && node tests/finale-bosses.test.js && node tests/arrivals-echo.test.js && node tests/prologue-drop.test.js && node tests/chapter-expansion.test.js",
     "start": "python3 -m http.server 8000",
-    "test:browser": "node tests/browser.cjs && node tests/story-browser.cjs && node tests/scene-browser.cjs && node tests/interaction-browser.cjs && node tests/teleport-browser.cjs && node tests/world-browser.cjs && node tests/tactical-browser.cjs && node tests/finale-browser.cjs && node tests/arrivals-browser.cjs && node tests/prologue-browser.cjs"
+    "test:browser": "node tests/browser.cjs && node tests/story-browser.cjs && node tests/scene-browser.cjs && node tests/interaction-browser.cjs && node tests/teleport-browser.cjs && node tests/world-browser.cjs && node tests/tactical-browser.cjs && node tests/finale-browser.cjs && node tests/arrivals-browser.cjs && node tests/prologue-browser.cjs && node tests/chapter-browser.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

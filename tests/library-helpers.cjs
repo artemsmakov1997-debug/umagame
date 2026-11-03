@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');
 async function checkLibrary(page){
- const groups=await page.evaluate(async()=>{const {chapters}=await import('./level.js?v=0.16.0');const {monsters}=await import('./catalog.js?v=0.16.0');return chapters.map((c,i)=>({name:c.name,monsters:monsters.filter(m=>m.chapter===i).map(m=>m.name)}));});
+ const groups=await page.evaluate(async()=>{const {chapters}=await import('./level.js?v=0.17.0');const {monsters}=await import('./catalog.js?v=0.17.0');return chapters.map((c,i)=>({name:c.name,monsters:monsters.filter(m=>m.chapter===i).map(m=>m.name)}));});
  assert.equal(await page.locator('.monster-option').count(),16);let shape;
  for(const [index,group]of groups.entries()){
   await page.locator(`#library-chapters [data-chapter="${index}"]`).click();assert.equal(await page.locator('.monster-option:visible').count(),4);

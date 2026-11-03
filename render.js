@@ -1,29 +1,31 @@
-import {drawExitArrow} from './navigation-art.js?v=0.16.0';
-import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.16.0';
-import {drawFinaleBackdrop} from './ending-ui.js?v=0.16.0';
-import {solidSurfaces} from './terrain.js?v=0.16.0';
-import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.16.0';
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.16.0';
-import {rect,text} from './pixel.js?v=0.16.0';
-import {cats,creatures,sprite} from './assets.js?v=0.16.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.16.0';
-import {drawHud} from './hud.js?v=0.16.0';
-import {drawNotebook} from './notebook-art.js?v=0.16.0';
-import {drawMovingRails,drawLifeCaches,drawArenaBoundary,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.16.0';
-import {drawArenaBoss} from './boss-art.js?v=0.16.0';
-import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.16.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.16.0';
-import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.16.0';
+import {drawMapProps,drawSectionTransition} from './chapter-route-art.js?v=0.17.0';
+import {drawExitArrow} from './navigation-art.js?v=0.17.0';
+import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.17.0';
+import {drawFinaleBackdrop} from './ending-ui.js?v=0.17.0';
+import {solidSurfaces} from './terrain.js?v=0.17.0';
+import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.17.0';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.17.0';
+import {rect,text} from './pixel.js?v=0.17.0';
+import {cats,creatures,sprite} from './assets.js?v=0.17.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.17.0';
+import {drawHud} from './hud.js?v=0.17.0';
+import {drawNotebook} from './notebook-art.js?v=0.17.0';
+import {drawMovingRails,drawLifeCaches,drawArenaBoundary,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.17.0';
+import {drawArenaBoss} from './boss-art.js?v=0.17.0';
+import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.17.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.17.0';
+import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.17.0';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
  draw(g,dt=0,visualTime=g.time){
   const c=this.c,a=this.assets,bounds=c.canvas.getBoundingClientRect(),vw=Math.max(160,Math.round(HEIGHT*bounds.width/Math.max(1,bounds.height)));
   if(c.canvas.width!==vw)c.canvas.width=vw;if(c.canvas.height!==HEIGHT)c.canvas.height=HEIGHT;
-  if(g.viewWidth!==vw){g.viewWidth=vw;g.updateCamera();}
+  const cozyFit=g.room===0&&!g.touchEnabled,worldWidth=cozyFit?WIDTH:vw;
+  if(g.viewWidth!==worldWidth){g.viewWidth=worldWidth;g.updateCamera();}
   const t=g.time,p=g.player,b=g.boss,cam=Math.round(g.camera),opening=g.room===0&&(g.mode==='waking'||g.pausedFrom==='waking'||g.dialogue?.id==='intro');
   if(['ending','won'].includes(g.mode)||['ending','won'].includes(g.pausedFrom)){c.imageSmoothingEnabled=false;drawFinaleBackdrop(c,a,g,vw);return;}
-  c.imageSmoothingEnabled=false;c.clearRect(0,0,vw,HEIGHT);c.save();c.translate(-cam,0);
+  c.imageSmoothingEnabled=false;c.clearRect(0,0,vw,HEIGHT);c.save();if(cozyFit)c.scale(vw/WIDTH,1);c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
    if(i!==g.room)continue;if(room.x+room.width+150<cam||room.x-150>cam+vw)continue;
    drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);
@@ -45,7 +47,7 @@ export class Renderer{
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
   drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
-  drawInfection(c,g,a);drawEnemySources(c,g,t);c.restore();
+  drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   if(rooms[g.room].arena)drawArenaBoundary(c,t,rooms[g.room]);drawArenaBoss(c,a,g,t);
   drawLifeCaches(c,g,t);
   for(const f of g.fishes)if(f.room===g.room&&!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
@@ -114,8 +116,8 @@ export class Renderer{
   if(p.attack>.04){c.save();c.translate(Math.round(p.x+17+p.dir*36),Math.round(p.y+24));if(p.dir<0)c.scale(-1,1);for(let i=0;i<3;i++){rect(c,10+i*2,-13+i*8,3,10,'#ffe6a7');rect(c,6+i*2,-15+i*8,4,2,'#ffe6a7');}c.restore();}
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   if(g.tether){const e=g.tether.ownerId==='boss:'+g.boss.id?g.boss:g.enemies.find(e=>e.id===g.tether.ownerId);if(e){c.strokeStyle='#c9a4ed';c.lineWidth=3;c.setLineDash([5,4]);c.beginPath();c.moveTo(e.x+24,e.y+2);c.lineTo(p.x+17,p.y+28);c.stroke();c.setLineDash([]);for(let i=0;i<5;i++)rect(c,e.x+5+i*8,e.y-58,5,3,i<Math.ceil(g.tether.remaining)?'#ffdb9b':'#263a55');}}
-  drawExitArrow(c,g,t,vw);c.restore();
-  drawHud(c,a,g,vw);drawArenaTransfer(c,g,vw);drawLocationLoading(c,g,vw);
+  drawExitArrow(c,g,t,worldWidth);c.restore();
+  drawHud(c,a,g,vw);drawSectionTransition(c,g,vw);drawArenaTransfer(c,g,vw);drawLocationLoading(c,g,vw);
   if(g.mode==='respawning'||g.pausedFrom==='respawning'){
    const progress=1-g.respawnTime/1.1;c.globalAlpha=Math.max(0,(progress-.25)/.75)*.86;rect(c,0,47,vw,HEIGHT-47,'#030a1e');c.globalAlpha=1;
   }

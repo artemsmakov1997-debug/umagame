@@ -1,13 +1,13 @@
-import {monsterGuides} from './monster-guides.js?v=0.16.0';
-import {canActivateEnemy} from './encounters.js?v=0.16.0';
-import {actorById,bossProxy} from './boss-actors.js?v=0.16.0';
-import {solidSurfaces} from './terrain.js?v=0.16.0';
-import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.16.0';
-import {enemy,rooms} from './level.js?v=0.16.0';
-import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.16.0';
-import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.16.0';
-import {stepEnemyFall} from './terrain.js?v=0.16.0';
-import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.16.0';
+import {monsterGuides} from './monster-guides.js?v=0.17.0';
+import {canActivateEnemy} from './encounters.js?v=0.17.0';
+import {actorById,bossProxy} from './boss-actors.js?v=0.17.0';
+import {solidSurfaces} from './terrain.js?v=0.17.0';
+import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.17.0';
+import {enemy,rooms} from './level.js?v=0.17.0';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.17.0';
+import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.17.0';
+import {stepEnemyFall} from './terrain.js?v=0.17.0';
+import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.17.0';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
