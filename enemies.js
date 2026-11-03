@@ -36,6 +36,11 @@ export function stepEnemies(g,dt,paw,prevBottom){
  for(const e of g.enemies){
   if(g.mode!=='playing')break;
   if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);continue;}if(e.room!==g.room)continue;
+  // Summoned or pre-activated enemies bypass encounter activation; introduce them once, too.
+  if(e.active&&g.cinematic&&!g.seenScenes.has('sighting:'+e.type)){
+   g.seenScenes.add('sighting:'+e.type);
+   g.emit('enemyIntroduction',{enemyType:e.type,room:e.room});
+  }
   if(!e.active){if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
   for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
