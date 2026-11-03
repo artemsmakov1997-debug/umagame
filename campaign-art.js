@@ -1,9 +1,10 @@
-import {rooms,WIDTH} from './level.js?v=0.19.0';
-import {rect,text} from './pixel.js?v=0.19.0';
-import {sprite,idleCats} from './assets.js?v=0.19.0';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.19.0';
-import {drawMonster,drawHauntedMonitor} from './art.js?v=0.19.0';
-import {drawDish,drawTowerPortal} from './stage-art.js?v=0.19.0';
+function safeWarning(p){return p.collapseCharge>.35;}
+import {rooms,WIDTH} from './level.js?v=0.20.0';
+import {rect,text} from './pixel.js?v=0.20.0';
+import {sprite,idleCats} from './assets.js?v=0.20.0';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.20.0';
+import {drawMonster,drawHauntedMonitor} from './art.js?v=0.20.0';
+import {drawDish,drawTowerPortal} from './stage-art.js?v=0.20.0';
 export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
@@ -48,6 +49,7 @@ export function drawSurface(c,a,p,time){
  for(let xx=x+9;xx<x+w-7;xx+=28){rect(c,xx,y+5,11,2,'#a1bdc4');rect(c,xx,y+8,2,2,'#0a1424');}
  rect(c,x,y-3,w,3,p.motion?'#9cf7f0':theme==='noise'?'#cfb5ff':'#ffe6a3');rect(c,x,y,Math.max(0,w-1),1,'#c88e44');rect(c,x+1,y+11,w-2,2,'#16334a');
  for(const xx of [x,x+w-3]){rect(c,xx,y-3,3,7,'#e5fbeb');rect(c,xx,y+5,2,7,'#8bc7d0');}
+ if(p.fragile){for(let i=0;i<4;i++)rect(c,x+10+i*(w-20)/4,y-2,3,10,safeWarning(p)?'#ff775c':'#af7558');}
  if(p.belt){c.save();c.beginPath();c.rect(x+2,y+2,w-4,9);c.clip();const offset=((time*p.belt)%22+22)%22;for(let xx=x-22+offset;xx<x+w+22;xx+=22){rect(c,xx,y+3,9,2,'#f2ce83');rect(c,xx+3,y+5,9,2,'#b98a51');}c.restore();}
 }
 export function drawAmbience(c,room,time){
@@ -66,9 +68,9 @@ export function drawCampaignObjects(c,a,g,time){
   rect(c,748,162,20,84,'#101d32');rect(c,752,168,12,74,'#10728a');rect(c,754,173,2,62,'#8bebdf');
   text(c,'В РЕДАКЦИЮ',647,223,'#9cc7cd');
   for(let i=0;i<3;i++)rect(c,752+i*4,157,2,3,g.tutorial.step>i?'#a8f2b2':'#29465a');
-  if(g.mode==='playing'){
+  if(g.mode==='playing'&&g.hintsEnabled!==false){
    const q=g.tutorial.step,notes=g.touchEnabled?['ДЖОЙСТИК →','↑ ПРЫЖОК','ДЖОЙСТИК ↑','→']:['← → / A D','↑ / W','↑ ↓ / W S','→'];
-   const x=q===0?120:q===1?207:q===2?420:705,y=q===0?225:q===1?324:q===2?214:214;rect(c,x-7,y-7,q<3?112:28,25,'#06152ddb');text(c,notes[q],x,y,'#ffe1a1');
+   const x=q===0?120:q===1?207:q===2?420:705,y=q===0?225:q===1?324:q===2?214:214;rect(c,x-10,y-12,q<3?150:40,35,'#031022');rect(c,x-10,y-12,q<3?150:40,2,'#ffe29b');text(c,notes[q],x,y,'#fff3be',1.4);
   }
  }
  for(const portal of g.portals){

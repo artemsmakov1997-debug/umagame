@@ -34,7 +34,7 @@ test('Censor stamps a bounded patch on its actual platform, with warning and a f
  const g=setup(3,3,20),e=actor('censor',3,125,3,{timer:0,speed:0});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');assert.equal(g.inks.length,0);tick(g,32);assert.equal(g.inks.length,1);const ink=g.inks[0],s=g.platforms.find(s=>s.id===ink.platformId);assert.ok(ink.localX>=0&&ink.localX+ink.w<=s.w);g.enemies=[];tick(g,560);assert.equal(g.inks.length,0);
 });
 test('ink slows Fakenews patrols and lunges but does not slow Censor',()=>{
- const distance=(type,ink,state='patrol')=>{const g=setup(3,3,10),e=actor(type,3,140,3,{dir:1,timer:99,jumpCooldown:99,state});g.enemies=[e];if(ink)stampInk(g,actor('censor',3,140,3));const x=e.x;tick(g,12);return Math.abs(e.x-x);};
+ const distance=(type,ink,state='patrol')=>{const g=setup(2,1,295),e=actor(type,2,350,1,{dir:1,timer:99,jumpCooldown:99,state});g.enemies=[e];if(ink)stampInk(g,actor('censor',2,350,1));const x=e.x;tick(g,12);return Math.abs(e.x-x);};
  assert.ok(distance('fakenews',true)<distance('fakenews',false)*.5);assert.ok(distance('fakenews',true,'lunge')<distance('fakenews',false,'lunge')*.5);assert.ok(Math.abs(distance('censor',true)-distance('censor',false))<.01);
 });
 test('Uma has real ink inertia after releasing movement and distinct slipping animation poses',()=>{
@@ -57,7 +57,7 @@ test('Copier remains vulnerable periodically even with an empty scanner or a ful
  const {g,c,original}=copierSetup();g.enemies=[c];assert.equal(g.hitEnemy(c),false);tick(g,58);assert.equal(c.state,'printing');assert.equal(g.hitEnemy(c),true);assert.equal(c.hp,2);assert.equal(g.enemies.some(e=>e.id===original.id),false);
 });
 test('copies are capped and destroying their Copier dissolves every owned duplicate immediately',()=>{
- const {g,c}=copierSetup();tick(g,1500);const copies=g.enemies.filter(e=>e.copyOwnerId===c.id&&!e.dead);assert.equal(copies.length,2);assert.ok(g.enemies.filter(e=>e.copyOwnerId&&!e.dead).length<=3);c.state='printing';c.inv=0;assert.equal(g.hitEnemy(c,false,99),true);assert.ok(copies.every(e=>e.dead));
+ const {g,c}=copierSetup();tick(g,1500);const copies=g.enemies.filter(e=>e.copyOwnerId===c.id&&!e.dead);assert.equal(copies.length,1);assert.ok(g.enemies.filter(e=>e.copyOwnerId&&!e.dead).length<=3);c.state='printing';c.inv=0;assert.equal(g.hitEnemy(c,false,99),true);assert.ok(copies.every(e=>e.dead));
 });
 test('Montager warns before removing only a middle span; permanent supports and antenna roofs survive',()=>{
  const g=setup(5,1,365),e=actor('cutter',5,655,2,{timer:99,speed:0});g.enemies=[e];assert.equal(planCut(g,e),true);const cut=g.cuts[0],s=g.platforms.find(s=>s.id===cut.platformId);assert.equal(s.index,1);assert.ok(cut.localX>=44&&s.w-cut.localX-cut.w>=44);tick(g,100);assert.equal(cut.phase,'warning');assert.equal(solidSurfaces(g).filter(p=>p.id===s.id).length,1);tick(g,10);assert.equal(cut.phase,'gap');const pieces=solidSurfaces(g).filter(p=>p.id===s.id);assert.equal(pieces.length,2);assert.equal(pieces.reduce((sum,p)=>sum+p.w,0),s.w-cut.w);assert.ok(!g.platforms.find(s=>s.id==='5:11').cuttable);

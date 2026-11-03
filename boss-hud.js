@@ -1,6 +1,5 @@
-import {phasePlans} from './boss-phases.js?v=0.19.0';
-import {drawMonster} from './art.js?v=0.19.0';
-import {rect} from './pixel.js?v=0.19.0';
+import {drawMonster} from './art.js?v=0.20.0';
+import {rect} from './pixel.js?v=0.20.0';
 export const bossStyles={
  spreader:{name:'Распространитель',edge:'#dcb87b',fill:'#f0d7a7',dark:'#47384a',portrait:'#17273b',kind:'paper'},
  agitator:{name:'Агитатор',edge:'#e69258',fill:'#f06361',dark:'#4b2237',portrait:'#281f35',kind:'broadcast'},
@@ -12,16 +11,14 @@ function portrait(assets,id){let map=portraits.get(assets);if(!map){map=new Map(
 export function drawBossHud(c,a,g,width,{y=8}={}){
  const b=g.boss;if(!b.active||b.hp<=0||b.room!==g.room)return;
  const style=bossStyles[b.id],w=Math.min(width<700?width-20:width-350,440),x=Math.round((width-w)/2),face=width<700?40:49,barX=x+face+9,barW=w-face-13;
- rect(c,x-2,y-3,w+4,77,'#02091be8');rect(c,x,y,face,face,style.edge);rect(c,x+2,y+2,face-4,face-4,style.portrait);c.drawImage(portrait(a,b.id),x+1,y+1,face-2,face-2);
+ rect(c,x-2,y-3,w+4,58,'#02091be8');rect(c,x,y,face,face,style.edge);rect(c,x+2,y+2,face-4,face-4,style.portrait);c.drawImage(portrait(a,b.id),x+1,y+1,face-2,face-2);
  rect(c,barX-2,y+3,barW+4,16,style.edge);rect(c,barX,y+5,barW,12,style.dark);
- const cells=Math.min(24,b.maxHp),gap=1,cell=(barW-4-(cells-1)*gap)/cells;
- for(let i=0;i<cells;i++){const left=barX+2+i*(cell+gap),amount=Math.max(0,Math.min(1,b.hp/b.maxHp*cells-i));if(amount>0){rect(c,left,y+7,cell*amount,8,style.fill);rect(c,left,y+7,cell*amount,2,'#ffe8c3');}}
+ rect(c,barX+2,y+7,(barW-4)*Math.max(0,b.hp/b.maxHp),8,style.fill);rect(c,barX+2,y+7,(barW-4)*Math.max(0,b.hp/b.maxHp),2,'#ffe8c3');
+ for(const fraction of[1/3,2/3])rect(c,barX+barW*fraction,y+5,2,12,'#020817');
  c.save();c.font=`${width<360?17:20}px UmaText, monospace`;c.fillStyle='#ffe4b1';c.textAlign='center';c.textBaseline='top';c.fillText(style.name,barX+barW/2,y+24,barW);c.restore();
  if(style.kind==='paper')for(let i=0;i<3;i++)rect(c,x+7+i*7,y+43,4,3,style.edge);
  if(style.kind==='broadcast')for(let i=0;i<6;i++)rect(c,barX+i*8,y+48,3,3+i%3,style.edge);
  if(style.kind==='film')for(let i=0;i<Math.floor(w/12);i++)rect(c,x+i*12,y+49,5,3,style.edge);
  if(style.kind==='static')for(let i=0;i<8;i++)rect(c,barX+i*barW/8,y+48+i%2,8,2,i%2?style.fill:style.edge);
- rect(c,x+5,y+55,w-10,18,'#12354b');
- c.save();c.font='14px UmaText,monospace';c.fillStyle='#79e6ff';c.textAlign='center';c.fillText(`ФАЗА ${b.phase} / 3 · ${phasePlans[b.id][b.phase-1][0]}`,x+w/2,y+69,w-10);c.restore();
  const sx=b.x+b.w/2-g.camera,world=g.viewWidth||768;if(sx<24||sx>world-24){const right=sx>world-24,px=right?x+w-10:x+7;for(let i=0;i<4;i++)rect(c,px+(right?i:-i),y+45+i,1,8-i*2,style.edge);}
 }

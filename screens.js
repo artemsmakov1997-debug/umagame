@@ -1,14 +1,14 @@
-import {chapters} from './level.js?v=0.19.0';
-import {monsters} from './catalog.js?v=0.19.0';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.19.0';
-import {idleFrame} from './menu-animation.js?v=0.19.0';
+import {chapters} from './level.js?v=0.20.0';
+import {monsters} from './catalog.js?v=0.20.0';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.20.0';
+import {idleFrame} from './menu-animation.js?v=0.20.0';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
- constructor(assets,onStart,onExit,onQuit=()=>{}){
-  this.assets=assets;this.onStart=onStart;this.onExit=onExit;this.onQuit=onQuit;this.view='menu';this.menuIndex=0;this.monsterIndex=0;this.time=0;this.idleAction='idle';this.libraryReturn=null;
+ constructor(assets,onStart,onExit,onQuit=()=>{},onSettings=()=>{}){
+  this.onSettings=onSettings;this.assets=assets;this.onStart=onStart;this.onExit=onExit;this.onQuit=onQuit;this.view='menu';this.menuIndex=0;this.monsterIndex=0;this.time=0;this.idleAction='idle';this.libraryReturn=null;
   this.menuItems=[...document.querySelectorAll('[data-menu]')];
   this.menuItems.forEach((button,index)=>{button.disabled=false;button.addEventListener('focus',()=>this.highlightMenu(index));button.addEventListener('pointerenter',()=>this.highlightMenu(index));button.addEventListener('click',()=>{
-   this.highlightMenu(index);if(button.dataset.menu==='start')this.onStart();else if(button.dataset.menu==='library')this.showLibrary();else if(button.dataset.menu==='authors')this.show('authors');else if(button.dataset.menu==='exit')this.onQuit();
+   this.highlightMenu(index);if(button.dataset.menu==='start')this.onStart();else if(button.dataset.menu==='library')this.showLibrary();else if(button.dataset.menu==='settings')this.onSettings();else if(button.dataset.menu==='authors')this.show('authors');else if(button.dataset.menu==='exit')this.onQuit();
   });});
   for(const button of document.querySelectorAll('[data-back]'))button.addEventListener('click',()=>this.back());
   document.querySelector('#exit-screen button').addEventListener('click',()=>{this.highlightMenu(0);this.show('menu');});

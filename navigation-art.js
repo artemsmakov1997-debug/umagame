@@ -1,6 +1,6 @@
-import {rooms,PORTAL_ROOM,PORTAL_X,LAST_ROOM} from './level.js?v=0.19.0';
-import {canLeaveRoom} from './room-transitions.js?v=0.19.0';
-import {rect} from './pixel.js?v=0.19.0';
+import {rooms,PORTAL_ROOM,PORTAL_X,LAST_ROOM} from './level.js?v=0.20.0';
+import {canLeaveRoom} from './room-transitions.js?v=0.20.0';
+import {rect} from './pixel.js?v=0.20.0';
 export function exitMarker(g){
  if(g.room===LAST_ROOM||!canLeaveRoom(g))return null;const r=rooms[g.room];return{x:g.room===PORTAL_ROOM?PORTAL_X-80:r.end-70,y:g.room===0?200:192};
 }

@@ -1,19 +1,19 @@
-import {canActivateEnemy} from './encounters.js?v=0.19.0';
-import {actorById,bossProxy} from './boss-actors.js?v=0.19.0';
-import {solidSurfaces} from './terrain.js?v=0.19.0';
-import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.19.0';
-import {enemy,rooms} from './level.js?v=0.19.0';
-import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.19.0';
-import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.19.0';
-import {stepEnemyFall} from './terrain.js?v=0.19.0';
-import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.19.0';
+import {canActivateEnemy} from './encounters.js?v=0.20.0';
+import {actorById,bossProxy} from './boss-actors.js?v=0.20.0';
+import {solidSurfaces} from './terrain.js?v=0.20.0';
+import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.20.0';
+import {enemy,rooms} from './level.js?v=0.20.0';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.20.0';
+import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.20.0';
+import {stepEnemyFall} from './terrain.js?v=0.20.0';
+import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.20.0';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
  g.emit('alarm',{x:caller.x+24,y:caller.y,attracted:targets.length});
- if(!g.portals.some(p=>p.ownerId===caller.id&&!p.cancelled)&&g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===caller.room).length<12){
+ if(!g.portals.some(p=>p.ownerId===caller.id&&!p.cancelled)&&g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===caller.room).length<3){
   const preferred=caller.x+caller.dir*75,x=Math.max(caller.origin,Math.min(caller.end,preferred));
-  g.portals.push({id:++g.portalSerial,ownerId:caller.id,room:caller.room,platformIndex:caller.platformIndex,x,y:caller.y+29,time:0,spawned:0,targetCount:3,cancelled:false});g.emit('portal',{x,y:caller.y});
+  g.portals.push({id:++g.portalSerial,ownerId:caller.id,room:caller.room,platformIndex:caller.platformIndex,x,y:caller.y+29,time:0,spawned:0,targetCount:1,cancelled:false});g.emit('portal',{x,y:caller.y});
  }
 }
 export function stepPortals(g,dt){
@@ -21,8 +21,8 @@ export function stepPortals(g,dt){
   if(portal.room!==g.room)continue;const found=actorById(g,portal.ownerId),owner=found===g.boss?bossProxy(g):found;
   if(!owner||owner.dead)portal.cancelled=true;
   if(portal.cancelled){portal.closeTime=(portal.closeTime||0)+dt;continue;}portal.time+=dt;
-  if(portal.spawned<3&&portal.time>=.7+portal.spawned*.5){
-   portal.spawned++;const count=g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===portal.room).length;if(count>=12||g.enemies.filter(e=>e.portalOwnerId===portal.ownerId&&!e.dead).length>=6)continue;
+  if(portal.spawned<(portal.targetCount||1)&&portal.time>=.7+portal.spawned*.5){
+   portal.spawned++;const count=g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===portal.room).length;if(count>=3||g.enemies.filter(e=>e.portalOwnerId===portal.ownerId&&!e.dead).length>=2)continue;
    let x=portal.x;const p=g.player;if(Math.abs(x-p.x)<60)x=p.x<=(owner.origin+owner.end)/2?owner.end:owner.origin;
    const e=enemy('fakenews',portal.room,x-rooms[portal.room].x,portal.platformIndex,{id:`portal-${portal.id}-${portal.spawned}`,active:true,spawnTime:.45,portalMinion:true,portalOwnerId:portal.ownerId,hp:1,maxHp:1,dir:p.x<x?-1:1,noticed:true});const surface=g.platforms?.find(s=>s.room===e.room&&s.index===e.platformIndex);if(surface){e.y=surface.y-e.h;e.origin=surface.x+12;e.end=surface.x+surface.w-60;}g.enemies.push(e);g.emit('portalSpawn',{x:e.x,y:e.y});
   }
@@ -41,7 +41,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
    g.seenScenes.add('sighting:'+e.type);
    g.emit('enemyIntroduction',{enemyType:e.type,room:e.room});
   }
-  if(!e.active){if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
+  if(!e.active){if(g.enemies.filter(other=>other!==e&&other.room===g.room&&other.active&&!other.dead&&Math.abs(other.x-p.x)<620).length>=3)continue;if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
   for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   updateEnemyInk(g,e);

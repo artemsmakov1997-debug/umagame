@@ -1,7 +1,7 @@
-import {rect,text} from './pixel.js?v=0.19.0';
-import {drawMonster} from './art.js?v=0.19.0';
-import {bossShielded} from './boss.js?v=0.19.0';
-import {rooms} from './level.js?v=0.19.0';
+import {rect,text} from './pixel.js?v=0.20.0';
+import {drawMonster} from './art.js?v=0.20.0';
+import {bossShielded} from './boss.js?v=0.20.0';
+import {rooms} from './level.js?v=0.20.0';
 export function drawArenaBoss(c,a,g,time){
  const b=g.boss;if(!rooms[g.room].arena||b.room!==g.room||b.hp<=0)return;const room=rooms[g.room],final=b.id==='infoshum';
  for(const d of b.docks){rect(c,d.x-9,d.y+b.h+2,b.w+18,3,'#3e4a79');rect(c,d.x+12,d.y+b.h+2,b.w-24,2,b.x===d.x?'#b199ec':'#536680');}

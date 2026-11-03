@@ -460,19 +460,6 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 .clues-panel li{padding:6px 0;border-bottom:1px solid #396078}
 @media(max-height:550px){.clues-panel{max-height:96%;padding:12px}.clues-panel li{padding:3px 0}}
 
-/* Post-boss illustrations occupy the desktop viewport with a separate reading column. */
-@media(min-width:1000px) and (min-height:551px){
- #app:is([data-story="interlude"],[data-story="ending"]) .ending-screen{padding:12px}
- #app:is([data-story="interlude"],[data-story="ending"]) .ending-panel{width:calc(100vw - 24px);height:calc(100dvh - 24px);min-width:0;min-height:0;max-width:none;max-height:none;padding:14px;gap:24px;grid-template-columns:minmax(0,1fr)minmax(300px,28%);grid-template-rows:auto minmax(0,1fr)auto}
- #app:is([data-story="interlude"],[data-story="ending"]) .ending-panel header{grid-column:2;grid-row:1;display:block;padding:12px 0 0}
- #app:is([data-story="interlude"],[data-story="ending"]) .ending-panel header span{display:block;margin-bottom:14px}
- #app:is([data-story="interlude"],[data-story="ending"]) .ending-panel h2{font-size:clamp(26px,2.2vw,38px)}
- #app:is([data-story="interlude"],[data-story="ending"]) #ending-art{grid-column:1;grid-row:1/4;min-width:0;min-height:0;height:100%;width:100%;max-height:none;aspect-ratio:auto;object-fit:contain}
- #app:is([data-story="interlude"],[data-story="ending"]) #ending-caption{grid-column:2;grid-row:2;align-self:center;min-height:0;font-size:clamp(28px,2.1vw,40px);line-height:1.24}
- #app:is([data-story="interlude"],[data-story="ending"]) .ending-actions{grid-column:2;grid-row:3}
- #app:is([data-story="interlude"],[data-story="ending"]) .ending-actions button{min-width:0;padding:12px 18px}
-}
-
 /* The instrument panel has its own space; level pixels begin below its frame. */
 #app[data-screen="game"]{--hud-height:94px}
 #app[data-screen="game"] #game{position:absolute;inset:var(--hud-height) 0 0;height:calc(100% - var(--hud-height))!important}
@@ -482,7 +469,7 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 #app[data-screen="game"][data-ending="true"] #game{inset:0;height:100%!important}
 #app[data-screen="game"][data-hud="false"] #game{inset:0;height:100%!important}
 #app[data-screen="game"][data-ending="true"] .game-hud{display:none}
-@media(max-width:699px){#app[data-screen="game"]{--hud-height:64px}#app[data-screen="game"][data-boss="true"]{--hud-height:148px}}
+@media(max-width:699px){#app[data-screen="game"]{--hud-height:64px}#app[data-screen="game"][data-boss="true"]{--hud-height:132px}}
 @media(max-height:550px) and (min-width:700px){#app[data-screen="game"]{--hud-height:64px}#app[data-screen="game"][data-boss="true"]{--hud-height:94px}}
 
 /* The prologue reads as illustrated sentences, without chapter headings or counters. */
@@ -518,3 +505,35 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
  #app[data-screen="menu"] .menu-item{font-size:24px;padding:7px 2px;min-height:44px}
  #app[data-screen="menu"] .menu-item.selected::before{left:-18px;width:20px;height:22px}
 }
+/* Shared story composition for the prologue, interludes and ending. */
+#app[data-story] .ending-screen{padding:12px}
+#app[data-story] .ending-panel{width:min(1200px,100%);height:calc(100dvh - 24px);max-height:none;min-height:0;min-width:0;padding:14px;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)auto 48px}
+#app[data-story] .ending-panel #ending-art{grid-column:1;grid-row:1;min-width:0;min-height:0;width:100%;height:100%;aspect-ratio:3/2;max-height:none;object-fit:contain}
+#app[data-story] #ending-caption{grid-column:1;grid-row:2;align-self:center;min-height:0;text-align:center;padding:0 12px;font:clamp(25px,2.3vw,36px)/1.2 UmaText,monospace}
+#app[data-story] .ending-actions{grid-column:1;grid-row:3}
+@media(max-width:700px) and (orientation:portrait){#app[data-story] .ending-screen{padding:6px}#app[data-story] .ending-panel{height:calc(100dvh - 12px);padding:10px;gap:10px}#app[data-story] #ending-caption{font-size:25px;padding:0}}
+@media(max-height:550px) and (orientation:landscape){#app[data-story] .ending-panel{grid-template-columns:minmax(0,3fr)minmax(0,2fr);grid-template-rows:minmax(0,1fr)44px}#app[data-story] .ending-panel #ending-art{grid-column:1;grid-row:1/3}#app[data-story] #ending-caption{grid-column:2;grid-row:1;font-size:23px;padding:0 8px}#app[data-story] .ending-actions{grid-column:2;grid-row:2}}
+.settings-layer{position:absolute;inset:0;z-index:24;display:grid;place-items:center;background:#020a1de8;padding:12px}
+.settings-panel{width:min(550px,96%);max-height:calc(100dvh - 24px);overflow:auto;padding:22px;display:flex;flex-direction:column;gap:13px}
+.settings-panel h2{text-align:center;font:30px/1 UmaDisplay,monospace;margin:0 0 6px}
+.settings-panel .menu-item{flex:none;min-height:46px;font:25px/1.15 UmaText,monospace;white-space:normal;padding:10px}
+.settings-panel label{font:24px/1.1 UmaText,monospace;display:flex;justify-content:space-between;gap:10px;color:#ffe4ac}
+.settings-panel input{width:100%;height:28px;accent-color:#ffd473;cursor:pointer}
+.testing-note{font:19px/1.15 UmaText,monospace;color:#9cc9d5;margin:0}
+.settings-panel .gold-button{font:25px/1 UmaText,monospace}
+#controls-panel{width:min(980px,96%);max-height:94dvh;overflow:auto;padding:18px}
+#controls-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+#controls-cards figure{margin:0;border:1px solid #30718b;background:#0a2037;padding:7px;min-width:0}
+#controls-cards canvas{width:100%;height:100px;object-fit:contain}
+#controls-cards figcaption{display:flex;flex-direction:column;gap:5px;text-align:center;font:21px/1.1 UmaText,monospace}
+#controls-cards figcaption span{color:#8fe2eb;font-size:19px}
+#controls-panel>p{font:23px/1.15 UmaText,monospace;margin:10px 0}
+@media(max-width:700px){#controls-cards{grid-template-columns:repeat(2,minmax(0,1fr))}#controls-cards canvas{height:84px}.settings-panel{padding:15px;gap:10px}}
+@media(max-height:550px) and (orientation:landscape){.settings-panel{width:min(680px,96%);gap:8px;padding:12px 20px}#controls-cards canvas{height:70px}}
+.status{bottom:6%;padding:15px 22px;font:clamp(22px,2vw,30px)/1.18 UmaText,monospace;background:#031123f5;border:3px solid #ffda7d;box-shadow:0 4px #010714,0 0 18px #010814b0;color:#fff3cb;width:min(760px,90%);text-shadow:1px 2px #000c1c}
+@media(min-width:1000px){#app[data-screen="menu"] .menu-panel{left:20%;width:28%;top:25%;height:59%;padding:18px 22px}#app[data-screen="menu"] .menu-item{font-size:30px}}
+@media(max-width:700px) and (orientation:portrait){#app[data-screen="menu"] .menu-panel{height:50%;top:23%}#app[data-screen="menu"] .menu-item{min-height:40px;font-size:23px}}
+/* Fixed caption rows keep every story image in the same frame. */
+#app[data-story] .ending-panel{grid-template-rows:minmax(0,1fr)120px 48px}
+@media(max-width:700px) and (orientation:portrait){#app[data-story] .ending-panel{grid-template-rows:minmax(0,1fr)200px 48px}}
+@media(max-height:550px) and (orientation:landscape){#app[data-story] .ending-panel{grid-template-rows:minmax(0,1fr)44px}}

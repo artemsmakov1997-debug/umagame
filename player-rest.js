@@ -1,13 +1,13 @@
-import {inkAt} from './terrain.js?v=0.19.0';
+import {inkAt} from './terrain.js?v=0.20.0';
 export const REST_AFTER=30;
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function wakePlayer(p){p.idleTime=0;p.sleepTime=0;p.sleeping=false;}
 export function playerHorizontal(g,axis,dt){
- const p=g.player,onInk=p.grounded&&!!inkAt(g,p);p.onInk=onInk;
- p.inkTime=onInk?.22:Math.max(0,(p.inkTime||0)-dt);
+ const p=g.player,ink=p.grounded&&inkAt(g,p),onInk=!!ink;p.onInk=onInk;
+ p.inkTime=onInk?.45:Math.max(0,(p.inkTime||0)-dt);
  if(!p.knock){
   if(p.dash>0){p.vx=p.dir*430;p.inkTime=0;}
-  else if(p.inkTime>0&&!p.climbing){const target=axis*(p.sneaking?46:112);p.vx=approach(p.vx,target,(axis?230:58)*dt);}
+  else if(p.inkTime>0&&!p.climbing){const target=axis*(p.sneaking?46:112)+(onInk?(ink.drift||0)*(p.sneaking?12:70):0);p.vx=approach(p.vx,target,(p.sneaking?330:axis?230:90)*dt);}
   else p.vx=axis*(p.sneaking?62:155);
  }
  p.slipping=!!(p.grounded&&p.dash===0&&!p.knock&&p.inkTime>0&&Math.abs(p.vx)>9&&!p.attack);

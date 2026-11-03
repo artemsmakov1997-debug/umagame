@@ -1,7 +1,7 @@
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const chapters=[
  {id:'newsroom',name:'РЕДАКЦИЯ',room:1,arena:2,monsters:['fakenews','copier','censor'],boss:'spreader'},
- {id:'roofs',name:'КРЫШИ УЛИЦ',room:3,arena:4,monsters:['informant','inflator','panicker'],boss:'agitator'},
+ {id:'roofs',name:'КРЫШИ',room:3,arena:4,monsters:['informant','inflator','panicker'],boss:'agitator'},
  {id:'studio',name:'СТУДИЯ',room:5,arena:6,monsters:['injection','cutter','splicer'],boss:'manipulator'},
  {id:'dimension',name:'ИЗМЕРЕНИЕ',room:7,arena:8,monsters:['echo','clickbait','static'],boss:'infoshum'}
 ];
@@ -9,7 +9,7 @@ const definitions=[
  {name:'ТИХАЯ КОМНАТА',theme:'cozy',chapter:0,tutorial:true,width:WIDTH},
  {name:'РЕДАКЦИЯ',theme:'newsroom',chapter:1,width:WIDTH*3},
  {name:'ПРОЛЁТ РАСПРОСТРАНИТЕЛЯ',theme:'newsroom',chapter:1,arena:true,boss:'spreader',width:ARENA_WIDTH},
- {name:'КРЫШИ УЛИЦ',theme:'roofs',chapter:2,width:WIDTH*3},
+ {name:'КРЫШИ',theme:'roofs',chapter:2,width:WIDTH*3},
  {name:'МАЧТА АГИТАТОРА',theme:'roofs',chapter:2,arena:true,boss:'agitator',width:ARENA_WIDTH},
  {name:'СТУДИЯ',theme:'studio',chapter:3,width:WIDTH*3},
  {name:'ПУЛЬТ МАНИПУЛЯТОРА',theme:'studio',chapter:3,arena:true,boss:'manipulator',width:ARENA_WIDTH},
@@ -60,14 +60,17 @@ for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>{
 });
 // Additional side routes: a paper lift, fire escape, stage wagon and drifting islands.
 for(const [room,extra] of [[1,[[760,352,130],[1520,356,126]]],[3,[[760,355,120],[1500,350,110]]],[5,[[760,350,130],[1510,350,130]]],[7,[[790,225,140],[1515,235,130]]]])layouts[room].push(...extra);
+// Exposed roof spans replace the broad safety floor; upper routes remain connected.
+for(const [i,shape]of Object.entries({3:[0,424,145],4:[350,414,140],5:[0,474,130],6:[330,474,130],13:[840,414,140],14:[1160,414,145],15:[820,474,120],16:[1380,474,120],22:[1610,412,145],23:[1940,414,135],24:[1640,474,125]}))layouts[3][Number(i)]=shape;
 const motions={
+ '3:1':{axis:'x',amplitude:24,period:4.4},'3:10':{axis:'y',amplitude:22,period:4.8},'3:19':{axis:'x',amplitude:26,period:4.7},'3:6':{axis:'x',amplitude:35,period:3.8},'3:14':{axis:'y',amplitude:20,period:4.2},
  '1:27':{axis:'y',amplitude:40,period:6},'1:28':{axis:'x',amplitude:45,period:6.4},'3:27':{axis:'x',amplitude:45,period:5.7},'3:28':{axis:'y',amplitude:44,period:6.2},'5:30':{axis:'x',amplitude:55,period:6},'5:31':{axis:'y',amplitude:50,period:6},'7:27':{axis:'y',amplitude:28,period:6},'7:28':{axis:'x',amplitude:42,period:7},
  '5:1':{axis:'x',amplitude:68,period:6.2},'5:10':{axis:'y',amplitude:94,period:5.4},'5:13':{axis:'x',amplitude:62,period:5.8},'5:29':{axis:'y',amplitude:86,period:5.2},
  '6:1':{axis:'x',amplitude:46,period:5.6},'6:3':{axis:'y',amplitude:46,period:6},'6:10':{axis:'y',amplitude:30,period:5.8},
  '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,motion:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,motion:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
  if(r.arena)return [];
@@ -89,7 +92,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
  actor.arrivalDuration=actor.spawnTime||.55;return actor;
 }
-export function createEnemies(){return [
+export function createEnemies(){const all=[
  enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,365,1),enemy('fakenews',1,180,9,{hp:2,maxHp:2}),enemy('copier',1,840,10,{trigger:700,scanIndex:10,scanStart:18,scanW:145}),
  enemy('censor',1,1250,14,{trigger:1200}),enemy('fakenews',1,90,3,{trigger:340}),enemy('fakenews',1,920,10),enemy('copier',1,1150,11,{scanIndex:11,scanStart:20}),enemy('fakenews',1,1090,11),
  enemy('censor',1,1700,22),enemy('fakenews',1,1430,12),enemy('fakenews',1,1610,19),enemy('fakenews',1,1920,20,{hp:2,maxHp:2}),enemy('copier',1,1980,20,{scanIndex:20,scanStart:18}),enemy('censor',1,1990,23),
@@ -99,7 +102,10 @@ export function createEnemies(){return [
  enemy('injection',5,1140,13),enemy('splicer',5,1190,16),enemy('cutter',5,1410,14),enemy('injection',5,1670,21),enemy('injection',5,1930,22),enemy('splicer',5,1990,25),enemy('cutter',5,2070,28),
  enemy('static',7,200,0,{trigger:130}),enemy('echo',7,1000,17,{trigger:800}),enemy('clickbait',7,1510,12,{trigger:1400}),enemy('static',7,870,10),enemy('static',7,1150,11),
  enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
- ];}
+ ];
+ const kept={1:[150,365,840,920,1250,1700,1610,1920,1980],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
+ return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
+}
 export function createFish(){return rooms.flatMap(r=>{
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));

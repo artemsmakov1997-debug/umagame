@@ -1,4 +1,4 @@
-import {rect} from './pixel.js?v=0.19.0';
+import {rect} from './pixel.js?v=0.20.0';
 export function sourcePosition(g,e){
  const s=e.source,p=s&&g.platforms.find(p=>p.room===e.room&&p.index===s.platformIndex);
  return p?{x:p.x+s.localX,y:p.y-(s.kind==='rift'?81:0)}:null;
@@ -10,7 +10,7 @@ export function drawEnemySources(c,g,time,assets){
  for(const e of g.enemies){
   if(e.room!==g.room||!e.source||e.source.transient&&e.dead)continue;
   const pos=sourcePosition(g,e);if(!pos||pos.x<g.camera-80||pos.x>g.camera+(g.viewWidth||768)+80)continue;
-  const index=sourceCells[e.source.kind]??3,opening=e.spawnTime>0,shake=opening?Math.sin(time*65)*1.5:0,w=['rift','portal','print'].includes(e.source.kind)?86:76,h=76;
+  const index=sourceCells[e.source.kind]??3,opening=e.spawnTime>0,shake=opening?Math.sin(time*65)*1.5:0,w=['rift','portal','print'].includes(e.source.kind)?58:49,h=49;
   c.save();c.translate(Math.round(pos.x+shake),Math.round(pos.y));c.drawImage(art,index%3*sw,Math.floor(index/3)*sh,sw,sh,-w/2,-h,w,h);
   if(opening)for(let i=0;i<5;i++){const d=(time*45+i*11)%42;rect(c,-20+i*10,-25-d,3,5,i%2?'#8ce8f0':'#ffe4b2');}c.restore();
  }

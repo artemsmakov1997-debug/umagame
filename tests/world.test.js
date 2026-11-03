@@ -27,9 +27,7 @@ test('losing a life in the dimension restarts there and preserves collected item
 test('Shift gives invulnerability throughout the actual dash and damage returns after it ends',()=>{
  const g=setup(),x=g.player.x;g.step(1/60,{dash:true,right:true});assert.equal(g.player.dash,.2);assert.equal(g.player.vx,430);assert.ok(g.player.x>x);for(const kind of ['paper','packet','rain','wave']){g.bolts=[{kind,x:g.player.x+4,y:g.player.y+4,w:20,h:16,vx:0,vy:0,ttl:1,fixedY:true}];stepProjectiles(g,1/60,{x:0,y:0,w:0,h:0});assert.equal(g.health,4,kind);}g.hurt();g.push(-1,g.player.x+40);assert.equal(g.health,4);assert.equal(g.player.knock,0);tick(g,10);assert.ok(g.player.dash>0);g.hurt();assert.equal(g.health,4);tick(g,4);assert.equal(g.player.dash,0);g.player.inv=0;g.hurt();assert.equal(g.health,3);
 });
-test('a fall during the protected dash returns Uma safely without taking a heart',()=>{
- const g=setup();g.player.y=HEIGHT+35;g.player.dash=.1;g.hurt(true);assert.equal(g.health,4);assert.equal(g.lives,3);assert.equal(g.player.y,checkpoints[1].y);assert.equal(g.player.dash,0);
-});
+test('falling loses a full life even during a dash, then restores the checkpoint',()=>{const g=setup();g.player.y=HEIGHT+35;g.player.dash=.1;g.hurt(true);assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.health,4);assert.equal(g.player.y,checkpoints[1].y);});
 test('a hidden cat-face cache restores one life, leaves hearts unchanged and cannot be collected twice',()=>{
  const g=setup(1,8,530),life=g.lifePickups.find(l=>l.room===1);Object.assign(g.player,{x:life.x-17,y:life.y-24});g.lives=2;g.health=1;tick(g,1);assert.equal(g.lives,3);assert.equal(g.health,1);assert.equal(life.taken,true);tick(g,60);assert.equal(g.lives,3);assert.equal(g.events.filter(e=>e.type==='lifePickup').length,1);
 });

@@ -1,21 +1,21 @@
-import {drawPassages} from './passage-art.js?v=0.19.0';
-import {drawMapProps} from './chapter-route-art.js?v=0.19.0';
-import {drawExitArrow} from './navigation-art.js?v=0.19.0';
-import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.19.0';
-import {drawFinaleBackdrop} from './ending-ui.js?v=0.19.0';
-import {solidSurfaces} from './terrain.js?v=0.19.0';
-import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.19.0';
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.19.0';
-import {rect,text} from './pixel.js?v=0.19.0';
-import {cats,creatures,sprite} from './assets.js?v=0.19.0';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.19.0';
-import {drawHud} from './hud.js?v=0.19.0';
-import {drawNotebook} from './notebook-art.js?v=0.19.0';
-import {drawMovingRails,drawLifeCaches,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.19.0';
-import {drawArenaBoss} from './boss-art.js?v=0.19.0';
-import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.19.0';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.19.0';
-import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.19.0';
+import {drawPassages} from './passage-art.js?v=0.20.0';
+import {drawMapProps} from './chapter-route-art.js?v=0.20.0';
+import {drawExitArrow} from './navigation-art.js?v=0.20.0';
+import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.20.0';
+import {drawFinaleBackdrop} from './ending-ui.js?v=0.20.0';
+import {solidSurfaces} from './terrain.js?v=0.20.0';
+import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.20.0';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.20.0';
+import {rect,text} from './pixel.js?v=0.20.0';
+import {cats,creatures,sprite} from './assets.js?v=0.20.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.20.0';
+import {drawHud} from './hud.js?v=0.20.0';
+import {drawNotebook} from './notebook-art.js?v=0.20.0';
+import {drawMovingRails,drawLifeCaches,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.20.0';
+import {drawArenaBoss} from './boss-art.js?v=0.20.0';
+import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.20.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.20.0';
+import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.20.0';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.hud=canvas.ownerDocument?.getElementById('hud');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -46,7 +46,7 @@ export class Renderer{
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
   drawMovingRails(c,g.platforms.filter(s=>s.room===g.room),t);
   for(const platform of solidSurfaces(g)){
-   if(platform.room!==g.room)continue;
+   if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawSurface(c,a,platform,t);
   }
