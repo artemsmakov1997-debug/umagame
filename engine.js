@@ -1,22 +1,24 @@
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.15.1';
-import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.15.1';
-import {stepEnemies,stepPortals} from './enemies.js?v=0.15.1';
-import {cancelInformantTeleport} from './informant-teleport.js?v=0.15.1';
-import {scenes,evidence} from './story.js?v=0.15.1';
-import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.15.1';
-import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.15.1';
-import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.15.1';
-import {cleanCopies} from './tactical-enemies.js?v=0.15.1';
-import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.15.1';
-import {beginFinale,advanceFinale} from './finale.js?v=0.15.1';
-import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.15.1';
-import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.15.1';
-import {stepEchoPull,releaseEchoPull} from './echo-pull.js?v=0.15.1';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.15.1';
+import {advanceOpening} from './prologue.js?v=0.16.0';
+import {tryDrop} from './drop-through.js?v=0.16.0';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.16.0';
+import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.16.0';
+import {stepEnemies,stepPortals} from './enemies.js?v=0.16.0';
+import {cancelInformantTeleport} from './informant-teleport.js?v=0.16.0';
+import {scenes,evidence} from './story.js?v=0.16.0';
+import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.16.0';
+import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.16.0';
+import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.16.0';
+import {cleanCopies} from './tactical-enemies.js?v=0.16.0';
+import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.16.0';
+import {beginFinale,advanceFinale} from './finale.js?v=0.16.0';
+import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.16.0';
+import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.16.0';
+import {stepEchoPull,releaseEchoPull} from './echo-pull.js?v=0.16.0';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.16.0';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export function playerHeight(p,height){const feet=p.y+p.h;p.h=height;p.y=feet-height;}
 export class Game {
- constructor({story=true}={}){this.overlap=overlap;this.storyEnabled=story;this.reset();}
+ constructor({story=true,cinematic=false}={}){this.overlap=overlap;this.storyEnabled=story;this.cinematic=cinematic;this.reset();}
  reset(){
   this.mode='ready';delete this.pausedFrom;this.time=0;this.fish=0;this.kills=0;this.health=MAX_HEALTH;this.lives=START_LIVES;this.respawnTime=0;this.camera=0;this.checkpoint=0;this.room=0;this.gateHint=-1;
   this.dialogue=null;this.ending=null;this.finalScore=null;this.encounters={};this.seenScenes=new Set();this.evidence=[];this.truthFound=false;this.wakeTime=0;this.viewWidth=this.viewWidth||WIDTH;this.transition=null;this.loading=null;this.chapter=0;this.bossesDefeated=new Set();this.roomHistory=new Set([0]);this.visitedPlatforms=new Set(['0:0']);this.safeTrail=[];this.echoImmunity=0;this.echoWarp=null;this.tether=null;
@@ -30,7 +32,8 @@ export class Game {
  emit(type,data={}){this.events.push({type,...data});}
  unlockForRoom(){return this.abilities;}
 
- start(){this.reset();this.mode=this.storyEnabled?'waking':'playing';this.emit('start');}
+ start(){this.reset();this.openingIndex=0;this.mode=this.storyEnabled?(this.cinematic?'prologue':'waking'):'playing';this.emit('start');}
+ advanceOpening(direction=1){return advanceOpening(this,direction);}
  enterArena(){return beginArenaEntry(this);}
  leaveRoom(){return beginLocationTransition(this);}
  finishWakeup(){if(this.mode!=='waking')return;this.wakeTime=WAKE_DURATION;this.mode='playing';this.openDialogue('intro');}
@@ -124,10 +127,11 @@ export class Game {
   for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace'])p[key]=Math.max(0,p[key]-dt);
   const keyboardAxis=(input.right?1:0)-(input.left?1:0),axis=keyboardAxis||Math.max(-1,Math.min(1,input.axisX||0));if(Math.abs(axis)>.05&&p.dash===0)p.dir=axis>0?1:-1;
   const ladder=ladders.find(l=>p.x+p.w>l.x&&p.x<l.x+l.w&&p.y+p.h>=l.y&&p.y<l.y+l.h);
-  const useLadder=ladder&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);
-  const canAttack=input.attack&&this.abilities.attack,canDash=input.dash&&this.abilities.dash;
+  let useLadder=ladder&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);
+  const dropping=tryDrop(this,input,dt);if(dropping)useLadder=false;
+  const canAttack=input.attack&&!input.down&&this.abilities.attack,canDash=input.dash&&this.abilities.dash;
   p.sneaking=!!(this.abilities.sneak&&input.down&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&p.attack===0&&!canAttack&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
-  p.coyote=p.grounded?.1:Math.max(0,p.coyote-dt);p.jumpBuffer=input.jump?.13:Math.max(0,p.jumpBuffer-dt);
+  p.coyote=p.grounded?.1:Math.max(0,p.coyote-dt);p.jumpBuffer=input.jump&&!input.down?.13:Math.max(0,p.jumpBuffer-dt);
   if(canDash&&p.dashCooldown===0){p.dash=.2;p.dashCooldown=1.5;p.climbing=false;p.knock=0;p.hurtTime=0;p.vy=0;this.emit('dash');}
   playerHorizontal(this,axis,dt);stepTether(this,dt);stepEchoPull(this,dt);
   if(useLadder){p.climbing=true;p.vy=(input.down?1:-1)*110;p.jumpBuffer=0;p.vx=0;}else if(!ladder||axis||p.dash>0)p.climbing=false;
@@ -143,7 +147,7 @@ export class Game {
    if(input.up&&p.y+p.h<=ladder.y+3){p.y=ladder.y-p.h;p.vy=0;p.grounded=true;p.climbing=false;}
    else if(input.down&&p.y+p.h>=ladder.y+ladder.h){p.y=ladder.y+ladder.h-p.h;p.vy=0;p.grounded=true;p.climbing=false;}
   }
-  if(p.vy>=0&&!p.climbing){const surface=solidSurfaces(this).filter(s=>p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=(s.id===carriedSupport?s.y:s.prevY)+1&&p.y+p.h>=s.y).sort((a,b)=>a.y-b.y)[0];if(surface){p.y=surface.y-p.h;p.vy=0;p.grounded=true;p.supportId=surface.id;}}
+  if(p.vy>=0&&!p.climbing){const surface=solidSurfaces(this).filter(s=>!(p.dropTime>0&&s.id===p.dropId)&&p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=(s.id===carriedSupport?s.y:s.prevY)+1&&p.y+p.h>=s.y).sort((a,b)=>a.y-b.y)[0];if(surface){p.y=surface.y-p.h;p.vy=0;p.grounded=true;p.supportId=surface.id;}}
   if(p.y>HEIGHT+30){this.hurt(true);return;}
   if(p.climbing)p.climbTime+=Math.abs(p.y-oldY)/18;if(p.sneaking)p.sneakTime+=Math.abs(p.x-oldX)/14;
   stepPlayerRest(this,input,dt);
@@ -154,7 +158,7 @@ export class Game {
   if(this.room===PORTAL_ROOM&&p.x+p.w>PORTAL_X-35&&p.vx>40&&!this.arenaEntered&&canLeaveRoom(this)){this.enterArena();this.updateCamera(dt);return;}
   if(this.room!==PORTAL_ROOM&&this.room<LAST_ROOM&&p.x+p.w>=bounds.end-20&&p.vx>40&&canLeaveRoom(this)){this.leaveRoom();this.updateCamera(dt);return;}
 
-  const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepEnemies(this,dt,paw,prevBottom);stepPortals(this,dt);
+  const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepEnemies(this,dt,paw,prevBottom);if(this.mode==='playing')stepPortals(this,dt);
   if(this.mode!=='playing'||this.swallow)return;
   for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
   for(const life of this.lifePickups)if(!life.taken&&this.lives<MAX_LIVES&&Math.abs(p.x+17-life.x)<25&&Math.abs(p.y+p.h/2-life.y)<32){life.taken=true;this.lives++;this.emit('lifePickup',{x:life.x,y:life.y});}

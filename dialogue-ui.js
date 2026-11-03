@@ -1,8 +1,8 @@
-import {scenes} from './story.js?v=0.15.1';
+import {scenes} from './story.js?v=0.16.0';
 const $=id=>document.getElementById(id);
 export class DialogueUI{
  constructor(game,assets,clearInput){this.game=game;this.clearInput=clearInput;this.lastKey=null;$('narrator-portrait').src=assets.yuri.src;$('dialogue-next').addEventListener('click',()=>this.advance());$('dialogue-skip').addEventListener('click',()=>this.advance(true));}
- advance(skip=false){this.clearInput();this.game.advanceDialogue(skip);this.update(true);if(this.game.mode==='playing'){$('game').focus({preventScroll:true});if(matchMedia('(max-width:700px) and (orientation:portrait)').matches)requestAnimationFrame(()=>document.querySelector('.cabinet').scrollIntoView({block:'start'}));}}
+ advance(skip=false){this.clearInput();this.game.advanceDialogue(skip);this.update(true);if(this.game.mode==='playing'){$('game').focus({preventScroll:true});}}
  key(event){
   if(this.game.mode!=='dialogue')return false;
   if(event.code==='Tab'){const buttons=[$('dialogue-next'),$('dialogue-skip')],index=buttons.indexOf(document.activeElement);if(event.shiftKey&&index<=0){event.preventDefault();buttons.at(-1).focus();}else if(!event.shiftKey&&(index<0||index===buttons.length-1)){event.preventDefault();buttons[0].focus();}return true;}
