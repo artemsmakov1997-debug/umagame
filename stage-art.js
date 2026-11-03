@@ -1,39 +1,15 @@
-import {rect} from './pixel.js?v=0.16.0';
-import {sprite} from './assets.js?v=0.16.0';
-import {drawHauntedMonitor} from './art.js?v=0.16.0';
-import {text} from './pixel.js?v=0.16.0';
-import {catLife} from './hud.js?v=0.16.0';
-import {rooms,WIDTH,PORTAL_X,PORTAL_ROOM,FINAL_X,ARENA_WIDTH} from './level.js?v=0.16.0';
+import {rect} from './pixel.js?v=0.18.0';
+import {sprite} from './assets.js?v=0.18.0';
+import {drawHauntedMonitor} from './art.js?v=0.18.0';
+import {text} from './pixel.js?v=0.18.0';
+import {catLife} from './hud.js?v=0.18.0';
+import {rooms,WIDTH,PORTAL_X,PORTAL_ROOM,FINAL_X,ARENA_WIDTH} from './level.js?v=0.18.0';
 const dishFrames=[
  {box:[0,0,512,512],pivot:[318,480]}, {box:[512,0,512,512],pivot:[830,480]}, {box:[1024,0,512,512],pivot:[1335,480]},
  {box:[0,512,512,512],pivot:[318,988]}, {box:[512,512,512,512],pivot:[811,988]}, {box:[1024,512,512,512],pivot:[1328,988]}
 ];
-function drawMissionNode(c,d,time){
- const x=Math.round(d.x-7),y=Math.round(d.y+8),active=d.hp>0;
- c.save();if(!active){
-  rect(c,x+5,y+42,46,10,'#263c48');rect(c,x+11,y+39,9,7,'#547181');rect(c,x+33,y+36,9,10,'#856970');
-  c.restore();return;
- }
- const pulse=Math.floor(time*4)%2===0,accent=d.kind==='signal'?'#bd8be2':'#75dce0';
- rect(c,x,y+14,54,45,'#061529');rect(c,x+3,y+17,48,38,'#3c6476');rect(c,x+6,y+20,42,31,'#0a2035');
- rect(c,x+9,y+23,36,6,accent);
- if(d.kind==='printer'){
-  rect(c,x+12,y+3,30,15,'#d5caad');rect(c,x+15,y+5,24,2,'#42657b');
-  rect(c,x+13,y+9,26,2,'#42657b');rect(c,x+8,y+34,38,6,'#09172a');
-  rect(c,x+15,y+41,24,3,pulse?'#efd797':'#59767d');
- }else if(d.kind==='edit'){
-  rect(c,x+11,y+24,32,22,'#16283b');
-  for(let i=0;i<3;i++){rect(c,x+13+i*10,y+27,5,5,accent);rect(c,x+13+i*10,y+38,5,5,accent);}
-  rect(c,x+15,y+7,25,12,'#d2b27a');rect(c,x+18,y+9,19,3,'#081d30');
- }else{
-  const cx=x+27,cy=y+34;for(let i=0;i<3;i++){const r=8+i*5;c.strokeStyle=i%2?'#9763b0':accent;c.lineWidth=2;c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.stroke();}
-  rect(c,cx-4,cy-4,8,8,pulse?'#fff0c3':'#e79bdc');
- }
- for(let i=0;i<3;i++)rect(c,x+8+i*18,y+57,4,5,pulse?accent:'#344e61');
- c.restore();
-}
 export function drawDish(c,a,d,time){
- if(d.kind!=='dish'&&d.kind!=='broadcast'){drawMissionNode(c,d,time);return;}
+ if(d.kind!=='dish'&&a.destructibles){const col={printer:0,broadcast:1,edit:2,signal:3}[d.kind]??0,row=d.hp?0:d.breakTime>.25?1:2,sw=a.destructibles.width/4,sh=a.destructibles.height/3;c.drawImage(a.destructibles,col*sw,row*sh,sw,sh,d.x+d.w/2-45,d.y+d.h-80,90,80);return;}
  const index=d.hp>0?Math.floor(time*3)%2:d.breakTime>.52?2:d.breakTime>.32?3:d.breakTime>.1?4:5,{box,pivot}=dishFrames[index],scale=80/480,cx=d.x+d.w/2,feet=d.y+d.h;
  sprite(c,a.dishes,box,cx+(box[0]-pivot[0])*scale,feet+(box[1]-pivot[1])*scale,box[2]*scale,box[3]*scale);
  if(d.hp>0)for(let i=0;i<3;i++){const radius=8+i*8+Math.sin(time*2)*3;c.strokeStyle=i%2?'#66c9e84d':'#b3f2f24d';c.lineWidth=1;c.beginPath();c.arc(cx-35,feet-63,radius,Math.PI*1.03,Math.PI*1.53);c.stroke();}

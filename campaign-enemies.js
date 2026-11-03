@@ -1,7 +1,7 @@
-import {actorById} from './boss-actors.js?v=0.16.0';
-import {rooms,spawns} from './level.js?v=0.16.0';
-import {solidSurfaces} from './terrain.js?v=0.16.0';
-import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.16.0';
+import {actorById} from './boss-actors.js?v=0.18.0';
+import {rooms,spawns} from './level.js?v=0.18.0';
+import {solidSurfaces} from './terrain.js?v=0.18.0';
+import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.18.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function stepAirEnemy(g,e,dt){
  const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+p.h/2-e.y-e.h/2,distance=Math.hypot(dx,dy)||1;

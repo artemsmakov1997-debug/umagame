@@ -17,8 +17,8 @@ test('catalogue has four equal groups of three regular enemies and one boss',()=
 test('training is physically separate, has no enemies, relays, soup or time pressure',()=>{
  const g=new Game({story:false});g.start();assert.equal(g.room,0);assert.equal(rooms[0].tutorial,true);assert.ok(g.enemies.every(e=>e.room>0&&!e.active));assert.ok(g.relays.every(r=>r.room>0));assert.ok(g.soups.every(s=>s.x>=WIDTH));tick(g,120);assert.equal('clock'in g,false);assert.equal(g.health,4);assert.equal(g.bolts.length,0);
 });
-test('training gate cannot be bypassed by falling to the continuous safety floor',()=>{
- const g=new Game({story:false});g.start();g.player.x=WIDTH-45;g.player.y=426;tick(g,60,{right:true});assert.ok(g.player.x+g.player.w<=WIDTH-12);assert.equal(g.room,0);assert.equal(g.health,4);
+test('quiet-room exit is free even without completing training',()=>{
+ const g=new Game({story:false});g.start();g.player.x=WIDTH-45;g.player.y=426;tick(g,100,{right:true});assert.equal(g.room,1);assert.equal(g.tutorial.complete,false);assert.equal(g.health,4);
 });
 test('a buffered jump lands on the same highlighted collision surface',()=>{
  const g=isolated();const before=g.player.y;g.step(1/60,{jump:true});assert.ok(g.player.y<before&&g.player.vy<0);tick(g,70);assert.equal(g.player.y,platforms.find(s=>s.room===1&&s.index===0).y-48);assert.equal(g.player.grounded,true);
@@ -121,6 +121,6 @@ test('half health changes phase; only paper and packets are reflectable',()=>{
 test('victory stops simulation and a long session has no hidden countdown',()=>{
  const g=bossGame();g.boss.hp=1;damageBoss(g,1);assert.equal(g.mode,'ending');for(let i=0;i<5;i++)g.advanceEnding();assert.equal(g.mode,'won');const time=g.time;tick(g,120,{attack:true,right:true});assert.equal(g.time,time);const t=isolated();t.time=99999;tick(t,1);assert.equal(t.mode,'playing');assert.equal('clock'in t,false);
 });
-test('Infoshum alternates all attacks and relocates between three distant arena docks in both phases',()=>{
- const g=bossGame(),casts=new Set(),positions=new Set([g.boss.x]);for(let i=0;i<2600;i++){if(i===1000)g.boss.hp=15;stepBoss(g,1/60);positions.add(g.boss.x);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.equal(casts.size,7);assert.ok(positions.size>3);assert.equal(g.boss.phase,2);assert.ok(Math.max(...positions)-Math.min(...positions)>800);assert.equal(g.boss.maxHp,32);
+test('Infoshum alternates all attacks and relocates between three distant arena docks across three phases',()=>{
+ const g=bossGame(),casts=new Set(),positions=new Set([g.boss.x]);for(let i=0;i<6900;i++){if(i===1300)g.boss.hp=15;if(i===2700)g.boss.hp=8;stepBoss(g,1/60);positions.add(g.boss.x);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.equal(casts.size,10);assert.ok(positions.size>3);assert.equal(g.boss.phase,3);assert.ok(Math.max(...positions)-Math.min(...positions)>800);assert.equal(g.boss.maxHp,32);
 });

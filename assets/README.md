@@ -75,3 +75,9 @@ Press Start 2P хранится локально вместе с лицензи�
   Web Audio в `audio.js`: скачивания фонограмм при запуске нет.
 
 Opening atlas `opening-slides.png`: four original pixel illustrations generated with ImageGen using the existing ending atlas as a style and character reference. Sleeping Uma, Yuri checking sources, Infoshum invasion, Yuri kidnapped into the screen. 1536×1024, four 768×512 panels.
+
+0.18.0 original ImageGen atlases, matched to `ending-slides.png` for character identity and game palette:
+- `monster-sources.png`: RGBA, 1536×1024, 3×3 emergence props (bin, papers, receiver, press, reels, CRT, newspaper rift, alarm portal, printed-copy outlet).
+- `map-destructibles.png`: RGBA, 1536×1024, 4 columns × 3 states; publishing server, propaganda power unit, editing console, dimensional anchor. Intact, breaking, wreck.
+- `chapter-interludes.png`: 1536×1024, 3 chapters × 2 story panels, each 512×512.
+The untouched generated originals are retained in `/workspace/generated_images`. In-game rendering crops the atlas cells; the interactive review page is `docs/props-preview.html`.

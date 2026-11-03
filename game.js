@@ -1,13 +1,13 @@
-import {EndingUI} from './ending-ui.js?v=0.16.0';
-import {scoreBreakdown,projectPurpose} from './finale.js?v=0.16.0';
-import {Game} from './engine.js?v=0.16.0';
-import {Renderer} from './render.js?v=0.16.0';
-import {loadAssets} from './assets.js?v=0.16.0';
-import {ScreenManager} from './screens.js?v=0.16.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.16.0';
-import {PauseMenu} from './pause-menu.js?v=0.16.0';
-import {TouchControls} from './touch-controls.js?v=0.16.0';
-import {GameAudio} from './audio.js?v=0.16.0';
+import {EndingUI} from './ending-ui.js?v=0.18.0';
+import {scoreBreakdown,projectPurpose} from './finale.js?v=0.18.0';
+import {Game} from './engine.js?v=0.18.0';
+import {Renderer} from './render.js?v=0.18.0';
+import {loadAssets} from './assets.js?v=0.18.0';
+import {ScreenManager} from './screens.js?v=0.18.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.18.0';
+import {PauseMenu} from './pause-menu.js?v=0.18.0';
+import {TouchControls} from './touch-controls.js?v=0.18.0';
+import {GameAudio} from './audio.js?v=0.18.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
@@ -59,23 +59,24 @@ async function boot(){
   if((event.code==='ShiftLeft'||event.code==='ShiftRight')&&!keys.has(event.code))dash=true;keys.add(event.code);
  });
  window.addEventListener('keyup',event=>keys.delete(event.code));
- function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp','ending','prologue'].includes(game.mode))pauseMenu.open();}
+ function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp','ending','prologue','interlude'].includes(game.mode))pauseMenu.open();}
  window.addEventListener('blur',blur);document.addEventListener('visibilitychange',()=>{audio.setHidden(document.hidden);if(document.hidden)blur();});
  function events(){for(const event of game.events){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady','locationExit','locationEnter','locationReady','echoTeleport','echoArrive','echoReady','endingSlide','victory'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
   if(event.type==='notebook'){updateControls();renderer.burst(event.x,event.y,'#ffe0a0');}
-  audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
+  audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup','controlBreak'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');
 
   if(event.type==='lifePickup')notify('+1 жизнь!');
+  if(event.type==='controlBreak')notify('Опасность отключена. Короткий путь открыт: ↑ у входа.');
   if(event.type==='clue')notify('СЛЕД: '+event.text,4700);
   if(event.type==='enemyIntroduction')notify(({fakenews:'Фейкньюс: ударь лапой или прыгни сверху',copier:'Копир: бей по открытому лотку',censor:'Цензор: избегай чернил',informant:'Информатор: следи за меткой',inflator:'Раздуватель: заходи сзади',panicker:'Паникёр: прерви тревогу',injection:'Вброс: отражай бегущую строку',cutter:'Нарезчик: уходи с метки',splicer:'Склейка: разорви ленту рывком',static:'Помеха: уклонись от броска',echo:'Эхо: разорви притяжение',clickbait:'Кликбейт: опасайся рыбки на крючке'})[event.enemyType]||'Новый противник!',3800);
   if(event.type==='alarm')notify('Паникёр открывает портал!');
   if(event.type==='portal')notify('Портал открыт! Прерви звон Паникёра.');
   if(event.type==='swallow'){clearInput();notify('Кликбейт! Поглощение отнимает целую жизнь.');}
-  if(event.type==='bossPhase')notify(event.phase===3?'ИНФОШУМ ПОВТОРЯЕТ ПРИЁМЫ ПРОШЛЫХ БОССОВ!':'Босс меняет тактику!');
+  if(event.type==='bossPhase')notify(`Фаза ${event.phase}: ${event.name}`);
   if(event.type==='won'||event.type==='lost'){clearTimeout(toastTimer);$('toast').classList.remove('visible');showResult(event.type);}
  }game.events=[];}
  function frame(now){
