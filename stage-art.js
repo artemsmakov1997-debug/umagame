@@ -1,9 +1,8 @@
-import {rect} from './pixel.js?v=0.18.0';
-import {sprite} from './assets.js?v=0.18.0';
-import {drawHauntedMonitor} from './art.js?v=0.18.0';
-import {text} from './pixel.js?v=0.18.0';
-import {catLife} from './hud.js?v=0.18.0';
-import {rooms,WIDTH,PORTAL_X,PORTAL_ROOM,FINAL_X,ARENA_WIDTH} from './level.js?v=0.18.0';
+import {rect} from './pixel.js?v=0.18.1';
+import {sprite} from './assets.js?v=0.18.1';
+import {drawHauntedMonitor} from './art.js?v=0.18.1';
+import {catLife} from './hud.js?v=0.18.1';
+import {rooms,PORTAL_X,PORTAL_ROOM} from './level.js?v=0.18.1';
 const dishFrames=[
  {box:[0,0,512,512],pivot:[318,480]}, {box:[512,0,512,512],pivot:[830,480]}, {box:[1024,0,512,512],pivot:[1335,480]},
  {box:[0,512,512,512],pivot:[318,988]}, {box:[512,512,512,512],pivot:[811,988]}, {box:[1024,512,512,512],pivot:[1328,988]}
@@ -48,15 +47,13 @@ export function drawLifeCaches(c,g,time){
 }
 export function drawTowerPortal(c,g,time,a){
  if(g.room!==PORTAL_ROOM&&g.pausedFrom!=='enteringArena')return;
+ if(a?.barriers){const sw=a.barriers.width/4,sh=a.barriers.height/2,open=!g.relays.some(d=>d.room===PORTAL_ROOM&&d.hp>0);c.drawImage(a.barriers,3*sw,(open?1:0)*sh,sw,sh,PORTAL_X-108,98,216,288);return;}
  const x=PORTAL_X-72,y=100,w=144,h=216;
  rect(c,x-9,y-8,w+18,h+22,'#020817');rect(c,x-6,y-5,w+12,h+15,'#345473');rect(c,x,y,w,h,'#020b22');
  for(let i=0;i<30;i++){const a=i*Math.PI/15+time*.7,rx=w*.43,ry=h*.43;rect(c,x+w/2+Math.cos(a)*rx,y+h/2+Math.sin(a)*ry,4,7,i%3?'#71dde8':'#bd8df5');}
  for(let i=0;i<18;i++){const a=i*2.4+time,r=(i*17+time*16)%58;rect(c,x+w/2+Math.cos(a)*r,y+h/2+Math.sin(a)*r*1.4,2,2,i%2?'#265084':'#7458ac');}
  if(a)drawHauntedMonitor(c,a,x+10,y+20,w-20,h-40,time,true);
  rect(c,x+w/2-10,y+h+14,20,9,'#355069');rect(c,x+w/2-38,y+h+23,76,5,'#4a7184');
-}
-export function drawArenaBoundary(c,time,room=rooms.at(-1)){
- for(const x of [room.x+1,room.end-5])for(let y=45;y<475;y+=15){rect(c,x,y,4,8,'#594c86');rect(c,x+1,y,2,4,Math.floor(time*5+y)%2?'#9ec7f9':'#bc91ee');}
 }
 export function drawArenaTransfer(c,g,width){
  const e=g.arenaEntry;if(!e)return;const alpha=Math.min(1,Math.max(0,1-Math.abs(e.time-.8)/.44));

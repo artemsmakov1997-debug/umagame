@@ -81,3 +81,5 @@ Opening atlas `opening-slides.png`: four original pixel illustrations generated 
 - `map-destructibles.png`: RGBA, 1536×1024, 4 columns × 3 states; publishing server, propaganda power unit, editing console, dimensional anchor. Intact, breaking, wreck.
 - `chapter-interludes.png`: 1536×1024, 3 chapters × 2 story panels, each 512×512.
 The untouched generated originals are retained in `/workspace/generated_images`. In-game rendering crops the atlas cells; the interactive review page is `docs/props-preview.html`.
+
+0.18.1: `chapter-barriers.png`, original ImageGen RGBA atlas, 1536×1024, four media-themed gateway columns and two rows (closed/open). Matched to the existing ending art: newsroom rolling gate, rooftop storm barrier, studio acoustic doors and a dimensional CRT arch. Original retained at `/workspace/generated_images/exec-77ef94e3-fac8-455d-802a-8fba6922770e.png`.
