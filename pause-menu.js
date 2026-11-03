@@ -5,13 +5,14 @@ export class PauseMenu{
   this.items=[...document.querySelectorAll('[data-pause-action]')];
   this.items.forEach((button,index)=>{button.addEventListener('focus',()=>{this.index=index;this.highlight();});button.addEventListener('pointerenter',()=>{this.index=index;this.highlight();});button.addEventListener('click',()=>this.action(button.dataset.pauseAction));});
   $('controls-back').addEventListener('click',()=>this.showRoot());
+  $('clues-back').addEventListener('click',()=>this.showRoot());
   $('fullscreen').addEventListener('click',()=>{if(document.fullscreenElement)document.exitFullscreen?.();else document.documentElement.requestFullscreen?.().catch(()=>{});});
  }
  open(){
   if(this.active||this.ui.view!=='game')return;this.previousMode=this.game.mode;this.game.pausedFrom=this.previousMode;this.game.mode='paused';this.active=true;this.clearInput();$('overlay').hidden=true;$('dialogue').hidden=true;$('app').dataset.dialogue='false';this.showRoot();
  }
  showRoot(){
-  if(this.ui.view!=='game')this.ui.show('game',false);this.panel='root';$('pause-menu').hidden=false;$('pause-root').hidden=false;$('controls-panel').hidden=true;$('pause-root').scrollTop=0;this.index=0;this.highlight();this.items[0].focus({preventScroll:true});
+  if(this.ui.view!=='game')this.ui.show('game',false);this.panel='root';$('pause-menu').hidden=false;$('pause-root').hidden=false;$('controls-panel').hidden=true;$('clues-panel').hidden=true;$('pause-root').scrollTop=0;this.index=0;this.highlight();this.items[0].focus({preventScroll:true});
  }
  highlight(){this.items.forEach((button,i)=>button.classList.toggle('selected',i===this.index));}
  resume(){
@@ -23,6 +24,14 @@ export class PauseMenu{
   else if(action==='sound')this.toggleSound();
   else if(action==='restart'){this.dismiss();this.restart();}
   else if(action==='controls'){this.panel='controls';$('pause-root').hidden=true;$('controls-panel').hidden=false;$('controls-back').focus({preventScroll:true});}
+  else if(action==='clues'){
+   this.panel='clues';$('pause-root').hidden=true;$('controls-panel').hidden=true;$('clues-panel').hidden=false;
+   const list=$('clues-list');list.replaceChildren();
+   const clues=[...this.game.clues,...this.game.evidence.map(e=>({text:e.title+': '+e.detail}))];
+   if(!clues.length){const item=document.createElement('li');item.textContent='Пока ничего не найдено.';list.append(item);}
+   for(const clue of clues){const item=document.createElement('li');item.textContent=clue.text;list.append(item);}
+   $('clues-back').focus({preventScroll:true});
+  }
   else if(action==='library'){this.panel='library';$('pause-menu').hidden=true;this.ui.showLibrary(()=>this.showRoot());}
   else if(action==='exit'){this.dismiss();this.exit();}
  }
@@ -33,7 +42,7 @@ export class PauseMenu{
   if(this.panel==='root'&&['ArrowUp','ArrowDown'].includes(event.code)){event.preventDefault();this.index=(this.index+(event.code==='ArrowDown'?1:-1)+this.items.length)%this.items.length;this.highlight();this.items[this.index].focus({preventScroll:true});this.items[this.index].scrollIntoView({block:'nearest'});return true;}
   if(event.code==='Enter'&&this.panel==='root'){event.preventDefault();if(!event.repeat)this.items[this.index].click();return true;}
   if(event.code==='Tab'){
-   const buttons=this.panel==='root'?this.items:[...$('controls-panel').querySelectorAll('button')],i=buttons.indexOf(document.activeElement);
+   const buttons=this.panel==='root'?this.items:[...(this.panel==='clues'?$('clues-panel'):$('controls-panel')).querySelectorAll('button')],i=buttons.indexOf(document.activeElement);
    if(event.shiftKey&&i<=0){event.preventDefault();buttons.at(-1).focus();}else if(!event.shiftKey&&(i<0||i===buttons.length-1)){event.preventDefault();buttons[0].focus();}return true;
   }
   if(['Space','ArrowLeft','ArrowRight','KeyA','KeyD','KeyW','KeyS','KeyX','ShiftLeft','ShiftRight'].includes(event.code)&&document.activeElement?.tagName!=='BUTTON')event.preventDefault();
