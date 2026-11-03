@@ -73,3 +73,5 @@ Press Start 2P хранится локально вместе с лицензи�
   рамках; новые монстры или чужой стиль не подставляются.
 - `music-scores.js` содержит 11 оригинальных партитур, которые исполняет
   Web Audio в `audio.js`: скачивания фонограмм при запуске нет.
+
+Opening atlas `opening-slides.png`: four original pixel illustrations generated with ImageGen using the existing ending atlas as a style and character reference. Sleeping Uma, Yuri checking sources, Infoshum invasion, Yuri kidnapped into the screen. 1536×1024, four 768×512 panels.

@@ -1,12 +1,13 @@
-import {canActivateEnemy} from './encounters.js?v=0.15.1';
-import {actorById,bossProxy} from './boss-actors.js?v=0.15.1';
-import {solidSurfaces} from './terrain.js?v=0.15.1';
-import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.15.1';
-import {enemy,rooms} from './level.js?v=0.15.1';
-import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.15.1';
-import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.15.1';
-import {stepEnemyFall} from './terrain.js?v=0.15.1';
-import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.15.1';
+import {monsterGuides} from './monster-guides.js?v=0.16.0';
+import {canActivateEnemy} from './encounters.js?v=0.16.0';
+import {actorById,bossProxy} from './boss-actors.js?v=0.16.0';
+import {solidSurfaces} from './terrain.js?v=0.16.0';
+import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.16.0';
+import {enemy,rooms} from './level.js?v=0.16.0';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.16.0';
+import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.16.0';
+import {stepEnemyFall} from './terrain.js?v=0.16.0';
+import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.16.0';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
@@ -34,6 +35,8 @@ function reveal(g,e,dx){e.revealed=true;e.dir=dx<0?-1:1;e.state='emerge';e.timer
 export function stepEnemies(g,dt,paw,prevBottom){
  const p=g.player;cleanCopies(g);
  for(const e of g.enemies){
+  if(g.mode!=='playing')break;
+  if(e.active&&!e.dead&&e.room===g.room&&g.cinematic&&!g.seenScenes.has('sighting:'+e.type)&&g.openDialogue('sighting:'+e.type,'playing',monsterGuides[e.type]))return;
   if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);continue;}if(e.room!==g.room)continue;
   if(!e.active){if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}

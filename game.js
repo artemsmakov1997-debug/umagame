@@ -1,17 +1,17 @@
-import {EndingUI} from './ending-ui.js?v=0.15.1';
-import {scoreBreakdown,projectPurpose} from './finale.js?v=0.15.1';
-import {Game} from './engine.js?v=0.15.1';
-import {Renderer} from './render.js?v=0.15.1';
-import {loadAssets} from './assets.js?v=0.15.1';
-import {ScreenManager} from './screens.js?v=0.15.1';
-import {DialogueUI} from './dialogue-ui.js?v=0.15.1';
-import {PauseMenu} from './pause-menu.js?v=0.15.1';
-import {TouchControls} from './touch-controls.js?v=0.15.1';
-import {GameAudio} from './audio.js?v=0.15.1';
+import {EndingUI} from './ending-ui.js?v=0.16.0';
+import {scoreBreakdown,projectPurpose} from './finale.js?v=0.16.0';
+import {Game} from './engine.js?v=0.16.0';
+import {Renderer} from './render.js?v=0.16.0';
+import {loadAssets} from './assets.js?v=0.16.0';
+import {ScreenManager} from './screens.js?v=0.16.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.16.0';
+import {PauseMenu} from './pause-menu.js?v=0.16.0';
+import {TouchControls} from './touch-controls.js?v=0.16.0';
+import {GameAudio} from './audio.js?v=0.16.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
- const game=new Game();game.touchEnabled=document.documentElement.classList.contains('has-touch');
+ const game=new Game({cinematic:true});game.touchEnabled=document.documentElement.classList.contains('has-touch');
  const assets=await loadAssets((done,total)=>{$('loading').textContent=`Готовлю редакцию: ${done}/${total}`;}).catch(()=>null);
  if(!assets){$('loading').textContent='Не удалось загрузить рисунки. ';const retry=document.createElement('button');retry.textContent='Повторить загрузку';retry.className='back-button';retry.addEventListener('click',()=>location.reload());$('loading').append(retry);return;}
  $('loading').hidden=true;
@@ -59,7 +59,7 @@ async function boot(){
   if((event.code==='ShiftLeft'||event.code==='ShiftRight')&&!keys.has(event.code))dash=true;keys.add(event.code);
  });
  window.addEventListener('keyup',event=>keys.delete(event.code));
- function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp','ending'].includes(game.mode))pauseMenu.open();}
+ function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp','ending','prologue'].includes(game.mode))pauseMenu.open();}
  window.addEventListener('blur',blur);document.addEventListener('visibilitychange',()=>{audio.setHidden(document.hidden);if(document.hidden)blur();});
  function events(){for(const event of game.events){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
@@ -82,6 +82,7 @@ async function boot(){
    accumulator+=dt;while(accumulator>=1/60){const mobile=touch.snapshot();game.step(1/60,{...mobile,left:keys.has('ArrowLeft')||keys.has('KeyA'),right:keys.has('ArrowRight')||keys.has('KeyD'),up:keys.has('ArrowUp')||keys.has('KeyW')||mobile.up,down:keys.has('ArrowDown')||keys.has('KeyS')||mobile.down,jump:jump||mobile.jump,dash:dash||mobile.dash,attack:attack||keys.has('Space')||keys.has('KeyX')||mobile.attack});jump=false;dash=false;attack=false;touch.consume();accumulator-=1/60;events();}renderer.draw(game,game.mode==='playing'?dt:0,clock);
   }else{accumulator=0;ui.draw($('game'),clock);}
   audio.setScene(ui.view,game);dialogueUI.update(ui.view==='game'&&!pauseMenu.active);endingUI.update(ui.view==='game'&&!pauseMenu.active);
+  document.body.classList.toggle('playing-screen',ui.view==='game');
   $('app').dataset.boss=String(ui.view==='game'&&game.mode==='playing'&&game.boss.active&&game.boss.hp>0);
   $('app').dataset.opening=String(ui.view==='game'&&(game.mode==='waking'||game.pausedFrom==='waking'||game.dialogue?.id==='intro'));
   $('pause').hidden=!game.touchEnabled||ui.view!=='game'||pauseMenu.active||['won','lost'].includes(game.mode);$('wake-caption').hidden=ui.view!=='game'||game.mode!=='waking'||pauseMenu.active;
