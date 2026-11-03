@@ -75,7 +75,7 @@ async function boot(){
   if(event.type==='alarm')notify('Паникёр открывает портал!');
   if(event.type==='portal')notify('Портал открыт! Прерви звон Паникёра.');
   if(event.type==='swallow'){clearInput();notify('Кликбейт! Поглощение отнимает целую жизнь.');}
-  if(event.type==='bossPhase')notify('Противник атакует быстрее!');
+  if(event.type==='bossPhase')notify(event.phase===3?'ИНФОШУМ ПОВТОРЯЕТ ПРИЁМЫ ПРОШЛЫХ БОССОВ!':'Босс меняет тактику!');
   if(event.type==='won'||event.type==='lost'){clearTimeout(toastTimer);$('toast').classList.remove('visible');showResult(event.type);}
  }game.events=[];}
  function frame(now){
