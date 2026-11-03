@@ -1,4 +1,3 @@
-import {monsterGuides} from './monster-guides.js?v=0.16.0';
 import {canActivateEnemy} from './encounters.js?v=0.16.0';
 import {actorById,bossProxy} from './boss-actors.js?v=0.16.0';
 import {solidSurfaces} from './terrain.js?v=0.16.0';
@@ -36,7 +35,6 @@ export function stepEnemies(g,dt,paw,prevBottom){
  const p=g.player;cleanCopies(g);
  for(const e of g.enemies){
   if(g.mode!=='playing')break;
-  if(e.active&&!e.dead&&e.room===g.room&&g.cinematic&&!g.seenScenes.has('sighting:'+e.type)&&g.openDialogue('sighting:'+e.type,'playing',monsterGuides[e.type]))return;
   if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);continue;}if(e.room!==g.room)continue;
   if(!e.active){if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
