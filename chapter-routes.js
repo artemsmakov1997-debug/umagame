@@ -1,8 +1,8 @@
-import {rooms,platforms} from './level.js?v=0.19.0';
+import {rooms,platforms} from './level.js?v=0.20.0';
 export const sectionNames={1:['Архив редакции','Печатный зал','Серверная'],3:['Переулок антенн','Рекламные крыши','Мачтовый квартал'],5:['За кулисами','Подвижная сцена','Монтажная'],7:['Бумажные острова','Разбитые отражения','Порог Инфошума']};
 export const propKinds={1:'server',3:'power',5:'console',7:'anchor'};
 export function createMapProps(){return [1,3,5,7].flatMap(room=>(room===5?[12,22]:[10,20]).map((index,i)=>{const p=platforms.find(p=>p.room===room&&p.index===index);return{id:`control-${room}-${i}`,room,platformIndex:index,kind:propKinds[room],x:p.x+p.w-66,y:p.y-62,w:48,h:62,hp:1,breakTime:0,lastSwing:-1,section:i+1};}));}
-export function createRoutePortals(){return [1,3,5,7].flatMap(room=>[0,1].map(i=>({room,id:`shortcut-${room}-${i}`,controlId:`control-${room}-${i}`,fromIndex:room===5?(i?24:15):(i?22:13),toIndex:room===5?(i?27:19):(i?25:17),cooldown:0})));}
+export function createRoutePortals(){return [3,5,7].flatMap(room=>[0,1].map(i=>({room,id:`burrow-${room}-${i}`,fromIndex:room===3?(i?12:9):room===5?(i?24:15):(i?22:13),toIndex:room===3?(i?25:17):room===5?(i?27:19):(i?25:17),cooldown:0})));}
 export function stepMapProps(g,dt,paw){
  const p=g.player;
  for(const d of g.mapProps||[]){if(d.room!==g.room)continue;const s=g.platforms.find(s=>s.room===d.room&&s.index===d.platformIndex);d.x=s.x+s.w-66;d.y=s.y-62;d.breakTime=Math.max(0,d.breakTime-dt);
@@ -12,8 +12,8 @@ export function stepMapProps(g,dt,paw){
 }
 export function tryRouteShortcut(g){
  const p=g.player;if(!g.routeUpPressed||!p.grounded||p.dash>0)return false;
- for(const route of g.routePortals||[]){if(route.room!==g.room||route.cooldown>0)continue;const d=g.mapProps.find(d=>d.id===route.controlId);if(d.hp)continue;
-  for(const [from,to]of [[route.fromIndex,route.toIndex],[route.toIndex,route.fromIndex]]){const s=g.platforms.find(s=>s.room===g.room&&s.index===from);if(p.supportId!==s.id||Math.abs(p.x+p.w/2-(s.x+s.w/2))>45)continue;const target=g.platforms.find(s=>s.room===g.room&&s.index===to);Object.assign(p,{x:target.x+target.w/2-p.w/2,y:target.y-p.h,vx:0,vy:0,grounded:true,supportId:target.id,inv:Math.max(p.inv,.8),climbing:false});route.cooldown=1;g.updateCamera();g.emit('shortcut',{x:p.x,y:p.y});return true;}
+ for(const route of g.routePortals||[]){if(route.room!==g.room||route.cooldown>0)continue;
+  for(const [from,to]of [[route.fromIndex,route.toIndex],[route.toIndex,route.fromIndex]]){const s=g.platforms.find(s=>s.room===g.room&&s.index===from);if(p.supportId!==s.id||Math.abs(p.x+p.w/2-(s.x+s.w/2))>45)continue;const target=g.platforms.find(s=>s.room===g.room&&s.index===to);Object.assign(p,{x:target.x+target.w/2-p.w/2,y:target.y-p.h,vx:0,vy:0,jumpBuffer:0,coyote:0,grounded:true,supportId:target.id,inv:Math.max(p.inv,.8),climbing:false});route.cooldown=1;g.updateCamera();g.emit('shortcut',{x:p.x,y:p.y});return true;}
  }return false;
 }
 

@@ -1,4 +1,4 @@
-import {platforms} from './level.js?v=0.19.0';
+import {platforms} from './level.js?v=0.20.0';
 export function createWorldPlatforms(){return platforms.map(s=>({...s,baseX:s.x,baseY:s.y,prevX:s.x,prevY:s.y,dx:0,dy:0}));}
 export function alignEnemyToPlatform(g,e){
  const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex),base=platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);if(!s||!base)return e;
@@ -8,6 +8,7 @@ export function stepWorldPlatforms(g,dt){
  g.platformClocks[g.room]=(g.platformClocks[g.room]||0)+dt;
  for(const s of g.platforms){
   s.prevX=s.x;s.prevY=s.y;s.dx=0;s.dy=0;
+  if(s.room===g.room&&s.fragile){s.collapseTime=Math.max(0,(s.collapseTime||0)-dt);if(!s.collapseTime){s.collapseCharge=g.player.grounded&&g.player.supportId===s.id?(s.collapseCharge||0)+dt:0;if(s.collapseCharge>.7){s.collapseTime=2.4;s.collapseCharge=0;g.emit('platformCrumble',{x:s.x+s.w/2,y:s.y});}}}
   if(s.room===g.room&&s.motion){const offset=Math.sin(g.platformClocks[g.room]*Math.PI*2/s.motion.period)*s.motion.amplitude;if(s.motion.axis==='x')s.x=s.baseX+offset;else s.y=s.baseY+offset;s.dx=s.x-s.prevX;s.dy=s.y-s.prevY;}
  }
  const p=g.player,feet=p.y+p.h;

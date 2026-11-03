@@ -1,6 +1,6 @@
-import {actorById} from './boss-actors.js?v=0.19.0';
-import {enemy,rooms} from './level.js?v=0.19.0';
-import {inkAt,solidSurfaces} from './terrain.js?v=0.19.0';
+import {actorById} from './boss-actors.js?v=0.20.0';
+import {enemy,rooms} from './level.js?v=0.20.0';
+import {inkAt,solidSurfaces} from './terrain.js?v=0.20.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const TACTICAL_TYPES=['censor','copier','cutter'];
 export function scanArea(g,e){
@@ -22,13 +22,13 @@ export function cleanCopies(g){
 export function stampInk(g,e){
  const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);if(!s)return;
  const w=Math.min(96,s.w-8),localX=clamp(e.x+e.w/2-s.x-w/2,4,s.w-w-4),old=g.inks.find(i=>i.platformId===s.id&&Math.abs(i.localX-localX)<35);
- if(old){old.localX=localX;old.time=9;}else g.inks.push({id:'ink-'+(++g.tacticalSerial),room:e.room,platformId:s.id,localX,w,time:9});
+ if(old){old.localX=localX;old.time=9;}else g.inks.push({id:'ink-'+(++g.tacticalSerial),room:e.room,platformId:s.id,localX,w,time:9,drift:e.x+e.w/2>s.x+s.w/2?1:-1});
  const own=g.inks.filter(i=>i.room===e.room);if(own.length>8)g.inks.splice(g.inks.indexOf(own[0]),1);
  g.emit('inkStamp',{x:e.x+e.w/2,y:s.y,enemyType:e.type});
 }
 function copyEnemy(g,e){
  const original=scanSource(g,e),area=scanArea(g,e);if(!original||original.id!==e.copySourceId||!area)return false;
- if(g.enemies.filter(c=>!c.dead&&c.copyOwnerId===e.id).length>=2||g.enemies.filter(c=>!c.dead&&c.copyOwnerId&&c.room===e.room).length>=3)return false;
+ if(g.enemies.filter(c=>!c.dead&&c.copyOwnerId===e.id).length>=1||g.enemies.filter(c=>!c.dead&&c.copyOwnerId&&c.room===e.room).length>=2)return false;
  const supports=solidSurfaces(g).filter(s=>s.id===area.surface.id&&s.w>=92),s=supports.find(s=>e.x>=s.x&&e.x<s.x+s.w)||supports[0];if(!s)return false;
  const start=s.x+4,end=s.x+s.w-52,options=[e.x+e.dir*66,start,end,s.x+s.w*.25,s.x+s.w*.75];
  const x=options.map(x=>clamp(x,start,end)).find(x=>Math.abs(x-g.player.x)>62&&!g.enemies.some(other=>other.active&&!other.dead&&!other.phased&&other.room===e.room&&other.platformIndex===s.index&&x+50>other.x&&x-2<other.x+other.w));if(x===undefined)return false;

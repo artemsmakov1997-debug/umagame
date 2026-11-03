@@ -1,9 +1,9 @@
-import {enemy,rooms,chapters} from './level.js?v=0.19.0';
-import {solidSurfaces} from './terrain.js?v=0.19.0';
-import {stampInk} from './tactical-enemies.js?v=0.19.0';
-import {alertNearby} from './enemies.js?v=0.19.0';
-import {bossProxy,bossActorId} from './boss-actors.js?v=0.19.0';
-import {releaseEchoPull} from './echo-pull.js?v=0.19.0';
+import {enemy,rooms,chapters} from './level.js?v=0.20.0';
+import {solidSurfaces} from './terrain.js?v=0.20.0';
+import {stampInk} from './tactical-enemies.js?v=0.20.0';
+import {alertNearby} from './enemies.js?v=0.20.0';
+import {bossProxy,bossActorId} from './boss-actors.js?v=0.20.0';
+import {releaseEchoPull} from './echo-pull.js?v=0.20.0';
 export const bossTroops=Object.fromEntries(chapters.map(c=>[c.boss,c.monsters]));
 export function summonPlaces(g,count=3){
  const b=g.boss,p=g.player,choices=solidSurfaces(g).filter(s=>s.room===g.room&&s.w>=120).sort((a,c)=>Math.abs(a.x+a.w/2-p.x)+Math.abs(a.y-p.y-p.h)-Math.abs(c.x+c.w/2-p.x)-Math.abs(c.y-p.y-p.h)),result=[];
@@ -14,7 +14,7 @@ export function summonPlaces(g,count=3){
  }}return result;
 }
 export function summonBossTroops(g,{types=null,copy=false,count=2}={}){
- const b=g.boss,roster=types||bossTroops[b.id],all=g.enemies.filter(e=>e.bossOwnerId===b.id&&!e.dead),alive=all.filter(e=>!!e.copyOwnerId===copy),limit=copy?2:3,free=Math.min(count,limit-alive.length),places=summonPlaces(g,free);if(free<=0)return[];
+ const b=g.boss,roster=types||bossTroops[b.id],all=g.enemies.filter(e=>e.bossOwnerId===b.id&&!e.dead),alive=all.filter(e=>!!e.copyOwnerId===copy),limit=copy?1:2,free=Math.min(count,limit-alive.length),places=summonPlaces(g,free);if(free<=0)return[];
  const made=[];for(const t of places){let type;
   for(let attempt=0;attempt<roster.length;attempt++){const candidate=roster[b.summonCursor++%roster.length];if(candidate==='clickbait'&&all.some(e=>e.type==='clickbait'))continue;if(!copy&&alive.concat(made).some(e=>e.type===candidate))continue;type=candidate;break;}
   if(!type)continue;const e=enemy(type,g.room,t.x-rooms[g.room].x,t.index,{id:'boss-troop-'+(++g.tacticalSerial),bossOwnerId:b.id,minion:true,active:true,noticed:true,spawnTime:.6,dir:g.player.x<t.x?-1:1,...(copy?{copyOwnerId:bossActorId(b),copyOf:'boss-print',hp:1,maxHp:1}:{})});

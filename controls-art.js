@@ -1,0 +1,10 @@
+import {cats,sprite} from './assets.js?v=0.20.0';
+import {drawTraversal} from './cat-animation.js?v=0.20.0';
+export const controlActions=[['Бег','← → / A D','run'],['Прыжок','↑ / W','jump'],['Лестница','↑ ↓ / W S','ladder'],['Удар лапой','Пробел / X','attack'],['Рывок','Shift','dash'],['Красться','↓ / S','sneak'],['Спрыгнуть ниже','↓ + Пробел','drop']];
+export function buildControls(){const list=document.getElementById('controls-cards');for(const[label,key,action]of controlActions){const item=document.createElement('figure'),canvas=document.createElement('canvas');canvas.width=200;canvas.height=112;canvas.dataset.control=action;canvas.setAttribute('aria-label','Ума: '+label);const caption=document.createElement('figcaption'),title=document.createElement('strong'),keys=document.createElement('span');title.textContent=label;keys.textContent=key;caption.append(title,keys);item.append(canvas,caption);list.append(item);}}
+export function drawControls(assets,time){for(const canvas of document.querySelectorAll('[data-control]')){const c=canvas.getContext('2d'),action=canvas.dataset.control;c.clearRect(0,0,200,112);c.imageSmoothingEnabled=false;c.fillStyle='#17354b';c.fillRect(8,96,184,4);const player={x:80,y:48,h:48,w:34,dir:1,climbing:action==='ladder',climbTime:time*4,sneaking:action==='sneak',sneakTime:time*3,vx:45};
+ if(action==='ladder'){c.fillStyle='#83bdcf';for(const x of[78,120])c.fillRect(x,4,3,95);for(let y=8;y<96;y+=16)c.fillRect(78,y,45,3);}if(action==='ladder'||action==='sneak'){drawTraversal(c,assets,player);continue;}
+ const pose=action==='attack'?4:action==='jump'||action==='drop'?3:action==='run'?1+Math.floor(time*6)%2:0,{box,anchor}=cats[pose],scale=.20,w=box[2]*scale,h=box[3]*scale,feet=action==='jump'?85-Math.abs(Math.sin(time*2))*26:action==='drop'?63+(time%1)*30:96;
+ if(action==='dash'){c.fillStyle='#79e4f3';for(let i=0;i<4;i++)c.fillRect(24+i*10,67+i%2*10,24,2);}sprite(c,assets.uma,box,104-w*anchor,feet-h,w,h);
+ if(action==='drop'){c.fillStyle='#9fc7d1';c.fillRect(8,54,50,4);c.fillRect(142,54,50,4);}
+ }}

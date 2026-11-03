@@ -1,17 +1,18 @@
-import {musicScores,sceneMusic} from './music-scores.js?v=0.19.0';
-import {rooms} from './level.js?v=0.19.0';
+import {musicScores,sceneMusic} from './music-scores.js?v=0.20.0';
+import {rooms} from './level.js?v=0.20.0';
 // Original chiptune score and procedural Foley. No downloads or external audio.
+function volume(key){try{const n=Number(globalThis.localStorage?.getItem('uma-volume-'+key)??'0.8');return Number.isFinite(n)?Math.max(0,Math.min(1,n)):.8;}catch{return .8;}}
 const midi=n=>440*Math.pow(2,(n-69)/12);
 function preference(){try{return globalThis.localStorage?.getItem('uma-sound')!=='off';}catch{return true;}}
 export class GameAudio{
  constructor({context=null,enabled=preference(),onChange=()=>{}}={}){
-  this.enabled=enabled;this.onChange=onChange;this.context=null;this.voices=new Set();this.theme='menu';this.duck=false;this.hidden=false;this.paused=false;this.step=0;this.next=0;this.interval=null;this.effectTimes=new Map();
+  this.musicVolume=volume('music');this.effectsVolume=volume('effects');this.enabled=enabled;this.onChange=onChange;this.context=null;this.voices=new Set();this.theme='menu';this.duck=false;this.hidden=false;this.paused=false;this.step=0;this.next=0;this.interval=null;this.effectTimes=new Map();
   if(context)this.connect(context);
  }
  connect(context){
   this.context=context;this.offline=typeof context.startRendering==='function';
   this.master=context.createGain();this.master.gain.value=this.enabled?.55:0;
-  this.music=context.createGain();this.music.gain.value=.42;this.effects=context.createGain();this.effects.gain.value=.66;
+  this.music=context.createGain();this.music.gain.value=.42*this.musicVolume;this.effects=context.createGain();this.effects.gain.value=.66*this.effectsVolume;
   this.music.connect(this.master);this.effects.connect(this.master);
   this.analyser=context.createAnalyser();this.analyser.fftSize=512;this.master.connect(this.analyser);this.analyser.connect(context.destination);
   this.noise=context.createBuffer(1,context.sampleRate,context.sampleRate);const samples=this.noise.getChannelData(0);let seed=137;
@@ -31,6 +32,7 @@ export class GameAudio{
   if(this.master)this.master.gain.setTargetAtTime(enabled?.55:0,this.context.currentTime,.015);
   this.next=0;this.onChange(this.enabled);
  }
+ setVolume(type,value){if(!['music','effects'].includes(type))return;value=Number.isFinite(value)?Math.max(0,Math.min(1,value)):.8;this[type+'Volume']=value;try{globalThis.localStorage?.setItem('uma-volume-'+type,String(value));}catch{}if(this.context){const level=type==='music'?(this.paused||this.hidden?0:this.duck?.12:.42):.66;this[type].gain.setTargetAtTime(level*value,this.context.currentTime,.02);}this.onChange(this.enabled);}
  stop(group=null){
   for(const voice of this.voices)if(!group||voice.group===group){try{voice.source.stop();}catch{}this.voices.delete(voice);}
  }
@@ -40,7 +42,7 @@ export class GameAudio{
   const theme=sceneMusic(view,game,rooms);
   this.duck=view==='game'&&['dialogue','waking'].includes(game.mode);
   if(theme!==this.theme||pause!==this.paused){this.stop('music');this.step=0;this.next=0;this.theme=theme;this.paused=pause;}
-  if(this.music)this.music.gain.setTargetAtTime(pause||this.hidden?0:this.duck?.12:.42,this.context.currentTime,.08);
+  if(this.music)this.music.gain.setTargetAtTime(pause||this.hidden?0:this.duck?.12*this.musicVolume:.42*this.musicVolume,this.context.currentTime,.08);
  }
  voice({frequency=220,to=frequency,duration=.15,gain=.06,wave='square',start,pan=0,group='effects',noise=false,filter=1800}){
   const ctx=this.context;if(!ctx)return;const at=start??ctx.currentTime+.006,source=noise?ctx.createBufferSource():ctx.createOscillator(),volume=ctx.createGain();

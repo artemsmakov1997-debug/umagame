@@ -4,7 +4,7 @@ const {open,begin,fixture,shot}=require('./browser-helpers.cjs');
 async function setupTeleport(page){
  await fixture(page,4,2,604);
  await page.evaluate(async()=>{
-  const {enemy}=await import('./level.js?v=0.19.0'),g=testGame;g.enemies=[enemy('informant',4,365,1,{active:true,noticed:true,teleportCooldown:0})];
+  const {enemy}=await import('./level.js?v=0.20.0'),g=testGame;g.enemies=[enemy('informant',4,365,1,{active:true,noticed:true,teleportCooldown:0})];
   const step=g.step.bind(g);g.haltAt='charge';g.haltDelay=.18;
   g.step=(dt,input)=>{step(dt,input);const t=g.enemies[0]?.teleport;if(g.haltAt==='done'&&!t||t&&t.phase===g.haltAt&&t.elapsed>=g.haltDelay){g.mode='paused';g.haltAt=null;}};
  });await page.waitForFunction(()=>testGame.mode==='paused'&&testGame.enemies[0].teleport?.phase==='charge');await page.waitForTimeout(35);
@@ -16,7 +16,7 @@ async function nextPhase(page,phase,delay){
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||undefined,args:['--no-sandbox']});
  const errors=[],p=await browser.newPage({viewport:{width:1280,height:960}});p.on('pageerror',e=>errors.push(e.message));await open(p);await p.evaluate(()=>window.testTime=.5);await p.waitForTimeout(60);
- assert.ok(await p.evaluate(()=>testUI.assets.menu.src.includes('menu-monster-pile.png')));await shot(p,'menu-pile-before-teleport');
+ assert.ok(await p.evaluate(()=>testUI.assets.menu.src.includes('menu-compact.png')));await shot(p,'menu-pile-before-teleport');
  await begin(p);await setupTeleport(p);const from=await p.evaluate(()=>testGame.enemies[0].x),images=[];
  for(const [phase,delay]of [['charge',.18],['out',.14],['blink',0],['in',.16],['done',0]]){
   if(phase!=='charge')await nextPhase(p,phase,delay);const state=await p.evaluate(()=>({phase:testGame.enemies[0].teleport?.phase,x:testGame.enemies[0].x,index:testGame.enemies[0].platformIndex,health:testGame.health,bolts:testGame.bolts.length,phased:testGame.enemies[0].phased}));

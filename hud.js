@@ -1,7 +1,7 @@
-import {drawBossHud} from './boss-hud.js?v=0.19.0';
-import {rect,heart} from './pixel.js?v=0.19.0';
-import {creatures,sprite} from './assets.js?v=0.19.0';
-import {MAX_HEALTH,START_LIVES} from './level.js?v=0.19.0';
+import {drawBossHud} from './boss-hud.js?v=0.20.0';
+import {rect,heart} from './pixel.js?v=0.20.0';
+import {creatures,sprite} from './assets.js?v=0.20.0';
+import {MAX_HEALTH,START_LIVES} from './level.js?v=0.20.0';
 export function catLife(c,x,y,on=true){
  const rows=['1100000000011','1110000000111','1111000001111','1111111111111','0111111111110','0111111111110','0111111111110','0011111111100','0001111111000'];
  rows.forEach((row,j)=>[...row].forEach((v,i)=>{if(v==='1')rect(c,x+i,y+j,1,1,on?'#a8a4a0':'#304254');}));
@@ -26,5 +26,6 @@ export function drawHud(c,assets,g,width,height=94){
   cached={key,layer:content};cache.set(assets,cached);
  }
  c.drawImage(cached.layer,0,0);
+ if(g.testingInvulnerable){c.save();c.font='14px UmaText,monospace';c.fillStyle='#ffdc86';c.textAlign='center';c.fillText('ТЕСТ: ЗАЩИТА',g.boss.active?width<700?width/2:220:width/2,width<700?59:79);c.restore();}
  drawBossHud(c,assets,g,width,{y:width<700?61:8});
 }

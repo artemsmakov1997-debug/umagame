@@ -1,7 +1,7 @@
-import {actorById} from './boss-actors.js?v=0.19.0';
-import {rooms,spawns} from './level.js?v=0.19.0';
-import {solidSurfaces} from './terrain.js?v=0.19.0';
-import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.19.0';
+import {actorById} from './boss-actors.js?v=0.20.0';
+import {rooms,spawns} from './level.js?v=0.20.0';
+import {solidSurfaces} from './terrain.js?v=0.20.0';
+import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.20.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function stepAirEnemy(g,e,dt){
  const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+p.h/2-e.y-e.h/2,distance=Math.hypot(dx,dy)||1;
@@ -40,9 +40,9 @@ export function handleFlyingContact(g,e){
 export function stepEchoWarp(g,dt){
  const warp=g.echoWarp;if(!warp)return;warp.time=Math.min(warp.duration,warp.time+Math.min(dt,1/30));
  if(warp.time>=.24&&!warp.transferred){
-  warp.transferred=true;g.lives=Math.max(0,g.lives-1);Object.assign(g.player,warp.to,{h:48,vx:0,vy:0,grounded:true,climbing:false,sneaking:false,knock:0,dash:0,inv:1.2,hurtTime:.5,slipping:false,inkTime:0});g.echoImmunity=2.2;g.updateCamera();g.emit('echoArrive',{x:g.player.x,y:g.player.y});
+  warp.transferred=true;if(!g.testingInvulnerable)g.lives=Math.max(0,g.lives-1);Object.assign(g.player,warp.to,{h:48,vx:0,vy:0,grounded:true,climbing:false,sneaking:false,knock:0,dash:0,inv:1.2,hurtTime:.5,slipping:false,inkTime:0});g.echoImmunity=2.2;g.updateCamera();g.emit('echoArrive',{x:g.player.x,y:g.player.y});
   if(g.lives===0){g.health=0;g.echoWarp=null;g.mode='lost';g.emit('lost',{reason:'echo'});return;}
-  g.emit('lifeLost',{lives:g.lives,reason:'echo'});
+  if(g.testingInvulnerable)g.emit('testRescue',{reason:'echo'});else g.emit('lifeLost',{lives:g.lives,reason:'echo'});
  }
  if(warp.time>=warp.duration){g.echoWarp=null;g.mode='playing';g.emit('echoReady');}
 }

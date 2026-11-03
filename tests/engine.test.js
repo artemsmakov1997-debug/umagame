@@ -32,8 +32,8 @@ test('jump, paw and dash break stealth instead of silently attacking',()=>{
 test('Uma can creep through an unalarmed Panicker without contact damage or a portal',()=>{
  const g=isolated(5,0,45),e=enemy('panicker',5,125,0,{noticed:false,dir:1,speed:9});g.enemies=[e];tick(g,155,{down:true,right:true});assert.ok(g.player.x>e.x+e.w);assert.equal(g.health,4);assert.equal(e.noticed,false);assert.equal(e.state,'patrol');assert.equal(g.portals.length,0);assert.equal(g.enemies.length,1);
 });
-test('ordinary movement triggers Panicker and a visible delayed portal with three Fakenews',()=>{
- const g=isolated(5,0,20),e=enemy('panicker',5,125);g.enemies=[e];tick(g,40);assert.equal(e.state,'alarm');assert.equal(g.portals.length,1);assert.equal(g.enemies.length,1);tick(g,120);assert.equal(g.enemies.filter(e=>e.portalMinion).length,3);assert.ok(g.enemies.filter(e=>e.portalMinion).every(e=>e.type==='fakenews'&&e.active));
+test('ordinary movement triggers Panicker and a visible delayed portal with one Fakenews',()=>{
+ const g=isolated(5,0,20),e=enemy('panicker',5,125);g.enemies=[e];tick(g,40);assert.equal(e.state,'alarm');assert.equal(g.portals.length,1);assert.equal(g.enemies.length,1);tick(g,120);assert.equal(g.enemies.filter(e=>e.portalMinion).length,1);assert.ok(g.enemies.filter(e=>e.portalMinion).every(e=>e.type==='fakenews'&&e.active));
 });
 test('crouching before the bell rings cancels its preparation',()=>{
  const g=isolated(5,0,20),e=enemy('panicker',5,125,0,{state:'windup',timer:.3});g.enemies=[e];tick(g,50,{down:true});assert.equal(e.state,'patrol');assert.equal(g.portals.length,0);
@@ -42,7 +42,7 @@ test('hitting or killing the portal owner closes the portal before new enemies a
  for(const lethal of [false,true]){const g=isolated(5,0,20),e=enemy('panicker',5,125,0,{hp:3});g.enemies=[e];alertNearby(g,e);assert.equal(g.portals.length,1);g.hitEnemy(e,false,lethal?9:1);tick(g,70);assert.equal(g.enemies.length,1);assert.equal(g.portals.length,0);}
 });
 test('portal minions are capped, spawn inside their platform and do not spawn inside Uma',()=>{
- const g=isolated(5,0,20),e=enemy('panicker',5,125);g.enemies=[e];for(let i=0;i<6;i++){alertNearby(g,e);for(let n=0;n<180;n++)stepPortals(g,1/60);}const spawned=g.enemies.filter(e=>e.portalMinion);assert.equal(spawned.length,6);for(const m of spawned){assert.ok(m.x>=m.origin&&m.x<=m.end);assert.ok(Math.abs(m.x-g.player.x)>=60);}
+ const g=isolated(5,0,20),e=enemy('panicker',5,125);g.enemies=[e];for(let i=0;i<6;i++){alertNearby(g,e);for(let n=0;n<180;n++)stepPortals(g,1/60);}const spawned=g.enemies.filter(e=>e.portalMinion);assert.equal(spawned.length,2);for(const m of spawned){assert.ok(m.x>=m.origin&&m.x<=m.end);assert.ok(Math.abs(m.x-g.player.x)>=60);}
 });
 test('Panicker alerts only active nearby enemies and does not redirect a prepared wave',()=>{
  const g=isolated(5,0,20),caller=enemy('panicker',5,125),fake=enemy('fakenews',5,400,1),wave=enemy('inflator',5,420,4,{state:'windup',dir:1}),far=enemy('fakenews',6,125),hidden=enemy('informant',5,440,4,{active:false});g.enemies=[caller,fake,wave,far,hidden];alertNearby(g,caller);assert.ok(fake.alert>0);assert.equal(wave.dir,1);assert.equal(far.alert,0);assert.equal(hidden.alert,0);

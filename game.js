@@ -1,18 +1,20 @@
-import {EndingUI} from './ending-ui.js?v=0.19.0';
-import {drawDefeat} from './result-art.js?v=0.19.0';
-import {scoreBreakdown,projectPurpose} from './finale.js?v=0.19.0';
-import {Game} from './engine.js?v=0.19.0';
-import {Renderer} from './render.js?v=0.19.0';
-import {loadAssets} from './assets.js?v=0.19.0';
-import {ScreenManager} from './screens.js?v=0.19.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.19.0';
-import {PauseMenu} from './pause-menu.js?v=0.19.0';
-import {TouchControls} from './touch-controls.js?v=0.19.0';
-import {GameAudio} from './audio.js?v=0.19.0';
+import {SettingsUI} from './settings.js?v=0.20.0';
+import {buildControls,drawControls} from './controls-art.js?v=0.20.0';
+import {EndingUI} from './ending-ui.js?v=0.20.0';
+import {drawDefeat} from './result-art.js?v=0.20.0';
+import {scoreBreakdown,projectPurpose} from './finale.js?v=0.20.0';
+import {Game} from './engine.js?v=0.20.0';
+import {Renderer} from './render.js?v=0.20.0';
+import {loadAssets} from './assets.js?v=0.20.0';
+import {ScreenManager} from './screens.js?v=0.20.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.20.0';
+import {PauseMenu} from './pause-menu.js?v=0.20.0';
+import {TouchControls} from './touch-controls.js?v=0.20.0';
+import {GameAudio} from './audio.js?v=0.20.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
- const game=new Game({cinematic:true});game.touchEnabled=document.documentElement.classList.contains('has-touch');
+ const game=new Game({cinematic:true});game.testingInvulnerable=true;game.touchEnabled=document.documentElement.classList.contains('has-touch');
  const assets=await loadAssets((done,total)=>{$('loading').textContent=`Готовлю редакцию: ${done}/${total}`;}).catch(()=>null);
  if(!assets){$('loading').textContent='Не удалось загрузить рисунки. ';const retry=document.createElement('button');retry.textContent='Повторить загрузку';retry.className='back-button';retry.addEventListener('click',()=>location.reload());$('loading').append(retry);return;}
  $('loading').hidden=true;
@@ -24,15 +26,16 @@ async function boot(){
  function begin(){pauseMenu.dismiss();game.start();clearEffects();clearInput();accumulator=0;$('overlay').hidden=true;ui.show('game');dialogueUI.update(true);}
  function goMain(){pauseMenu.dismiss();game.mode='ready';game.dialogue=null;clearEffects();ui.show('menu');dialogueUI.update(false);}
  function quit(){pauseMenu.dismiss();game.mode='exited';game.dialogue=null;clearEffects();clearInput();ui.show('exit');dialogueUI.update(false);}
- const ui=new ScreenManager(assets,begin,()=>{if(game.mode==='playing')game.mode='paused';clearInput();},quit);
+ const ui=new ScreenManager(assets,begin,()=>{if(game.mode==='playing')game.mode='paused';clearInput();},quit,()=>settingsUI.open(()=>ui.menuItems[ui.menuIndex].focus({preventScroll:true})));
  const dialogueUI=new DialogueUI(game,assets,clearInput);
  const endingUI=new EndingUI(game,assets,clearInput);
- const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,toggleSound:()=>{audio.setEnabled(!audio.enabled);if(audio.enabled)audio.play({type:'fish'});},onResume:mode=>{dialogueUI.update(true);endingUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
+ const settingsUI=new SettingsUI(game,audio,clearInput);buildControls();
+ const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,openSettings:back=>settingsUI.open(back),onResume:mode=>{dialogueUI.update(true);endingUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
  touch=new TouchControls(document.querySelector('.game-shell'),()=>ui.view==='game'&&game.mode==='playing'&&!pauseMenu.active);
- function updateSound(){$('pause-sound').textContent=`Звук: ${audio.enabled?'включён':'выключен'}`;$('pause-sound').setAttribute('aria-pressed',String(audio.enabled));}
- updateSound();let lastAbilities='';
+ function updateSound(){settingsUI?.sync();}
+ let lastAbilities='';
  function updateControls(){const signature=Object.values(game.abilities).join();if(signature===lastAbilities)return;lastAbilities=signature;for(const el of document.querySelectorAll('[data-ability]'))el.hidden=!game.abilities[el.dataset.ability];}
- function notify(message,duration=2800){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),duration);}
+ function notify(message,duration=5200){if(!game.hintsEnabled)return;$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),duration);}
  function showResult(kind){
   $('overlay').hidden=false;clearInput();const won=kind==='won';$('retry-location').hidden=won;$('result-library').hidden=won;
   $('overlay').dataset.result=won?'won':'lost';$('defeat-art').hidden=won;$('result-text').hidden=!won;
@@ -50,7 +53,7 @@ async function boot(){
  $('return-menu').addEventListener('click',goMain);$('wake-skip').addEventListener('click',()=>{clearInput();game.finishWakeup();dialogueUI.update(true);});
  const controls=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyS','Space','KeyA','KeyD','KeyW','KeyX','ShiftLeft','ShiftRight'];
  window.addEventListener('keydown',event=>{
-  if(pauseMenu.key(event))return;
+  if(settingsUI.key(event)||pauseMenu.key(event))return;
   if(ui.view!=='game'){ui.key(event);return;}
   if(event.code==='Escape'||event.code==='KeyP'){event.preventDefault();if(!event.repeat)pauseMenu.open();return;}
   if(game.mode==='waking'&&['Enter','Space'].includes(event.code)){event.preventDefault();if(!event.repeat)game.finishWakeup();return;}
@@ -73,19 +76,19 @@ async function boot(){
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');
 
   if(event.type==='lifePickup')notify('+1 жизнь!');
-  if(event.type==='controlBreak')notify('Опасность отключена. Короткий путь открыт: ↑ у входа.');
-  if(event.type==='clue')notify('СЛЕД: '+event.text,4700);
+  if(event.type==='controlBreak')notify('Опасный механизм отключён.');
+  if(event.type==='clue')notify('СЛЕД: '+event.text,6500);
   if(event.type==='enemyIntroduction')notify(({fakenews:'Фейкньюс: ударь лапой или прыгни сверху',copier:'Копир: бей по открытому лотку',censor:'Цензор: избегай чернил',informant:'Информатор: следи за меткой',inflator:'Раздуватель: заходи сзади',panicker:'Паникёр: прерви тревогу',injection:'Вброс: отражай бегущую строку',cutter:'Нарезчик: уходи с метки',splicer:'Склейка: разорви ленту рывком',static:'Помеха: уклонись от броска',echo:'Эхо: разорви притяжение',clickbait:'Кликбейт: опасайся рыбки на крючке'})[event.enemyType]||'Новый противник!',3800);
   if(event.type==='alarm')notify('Паникёр открывает портал!');
   if(event.type==='portal')notify('Портал открыт! Прерви звон Паникёра.');
   if(event.type==='swallow'){clearInput();notify('Кликбейт! Поглощение отнимает целую жизнь.');}
-  if(event.type==='bossPhase')notify(`Фаза ${event.phase}: ${event.name}`);
+  if(event.type==='platformCrumble')notify('Настил осыпается! Прыгай на соседнюю крышу.');
   if(event.type==='won'||event.type==='lost'){clearTimeout(toastTimer);$('toast').classList.remove('visible');showResult(event.type);}
  }game.events=[];}
  function frame(now){
   const dt=last?Math.min((now-last)/1000,.1):0;last=now;clock+=dt;
   if(ui.view==='game'){
-   accumulator+=dt;while(accumulator>=1/60){const mobile=touch.snapshot();game.step(1/60,{...mobile,left:keys.has('ArrowLeft')||keys.has('KeyA'),right:keys.has('ArrowRight')||keys.has('KeyD'),up:keys.has('ArrowUp')||keys.has('KeyW')||mobile.up,down:keys.has('ArrowDown')||keys.has('KeyS')||mobile.down,jump:jump||mobile.jump,dash:dash||mobile.dash,attack:attack||keys.has('Space')||keys.has('KeyX')||mobile.attack});jump=false;dash=false;attack=false;touch.consume();accumulator-=1/60;events();}renderer.draw(game,game.mode==='playing'?dt:0,clock);
+   accumulator+=dt;while(accumulator>=1/60){const mobile=touch.snapshot();game.step(1/60,{...mobile,left:keys.has('ArrowLeft')||keys.has('KeyA'),right:keys.has('ArrowRight')||keys.has('KeyD'),up:jump||keys.has('ArrowUp')||keys.has('KeyW')||mobile.up,down:keys.has('ArrowDown')||keys.has('KeyS')||mobile.down,jump:jump||mobile.jump,dash:dash||mobile.dash,attack:attack||keys.has('Space')||keys.has('KeyX')||mobile.attack});jump=false;dash=false;attack=false;touch.consume();accumulator-=1/60;events();}renderer.draw(game,game.mode==='playing'?dt:0,clock);
   }else{accumulator=0;ui.draw($('game'),clock);}
   audio.setScene(ui.view,game);dialogueUI.update(ui.view==='game'&&!pauseMenu.active);endingUI.update(ui.view==='game'&&!pauseMenu.active);
   $('game-hud').hidden=ui.view!=='game'||['prologue','interlude','ending','won','lost'].includes(game.mode)||['prologue','interlude','ending'].includes(game.pausedFrom)&&game.mode==='paused';
@@ -95,7 +98,7 @@ async function boot(){
   $('app').dataset.boss=String(ui.view==='game'&&game.boss.active&&game.boss.hp>0&&game.boss.room===game.room);
   $('app').dataset.opening=String(ui.view==='game'&&(game.mode==='waking'||game.pausedFrom==='waking'||game.dialogue?.id==='intro'));
   $('pause').hidden=!game.touchEnabled||ui.view!=='game'||pauseMenu.active||['won','lost'].includes(game.mode);$('wake-caption').hidden=ui.view!=='game'||game.mode!=='waking'||pauseMenu.active;
-  updateControls();
+  updateControls();if(pauseMenu.active&&pauseMenu.panel==='controls')drawControls(assets,clock);
   $('touch-controls').hidden=ui.view!=='game'||game.mode!=='playing'||pauseMenu.active;
   const hudText=`Здоровье: ${game.health}. Рыбки: ${game.fish}. Жизни: ${game.lives}.`;if($('hud-status').textContent!==hudText)$('hud-status').textContent=hudText;
   $('dash-status').textContent=game.player.dashCooldown>0?game.player.dashCooldown.toFixed(1):'';

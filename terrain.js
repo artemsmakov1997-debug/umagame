@@ -1,7 +1,7 @@
-import {platforms} from './level.js?v=0.19.0';
+import {platforms} from './level.js?v=0.20.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function solidSurfaces(g){
- const all=g.platforms||platforms;if(!g.cuts?.some(c=>c.phase==='gap'))return all;
+ const all=(g.platforms||platforms).filter(s=>!(s.collapseTime>0));if(!g.cuts?.some(c=>c.phase==='gap'))return all;
  return all.flatMap(s=>{
   const cut=g.cuts.find(c=>c.platformId===s.id&&c.phase==='gap');if(!cut)return [s];
   const left=clamp(cut.localX,0,s.w),right=clamp(cut.localX+cut.w,0,s.w),parts=[];
@@ -37,7 +37,7 @@ export function stepEnemyFall(g,e,dt){
  const surfaces=solidSurfaces(g),feet=e.y+e.h;
  if(!e.terrainFall){
   const base=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);
-  if(!base||!g.cuts.some(c=>c.platformId===base.id&&c.phase==='gap')||surfaces.some(s=>s.id===base.id&&Math.abs(s.y-feet)<4&&e.x+e.w>s.x+1&&e.x<s.x+s.w-1))return false;
+  if(!base||!(base.collapseTime>0||g.cuts.some(c=>c.platformId===base.id&&c.phase==='gap'))||surfaces.some(s=>s.id===base.id&&Math.abs(s.y-feet)<4&&e.x+e.w>s.x+1&&e.x<s.x+s.w-1))return false;
   e.terrainFall=true;e.fallVx=e.dir*e.speed;e.vy=35;e.jumpPhase=null;e.state='fall';g.emit('enemyFall',{x:e.x,y:e.y,enemyType:e.type});
  }
  e.x+=e.fallVx*dt;e.vy=Math.min(550,e.vy+900*dt);e.y+=e.vy*dt;
