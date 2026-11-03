@@ -47,12 +47,24 @@ const arenaBase=[
  [0,420,236],[296,346,232],[616,296,246],[914,374,236],[1256,314,280],[0,474,390],[470,474,320],[870,474,310],[1244,474,292],
  [120,230,170],[356,166,180],[634,124,224],[964,208,196],[1220,146,230],[20,328,140],[504,244,140],[838,290,100],[1138,260,124]
 ];
-for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>[x,index===2&&[1,3,4].includes(i)?y-14:index===4&&i===2?y+10:y,w]);
+// Each boss now has its own route: press machinery, exposed rooftops,
+// unstable studio scenery, and a fractured digital arena.
+const arenaOffsets={
+ 2:{1:[-14,-14],3:[12,-14],4:[-12,-14],10:[8,8],12:[-10,6]},
+ 4:{1:[-10,-28],2:[0,-20],4:[-15,-24],10:[-6,-24],13:[0,-28]},
+ 6:{1:[-10,8],3:[12,-16],4:[-8,-4],10:[8,-16],11:[10,12],13:[-14,6],16:[0,-10]},
+ 8:{1:[-16,-18],2:[-12,2],3:[16,-18],4:[-12,-20],10:[-8,-26],12:[-10,6],13:[10,-14],16:[12,-8]}
+};
+for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>{
+ const [dx,dy]=arenaOffsets[index][i]||[0,0];return[x+dx,y+dy,w];
+});
 const motions={
  '5:1':{axis:'x',amplitude:68,period:6.2},'5:10':{axis:'y',amplitude:94,period:5.4},'5:13':{axis:'x',amplitude:62,period:5.8},'5:29':{axis:'y',amplitude:86,period:5.2},
- '6:1':{axis:'x',amplitude:46,period:5.6},'6:3':{axis:'y',amplitude:46,period:6},'7:13':{axis:'x',amplitude:38,period:7.2}
+ '6:1':{axis:'x',amplitude:46,period:5.6},'6:3':{axis:'y',amplitude:46,period:6},'6:10':{axis:'y',amplitude:30,period:5.8},
+ '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
+ '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,cuttable:r.theme==='studio'&&[1,4,13,16,22,25].includes(index),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):0,motion:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,motion:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
  if(r.arena)return [];
@@ -91,7 +103,9 @@ export function createFish(){return rooms.flatMap(r=>{
 });}
 export function createSoup(){return rooms.filter(r=>!r.tutorial).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 const antennaPlaces=[[1,7],[1,18],[1,26],[2,13],[3,8],[3,18],[3,26],[4,13],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
-export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:1,lastSwing:-1,breakTime:0,kind:'dish'};});}
+export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
+ const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
+ return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:1,lastSwing:-1,breakTime:0,kind,ordinal};});}
 export function createLifePickups(){return [[1,17],[1,22],[2,9],[3,7],[3,22],[4,9],[5,7],[5,24],[6,9],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
