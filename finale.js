@@ -5,7 +5,7 @@ export const endingSlides=[
  {title:'ТЕПЕРЬ МЫ ВМЕСТЕ',text:'Юрий обнимает Уму. «Мы проверяем факты. Но каждый решает, что передать дальше».'},
  {title:'А ЕСЛИ ЗАВТРА?',text:'Новый заголовок. Палец завис над кнопкой «Поделиться». Инфошум может вернуться. Всё начинается с нас.'}
 ];
-export const projectPurpose='Инфошум появляется из цепочки пересылок и искажений. Журналисты проверяют факты, но остановить новую волну можем только мы вместе.';
+export const projectPurpose='Инфошум рождается из наших пересылок. Журналисты проверяют факты, но ответственность лежит на каждом.';
 export function scoreBreakdown(g){
  const values=[['Рыбки',g.fish,10],['Побеждённые враги',g.kills,50],['Антенны',g.relays.filter(d=>d.hp===0).length,100],['Боссы',g.bossesDefeated.size,1000]];
  return {items:values.map(([label,count,points])=>({label,count,points,total:count*points})),total:values.reduce((sum,[,count,points])=>sum+count*points,0)};
