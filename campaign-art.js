@@ -1,9 +1,9 @@
-import {rooms,WIDTH} from './level.js?v=0.18.1';
-import {rect,text} from './pixel.js?v=0.18.1';
-import {sprite,idleCats} from './assets.js?v=0.18.1';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.18.1';
-import {drawMonster,drawHauntedMonitor} from './art.js?v=0.18.1';
-import {drawDish,drawTowerPortal} from './stage-art.js?v=0.18.1';
+import {rooms,WIDTH} from './level.js?v=0.19.0';
+import {rect,text} from './pixel.js?v=0.19.0';
+import {sprite,idleCats} from './assets.js?v=0.19.0';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.19.0';
+import {drawMonster,drawHauntedMonitor} from './art.js?v=0.19.0';
+import {drawDish,drawTowerPortal} from './stage-art.js?v=0.19.0';
 export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
@@ -28,6 +28,7 @@ export function sceneLayers(assets){
 }
 export function backgroundLayers(layers){
  return layers.map((base,index)=>{
+  if(index===0)return base;
   const canvas=document.createElement('canvas');canvas.width=base.width+160;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
   c.save();c.translate(80,0);c.scale(-1,1);c.drawImage(base,0,0,80,512,0,0,80,512);c.restore();
   c.drawImage(base,80,0);
@@ -37,7 +38,7 @@ export function backgroundLayers(layers){
  });
 }
 export function backgroundOffset(room,camera){return room.index===0||room.theme==='cozy'?0:Math.max(-64,Math.min(64,(camera-(room.x+WIDTH*.25))*.16));}
-export function drawBackdrop(c,layer,room,camera,darkness=0){c.save();if(room.theme==='cozy'&&darkness>0)c.filter=`brightness(${1-darkness*.8})`;c.drawImage(layer,Math.round(room.x-80+backgroundOffset(room,camera)),0);c.restore();}
+export function drawBackdrop(c,layer,room,camera,darkness=0){c.save();if(room.theme==='cozy'&&darkness>0)c.filter=`brightness(${1-darkness*.8})`;c.drawImage(layer,Math.round(room.x-(room.theme==='cozy'?0:80)+backgroundOffset(room,camera)),0);if(room.theme==='cozy')for(const x of[room.x-4,room.x+room.width]){rect(c,x,0,4,512,'#241b25');rect(c,x+1,0,1,512,'#836140');}c.restore();}
 export function drawSurface(c,a,p,time){
  if(p.room===0&&p.index===7)return;
  const bed=p.room===0&&p.index===0,x=bed?160:p.x,y=p.y,w=bed?p.w-160:p.w,theme=rooms[p.room].theme;

@@ -1,36 +1,41 @@
-import {drawPassages} from './passage-art.js?v=0.18.1';
-import {drawMapProps} from './chapter-route-art.js?v=0.18.1';
-import {drawExitArrow} from './navigation-art.js?v=0.18.1';
-import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.18.1';
-import {drawFinaleBackdrop} from './ending-ui.js?v=0.18.1';
-import {solidSurfaces} from './terrain.js?v=0.18.1';
-import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.18.1';
-import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.18.1';
-import {rect,text} from './pixel.js?v=0.18.1';
-import {cats,creatures,sprite} from './assets.js?v=0.18.1';
-import {drawMonster,drawLure,drawSoup} from './art.js?v=0.18.1';
-import {drawHud} from './hud.js?v=0.18.1';
-import {drawNotebook} from './notebook-art.js?v=0.18.1';
-import {drawMovingRails,drawLifeCaches,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.18.1';
-import {drawArenaBoss} from './boss-art.js?v=0.18.1';
-import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.18.1';
-import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.18.1';
-import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.18.1';
+import {drawPassages} from './passage-art.js?v=0.19.0';
+import {drawMapProps} from './chapter-route-art.js?v=0.19.0';
+import {drawExitArrow} from './navigation-art.js?v=0.19.0';
+import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.19.0';
+import {drawFinaleBackdrop} from './ending-ui.js?v=0.19.0';
+import {solidSurfaces} from './terrain.js?v=0.19.0';
+import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.19.0';
+import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.19.0';
+import {rect,text} from './pixel.js?v=0.19.0';
+import {cats,creatures,sprite} from './assets.js?v=0.19.0';
+import {drawMonster,drawLure,drawSoup} from './art.js?v=0.19.0';
+import {drawHud} from './hud.js?v=0.19.0';
+import {drawNotebook} from './notebook-art.js?v=0.19.0';
+import {drawMovingRails,drawLifeCaches,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.19.0';
+import {drawArenaBoss} from './boss-art.js?v=0.19.0';
+import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.19.0';
+import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.19.0';
+import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.19.0';
 export class Renderer{
- constructor(canvas,assets){this.c=canvas.getContext('2d');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
+ constructor(canvas,assets){this.c=canvas.getContext('2d');this.hud=canvas.ownerDocument?.getElementById('hud');this.c.imageSmoothingEnabled=false;this.assets=assets;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
  draw(g,dt=0,visualTime=g.time){
   const c=this.c,a=this.assets,bounds=c.canvas.getBoundingClientRect(),vw=Math.max(160,Math.round(HEIGHT*bounds.width/Math.max(1,bounds.height)));
   if(c.canvas.width!==vw)c.canvas.width=vw;if(c.canvas.height!==HEIGHT)c.canvas.height=HEIGHT;
-  const cozyFit=g.room===0&&!g.touchEnabled,worldWidth=cozyFit?Math.min(WIDTH,vw):vw,worldInset=cozyFit?Math.max(0,(vw-WIDTH)/2):0;
-  if(g.viewWidth!==worldWidth){g.viewWidth=worldWidth;g.updateCamera();}
+  const hudBounds=this.hud?.getBoundingClientRect();if(hudBounds?.width&&hudBounds.height){const hw=Math.round(hudBounds.width),hh=Math.round(hudBounds.height);if(this.hud.width!==hw)this.hud.width=hw;if(this.hud.height!==hh)this.hud.height=hh;const hc=this.hud.getContext('2d');hc.imageSmoothingEnabled=false;drawHud(hc,a,g,hw,hh);}
+  const cozyFit=g.room===0&&!g.touchEnabled,worldScale=cozyFit?Math.min(vw/WIDTH,HEIGHT/512):1,worldWidth=cozyFit?WIDTH:vw,worldInset=cozyFit?(vw-WIDTH*worldScale)/2:0,worldTop=cozyFit?(HEIGHT-512*worldScale)/2:0;
+  if(g.mode!=='paused'&&g.viewWidth!==worldWidth){g.viewWidth=worldWidth;g.updateCamera();}
   const t=g.time,p=g.player,b=g.boss,cam=Math.round(g.camera),opening=g.room===0&&(g.mode==='waking'||g.pausedFrom==='waking'||g.dialogue?.id==='intro');
   if(['ending','won'].includes(g.mode)||['ending','won'].includes(g.pausedFrom)){c.imageSmoothingEnabled=false;drawFinaleBackdrop(c,a,g,vw);return;}
-  c.imageSmoothingEnabled=false;c.clearRect(0,0,vw,HEIGHT);c.save();c.translate(worldInset-cam,0);
-  if(cozyFit&&worldInset>0){
-   for(let x=-80;x>-worldInset-80;x-=80){c.save();c.translate(x+80,0);c.scale(-1,1);c.drawImage(a.cozy,0,0,80,512,0,0,80,512);c.restore();}
-   for(let x=WIDTH;x<WIDTH+worldInset+80;x+=80){c.save();c.translate(x+80,0);c.scale(-1,1);c.drawImage(a.cozy,688,0,80,512,0,0,80,512);c.restore();}
+  c.imageSmoothingEnabled=false;c.clearRect(0,0,vw,HEIGHT);
+  if(cozyFit&&a.wings){
+   const s=HEIGHT/a.wings.height,sw=a.wings.width/4,wing=sw*s;c.save();if(roomDarkness(g.wakeTime)>0)c.filter=`brightness(${1-roomDarkness(g.wakeTime)*.8})`;
+   c.drawImage(a.wings,(vw-a.wings.width*s)/2,0,a.wings.width*s,HEIGHT);
+   for(let x=worldInset;x>0;x-=wing)c.drawImage(a.wings,0,0,sw,a.wings.height,x-wing,0,wing,HEIGHT);
+   const rightSource=186,rightWing=rightSource*s;for(let x=worldInset+WIDTH*worldScale;x<vw;x+=rightWing)c.drawImage(a.wings,a.wings.width-rightSource,0,rightSource,a.wings.height,x,0,rightWing,HEIGHT);
+   c.restore();
   }
+  c.save();c.translate(worldInset,worldTop);c.scale(worldScale,worldScale);c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
    if(i!==g.room)continue;if(room.x+room.width+150<cam||room.x-150>cam+vw)continue;
    drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);
@@ -123,7 +128,7 @@ export class Renderer{
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   if(g.tether){const e=g.tether.ownerId==='boss:'+g.boss.id?g.boss:g.enemies.find(e=>e.id===g.tether.ownerId);if(e){c.strokeStyle='#c9a4ed';c.lineWidth=3;c.setLineDash([5,4]);c.beginPath();c.moveTo(e.x+24,e.y+2);c.lineTo(p.x+17,p.y+28);c.stroke();c.setLineDash([]);for(let i=0;i<5;i++)rect(c,e.x+5+i*8,e.y-58,5,3,i<Math.ceil(g.tether.remaining)?'#ffdb9b':'#263a55');}}
   drawExitArrow(c,g,t,worldWidth);c.restore();
-  drawHud(c,a,g,vw);drawArenaTransfer(c,g,vw);drawLocationLoading(c,g,vw);
+  drawArenaTransfer(c,g,vw);drawLocationLoading(c,g,vw);
   if(g.mode==='respawning'||g.pausedFrom==='respawning'){
    const progress=1-g.respawnTime/1.1;c.globalAlpha=Math.max(0,(progress-.25)/.75)*.86;rect(c,0,47,vw,HEIGHT-47,'#030a1e');c.globalAlpha=1;
   }

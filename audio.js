@@ -1,5 +1,5 @@
-import {musicScores,sceneMusic} from './music-scores.js?v=0.18.1';
-import {rooms} from './level.js?v=0.18.1';
+import {musicScores,sceneMusic} from './music-scores.js?v=0.19.0';
+import {rooms} from './level.js?v=0.19.0';
 // Original chiptune score and procedural Foley. No downloads or external audio.
 const midi=n=>440*Math.pow(2,(n-69)/12);
 function preference(){try{return globalThis.localStorage?.getItem('uma-sound')!=='off';}catch{return true;}}

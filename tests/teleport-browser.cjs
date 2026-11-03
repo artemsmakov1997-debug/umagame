@@ -4,7 +4,7 @@ const {open,begin,fixture,shot}=require('./browser-helpers.cjs');
 async function setupTeleport(page){
  await fixture(page,4,2,604);
  await page.evaluate(async()=>{
-  const {enemy}=await import('./level.js?v=0.18.1'),g=testGame;g.enemies=[enemy('informant',4,365,1,{active:true,noticed:true,teleportCooldown:0})];
+  const {enemy}=await import('./level.js?v=0.19.0'),g=testGame;g.enemies=[enemy('informant',4,365,1,{active:true,noticed:true,teleportCooldown:0})];
   const step=g.step.bind(g);g.haltAt='charge';g.haltDelay=.18;
   g.step=(dt,input)=>{step(dt,input);const t=g.enemies[0]?.teleport;if(g.haltAt==='done'&&!t||t&&t.phase===g.haltAt&&t.elapsed>=g.haltDelay){g.mode='paused';g.haltAt=null;}};
  });await page.waitForFunction(()=>testGame.mode==='paused'&&testGame.enemies[0].teleport?.phase==='charge');await page.waitForTimeout(35);
@@ -16,14 +16,7 @@ async function nextPhase(page,phase,delay){
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||undefined,args:['--no-sandbox']});
  const errors=[],p=await browser.newPage({viewport:{width:1280,height:960}});p.on('pageerror',e=>errors.push(e.message));await open(p);await p.evaluate(()=>window.testTime=.5);await p.waitForTimeout(60);
- assert.ok(await p.evaluate(()=>testUI.assets.menu.src.includes('menu-clean.png')));
- const glass=await p.evaluate(async()=>{
-  const {drawMenuScene}=await import('./art.js?v=0.18.1'),a=testUI.assets,canvas=()=>{const c=document.createElement('canvas');c.width=768;c.height=480;c.getContext('2d').imageSmoothingEnabled=false;return c;},base=canvas(),live=canvas();base.getContext('2d').drawImage(a.menu,0,0,768,512);drawMenuScene(live.getContext('2d'),a,.5,false);
-  const before=base.getContext('2d').getImageData(0,0,768,480).data,after=live.getContext('2d').getImageData(0,0,768,480).data;let minX=768,maxX=0,minY=480,maxY=0,count=0;
-  for(let i=0;i<before.length;i+=4)if(before[i]!==after[i]||before[i+1]!==after[i+1]||before[i+2]!==after[i+2]){const n=i/4,x=n%768,y=Math.floor(n/768);minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);count++;}
-  return {minX,maxX,minY,maxY,count};
- });assert.ok(glass.count>80);assert.ok(glass.minX>=694&&glass.maxX<=748&&glass.minY>=278&&glass.maxY<=326,JSON.stringify(glass));
- await shot(p,'menu-clean-monitor');const b=await p.locator('#game').boundingBox();await p.screenshot({path:require('node:path').join(require('./browser-helpers.cjs').artifacts,'monitor-detail.png'),clip:{x:b.x+659/768*b.width,y:b.y+235/480*b.height,width:109/768*b.width,height:155/480*b.height}});
+ assert.ok(await p.evaluate(()=>testUI.assets.menu.src.includes('menu-monster-pile.png')));await shot(p,'menu-pile-before-teleport');
  await begin(p);await setupTeleport(p);const from=await p.evaluate(()=>testGame.enemies[0].x),images=[];
  for(const [phase,delay]of [['charge',.18],['out',.14],['blink',0],['in',.16],['done',0]]){
   if(phase!=='charge')await nextPhase(p,phase,delay);const state=await p.evaluate(()=>({phase:testGame.enemies[0].teleport?.phase,x:testGame.enemies[0].x,index:testGame.enemies[0].platformIndex,health:testGame.health,bolts:testGame.bolts.length,phased:testGame.enemies[0].phased}));
@@ -34,5 +27,5 @@ async function nextPhase(page,phase,delay){
  for(const [width,height]of [[320,844],[390,844],[844,390]]){
   const m=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true});m.on('pageerror',e=>errors.push(e.message));await open(m);await m.evaluate(()=>window.testTime=.5);await m.waitForTimeout(60);await shot(m,'clean-monitor-menu-'+width);await begin(m);await setupTeleport(m);assert.ok(await m.evaluate(()=>testGame.enemies[0].teleport.target.x>testGame.camera&&testGame.enemies[0].teleport.target.x<testGame.camera+testGame.viewWidth));await shot(m,'teleport-warning-'+width);await nextPhase(m,'in',.16);await shot(m,'teleport-appearance-'+width);await nextPhase(m,'done',0);assert.equal(await m.evaluate(()=>testGame.enemies[0].platformIndex),2);assert.ok(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await m.close();
  }
- assert.deepEqual(errors,[]);await browser.close();console.log('PASS: painted monitor and registered animated eyes without a rectangular overlay; source charge, pixel disappearance, transit, destination appearance, recovery and real ranged attacks; safe on-platform landing; phone warning/appearance at 320/390/844; no page errors.');
+ assert.deepEqual(errors,[]);await browser.close();console.log('PASS: painted monster-pile menu; source charge, pixel disappearance, transit, destination appearance, recovery and real ranged attacks; safe on-platform landing; phone warning/appearance at 320/390/844; no page errors.');
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -1,16 +1,16 @@
-import {rect} from './pixel.js?v=0.18.1';
-import {sprite} from './assets.js?v=0.18.1';
-import {drawHauntedMonitor} from './art.js?v=0.18.1';
-import {catLife} from './hud.js?v=0.18.1';
-import {rooms,PORTAL_X,PORTAL_ROOM} from './level.js?v=0.18.1';
+import {rect} from './pixel.js?v=0.19.0';
+import {drawTargetSprite} from './target-art.js?v=0.19.0';
+import {drawHauntedMonitor} from './art.js?v=0.19.0';
+import {catLife} from './hud.js?v=0.19.0';
+import {rooms,PORTAL_X,PORTAL_ROOM} from './level.js?v=0.19.0';
 const dishFrames=[
  {box:[0,0,512,512],pivot:[318,480]}, {box:[512,0,512,512],pivot:[830,480]}, {box:[1024,0,512,512],pivot:[1335,480]},
  {box:[0,512,512,512],pivot:[318,988]}, {box:[512,512,512,512],pivot:[811,988]}, {box:[1024,512,512,512],pivot:[1328,988]}
 ];
 export function drawDish(c,a,d,time){
- if(d.kind!=='dish'&&a.destructibles){const col={printer:0,broadcast:1,edit:2,signal:3}[d.kind]??0,row=d.hp?0:d.breakTime>.25?1:2,sw=a.destructibles.width/4,sh=a.destructibles.height/3;c.drawImage(a.destructibles,col*sw,row*sh,sw,sh,d.x+d.w/2-45,d.y+d.h-80,90,80);return;}
+ if(d.kind!=='dish'&&a.destructibles){const col={printer:0,broadcast:1,edit:2,signal:3}[d.kind]??0,row=d.hp?0:d.breakTime>.25?1:2,sw=a.destructibles.width/4,sh=a.destructibles.height/3;drawTargetSprite(c,a.destructibles,[col*sw,row*sh,sw,sh],d.x+d.w/2-45,d.y+d.h-80,90,80,time,d.hp>0);return;}
  const index=d.hp>0?Math.floor(time*3)%2:d.breakTime>.52?2:d.breakTime>.32?3:d.breakTime>.1?4:5,{box,pivot}=dishFrames[index],scale=80/480,cx=d.x+d.w/2,feet=d.y+d.h;
- sprite(c,a.dishes,box,cx+(box[0]-pivot[0])*scale,feet+(box[1]-pivot[1])*scale,box[2]*scale,box[3]*scale);
+ drawTargetSprite(c,a.dishes,box,cx+(box[0]-pivot[0])*scale,feet+(box[1]-pivot[1])*scale,box[2]*scale,box[3]*scale,time,d.hp>0);
  if(d.hp>0)for(let i=0;i<3;i++){const radius=8+i*8+Math.sin(time*2)*3;c.strokeStyle=i%2?'#66c9e84d':'#b3f2f24d';c.lineWidth=1;c.beginPath();c.arc(cx-35,feet-63,radius,Math.PI*1.03,Math.PI*1.53);c.stroke();}
 
 }
