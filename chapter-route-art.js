@@ -1,6 +1,5 @@
-import {rooms} from './level.js?v=0.18.0';
-import {rect,text} from './pixel.js?v=0.18.0';
-import {sectionNames} from './chapter-routes.js?v=0.18.0';
+import {rooms} from './level.js?v=0.18.1';
+import {rect,text} from './pixel.js?v=0.18.1';
 const columns={server:0,power:1,console:2,anchor:3};
 export function drawMapProps(c,a,g,t){
  if(!a.destructibles)return;
@@ -15,10 +14,7 @@ export function drawMapProps(c,a,g,t){
  // Warned environmental machinery belongs to each sector, and stops with its controller.
  for(const d of g.mapProps||[]){if(d.room!==g.room||!d.hp)continue;const phase=(t+d.section*.8)%5;if(phase>2.2)continue;const x=rooms[g.room].x+d.section*768+260,w=110,color=g.room===3?'#bfe9f0':g.room===5?'#ffdd8a':g.room===7?'#ba94f1':'#86d9e0';
   c.save();c.globalAlpha=phase<1.2?.25+.15*Math.sin(t*12):.7;
-  for(let k=0;k<8;k++)rect(c,x+k*14,468,9,3,color);
+  rect(c,x-3,466,w+6,9,'#071224');rect(c,x,466,w,3,color);rect(c,x+3,469,w-6,4,'#294557');
   if(phase>=1.2)for(let k=0;k<18;k++){const yy=55+(k*29+t*(g.room===3?90:155))%410,xx=x+(k*17)%w;rect(c,xx,yy,g.room===3?18:4,g.room===3?2:9,color);}c.restore();
  }
-}
-export function drawSectionTransition(c,g,width){
- const s=g.sectionTransition;if(!s)return;const alpha=Math.sin(Math.min(1,s.time/.65)*Math.PI);c.save();c.globalAlpha=alpha;rect(c,0,0,width,480,'#03091d');c.font=`${width<300?25:34}px UmaText,monospace`;c.fillStyle='#ffe6ae';c.textAlign='center';c.fillText(s.title,width/2,242,width-24);c.restore();
 }

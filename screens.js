@@ -1,7 +1,7 @@
-import {chapters} from './level.js?v=0.18.0';
-import {monsters} from './catalog.js?v=0.18.0';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.18.0';
-import {idleFrame} from './menu-animation.js?v=0.18.0';
+import {chapters} from './level.js?v=0.18.1';
+import {monsters} from './catalog.js?v=0.18.1';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.18.1';
+import {idleFrame} from './menu-animation.js?v=0.18.1';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
  constructor(assets,onStart,onExit,onQuit=()=>{}){
@@ -52,7 +52,7 @@ export class ScreenManager{
  }
  draw(canvas,time){
   if(canvas.width!==768)canvas.width=768;
-  this.time=time;this.idleAction=idleFrame(time).action;const bounds=canvas.getBoundingClientRect(),height=this.view==='menu'?Math.max(480,Math.round(768*bounds.height/bounds.width)):Math.round(768*bounds.height/bounds.width);if(canvas.height!==height)canvas.height=height;
+  this.time=time;this.idleAction=idleFrame(time).action;const bounds=canvas.getBoundingClientRect(),height=Math.max(1,Math.round(768*bounds.height/bounds.width));if(canvas.height!==height)canvas.height=height;
   const c=canvas.getContext('2d');
   if(this.view==='library'){
    c.imageSmoothingEnabled=false;if(height===480)c.drawImage(this.assets.library,0,0,768,512);else{const w=height*1.5;c.drawImage(this.assets.library,(768-w)/2,0,w,height);}

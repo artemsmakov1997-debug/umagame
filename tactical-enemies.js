@@ -1,6 +1,6 @@
-import {actorById} from './boss-actors.js?v=0.18.0';
-import {enemy,rooms} from './level.js?v=0.18.0';
-import {inkAt,solidSurfaces} from './terrain.js?v=0.18.0';
+import {actorById} from './boss-actors.js?v=0.18.1';
+import {enemy,rooms} from './level.js?v=0.18.1';
+import {inkAt,solidSurfaces} from './terrain.js?v=0.18.1';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const TACTICAL_TYPES=['censor','copier','cutter'];
 export function scanArea(g,e){

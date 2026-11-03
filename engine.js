@@ -1,23 +1,23 @@
-import {beginChapterStory,advanceChapterStory} from './chapter-story.js?v=0.18.0';
-import {createMapProps,createRoutePortals,stepMapProps,stepSection,stepLocationHazards,tryRouteShortcut} from './chapter-routes.js?v=0.18.0';
-import {advanceOpening} from './prologue.js?v=0.18.0';
-import {tryDrop} from './drop-through.js?v=0.18.0';
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.18.0';
-import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.18.0';
-import {stepEnemies,stepPortals} from './enemies.js?v=0.18.0';
-import {cancelInformantTeleport} from './informant-teleport.js?v=0.18.0';
-import {applyRelayEffect} from './chapter-systems.js?v=0.18.0';
-import {scenes,evidence,relayClues} from './story.js?v=0.18.0';
-import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.18.0';
-import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.18.0';
-import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.18.0';
-import {cleanCopies} from './tactical-enemies.js?v=0.18.0';
-import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.18.0';
-import {beginFinale,advanceFinale} from './finale.js?v=0.18.0';
-import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.18.0';
-import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.18.0';
-import {stepEchoPull,releaseEchoPull} from './echo-pull.js?v=0.18.0';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.18.0';
+import {beginChapterStory,advanceChapterStory} from './chapter-story.js?v=0.18.1';
+import {createMapProps,createRoutePortals,stepMapProps,stepSection,stepLocationHazards,tryRouteShortcut} from './chapter-routes.js?v=0.18.1';
+import {advanceOpening} from './prologue.js?v=0.18.1';
+import {tryDrop} from './drop-through.js?v=0.18.1';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.18.1';
+import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.18.1';
+import {stepEnemies,stepPortals} from './enemies.js?v=0.18.1';
+import {cancelInformantTeleport} from './informant-teleport.js?v=0.18.1';
+import {applyRelayEffect} from './chapter-systems.js?v=0.18.1';
+import {scenes,evidence,relayClues} from './story.js?v=0.18.1';
+import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.18.1';
+import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.18.1';
+import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.18.1';
+import {cleanCopies} from './tactical-enemies.js?v=0.18.1';
+import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.18.1';
+import {beginFinale,advanceFinale} from './finale.js?v=0.18.1';
+import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.18.1';
+import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.18.1';
+import {stepEchoPull,releaseEchoPull} from './echo-pull.js?v=0.18.1';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.18.1';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export function playerHeight(p,height){const feet=p.y+p.h;p.h=height;p.y=feet-height;}
 export class Game {
@@ -122,7 +122,6 @@ export class Game {
   if(this.mode==='enteringArena'){this.time+=Math.min(dt,1/30);stepArenaEntry(this,dt);return;}
   if(this.mode==='respawning'){dt=Math.min(dt,1/30);this.respawnTime=Math.max(0,this.respawnTime-dt);this.player.hurtTime=Math.max(0,this.player.hurtTime-dt);if(this.respawnTime===0)this.restoreCheckpoint();return;}
   if(this.mode==='waking'){const before=this.wakeTime;this.wakeTime=Math.min(WAKE_DURATION,this.wakeTime+Math.min(dt,1/30));if(before<2.7&&this.wakeTime>=2.7)this.emit('infection');if(this.wakeTime>=WAKE_DURATION)this.finishWakeup();return;}
-  if(this.mode==='playing'&&this.sectionTransition){stepSection(this,Math.min(dt,1/30));return;}
   if(this.mode!=='playing'||this.checkNotebooks())return;dt=Math.min(dt,1/30);this.time+=dt;
   if(this.transition){this.transition.time+=dt;if(this.transition.time>=this.transition.duration)this.transition=null;}
   this.routeUpPressed=!!input.up&&!this.routeUpHeld;this.routeUpHeld=!!input.up;if(tryRouteShortcut(this))input={...input,up:false,jump:false};

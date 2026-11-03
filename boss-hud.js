@@ -1,6 +1,6 @@
-import {phasePlans} from './boss-phases.js?v=0.18.0';
-import {drawMonster} from './art.js?v=0.18.0';
-import {rect} from './pixel.js?v=0.18.0';
+import {phasePlans} from './boss-phases.js?v=0.18.1';
+import {drawMonster} from './art.js?v=0.18.1';
+import {rect} from './pixel.js?v=0.18.1';
 export const bossStyles={
  spreader:{name:'Распространитель',edge:'#dcb87b',fill:'#f0d7a7',dark:'#47384a',portrait:'#17273b',kind:'paper'},
  agitator:{name:'Агитатор',edge:'#e69258',fill:'#f06361',dark:'#4b2237',portrait:'#281f35',kind:'broadcast'},
@@ -21,6 +21,7 @@ export function drawBossHud(c,a,g,width){
  if(style.kind==='broadcast')for(let i=0;i<6;i++)rect(c,barX+i*8,y+48,3,3+i%3,style.edge);
  if(style.kind==='film')for(let i=0;i<Math.floor(w/12);i++)rect(c,x+i*12,y+49,5,3,style.edge);
  if(style.kind==='static')for(let i=0;i<8;i++)rect(c,barX+i*barW/8,y+48+i%2,8,2,i%2?style.fill:style.edge);
- c.save();c.font='14px UmaText,monospace';c.fillStyle=style.fill;c.textAlign='center';c.fillText(`${b.phase} / 3 · ${phasePlans[b.id][b.phase-1][0]}`,x+w/2,y+69,w-10);c.restore();
+ rect(c,x+5,y+55,w-10,18,'#12354b');
+ c.save();c.font='14px UmaText,monospace';c.fillStyle='#79e6ff';c.textAlign='center';c.fillText(`ФАЗА ${b.phase} / 3 · ${phasePlans[b.id][b.phase-1][0]}`,x+w/2,y+69,w-10);c.restore();
  const sx=b.x+b.w/2-g.camera;if(sx<24||sx>width-24){const right=sx>width-24,px=right?width-16:8;for(let i=0;i<5;i++)rect(c,px+(right?i:-i)*2,125+i*2,2,10-i*2,style.edge);}
 }

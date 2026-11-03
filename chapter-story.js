@@ -1,4 +1,4 @@
-import {beginLocationTransition} from './room-transitions.js?v=0.18.0';
+import {beginLocationTransition} from './room-transitions.js?v=0.18.1';
 export const chapterStories={
  spreader:[{title:'СЛЕД В БУМАГАХ',text:'В архиве повторяется одна заметка без подписи — сигнал ведёт дальше.'},{title:'ВЫШЕ РЕДАКЦИИ',text:'Юрий ловит обрывок сигнала с крыш, и Ума идёт по следу.'}],
  agitator:[{title:'ЭФИР ЗАТИХ',text:'Мачта умолкла, но изменённое сообщение повторяют сотни передатчиков.'},{title:'ЗА КУЛИСАМИ',text:'Путь ведёт в студию, где ещё могла сохраниться исходная запись.'}],

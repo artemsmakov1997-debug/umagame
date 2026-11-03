@@ -1,4 +1,4 @@
-import {rooms,platforms} from './level.js?v=0.18.0';
+import {rooms,platforms} from './level.js?v=0.18.1';
 export const sectionNames={1:['Архив редакции','Печатный зал','Серверная'],3:['Переулок антенн','Рекламные крыши','Мачтовый квартал'],5:['За кулисами','Подвижная сцена','Монтажная'],7:['Бумажные острова','Разбитые отражения','Порог Инфошума']};
 export const propKinds={1:'server',3:'power',5:'console',7:'anchor'};
 export function createMapProps(){return [1,3,5,7].flatMap(room=>(room===5?[12,22]:[10,20]).map((index,i)=>{const p=platforms.find(p=>p.room===room&&p.index===index);return{id:`control-${room}-${i}`,room,platformIndex:index,kind:propKinds[room],x:p.x+p.w-66,y:p.y-62,w:48,h:62,hp:1,breakTime:0,lastSwing:-1,section:i+1};}));}
@@ -17,13 +17,14 @@ export function tryRouteShortcut(g){
  }return false;
 }
 
-export function stepSection(g,dt){
- if(g.sectionTransition){g.sectionTransition.time+=dt;if(g.sectionTransition.time>=.65)g.sectionTransition=null;return;}
+export function stepSection(g){
+ // Sectors share one running world. Crossing never freezes physics or changes mode.
  if(!g.cinematic||!sectionNames[g.room])return;
  const index=Math.min(2,Math.max(0,Math.floor((g.player.x-rooms[g.room].x)/768))),key=g.room+':'+index;
  if(index===0||g.visitedSections.has(key))return;
- g.visitedSections.add(key);g.sectionTransition={time:0,title:sectionNames[g.room][index]};g.emit('sectionEnter',{room:g.room,section:index});
+ g.visitedSections.add(key);g.emit('sectionEnter',{room:g.room,section:index,title:sectionNames[g.room][index]});
 }
+
 export function stepLocationHazards(g,dt){
  if(!g.cinematic||!sectionNames[g.room]||g.player.inv>0||g.player.dash>0)return;
  const p=g.player,index=Math.min(2,Math.max(0,Math.floor((p.x-rooms[g.room].x)/768))),control=g.mapProps.find(d=>d.room===g.room&&d.section===index);

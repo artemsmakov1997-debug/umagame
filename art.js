@@ -1,8 +1,8 @@
-import {creatures,newCreatures,sprite} from './assets.js?v=0.18.0';
-import {rect} from './pixel.js?v=0.18.0';
-import {idlePlacement} from './menu-animation.js?v=0.18.0';
-import {drawMonitorEyes,drawPortraitMonitor} from './menu-monitor.js?v=0.18.0';
-import {motion,monsterFrame,monsterReaction,previewActor,clickbaitAppearanceFrame,baitEmergenceFrames,locomotionFrame} from './monster-animation.js?v=0.18.0';
+import {creatures,newCreatures,sprite} from './assets.js?v=0.18.1';
+import {rect} from './pixel.js?v=0.18.1';
+import {idlePlacement} from './menu-animation.js?v=0.18.1';
+import {drawMonitorEyes,drawPortraitMonitor} from './menu-monitor.js?v=0.18.1';
+import {motion,monsterFrame,monsterReaction,previewActor,clickbaitAppearanceFrame,baitEmergenceFrames,locomotionFrame} from './monster-animation.js?v=0.18.1';
 export function drawCrt(c,x,y,w,h,time=0){
  rect(c,x,y,w,h,'#080f22');rect(c,x+2,y+2,w-4,h-5,'#8792ab');rect(c,x+5,y+5,w-10,h-15,'#303f61');rect(c,x+9,y+9,w-18,h-23,'#062c51');
  for(let i=0;i<9;i++){const yy=y+12+i*(h-30)/9;rect(c,x+12,yy,w-24,2,'#0b658b');for(let j=0;j<6;j++)if((i*3+j+Math.floor(time*7))%4===0)rect(c,x+13+j*(w-28)/6,yy,Math.max(2,w/14),2,'#77ecff');}
@@ -25,12 +25,13 @@ export function drawLure(c,a,x,y,time){
 }
 export function drawSoup(c,a,x,y,h=30){const b=newCreatures.soup,w=h*b[2]/b[3];sprite(c,a.monsters,b,x-w/2,y-h/2,w,h);}
 export function drawMenuScene(c,a,time,cat=true){
- const height=c.canvas.height;c.imageSmoothingEnabled=false;c.clearRect(0,0,768,height);if(height===480)c.drawImage(a.menu,0,0,768,512);else{const width=height*1.5;c.drawImage(a.menu,(768-width)/2,0,width,height);}
- const width=height===480?768:height*1.5,imageHeight=height===480?512:height;
- c.save();c.translate((768-width)/2,0);c.scale(width/1536,imageHeight/1024);drawMonitorEyes(c,time);c.restore();
+ const height=c.canvas.height,scale=Math.max(.5,height/1024),width=a.menu.width*scale,imageHeight=a.menu.height*scale,x=(768-width)/2,y=Math.min(0,height-480);
+ c.imageSmoothingEnabled=false;c.clearRect(0,0,768,height);c.drawImage(a.menu,x,y,width,imageHeight);
+ c.save();c.translate(x,y);c.scale(scale,scale);drawMonitorEyes(c,time);c.restore();
  if(height>700)drawPortraitMonitor(c,a,time,height);
- if(cat){const {box,x,y,w,h}=idlePlacement(time,height);sprite(c,a.idle,box,x,y,w,h);}
+ if(cat){const tall=height>700,pose=idlePlacement(time,tall?height:480),k=tall?1:scale/.5,dx=tall?0:x,dy=tall?0:y;sprite(c,a.idle,pose.box,dx+pose.x*k,dy+pose.y*k,pose.w*k,pose.h*k);}
 }
+
 export function drawPortrait(canvas,a,id,time=0){
  const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.clearRect(0,0,canvas.width,canvas.height);
  const big=canvas.width>200,pad=big?8:3,actor=previewActor(time),cast=actor.state==='casting';

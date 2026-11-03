@@ -1,9 +1,9 @@
-import {rooms,WIDTH} from './level.js?v=0.18.0';
-import {rect,text} from './pixel.js?v=0.18.0';
-import {sprite,idleCats} from './assets.js?v=0.18.0';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.18.0';
-import {drawMonster,drawHauntedMonitor} from './art.js?v=0.18.0';
-import {drawDish,drawTowerPortal} from './stage-art.js?v=0.18.0';
+import {rooms,WIDTH} from './level.js?v=0.18.1';
+import {rect,text} from './pixel.js?v=0.18.1';
+import {sprite,idleCats} from './assets.js?v=0.18.1';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.18.1';
+import {drawMonster,drawHauntedMonitor} from './art.js?v=0.18.1';
+import {drawDish,drawTowerPortal} from './stage-art.js?v=0.18.1';
 export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
@@ -76,7 +76,7 @@ export function drawCampaignObjects(c,a,g,time){
  }
 
  for(const dish of g.relays)if(dish.room===g.room)drawDish(c,a,dish,time);
- const room=rooms[g.room];if(g.room>0&&g.room!==7&&g.room!==8){const locked=g.relays.some(d=>d.room===g.room&&d.hp>0)||room.arena&&!g.bossesDefeated.has(room.boss),x=room.end-15;rect(c,x-3,44,15,430,'#071226');for(let y=48;y<470;y+=14)rect(c,x,y,4,7,locked?'#e3945e':'#6ed3bb');if(locked)for(let i=0;i<g.relays.filter(d=>d.room===g.room).length;i++)rect(c,x-7-i*8,53,5,5,g.relays.filter(d=>d.room===g.room)[i].hp>0?'#f2c371':'#6bcdb4');}
+
  drawTowerPortal(c,g,time,a);
 }
 export function drawWakeup(c,a,p,elapsed){drawEmotion(c,a,wakePose(elapsed).frame,p.x+17,p.y+p.h,76);}
