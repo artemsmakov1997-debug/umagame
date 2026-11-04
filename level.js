@@ -1,3 +1,4 @@
+import {designFor} from './world-design.js?v=0.22.0';
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const chapters=[
  {id:'newsroom',name:'РЕДАКЦИЯ',room:1,arena:2,monsters:['fakenews','copier','censor'],boss:'spreader'},
@@ -17,7 +18,7 @@ const definitions=[
  {name:'СЕРДЦЕ ИНФОШУМА',theme:'noise',chapter:4,arena:true,boss:'infoshum',width:ARENA_WIDTH}
 ];
 let cursor=0;
-export const rooms=definitions.map((r,index)=>{const room={...r,index,x:cursor,end:cursor+r.width};cursor+=r.width;return room;});
+export const rooms=definitions.map((r,index)=>{const design=designFor(index),room={...r,index,x:cursor,end:cursor+r.width,height:design?.height||480,multiStorey:!!design};cursor+=r.width;return room;});
 export const LAST_ROOM=rooms.length-1,FINAL_X=rooms[LAST_ROOM].x,WORLD=cursor,PORTAL_ROOM=7,PORTAL_X=rooms[PORTAL_ROOM].end-96;
 export function roomAt(x){return rooms.find(r=>x>=r.x&&x<r.end)?.index??(x<0?0:LAST_ROOM);}
 export const layouts=[];
@@ -70,9 +71,11 @@ const motions={
  '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,motion:motions[r.index+':'+index]||null})));
+for(const room of rooms){const design=designFor(room.index);if(design)layouts[room.index]=design.layout;}
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,structural:designFor(r.index)?.structural.includes(index)||false,motion:designFor(r.index)?designFor(r.index).motions[index]||null:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
+ const design=designFor(r.index);if(design)return design.stairs.map(x=>({x:r.x+x,y:280,w:31,h:720,room:r.index}));
  if(r.arena)return [];
  return [r.x+730,r.x+1498,r.end-50].map((x,i)=>{const s=platforms.find(p=>p.room===r.index&&p.index===[2,12,21][i]);return{x,y:s.y,w:31,h:474-s.y,room:r.index};});
 });

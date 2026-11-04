@@ -1,7 +1,8 @@
-import {platforms} from './level.js?v=0.21.0';
+import {rooms} from './level.js?v=0.22.0';
+import {platforms} from './level.js?v=0.22.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function solidSurfaces(g){
- const all=(g.platforms||platforms).filter(s=>!(s.collapseTime>0));if(!g.cuts?.some(c=>c.phase==='gap'))return all;
+ const all=[...(g.platforms||platforms),...(g.temporarySurfaces||[])].filter(s=>!(s.collapseTime>0));if(!g.cuts?.some(c=>c.phase==='gap'))return all;
  return all.flatMap(s=>{
   const cut=g.cuts.find(c=>c.platformId===s.id&&c.phase==='gap');if(!cut)return [s];
   const left=clamp(cut.localX,0,s.w),right=clamp(cut.localX+cut.w,0,s.w),parts=[];
@@ -43,7 +44,7 @@ export function stepEnemyFall(g,e,dt){
  e.x+=e.fallVx*dt;e.vy=Math.min(550,e.vy+900*dt);e.y+=e.vy*dt;
  const landed=surfaces.filter(s=>s.room===e.room&&e.x+e.w>s.x+1&&e.x<s.x+s.w-1&&feet<=(s.prevY??s.y)+1&&e.y+e.h>=s.y).sort((a,b)=>a.y-b.y)[0];
  if(landed){e.y=landed.y-e.h;e.platformIndex=landed.index;e.origin=landed.x+4;e.end=Math.max(e.origin,landed.x+landed.w-e.w-4);e.x=clamp(e.x,e.origin,e.end);e.vy=0;e.terrainFall=false;e.state='recover';e.timer=.65;}
- else if(e.y>520){
+ else if(e.y>(rooms[e.room].multiStorey?rooms[e.room].height+8:520)){
   if(e.type==='clickbait'){const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);e.x=s.x+8;e.y=s.y-e.h;e.terrainFall=false;e.vy=0;e.state='recover';e.timer=1;}
   else{e.dead=true;e.hp=0;e.deathTime=.28;g.kills++;g.emit('pop',{x:e.x,y:e.y,enemyType:e.type});}
  }

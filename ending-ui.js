@@ -1,7 +1,7 @@
-import {chapterStories} from './chapter-story.js?v=0.21.0';
-import {openingSlides} from './prologue.js?v=0.21.0';
-import {endingSlides} from './finale.js?v=0.21.0';
-import {storyFrame,fitStoryImage} from './story-art.js?v=0.21.0';
+import {chapterStories} from './chapter-story.js?v=0.22.0';
+import {openingSlides} from './prologue.js?v=0.22.0';
+import {endingSlides} from './finale.js?v=0.22.0';
+import {storyFrame,fitStoryImage} from './story-art.js?v=0.22.0';
 const $=id=>document.getElementById(id);
 export function finaleFrame(a,index){const slide=endingSlides[index]||endingSlides.at(-1),[key,n]=slide.art.split(':'),art=a[key],cols=key==='rewind'?4:2,rows=2,w=art.width/cols,h=art.height/rows,i=Number(n);return{a:art,box:[i%cols*w,Math.floor(i/cols)*h,w,h]};}
 export class EndingUI{

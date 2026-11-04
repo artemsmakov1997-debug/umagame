@@ -1,7 +1,7 @@
-import {actorById} from './boss-actors.js?v=0.21.0';
-import {rooms,spawns} from './level.js?v=0.21.0';
-import {solidSurfaces} from './terrain.js?v=0.21.0';
-import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.21.0';
+import {actorById} from './boss-actors.js?v=0.22.0';
+import {rooms,spawns} from './level.js?v=0.22.0';
+import {solidSurfaces} from './terrain.js?v=0.22.0';
+import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.22.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function stepAirEnemy(g,e,dt){
  const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+p.h/2-e.y-e.h/2,distance=Math.hypot(dx,dy)||1;
@@ -15,7 +15,7 @@ export function stepAirEnemy(g,e,dt){
   else if(e.state==='lunge'){e.x+=e.charge.vx*dt;e.y+=e.charge.vy*dt;if(e.timer<=0){e.state='recover';e.timer=1.1;}}
   else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.5;}
  }
- e.x=clamp(e.x,r.x+8,r.end-e.w-8);e.y=clamp(e.y,48,480-e.h-12);if(Math.abs(dx)>5)e.dir=dx<0?-1:1;
+ e.x=clamp(e.x,r.x+8,r.end-e.w-8);e.y=clamp(e.y,48,r.height-e.h-12);if(Math.abs(dx)>5)e.dir=dx<0?-1:1;
 }
 function warpLanding(g){
  const p=g.player,r=rooms[g.room],surfaces=solidSurfaces(g).filter(s=>s.room===g.room&&s.w>=88);

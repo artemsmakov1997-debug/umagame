@@ -1,5 +1,5 @@
-import {drawMonster} from './art.js?v=0.21.0';
-import {projectileFrames} from './projectile-frames.js?v=0.21.0';
+import {drawMonster} from './art.js?v=0.22.0';
+import {projectileFrames} from './projectile-frames.js?v=0.22.0';
 const cache=new WeakMap();
 function body(a,id){let entries=cache.get(a);if(!entries){entries=new Map();cache.set(a,entries);}if(!entries.has(id)){const final=id==='infoshum',c=document.createElement('canvas');c.width=final?280:156;c.height=final?236:138;drawMonster(c.getContext('2d'),a,id,0,0,c.width,c.height,0,false,{hurtTime:.22,state:'recover',projection:true});entries.set(id,c);}return entries.get(id);}
 export function drawBossDefeat(c,a,g){const d=g.defeat;if(!d||!['bossDefeat','paused'].includes(g.mode)||g.mode==='paused'&&g.pausedFrom!=='bossDefeat')return;const t=d.time,p=Math.max(0,Math.min(1,(t-.22)/1.12)),final=d.boss==='infoshum',sprite=body(a,d.boss),x=d.x-(final?76:28),y=d.y-(final?100:62),cols=final?6:4,rows=final?4:3;

@@ -1,4 +1,4 @@
-import {inkAt} from './terrain.js?v=0.21.0';
+import {inkAt} from './terrain.js?v=0.22.0';
 export const REST_AFTER=30;
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function wakePlayer(p){p.idleTime=0;p.sleepTime=0;p.sleeping=false;}

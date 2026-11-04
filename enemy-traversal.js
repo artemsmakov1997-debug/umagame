@@ -1,5 +1,5 @@
-import {solidSurfaces} from './terrain.js?v=0.21.0';
-import {rooms} from './level.js?v=0.21.0';
+import {solidSurfaces} from './terrain.js?v=0.22.0';
+import {rooms} from './level.js?v=0.22.0';
 const GRAVITY=900,IMPULSE=460;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function flight(dy){const disc=IMPULSE*IMPULSE+2*GRAVITY*dy;return dy< -115||dy>170||disc<=0?0:(IMPULSE+Math.sqrt(disc))/GRAVITY;}
@@ -59,6 +59,6 @@ export function stepFakeJump(g,e,dt){
  const oldBottom=e.y+e.h,nextX=e.x+e.jumpVx*dt;e.x=e.jumpTarget&&(e.jumpVx>0&&nextX>=e.jumpTarget.x||e.jumpVx<0&&nextX<=e.jumpTarget.x)?e.jumpTarget.x:nextX;e.vy=Math.min(580,e.vy+GRAVITY*dt);e.y+=e.vy*dt;
  e.x=clamp(e.x,rooms[e.room].x+8,rooms[e.room].end-e.w-8);
  if(e.vy>=0){const surfaces=solidSurfaces(g).filter(s=>s.room===e.room&&e.x+e.w>s.x+2&&e.x<s.x+s.w-2&&oldBottom<=(s.prevY??s.y)+1&&e.y+e.h>=s.y).sort((a,b)=>a.y-b.y);if(surfaces.length){land(e,surfaces[0]);g.emit('fakeLand',{x:e.x,y:e.y+e.h,enemyType:e.type});}}
- if(e.y>520){const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);e.x=clamp(e.x,s.x+8,s.x+s.w-e.w-8);e.y=s.y-e.h;e.jumpPhase=null;e.vy=0;e.state='recover';e.timer=.8;e.jumpCooldown=1.5;}
+ if(e.y>(rooms[e.room].multiStorey?rooms[e.room].height+8:520)){const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);e.x=clamp(e.x,s.x+8,s.x+s.w-e.w-8);e.y=s.y-e.h;e.jumpPhase=null;e.vy=0;e.state='recover';e.timer=.8;e.jumpCooldown=1.5;}
  return true;
 }

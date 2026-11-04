@@ -1,10 +1,10 @@
 function safeWarning(p){return p.collapseCharge>.35;}
-import {rooms,WIDTH} from './level.js?v=0.21.0';
-import {rect,text} from './pixel.js?v=0.21.0';
-import {sprite,idleCats} from './assets.js?v=0.21.0';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.21.0';
-import {drawMonster,drawHauntedMonitor} from './art.js?v=0.21.0';
-import {drawDish,drawTowerPortal} from './stage-art.js?v=0.21.0';
+import {rooms,WIDTH} from './level.js?v=0.22.0';
+import {rect,text} from './pixel.js?v=0.22.0';
+import {sprite,idleCats} from './assets.js?v=0.22.0';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.22.0';
+import {drawMonster,drawHauntedMonitor} from './art.js?v=0.22.0';
+import {drawDish,drawTowerPortal} from './stage-art.js?v=0.22.0';
 export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;

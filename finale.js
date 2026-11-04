@@ -1,4 +1,4 @@
-import {beginConclusion} from './conclusion.js?v=0.21.0';
+import {beginConclusion} from './conclusion.js?v=0.22.0';
 export const endingSlides=[
  {title:'УМА ПОБЕДИЛА',art:'ending:0',text:'Инфошум распадается. Портал втягивает уцелевших монстров. Среди обрывков Ума замечает знакомый силуэт Юрия.'},
  {title:'ОБРАТНАЯ ПЕРЕМОТКА',art:'rewind:6',text:'Поток разворачивается вспять. Огромный Инфошум распадается на тысячи небольших существ — и ещё более мелких сообщений.'},

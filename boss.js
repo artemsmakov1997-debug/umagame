@@ -1,10 +1,10 @@
-import {phasePattern,stepBossPhase,phasePlans} from './boss-phases.js?v=0.21.0';
-import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.21.0';
-import {solidSurfaces} from './terrain.js?v=0.21.0';
-import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v=0.21.0';
-import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.21.0';
-import {stepEcho} from './echo-pull.js?v=0.21.0';
-export {bossTroops} from './boss-abilities.js?v=0.21.0';
+import {phasePattern,stepBossPhase,phasePlans} from './boss-phases.js?v=0.22.0';
+import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.22.0';
+import {solidSurfaces} from './terrain.js?v=0.22.0';
+import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v=0.22.0';
+import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.22.0';
+import {stepEcho} from './echo-pull.js?v=0.22.0';
+export {bossTroops} from './boss-abilities.js?v=0.22.0';
 export const BOSS_HEALTH=32;
 export const abilities=['volley','wave','rain','summon','echoPulse','staticRush','lure'];
 export const bossPatterns={spreader:['scatter','summon','ink','copy','swoop'],agitator:['telecast','summon','pressure','alarm','broadcast'],manipulator:['ticker','summon','cut','splice','spotlight'],infoshum:abilities};
@@ -72,5 +72,5 @@ export function stepProjectiles(g,dt,paw){
   else if(g.overlap(g.player,bolt)){if(bolt.kind==='echoOrb'){if(bolt.state==='pulling')handleFlyingContact(g,{...bolt,type:'echo'});}else{const safe=g.player.dash>0;g.hurt(false,bolt.x);if(bolt.push&&!safe&&g.mode==='playing')g.push(Math.sign(bolt.vx),bolt.x);bolt.dead=true;}}
   if(bolt.dead)g.emit('boltImpact',{x:bolt.x+bolt.w/2,y:bolt.y+bolt.h/2,kind:bolt.kind,visual:bolt.visual});
  }
- const r=rooms[g.room];g.bolts=g.bolts.filter(v=>!v.dead&&v.ttl>0&&v.x>r.x-50&&v.x<r.end+50&&v.y<530&&(v.room===undefined||v.room===g.room)).slice(-90);
+ const r=rooms[g.room];g.bolts=g.bolts.filter(v=>!v.dead&&v.ttl>0&&v.x>r.x-50&&v.x<r.end+50&&v.y<(r.multiStorey?r.height+18:530)&&(v.room===undefined||v.room===g.room)).slice(-90);
 }
