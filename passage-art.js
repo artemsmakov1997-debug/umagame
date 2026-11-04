@@ -1,5 +1,5 @@
-import {rooms} from './level.js?v=0.22.0';
-import {canLeaveRoom} from './room-transitions.js?v=0.22.0';
+import {rooms} from './level.js?v=0.21.1';
+import {canLeaveRoom} from './room-transitions.js?v=0.21.1';
 const themes={newsroom:0,roofs:1,studio:2,noise:3};
 function gateway(c,a,center,theme,open,height=330,mirror=false){
  const art=a.barriers;if(!art)return;const sw=art.width/4,sh=art.height/2,w=height*sw/sh;

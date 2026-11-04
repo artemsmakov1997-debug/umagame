@@ -1,10 +1,7 @@
-import {rooms} from './level.js?v=0.22.0';
-import {platforms} from './level.js?v=0.22.0';
+import {platforms} from './level.js?v=0.21.1';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function solidSurfaces(g){
- let all=[...(g.platforms||platforms),...(g.temporarySurfaces||[])].filter(s=>!(s.collapseTime>0));
- const shafts=(g.platforms||platforms).filter(s=>s.room===g.room&&s.motion?.axis==='y');
- all=all.flatMap(s=>{if(!s.structural||s.room!==g.room||s.y>rooms[s.room].height-80)return[s];let parts=[s];for(const lift of shafts){if(s.y<lift.baseY-lift.motion.amplitude-80||s.y>lift.baseY+lift.motion.amplitude+50)continue;parts=parts.flatMap(p=>{const left=lift.baseX-3,right=lift.baseX+lift.w+3;if(right<=p.x||left>=p.x+p.w)return[p];const out=[];if(left>p.x+3)out.push({...p,w:left-p.x});if(right<p.x+p.w-3)out.push({...p,x:right,w:p.x+p.w-right,prevX:right});return out;});}return parts;});if(!g.cuts?.some(c=>c.phase==='gap'))return all;
+ const all=(g.platforms||platforms).filter(s=>!(s.collapseTime>0));if(!g.cuts?.some(c=>c.phase==='gap'))return all;
  return all.flatMap(s=>{
   const cut=g.cuts.find(c=>c.platformId===s.id&&c.phase==='gap');if(!cut)return [s];
   const left=clamp(cut.localX,0,s.w),right=clamp(cut.localX+cut.w,0,s.w),parts=[];
@@ -30,7 +27,6 @@ export function stepTacticalTerrain(g,dt){
   const owner=cut.ownerId==='boss:'+g.boss.id&&g.boss.active&&g.boss.hp>0?g.boss:g.enemies.find(e=>e.id===cut.ownerId&&!e.dead);
   if(cut.phase==='warning'&&(!owner||owner.hurtTime>0)){cut.time=0;continue;}
   cut.time-=dt;
-  if(cut.kind==='partition'){const part=g.partitions.find(w=>w.id===cut.partitionId);if(cut.phase==='warning'&&cut.time<=0&&part){part.open=true;cut.phase='open';cut.time=.4;g.emit('partitionOpen',{x:part.x,y:part.y});}continue;}
   if(cut.phase==='warning'&&cut.time<=0){cut.phase='gap';cut.time=3;g.emit('platformCut',{x:cut.x,y:cut.y,enemyType:'cutter'});}
   else if(cut.phase==='gap'&&cut.time<=0)g.emit('platformRestore',{x:cut.x,y:cut.y});
  }
@@ -38,7 +34,7 @@ export function stepTacticalTerrain(g,dt){
 }
 export function stepEnemyFall(g,e,dt){
  if(e.flying||e.phased||e.teleport||e.jumpPhase==='air')return false;
- const surfaces=solidSurfaces(g).filter(s=>!s.temporary),feet=e.y+e.h;
+ const surfaces=solidSurfaces(g),feet=e.y+e.h;
  if(!e.terrainFall){
   const base=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);
   if(!base||!(base.collapseTime>0||g.cuts.some(c=>c.platformId===base.id&&c.phase==='gap'))||surfaces.some(s=>s.id===base.id&&Math.abs(s.y-feet)<4&&e.x+e.w>s.x+1&&e.x<s.x+s.w-1))return false;
@@ -47,7 +43,7 @@ export function stepEnemyFall(g,e,dt){
  e.x+=e.fallVx*dt;e.vy=Math.min(550,e.vy+900*dt);e.y+=e.vy*dt;
  const landed=surfaces.filter(s=>s.room===e.room&&e.x+e.w>s.x+1&&e.x<s.x+s.w-1&&feet<=(s.prevY??s.y)+1&&e.y+e.h>=s.y).sort((a,b)=>a.y-b.y)[0];
  if(landed){e.y=landed.y-e.h;e.platformIndex=landed.index;e.origin=landed.x+4;e.end=Math.max(e.origin,landed.x+landed.w-e.w-4);e.x=clamp(e.x,e.origin,e.end);e.vy=0;e.terrainFall=false;e.state='recover';e.timer=.65;}
- else if(e.y>(rooms[e.room].multiStorey?rooms[e.room].height+8:520)){
+ else if(e.y>520){
   if(e.type==='clickbait'){const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);e.x=s.x+8;e.y=s.y-e.h;e.terrainFall=false;e.vy=0;e.state='recover';e.timer=1;}
   else{e.dead=true;e.hp=0;e.deathTime=.28;g.kills++;g.emit('pop',{x:e.x,y:e.y,enemyType:e.type});}
  }

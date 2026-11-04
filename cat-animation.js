@@ -1,4 +1,4 @@
-import {sprite} from './assets.js?v=0.22.0';
+import {sprite} from './assets.js?v=0.21.1';
 export const emotionFrames=[
  {box:[48,205,331,269],pivot:[210,474]},
  {box:[449,235,324,239],pivot:[611,474]},

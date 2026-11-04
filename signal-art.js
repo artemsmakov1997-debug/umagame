@@ -1,8 +1,8 @@
-import {drawYuriPortrait,yuriEmotion} from './yuri-portrait.js?v=0.22.0';
-import {rooms} from './level.js?v=0.22.0';
-import {drawHauntedMonitor} from './art.js?v=0.22.0';
-import {hauntedScreens} from './campaign-art.js?v=0.22.0';
-import {rect,text} from './pixel.js?v=0.22.0';
+import {drawYuriPortrait,yuriEmotion} from './yuri-portrait.js?v=0.21.1';
+import {rooms} from './level.js?v=0.21.1';
+import {drawHauntedMonitor} from './art.js?v=0.21.1';
+import {hauntedScreens} from './campaign-art.js?v=0.21.1';
+import {rect,text} from './pixel.js?v=0.21.1';
 function face(c,a,screen,t,quality,echo=false,emotion=0){c.save();c.beginPath();c.rect(screen.x,screen.y,screen.w,screen.h);c.clip();rect(c,screen.x,screen.y,screen.w,screen.h,'#031524');c.globalAlpha=quality*.8+.16;const cut=Math.floor(t*5)%13===0;drawYuriPortrait(c,a,{...screen,time:t,emotion,quality,speaking:true});c.globalAlpha=1;for(let i=0;i<8;i++)rect(c,screen.x,screen.y+(i*17+Math.floor(t*27))%screen.h,screen.w,i%3?1:2,echo?'#e5647760':'#8de5ee35');if(cut)rect(c,screen.x,screen.y+screen.h*.47,screen.w,4,echo?'#ff4a7355':'#8ce9e650');c.restore();}
 export function drawYuriSignal(c,a,g,t){
  const dialogue=g.mode==='dialogue'||g.mode==='paused'&&g.pausedFrom==='dialogue';

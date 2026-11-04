@@ -1,7 +1,5 @@
-import {chapterStories} from './chapter-story.js?v=0.22.0';
 export function storyFrame(assets,mode,index,interlude){
  if(mode==='prologue'){const a=assets.opening,w=a.width/2,h=a.height/2;return{a,box:[index%2*w,Math.floor(index/2)*h,w,h]};}
- if(mode==='interlude'&&chapterStories[interlude.boss]?.[index]?.art==='chain')return{a:assets.chain,box:[0,0,assets.chain.width,assets.chain.height]};
  if(mode==='interlude'){const a=assets.storyTransitions,w=a.width/3,h=a.height/3,i=interlude.chapterIndex*3+index;return{a,box:[i%3*w,Math.floor(i/3)*h,w,h]};}
  return null;
 }
