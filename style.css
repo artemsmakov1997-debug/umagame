@@ -351,7 +351,7 @@ footer{display:flex;align-items:center;justify-content:space-between;padding:10p
  .library-panel{top:auto;height:auto}
  #monster-list{height:280px;flex:0 0 280px;gap:5px;padding:5px;border-bottom:3px double #14ccf0}
  .monster-option{height:100%;min-height:0;max-height:none;font-size:23px;grid-template-columns:83px minmax(0,1fr)}
- #monster-card{height:680px;flex:0 0 680px;grid-template-rows:44px 155px 82px 180px 191px;padding:12px 8px 8px}
+ #monster-card{height:640px;flex:0 0 640px;grid-template-rows:44px 155px 82px 180px 151px;padding:12px 8px 8px}
  #monster-title,#monster-title.long-title{font-size:25px;white-space:nowrap}
  #monster-description{font-size:22px;line-height:1.14}
  #monster-abilities>div{grid-template-columns:1fr;grid-template-rows:29px minmax(0,1fr);padding:6px 0}

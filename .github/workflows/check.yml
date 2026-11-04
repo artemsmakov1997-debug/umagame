@@ -14,7 +14,7 @@ jobs:
       - run: for file in *.js tests/*.cjs; do node --check "$file"; done
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 16
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

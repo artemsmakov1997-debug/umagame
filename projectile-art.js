@@ -1,5 +1,5 @@
-import {projectileFrames} from './projectile-frames.js?v=0.22.0';
-import {rect} from './pixel.js?v=0.22.0';
+import {projectileFrames} from './projectile-frames.js?v=0.21.1';
+import {rect} from './pixel.js?v=0.21.1';
 export function projectileStyle(g,b){if(b.kind==='packet')return 2;if(b.kind==='ticker')return 3;if(b.kind==='frame')return 4;if(b.kind==='wave')return 7;const owner=b.visual||g.boss?.id;return owner==='agitator'?1:owner==='manipulator'?5:owner==='infoshum'?6:0;}
 export function drawProjectile(c,a,g,b,t){
  const i=projectileStyle(g,b),frame=projectileFrames[i],w=b.w,h=b.h;c.save();c.imageSmoothingEnabled=false;

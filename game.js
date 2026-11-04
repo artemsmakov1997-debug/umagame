@@ -1,18 +1,18 @@
-import {projectileStyle} from './projectile-art.js?v=0.22.0';
-import {ConclusionUI} from './conclusion-ui.js?v=0.22.0';
-import {SettingsUI} from './settings.js?v=0.22.0';
-import {buildControls,drawControls} from './controls-art.js?v=0.22.0';
-import {EndingUI} from './ending-ui.js?v=0.22.0';
-import {drawDefeat} from './result-art.js?v=0.22.0';
-import {scoreBreakdown,projectPurpose} from './finale.js?v=0.22.0';
-import {Game} from './engine.js?v=0.22.0';
-import {Renderer} from './render.js?v=0.22.0';
-import {loadAssets} from './assets.js?v=0.22.0';
-import {ScreenManager} from './screens.js?v=0.22.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.22.0';
-import {PauseMenu} from './pause-menu.js?v=0.22.0';
-import {TouchControls} from './touch-controls.js?v=0.22.0';
-import {GameAudio} from './audio.js?v=0.22.0';
+import {projectileStyle} from './projectile-art.js?v=0.21.1';
+import {ConclusionUI} from './conclusion-ui.js?v=0.21.1';
+import {SettingsUI} from './settings.js?v=0.21.1';
+import {buildControls,drawControls} from './controls-art.js?v=0.21.1';
+import {EndingUI} from './ending-ui.js?v=0.21.1';
+import {drawDefeat} from './result-art.js?v=0.21.1';
+import {scoreBreakdown,projectPurpose} from './finale.js?v=0.21.1';
+import {Game} from './engine.js?v=0.21.1';
+import {Renderer} from './render.js?v=0.21.1';
+import {loadAssets} from './assets.js?v=0.21.1';
+import {ScreenManager} from './screens.js?v=0.21.1';
+import {DialogueUI} from './dialogue-ui.js?v=0.21.1';
+import {PauseMenu} from './pause-menu.js?v=0.21.1';
+import {TouchControls} from './touch-controls.js?v=0.21.1';
+import {GameAudio} from './audio.js?v=0.21.1';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
@@ -83,11 +83,6 @@ async function boot(){
   if(['parry','blocked','boltImpact'].includes(event.type)){renderer.combatEffects.push({kind:event.type,x:event.x,y:event.y,time:0,frame:projectileStyle(game,{kind:event.kind,visual:event.visual})});renderer.combatEffects=renderer.combatEffects.slice(-18);}
   audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup','controlBreak'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
-  if(event.type==='worldEvent')notify(({newsroom:'Печатный цех ожил! Уходи по лестницам и конвейерам.',roofs:'Передатчики перегружены: ищи безопасный воздушный поток.',studio:'Декорации перестраиваются. Пульт наверху останавливает сцену.',noise:'Твои прошлые шаги оживают. Меняй маршрут и используй рывок.'})[event.theme],5000);
-  if(event.type==='mechanismChanged')notify('Узел заклинило. Защита ядра ослабла.',2400);
-  if(event.type==='tickerPlatform')notify('Голубая строка выдержит Уму. Прыгай на неё.',2600);
-  if(event.type==='signalRedirected')notify('Сигнал перенаправлен.',1800);
-  if(event.type==='generatorOff')notify('Источник отключён. Новых копий не будет.');
   if(event.type==='voiceEcho')notify(event.text,4800);
   if(event.type==='bossDefeatStart'){clearInput();clearEffects();}
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');
@@ -98,7 +93,7 @@ async function boot(){
   if(event.type==='enemyIntroduction')notify(({fakenews:'Фейкньюс: ударь лапой или прыгни сверху',copier:'Копир: бей по открытому лотку',censor:'Цензор: избегай чернил',informant:'Информатор: следи за меткой',inflator:'Раздуватель: заходи сзади',panicker:'Паникёр: прерви тревогу',injection:'Вброс: отражай бегущую строку',cutter:'Нарезчик: уходи с метки',splicer:'Склейка: разорви ленту рывком',static:'Помеха: уклонись от броска',echo:'Эхо: разорви притяжение',clickbait:'Кликбейт: опасайся рыбки на крючке'})[event.enemyType]||'Новый противник!',3800);
   if(event.type==='alarm')notify('Паникёр открывает портал!');
   if(event.type==='portal')notify('Портал открыт! Прерви звон Паникёра.');
-  if(event.type==='swallow'){clearInput();notify('Кликбейт! Рывок помогает вырваться, лапа заранее раскрывает приманку.');}
+  if(event.type==='swallow'){clearInput();notify('Кликбейт! Поглощение отнимает целую жизнь.');}
   if(event.type==='platformCrumble')notify('Настил осыпается! Прыгай на соседнюю крышу.');
   if(event.type==='won'||event.type==='lost'){clearTimeout(toastTimer);$('toast').classList.remove('visible');showResult(event.type);}
  }game.events=[];}

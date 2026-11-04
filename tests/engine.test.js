@@ -56,8 +56,8 @@ test('the first Fakenews is weak; one swing cannot damage a tougher one repeated
 test('a revealed Clickbait stays visible, patrols, turns at the edge and never becomes a lure again',()=>{
  const g=isolated(2,1,350),e=enemy('clickbait',2,365,1);g.enemies=[e];tick(g,1);assert.equal(e.revealed,true);assert.equal(e.state,'emerge');g.player.x=campaignRooms[2].x+10;g.player.y=282;tick(g,165);assert.equal(e.state,'patrol');const x=e.x;tick(g,30);assert.notEqual(e.x,x);assert.ok(e.x>=e.origin&&e.x<=e.end);tick(g,300);assert.notEqual(e.state,'lure');assert.equal(e.revealed,true);
 });
-test('a lethal Clickbait capture freezes in the menu and spends one life only after the last heart',()=>{
- const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.4,revealed:true});g.enemies=[e];g.health=1;tick(g,1);assert.ok(g.swallow);const x=g.player.x;tick(g,10,{right:true,jump:true,attack:true});assert.equal(g.player.x,x);g.mode='paused';const time=g.swallow.timer;tick(g,120);assert.equal(g.swallow.timer,time);g.mode='playing';tick(g,55);assert.equal(g.swallow,null);assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(e.revealed,true);
+test('Clickbait swallowing locks control, freezes in the menu and loses one whole life',()=>{
+ const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.4,revealed:true});g.enemies=[e];tick(g,1);assert.ok(g.swallow);const x=g.player.x;tick(g,10,{right:true,jump:true,attack:true});assert.equal(g.player.x,x);g.mode='paused';const time=g.swallow.timer;tick(g,120);assert.equal(g.swallow.timer,time);g.mode='playing';tick(g,55);assert.equal(g.swallow,null);assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(e.revealed,true);
 });
 test('Clickbait ignores an early paw; a protected dash avoids ingestion',()=>{
  for(const action of ['attack','dash']){const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.3,revealed:true});g.enemies=[e];tick(g,1,{[action]:true});assert.equal(!!g.swallow,action==='attack');assert.equal(e.hp,e.maxHp);assert.equal(e.dead,false);assert.equal(g.health,4);}
@@ -81,7 +81,7 @@ test('Informer shields preparation; a reflected packet breaks the shield and dea
  const g=isolated(4,0,20),e=enemy('informant',4,150,0,{state:'windup',timer:.8});g.enemies=[e];assert.equal(g.hitEnemy(e),false);assert.equal(e.hp,3);assert.equal(g.hitEnemy(e,false,2,{reflected:true}),true);assert.equal(e.hp,1);assert.equal(e.shieldBroken,3);assert.equal(e.state,'recover');
 });
 test('a packet can be parried into its owner even when the final boss is active',()=>{
- const g=isolated(4,0,45),e=enemy('informant',4,150,0,{state:'windup',timer:1});g.enemies=[e];g.boss.active=true;g.player.attack=.18;g.bolts=[{kind:'packet',sourceId:e.id,x:campaignRooms[4].x+90,y:e.y+8,w:16,h:12,vx:-100,vy:0,ttl:3}];const paw={x:campaignRooms[4].x+60,y:e.y-5,w:60,h:65};stepProjectiles(g,1/60,paw);assert.equal(g.bolts[0].friendly,true);assert.ok(g.bolts[0].vx>0);for(let i=0;i<40;i++)stepProjectiles(g,1/60,paw);assert.equal(e.hp,1);assert.ok(e.shieldBroken>0);
+ const g=isolated(4,0,45),e=enemy('informant',4,150,0,{state:'windup',timer:1});g.enemies=[e];g.boss.active=true;g.player.attack=.18;g.bolts=[{kind:'packet',sourceId:e.id,x:campaignRooms[4].x+90,y:270,w:16,h:12,vx:-100,vy:0,ttl:3}];const paw={x:campaignRooms[4].x+60,y:250,w:60,h:65};stepProjectiles(g,1/60,paw);assert.equal(g.bolts[0].friendly,true);assert.ok(g.bolts[0].vx>0);for(let i=0;i<40;i++)stepProjectiles(g,1/60,paw);assert.equal(e.hp,1);assert.ok(e.shieldBroken>0);
 });
 test('dash protects Uma and cannot restart during its cooldown',()=>{
  const g=isolated();g.step(1/60,{dash:true});const lives=g.health;g.hurt();assert.equal(g.health,lives);tick(g,20,{dash:true});assert.equal(g.player.dash,0);assert.ok(g.player.dashCooldown>0);
@@ -96,7 +96,7 @@ test('all gameplay timers, warnings, portal growth, buffs and transitions freeze
  const g=isolated(5);g.enemies=[enemy('panicker',5,125)];alertNearby(g,g.enemies[0]);g.player.powerTime=7;g.transition={from:4,to:5,time:.2,duration:.85};g.mode='paused';const snapshot=JSON.stringify(g);tick(g,150,{right:true,attack:true});assert.equal(JSON.stringify(g),snapshot);
 });
 test('one paw destroys a satellite dish and opens its gate even while a defender is alive',()=>{
- const g=isolated(1,7,4),r=g.relays[0],e=enemy('fakenews',1,62,7,{hp:3,guardian:true});g.enemies=[e];Object.assign(g.player,{x:r.x-34,y:r.y+r.h-48,supportId:'1:7'});g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence.length,0);assert.equal(g.relays.filter(d=>d.room===1&&d.hp>0).length,2);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,0);
+ const g=isolated(1,7,4),r=g.relays[0],e=enemy('fakenews',1,62,7,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence.length,0);assert.equal(g.relays.filter(d=>d.room===1&&d.hp>0).length,2);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,0);
 });
 
 test('checkpoint retry preserves records, open gates and collections but resets local enemies and portals',()=>{
@@ -110,7 +110,7 @@ test('camera eases through normal rooms and the separate arena is hidden before 
 });
 
 test('boss shield, recovery, reflected damage and one-damage-per-swing rules remain intact',()=>{
- const g=bossGame();g.boss.state='windup';assert.equal(damageBoss(g,1),false);assert.equal(damageBoss(g,2,true),true);g.boss.cooldown=0;g.boss.state='recover';const hp=g.boss.hp;Object.assign(g.player,{x:g.boss.x-35,y:g.boss.y+g.boss.h-48,supportId:LAST_ROOM+':'+g.boss.platformIndex});g.step(1/60,{attack:true});tick(g,8);assert.equal(g.boss.hp,hp-1);
+ const g=bossGame();g.boss.state='windup';assert.equal(damageBoss(g,1),false);assert.equal(damageBoss(g,2,true),true);g.boss.cooldown=0;g.boss.state='recover';const hp=g.boss.hp;g.step(1/60,{attack:true});tick(g,8);assert.equal(g.boss.hp,hp-1);
 });
 test('Infoshum combines its arsenal with all three native enemy abilities and summons',()=>{
  const g=bossGame();assert.deepEqual(abilities,['volley','wave','rain','summon','echoPulse','staticRush','lure']);for(const ability of abilities){g.boss.ability=ability;g.boss.aim={x:FINAL_X+450,y:250};g.boss.targets=[FINAL_X+400,FINAL_X+500,FINAL_X+600];castAttack(g);}assert.ok(g.bolts.some(b=>b.kind==='paper'));assert.ok(g.bolts.some(b=>b.kind==='wave'));assert.ok(g.bolts.some(b=>b.kind==='rain'));assert.ok(g.bolts.some(b=>b.kind==='echoOrb'));assert.ok(g.enemies.some(e=>e.type==='clickbait'));assert.ok(g.enemies.every(e=>['echo','clickbait','static'].includes(e.type)));
@@ -122,5 +122,5 @@ test('victory stops simulation and a long session has no hidden countdown',()=>{
  const g=bossGame();g.boss.hp=1;damageBoss(g,1);assert.equal(g.mode,'bossDefeat');g.skipBossDefeat();assert.equal(g.mode,'ending');while(g.mode==='ending')g.advanceEnding();g.advanceConclusion(true);assert.equal(g.mode,'won');const time=g.time;tick(g,120,{attack:true,right:true});assert.equal(g.time,time);const t=isolated();t.time=99999;tick(t,1);assert.equal(t.mode,'playing');assert.equal('clock'in t,false);
 });
 test('Infoshum alternates all attacks and relocates between three distant arena docks across three phases',()=>{
- const g=bossGame(),casts=new Set(),positions=new Set([g.boss.x]);for(let i=0;i<6900;i++){if(i===1300)g.boss.hp=15;if(i===2700)g.boss.hp=8;stepBoss(g,1/60);positions.add(g.boss.x);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.equal(casts.size,11);assert.ok(positions.size>3);assert.equal(g.boss.phase,3);assert.ok(Math.max(...positions)-Math.min(...positions)>800);assert.equal(g.boss.maxHp,32);
+ const g=bossGame(),casts=new Set(),positions=new Set([g.boss.x]);for(let i=0;i<6900;i++){if(i===1300)g.boss.hp=15;if(i===2700)g.boss.hp=8;stepBoss(g,1/60);positions.add(g.boss.x);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.equal(casts.size,10);assert.ok(positions.size>3);assert.equal(g.boss.phase,3);assert.ok(Math.max(...positions)-Math.min(...positions)>800);assert.equal(g.boss.maxHp,32);
 });

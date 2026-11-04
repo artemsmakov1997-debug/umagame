@@ -1,5 +1,5 @@
-import {cats,sprite} from './assets.js?v=0.22.0';
-import {drawTraversal} from './cat-animation.js?v=0.22.0';
+import {cats,sprite} from './assets.js?v=0.21.1';
+import {drawTraversal} from './cat-animation.js?v=0.21.1';
 export const controlActions=[['Бег','← → / A D','run'],['Прыжок','↑ / W','jump'],['Лестница','↑ ↓ / W S','ladder'],['Удар лапой','Пробел / X','attack'],['Рывок','Shift','dash'],['Красться','↓ / S','sneak'],['Спрыгнуть ниже','↓ + Пробел','drop']];
 export function buildControls(){const list=document.getElementById('controls-cards');for(const[label,key,action]of controlActions){const item=document.createElement('figure'),canvas=document.createElement('canvas');canvas.width=200;canvas.height=112;canvas.dataset.control=action;canvas.setAttribute('aria-label','Ума: '+label);const caption=document.createElement('figcaption'),title=document.createElement('strong'),keys=document.createElement('span');title.textContent=label;keys.textContent=key;caption.append(title,keys);item.append(canvas,caption);list.append(item);}}
 export function drawControls(assets,time){for(const canvas of document.querySelectorAll('[data-control]')){const c=canvas.getContext('2d'),action=canvas.dataset.control;c.clearRect(0,0,200,112);c.imageSmoothingEnabled=false;c.fillStyle='#17354b';c.fillRect(8,96,184,4);const player={x:80,y:48,h:48,w:34,dir:1,climbing:action==='ladder',climbTime:time*4,sneaking:action==='sneak',sneakTime:time*3,vx:45};
