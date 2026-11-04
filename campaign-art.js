@@ -99,7 +99,7 @@ export function drawOpening(c,a,g){
  c.restore();
 }
 // These screens are scenery only; their rectangles never enter collision geometry.
-export const hauntedScreens=[{room:1,lx:620,y:112,w:108,h:108},{room:1,lx:1510,y:225,w:94,h:94},{room:3,lx:680,y:108,w:108,h:108},{room:5,lx:630,y:115,w:108,h:108}];
+export const hauntedScreens=[{room:1,lx:620,y:112,w:108,h:108},{room:1,lx:1510,y:225,w:94,h:94},{room:3,lx:680,y:108,w:108,h:108},{room:5,lx:630,y:115,w:108,h:108},{room:5,lx:1080,y:350,w:82,h:82},{room:5,lx:1170,y:350,w:82,h:82,forged:true}];
 export function drawInfection(c,g,a){
  for(const m of hauntedScreens)if(m.room===g.room)drawHauntedMonitor(c,a,rooms[m.room].x+m.lx,m.y,m.w,m.h,g.time);
 }

@@ -1,7 +1,8 @@
+import {drawYuriPortrait,yuriEmotion,yuriEmotions} from './yuri-portrait.js?v=0.22.0';
 import {scenes} from './story.js?v=0.22.0';
 const $=id=>document.getElementById(id);
 export class DialogueUI{
- constructor(game,assets,clearInput){this.game=game;this.clearInput=clearInput;this.lastKey=null;this.signalClock=0;$('narrator-portrait').src=assets.yuri.src;$('dialogue-next').addEventListener('click',()=>this.advance());$('dialogue-skip').addEventListener('click',()=>this.advance(true));}
+ constructor(game,assets,clearInput){this.game=game;this.clearInput=clearInput;this.lastKey=null;this.signalClock=0;this.mouthAge=0;this.assets=assets;$('dialogue-next').addEventListener('click',()=>this.advance());$('dialogue-skip').addEventListener('click',()=>this.advance(true));}
  advance(skip=false){this.clearInput();this.game.advanceDialogue(skip);this.update(true);if(this.game.mode==='playing'){$('game').focus({preventScroll:true});}}
  key(event){
   if(this.game.mode!=='dialogue')return false;
@@ -10,6 +11,6 @@ export class DialogueUI{
  }
  update(inGame,dt=0){
   const d=inGame&&this.game.mode==='dialogue'?this.game.dialogue:null,active=!!d;$('dialogue').hidden=!active;$('app').dataset.dialogue=String(active);
-  if(!active){this.lastKey=null;return;}this.signalClock+=dt;const stage=(d.signal||{state:'stable'}).state;$('dialogue').dataset.signal=stage;$('dialogue').style.setProperty('--signal-shift',Math.floor(this.signalClock*5)%11===0?'2px':'0px');$('dialogue').style.setProperty('--signal-loss',Math.floor(this.signalClock*(stage==='fading'?4:2))%9===0?'.35':'1');const key=d.id+':'+d.page;if(key===this.lastKey)return;this.lastKey=key;this.clearInput();$('dialogue-text').textContent=(d.pages||scenes[d.id].pages)[d.page];$('dialogue-next').textContent='Далее';$('dialogue-next').focus({preventScroll:true});
+  if(!active){if(this.game.mode!=='paused')this.lastKey=null;return;}this.signalClock+=dt;this.mouthAge+=dt;const portrait=$('narrator-portrait'),emotion=yuriEmotion(this.game);portrait.dataset.emotion=yuriEmotions[emotion];drawYuriPortrait(portrait.getContext('2d'),this.assets,{time:this.signalClock,emotion,quality:(d.signal||this.game.signal).quality,speaking:this.mouthAge<4});const stage=(d.signal||{state:'stable'}).state;$('dialogue').dataset.signal=stage;$('dialogue').style.setProperty('--signal-shift',Math.floor(this.signalClock*5)%11===0?'2px':'0px');$('dialogue').style.setProperty('--signal-loss',Math.floor(this.signalClock*(stage==='fading'?4:2))%9===0?'.35':'1');const key=d.id+':'+d.page;if(key===this.lastKey)return;this.lastKey=key;this.mouthAge=0;this.clearInput();$('dialogue-text').textContent=(d.pages||scenes[d.id].pages)[d.page];$('dialogue-next').textContent='Далее';$('dialogue-next').focus({preventScroll:true});
  }
 }
