@@ -1,6 +1,6 @@
-import {rect} from './pixel.js?v=0.20.0';
-import {drawMonster} from './art.js?v=0.20.0';
-import {TELEPORT_PHASES} from './informant-teleport.js?v=0.20.0';
+import {rect} from './pixel.js?v=0.21.0';
+import {drawMonster} from './art.js?v=0.21.0';
+import {TELEPORT_PHASES} from './informant-teleport.js?v=0.21.0';
 function ring(c,x,y,time,strength){
  c.save();c.globalAlpha*=strength;
  rect(c,x-25,y+2,50,3,'#020918');

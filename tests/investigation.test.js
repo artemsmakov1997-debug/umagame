@@ -11,10 +11,11 @@ test('monster origins remain a mystery until the full chain is shown in the epil
   const words=scenes[id].pages.join(' ');
   assert.ok(!/создаёте меня каждый день|Всё начинается с нас|запустил цепную реакцию/i.test(words));
  }
- assert.equal(endingSlides.length,5);
- assert.match(endingSlides[1].text,/первого сообщения/);
- assert.match(endingSlides[2].text,/журналисты/);
- assert.match(endingSlides[4].text,/Инфошум может вернуться/);
+ assert.equal(endingSlides.length,11);
+ assert.match(endingSlides[1].text,/вспять/);
+ assert.match(endingSlides[7].text,/разных людей/);
+ assert.match(endingSlides.at(-1).text,/обнимает/);
+
 });
 
 test('each playable chapter has its own interactive devices and distinct boss arena',()=>{

@@ -1,14 +1,14 @@
-import {rect,text} from './pixel.js?v=0.20.0';
-import {drawMonster} from './art.js?v=0.20.0';
-import {bossShielded} from './boss.js?v=0.20.0';
-import {rooms} from './level.js?v=0.20.0';
+import {drawBossBarrier} from './shield-art.js?v=0.21.0';
+import {rect,text} from './pixel.js?v=0.21.0';
+import {drawMonster} from './art.js?v=0.21.0';
+import {bossShielded} from './boss.js?v=0.21.0';
+import {rooms} from './level.js?v=0.21.0';
 export function drawArenaBoss(c,a,g,time){
  const b=g.boss;if(!rooms[g.room].arena||b.room!==g.room||b.hp<=0)return;const room=rooms[g.room],final=b.id==='infoshum';
  for(const d of b.docks){rect(c,d.x-9,d.y+b.h+2,b.w+18,3,'#3e4a79');rect(c,d.x+12,d.y+b.h+2,b.w-24,2,b.x===d.x?'#b199ec':'#536680');}
  c.save();if(b.ability==='telecast'&&b.state==='casting')c.globalAlpha=b.castElapsed<.22?Math.max(0,1-b.castElapsed/.22):Math.min(1,(b.castElapsed-.22)/.28);if(b.state==='shift')c.globalAlpha=Math.min(1,Math.abs(b.timer-.56)/.5);
  drawMonster(c,a,b.id,b.x-(final?76:28),b.y-(final?100:62),final?280:156,final?236:138,time,b.dir<0,{...b,moving:b.id==='spreader',walkTime:time});c.restore();
- const shield=bossShielded(g,b);
- if(shield){c.save();c.strokeStyle='#8d98d4';c.setLineDash([3,5]);c.strokeRect(b.x-7,b.y-12,b.w+14,b.h+18);for(const d of g.relays.filter(d=>d.room===g.room&&d.hp>0)){c.beginPath();c.moveTo(b.x+b.w/2,b.y+20);c.lineTo(d.x+20,d.y+25);c.stroke();}c.restore();}
+ drawBossBarrier(c,g,time);
 
  // Small corner marks show an opening to attack; the health gauge lives in the HUD.
  if(b.state==='recover'||b.id==='manipulator'&&b.ability==='splice'&&b.state==='casting'||b.id==='spreader'&&['ink','copy'].includes(b.ability)&&b.state==='casting')for(const xx of[b.x+5,b.x+b.w-8]){rect(c,xx,b.y+b.h-18,2,10,'#a9ffd3');rect(c,xx-2,b.y+b.h-18,6,2,'#e8ffe9');rect(c,xx-2,b.y+b.h-10,6,2,'#a9ffd3');}

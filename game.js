@@ -1,16 +1,17 @@
-import {SettingsUI} from './settings.js?v=0.20.0';
-import {buildControls,drawControls} from './controls-art.js?v=0.20.0';
-import {EndingUI} from './ending-ui.js?v=0.20.0';
-import {drawDefeat} from './result-art.js?v=0.20.0';
-import {scoreBreakdown,projectPurpose} from './finale.js?v=0.20.0';
-import {Game} from './engine.js?v=0.20.0';
-import {Renderer} from './render.js?v=0.20.0';
-import {loadAssets} from './assets.js?v=0.20.0';
-import {ScreenManager} from './screens.js?v=0.20.0';
-import {DialogueUI} from './dialogue-ui.js?v=0.20.0';
-import {PauseMenu} from './pause-menu.js?v=0.20.0';
-import {TouchControls} from './touch-controls.js?v=0.20.0';
-import {GameAudio} from './audio.js?v=0.20.0';
+import {ConclusionUI} from './conclusion-ui.js?v=0.21.0';
+import {SettingsUI} from './settings.js?v=0.21.0';
+import {buildControls,drawControls} from './controls-art.js?v=0.21.0';
+import {EndingUI} from './ending-ui.js?v=0.21.0';
+import {drawDefeat} from './result-art.js?v=0.21.0';
+import {scoreBreakdown,projectPurpose} from './finale.js?v=0.21.0';
+import {Game} from './engine.js?v=0.21.0';
+import {Renderer} from './render.js?v=0.21.0';
+import {loadAssets} from './assets.js?v=0.21.0';
+import {ScreenManager} from './screens.js?v=0.21.0';
+import {DialogueUI} from './dialogue-ui.js?v=0.21.0';
+import {PauseMenu} from './pause-menu.js?v=0.21.0';
+import {TouchControls} from './touch-controls.js?v=0.21.0';
+import {GameAudio} from './audio.js?v=0.21.0';
 const $=id=>document.getElementById(id);
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
@@ -22,15 +23,21 @@ async function boot(){
  const audio=new GameAudio({onChange:()=>updateSound()});
  window.addEventListener('pointerdown',()=>audio.unlock(),{capture:true});window.addEventListener('keydown',()=>audio.unlock(),{capture:true});
  function clearInput(){keys.clear();jump=false;dash=false;attack=false;touch?.reset();}
- function clearEffects(){renderer.particles=[];renderer.trail=[];clearTimeout(toastTimer);$('toast').classList.remove('visible');}
+ function clearEffects(){renderer.combatEffects=[];renderer.particles=[];renderer.trail=[];clearTimeout(toastTimer);$('toast').classList.remove('visible');}
  function begin(){pauseMenu.dismiss();game.start();clearEffects();clearInput();accumulator=0;$('overlay').hidden=true;ui.show('game');dialogueUI.update(true);}
- function goMain(){pauseMenu.dismiss();game.mode='ready';game.dialogue=null;clearEffects();ui.show('menu');dialogueUI.update(false);}
- function quit(){pauseMenu.dismiss();game.mode='exited';game.dialogue=null;clearEffects();clearInput();ui.show('exit');dialogueUI.update(false);}
+ function goMain(){
+  pauseMenu.dismiss();audio.stop();game.abandon();clearEffects();clearInput();accumulator=0;settingsUI.active=false;$('settings-layer').hidden=true;$('overlay').hidden=true;ui.highlightMenu(0);ui.show('menu');dialogueUI.update(false);endingUI.update(false);conclusionUI.update(false);
+ }
+
+ function quit(){goMain();}
+
  const ui=new ScreenManager(assets,begin,()=>{if(game.mode==='playing')game.mode='paused';clearInput();},quit,()=>settingsUI.open(()=>ui.menuItems[ui.menuIndex].focus({preventScroll:true})));
  const dialogueUI=new DialogueUI(game,assets,clearInput);
  const endingUI=new EndingUI(game,assets,clearInput);
+ const conclusionUI=new ConclusionUI(game,clearInput);
+ $('cinematic-skip').addEventListener('click',()=>{clearInput();game.skipBossDefeat();});
  const settingsUI=new SettingsUI(game,audio,clearInput);buildControls();
- const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,openSettings:back=>settingsUI.open(back),onResume:mode=>{dialogueUI.update(true);endingUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
+ const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,openSettings:back=>settingsUI.open(back),onResume:mode=>{dialogueUI.update(true);endingUI.update(true);conclusionUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
  touch=new TouchControls(document.querySelector('.game-shell'),()=>ui.view==='game'&&game.mode==='playing'&&!pauseMenu.active);
  function updateSound(){settingsUI?.sync();}
  let lastAbilities='';
@@ -58,21 +65,25 @@ async function boot(){
   if(event.code==='Escape'||event.code==='KeyP'){event.preventDefault();if(!event.repeat)pauseMenu.open();return;}
   if(game.mode==='waking'&&['Enter','Space'].includes(event.code)){event.preventDefault();if(!event.repeat)game.finishWakeup();return;}
   if(game.mode==='lost'&&!$('overlay').hidden&&['ArrowUp','ArrowDown','Home','End'].includes(event.code)){event.preventDefault();const buttons=[...$('overlay').querySelectorAll('button:not([hidden])')],i=buttons.indexOf(document.activeElement),next=event.code==='Home'?0:event.code==='End'?buttons.length-1:(i+(event.code==='ArrowUp'?-1:1)+buttons.length)%buttons.length;buttons[next].focus({preventScroll:true});return;}
-  if(endingUI.key(event)||dialogueUI.key(event))return;
+  if(game.mode==='bossDefeat'&&['Enter','Space'].includes(event.code)){event.preventDefault();if(!event.repeat){clearInput();game.skipBossDefeat();}return;}
+  if(conclusionUI.key(event)||endingUI.key(event)||dialogueUI.key(event))return;
   if(game.mode!=='playing'||!controls.includes(event.code))return;event.preventDefault();
   if((event.code==='ArrowUp'||event.code==='KeyW')&&!keys.has(event.code))jump=true;
   if(event.code==='Space'||event.code==='KeyX')attack=true;
   if((event.code==='ShiftLeft'||event.code==='ShiftRight')&&!keys.has(event.code))dash=true;keys.add(event.code);
  });
  window.addEventListener('keyup',event=>keys.delete(event.code));
- function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp','ending','prologue','interlude'].includes(game.mode))pauseMenu.open();}
+ function blur(){clearInput();if(ui.view==='game'&&!pauseMenu.active&&['playing','waking','dialogue','respawning','enteringArena','loading','echoWarp','ending','prologue','interlude','bossDefeat','conclusion'].includes(game.mode))pauseMenu.open();}
  window.addEventListener('blur',blur);document.addEventListener('visibilitychange',()=>{audio.setHidden(document.hidden);if(document.hidden)blur();});
  function events(){for(const event of game.events){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady','locationExit','locationEnter','locationReady','echoTeleport','echoArrive','echoReady','endingSlide','victory'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
   if(event.type==='notebook'){updateControls();renderer.burst(event.x,event.y,'#ffe0a0');}
+  if(['parry','blocked','boltImpact'].includes(event.type)){renderer.combatEffects.push({kind:event.type,x:event.x,y:event.y,time:0,frame:event.kind==='packet'?2:event.kind==='ticker'?3:0});renderer.combatEffects=renderer.combatEffects.slice(-18);}
   audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup','controlBreak'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
+  if(event.type==='voiceEcho')notify(event.text,4800);
+  if(event.type==='bossDefeatStart'){clearInput();clearEffects();}
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');
 
   if(event.type==='lifePickup')notify('+1 жизнь!');
@@ -90,12 +101,13 @@ async function boot(){
   if(ui.view==='game'){
    accumulator+=dt;while(accumulator>=1/60){const mobile=touch.snapshot();game.step(1/60,{...mobile,left:keys.has('ArrowLeft')||keys.has('KeyA'),right:keys.has('ArrowRight')||keys.has('KeyD'),up:jump||keys.has('ArrowUp')||keys.has('KeyW')||mobile.up,down:keys.has('ArrowDown')||keys.has('KeyS')||mobile.down,jump:jump||mobile.jump,dash:dash||mobile.dash,attack:attack||keys.has('Space')||keys.has('KeyX')||mobile.attack});jump=false;dash=false;attack=false;touch.consume();accumulator-=1/60;events();}renderer.draw(game,game.mode==='playing'?dt:0,clock);
   }else{accumulator=0;ui.draw($('game'),clock);}
-  audio.setScene(ui.view,game);dialogueUI.update(ui.view==='game'&&!pauseMenu.active);endingUI.update(ui.view==='game'&&!pauseMenu.active);
-  $('game-hud').hidden=ui.view!=='game'||['prologue','interlude','ending','won','lost'].includes(game.mode)||['prologue','interlude','ending'].includes(game.pausedFrom)&&game.mode==='paused';
+  audio.setScene(ui.view,game);dialogueUI.update(ui.view==='game'&&!pauseMenu.active,game.mode==='dialogue'?dt:0);endingUI.update(ui.view==='game'&&!pauseMenu.active,pauseMenu.active?0:dt);conclusionUI.update(ui.view==='game'&&!pauseMenu.active);
+  $('cinematic-skip').hidden=ui.view!=='game'||pauseMenu.active||game.mode!=='bossDefeat';
+  $('game-hud').hidden=ui.view!=='game'||['prologue','interlude','ending','conclusion','won','lost'].includes(game.mode)||['prologue','interlude','ending','conclusion'].includes(game.pausedFrom)&&game.mode==='paused';
   $('app').dataset.hud=String(!$('game-hud').hidden);
   if(ui.view==='game'&&game.mode==='lost'&&!$('overlay').hidden)drawDefeat($('defeat-art'),assets,clock);
   document.body.classList.toggle('playing-screen',ui.view==='game');
-  $('app').dataset.boss=String(ui.view==='game'&&game.boss.active&&game.boss.hp>0&&game.boss.room===game.room);
+  $('app').dataset.boss=String(ui.view==='game'&&game.boss.room===game.room&&(game.boss.active&&game.boss.hp>0||game.mode==='bossDefeat'||game.pausedFrom==='bossDefeat'));
   $('app').dataset.opening=String(ui.view==='game'&&(game.mode==='waking'||game.pausedFrom==='waking'||game.dialogue?.id==='intro'));
   $('pause').hidden=!game.touchEnabled||ui.view!=='game'||pauseMenu.active||['won','lost'].includes(game.mode);$('wake-caption').hidden=ui.view!=='game'||game.mode!=='waking'||pauseMenu.active;
   updateControls();if(pauseMenu.active&&pauseMenu.panel==='controls')drawControls(assets,clock);

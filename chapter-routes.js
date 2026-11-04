@@ -1,4 +1,4 @@
-import {rooms,platforms} from './level.js?v=0.20.0';
+import {rooms,platforms} from './level.js?v=0.21.0';
 export const sectionNames={1:['Архив редакции','Печатный зал','Серверная'],3:['Переулок антенн','Рекламные крыши','Мачтовый квартал'],5:['За кулисами','Подвижная сцена','Монтажная'],7:['Бумажные острова','Разбитые отражения','Порог Инфошума']};
 export const propKinds={1:'server',3:'power',5:'console',7:'anchor'};
 export function createMapProps(){return [1,3,5,7].flatMap(room=>(room===5?[12,22]:[10,20]).map((index,i)=>{const p=platforms.find(p=>p.room===room&&p.index===index);return{id:`control-${room}-${i}`,room,platformIndex:index,kind:propKinds[room],x:p.x+p.w-66,y:p.y-62,w:48,h:62,hp:1,breakTime:0,lastSwing:-1,section:i+1};}));}

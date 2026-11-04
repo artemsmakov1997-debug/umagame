@@ -13,7 +13,7 @@ export const musicScores={
  ending:{bpm:78,wave:'triangle',melody:[72,null,76,79,84,null,83,79,77,null,76,74,72,null,null,67,69,null,72,76,79,76,74,null,72,null,67,64,60,null,null,null],bass:[36,29,33,36],chords:[[60,64,67],[53,57,60],[57,60,64],[60,64,67]],drums:[]}
 };
 export function sceneMusic(view,g,rooms){
- if(view!=='game')return'menu';const mode=g.mode==='paused'?g.pausedFrom:g.mode;if(['ending','won'].includes(mode))return'ending';
- const r=rooms[g.room];if(!r||g.room===0)return'quiet';if(r.arena&&g.boss?.hp>0)return r.boss;
+ if(view!=='game')return'menu';const mode=g.mode==='paused'?g.pausedFrom:g.mode;if(['ending','interlude','conclusion','won'].includes(mode))return'ending';
+ const r=rooms[g.room];if(!r||g.room===0)return'quiet';if(r.arena&&(g.boss?.hp>0||mode==='bossDefeat'))return r.boss;
  return{newsroom:'newsroom',roofs:'roofs',studio:'studio',noise:'dimension'}[r.theme]||'newsroom';
 }
