@@ -83,6 +83,8 @@ async function boot(){
   if(['parry','blocked','boltImpact'].includes(event.type)){renderer.combatEffects.push({kind:event.type,x:event.x,y:event.y,time:0,frame:projectileStyle(game,{kind:event.kind,visual:event.visual})});renderer.combatEffects=renderer.combatEffects.slice(-18);}
   audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup','controlBreak'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
+  if(event.type==='worldEvent')notify(({newsroom:'Печатный цех ожил! Уходи по лестницам и конвейерам.',roofs:'Передатчики перегружены: ищи безопасный воздушный поток.',studio:'Декорации перестраиваются. Пульт наверху останавливает сцену.',noise:'Твои прошлые шаги оживают. Меняй маршрут и используй рывок.'})[event.theme],5000);
+  if(event.type==='generatorOff')notify('Источник отключён. Новых копий не будет.');
   if(event.type==='voiceEcho')notify(event.text,4800);
   if(event.type==='bossDefeatStart'){clearInput();clearEffects();}
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');

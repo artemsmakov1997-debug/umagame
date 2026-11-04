@@ -1,3 +1,4 @@
+import {architecturalLayer} from './architecture-art.js?v=0.22.0';
 function safeWarning(p){return p.collapseCharge>.35;}
 import {rooms,WIDTH} from './level.js?v=0.22.0';
 import {rect,text} from './pixel.js?v=0.22.0';
@@ -7,8 +8,9 @@ import {drawMonster,drawHauntedMonitor} from './art.js?v=0.22.0';
 import {drawDish,drawTowerPortal} from './stage-art.js?v=0.22.0';
 export function sceneLayers(assets){
  return rooms.map(room=>{
-  const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
+  const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=room.multiStorey?room.height:512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
   if(room.tutorial){c.drawImage(assets.cozy,0,0,768,512);return canvas;}
+  if(room.multiStorey&&assets.interiors){architecturalLayer(c,assets,room);return canvas;}
   const index={newsroom:0,roofs:1,studio:2,noise:3}[room.theme],sw=assets.backdrops.width/2,sh=assets.backdrops.height/2;
   c.filter='saturate(.62) brightness(.65)';
   for(let offset=0;offset<room.width;offset+=768){
@@ -30,12 +32,12 @@ export function sceneLayers(assets){
 export function backgroundLayers(layers){
  return layers.map((base,index)=>{
   if(index===0)return base;
-  const canvas=document.createElement('canvas');canvas.width=base.width+160;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
-  c.save();c.translate(80,0);c.scale(-1,1);c.drawImage(base,0,0,80,512,0,0,80,512);c.restore();
+  const canvas=document.createElement('canvas');canvas.width=base.width+160;canvas.height=base.height;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
+  c.save();c.translate(80,0);c.scale(-1,1);c.drawImage(base,0,0,80,base.height,0,0,80,base.height);c.restore();
   c.drawImage(base,80,0);
-  c.save();c.translate(canvas.width,0);c.scale(-1,1);c.drawImage(base,base.width-80,0,80,512,0,0,80,512);c.restore();
+  c.save();c.translate(canvas.width,0);c.scale(-1,1);c.drawImage(base,base.width-80,0,80,base.height,0,0,80,base.height);c.restore();
   const mask=c.createLinearGradient(0,0,canvas.width,0);mask.addColorStop(0,index===0||rooms[index].arena?'#fff':'#fff0');mask.addColorStop(80/canvas.width,'#fff');mask.addColorStop((canvas.width-80)/canvas.width,'#fff');mask.addColorStop(1,index===layers.length-1?'#fff':'#fff0');
-  c.globalCompositeOperation='destination-in';c.fillStyle=mask;c.fillRect(0,0,canvas.width,512);return canvas;
+  c.globalCompositeOperation='destination-in';c.fillStyle=mask;c.fillRect(0,0,canvas.width,canvas.height);return canvas;
  });
 }
 export function backgroundOffset(room,camera){return room.index===0||room.theme==='cozy'?0:Math.max(-64,Math.min(64,(camera-(room.x+WIDTH*.25))*.16));}
@@ -44,6 +46,7 @@ export function drawSurface(c,a,p,time){
  if(p.room===0&&p.index===7)return;
  const bed=p.room===0&&p.index===0,x=bed?160:p.x,y=p.y,w=bed?p.w-160:p.w,theme=rooms[p.room].theme;
  rect(c,x+3,y+9,w,15,'#010714c9');rect(c,x-2,y-4,w+4,19,'#020611');
+ if(p.structural){rect(c,x,y+13,w,20,'#152638');for(let xx=x+4;xx<x+w;xx+=24){rect(c,xx,y+16,20,3,'#52616d');rect(c,xx+4,y+23,12,2,'#263e51');}rect(c,x,y+31,w,3,'#07111f');}
  const base=p.motion?'#397187':theme==='noise'?'#51456e':theme==='cozy'?'#876440':theme==='press'?'#896341':theme==='roofs'?'#8d665c':'#556a7c';
  rect(c,x,y,w,13,base);rect(c,x+2,y+4,w-4,6,'#21394c');
  for(let xx=x+9;xx<x+w-7;xx+=28){rect(c,xx,y+5,11,2,'#a1bdc4');rect(c,xx,y+8,2,2,'#0a1424');}

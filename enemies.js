@@ -1,3 +1,4 @@
+import {distractionTarget} from './world-interactions.js?v=0.22.0';
 import {canActivateEnemy} from './encounters.js?v=0.22.0';
 import {actorById,bossProxy} from './boss-actors.js?v=0.22.0';
 import {solidSurfaces} from './terrain.js?v=0.22.0';
@@ -45,14 +46,14 @@ export function stepEnemies(g,dt,paw,prevBottom){
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
   for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown','guardFlash'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   updateEnemyInk(g,e);
-  const previousX=e.x,dx=p.x-e.x,dy=p.y+p.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&(p.sneaking||e.muffled);
+  const target=distractionTarget(g,e),previousX=e.x,dx=target.x-e.x,dy=target.y+target.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&(p.sneaking||e.muffled);
   if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y,enemyType:e.type});}
   const traversing=stepEnemyFall(g,e,dt)||['fakenews','injection'].includes(e.type)&&(stepFakeJump(g,e,dt)||e.noticeTime===0&&beginFakeJump(g,e))||e.type==='informant'&&(stepInformantTeleport(g,e,dt)||beginInformantTeleport(g,e));
   if(!traversing&&e.noticeTime===0&&e.hurtTime===0){
    if(!e.flying)e.timer-=dt;if(e.type==='clickbait'&&e.state==='emerge')e.revealTime+=dt;
    if(e.flying)stepAirEnemy(g,e,dt);
    else if(e.type==='fakenews'){
-    if(e.state==='patrol'){if(e.navWalkX!==undefined)e.dir=e.navWalkX<e.x?-1:1;else if(e.noticed||e.alert>0)e.dir=dx<0?-1:1;e.x+=e.dir*e.speed*(e.inkSlow||1)*(e.pressureTime>0?1.5:1)*dt;if(Math.abs(dx)<118&&Math.abs(dy)<65&&e.timer<=0){e.dir=dx<0?-1:1;e.state='windup';e.timer=.5;}}
+    if(e.state==='patrol'){if(e.navWalkX!==undefined)e.dir=e.navWalkX<e.x?-1:1;else if(e.noticed||e.alert>0)e.dir=dx<0?-1:1;e.x+=e.dir*e.speed*(e.inkSlow||1)*(e.sensation||1)*(e.alert>0?1.2:1)*(e.pressureTime>0?1.5:1)*dt;if(Math.abs(dx)<118&&Math.abs(dy)<65&&e.timer<=0){e.dir=dx<0?-1:1;e.state='windup';e.timer=.5;}}
     else if(e.state==='windup'&&e.timer<=0){e.state='lunge';e.timer=.32;g.emit('fakeLunge',{x:e.x,y:e.y});}
     else if(e.state==='lunge'){e.x+=e.dir*(e.inkSlow||1)*(e.pressureTime>0?270:210)*dt;if(e.timer<=0){e.state='recover';e.timer=.85;}}
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.65;}

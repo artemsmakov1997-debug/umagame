@@ -1,5 +1,5 @@
 // Coordinates are local to a room; chapter enablement follows the staged redesign.
-export const enabledChapters=new Set([]);
+export const enabledChapters=new Set([1]);
 const newsroom=[
  [0,460,260],[310,380,240],[590,460,200],[0,950,250],[290,890,270],[0,1000,280],[310,1000,450],[100,300,170],[470,320,180],[155,380,150],
  [800,460,260],[1100,380,230],[1360,460,210],[800,950,260],[1100,950,320],[790,1000,510],[1360,1000,200],[900,820,180],[1190,760,190],
@@ -23,11 +23,16 @@ const pressArena=[[0,460,230],[300,420,240],[640,810,250],[940,600,240],[1250,43
 const roofArena=[[0,720,220],[300,350,230],[630,620,250],[930,840,220],[1250,290,286],[0,1000,310],[380,930,270],[760,1000,300],[1180,960,356],[90,530,170],[350,180,180],[650,430,220],[950,650,210],[1230,130,230],[25,880,150],[490,750,140],[850,430,120],[1120,470,150]];
 const studioArena=[[0,950,230],[300,780,250],[640,450,250],[940,850,240],[1250,740,286],[0,1000,360],[430,1000,330],[850,1000,300],[1210,1000,326],[100,450,180],[350,270,190],[640,260,230],[950,450,210],[1230,260,230],[25,780,150],[500,600,150],[850,650,130],[1130,580,150]];
 const finalArena=[[0,820,230],[300,620,240],[650,400,250],[950,730,230],[1250,510,286],[0,1000,340],[410,920,290],[810,1000,300],[1200,940,336],[100,620,160],[340,400,190],[650,210,230],[950,460,210],[1230,230,230],[25,980,160],[490,790,150],[850,250,130],[1130,660,150]];
+// Broad load-bearing floors make these actual buildings; tables and catwalks sit above them.
+for(const [x,y,w]of [[0,474,670],[780,474,650],[1540,474,670]])newsroom.push([x,y,w]);
+for(const [x,y,w]of [[0,474,670],[780,474,650],[1540,474,670]])studio.push([x,y,w]);
+pressArena.push([0,474,570],[640,474,460],[1180,474,356]);studioArena.push([0,474,540],[620,474,470],[1180,474,356]);
 const layouts={1:newsroom,2:pressArena,3:roofs,4:roofArena,5:studio,6:studioArena,7:dimension,8:finalArena};
 export function designFor(index){if(!index||!enabledChapters.has(Math.ceil(index/2)))return null;const arena=index%2===0,theme=Math.ceil(index/2),layout=layouts[index].map(s=>s.slice()),stairs=arena?[240,590,1180]:[700,1480,2235];
  // Permanent stair landings guarantee a route independent of enemy powers and moving lifts.
  for(const x of stairs)for(const y of[440,580,720,860,1000])layout.push([x-35,y,100]);
- const motions=theme===1?{27:{axis:'y',amplitude:240,period:12},28:{axis:'y',amplitude:230,period:12}}:theme===2?{1:{axis:'x',amplitude:25,period:5},27:{axis:'y',amplitude:90,period:8}}:theme===3?{1:{axis:'x',amplitude:50,period:7},13:{axis:'x',amplitude:60,period:7},...(arena?{15:{axis:'y',amplitude:130,period:9}}:{27:{axis:'y',amplitude:220,period:12},30:{axis:'y',amplitude:230,period:12}})}:{13:{axis:'x',amplitude:25,period:7},27:{axis:'y',amplitude:70,period:8}};
+ const motions=theme===1?{...(arena?{15:{axis:'y',amplitude:160,period:10}}:{27:{axis:'y',amplitude:240,period:12},28:{axis:'y',amplitude:230,period:12}})}:theme===2?{1:{axis:'x',amplitude:25,period:5},27:{axis:'y',amplitude:90,period:8}}:theme===3?{1:{axis:'x',amplitude:50,period:7},13:{axis:'x',amplitude:60,period:7},...(arena?{15:{axis:'y',amplitude:130,period:9}}:{27:{axis:'y',amplitude:220,period:12},30:{axis:'y',amplitude:230,period:12}})}:{13:{axis:'x',amplitude:25,period:7},27:{axis:'y',amplitude:70,period:8}};
  // Only indices that exist in this arena are used.
- return{height:1056,floors:theme===2?[300,700,1000]:theme===4?[260,620,1000]:[460,1000],layout,motions,stairs,structural:theme===1?[0,2,10,12,19,21,5,6,15,16,24]:theme===3?[5,6,10,12,20,22,3,4,15,16,24]:[],theme,arena};
+ const structural=theme===1?[0,2,10,12,19,21,5,6,15,16,24]:theme===3?[5,6,10,12,20,22,3,4,15,16,24]:[];if(theme===1||theme===3){const start=arena?18:theme===1?29:32;structural.push(start,start+1,start+2);}
+ return{height:1056,floors:theme===2?[300,700,1000]:theme===4?[260,620,1000]:[460,1000],layout,motions,stairs,structural,theme,arena};
 }

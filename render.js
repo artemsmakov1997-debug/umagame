@@ -1,3 +1,4 @@
+import {drawInteractiveWorld} from './architecture-art.js?v=0.22.0';
 import {drawProjectile,drawCombatEffects} from './projectile-art.js?v=0.22.0';
 import {drawBossDefeat} from './boss-defeat-art.js?v=0.22.0';
 import {drawYuriSignal} from './signal-art.js?v=0.22.0';
@@ -61,7 +62,7 @@ export class Renderer{
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
-  drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
+  drawCampaignObjects(c,a,g,t);drawInteractiveWorld(c,a,g,t);drawTacticalTerrain(c,g,t);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   drawArenaBoss(c,a,g,t);
   drawLifeCaches(c,g,t);

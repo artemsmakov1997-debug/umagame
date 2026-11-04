@@ -1,3 +1,4 @@
+import {copyDecoy,blockWithInk} from './world-interactions.js?v=0.22.0';
 import {actorById} from './boss-actors.js?v=0.22.0';
 import {enemy,rooms} from './level.js?v=0.22.0';
 import {inkAt,solidSurfaces} from './terrain.js?v=0.22.0';
@@ -24,7 +25,7 @@ export function stampInk(g,e){
  const w=Math.min(96,s.w-8),localX=clamp(e.x+e.w/2-s.x-w/2,4,s.w-w-4),old=g.inks.find(i=>i.platformId===s.id&&Math.abs(i.localX-localX)<35);
  if(old){old.localX=localX;old.time=9;}else g.inks.push({id:'ink-'+(++g.tacticalSerial),room:e.room,platformId:s.id,localX,w,time:9,drift:e.x+e.w/2>s.x+s.w/2?1:-1});
  const own=g.inks.filter(i=>i.room===e.room);if(own.length>8)g.inks.splice(g.inks.indexOf(own[0]),1);
- g.emit('inkStamp',{x:e.x+e.w/2,y:s.y,enemyType:e.type});
+ blockWithInk(g,e);g.emit('inkStamp',{x:e.x+e.w/2,y:s.y,enemyType:e.type});
 }
 function copyEnemy(g,e){
  const original=scanSource(g,e),area=scanArea(g,e);if(!original||original.id!==e.copySourceId||!area)return false;
@@ -52,9 +53,10 @@ export function stepTacticalEnemy(g,e,dt,dx,dy){
  }else if(e.type==='copier'){
   if(e.state==='patrol'){
    e.x+=e.dir*e.speed*dt;const source=scanSource(g,e);
-   if(e.timer<=0&&Math.abs(dx)<380&&Math.abs(dy)<200){e.copySourceId=source?.id||null;e.state='windup';e.timer=.9;g.emit('copyScan',{x:e.x,y:e.y,enemyType:e.type});}
-  }else if(e.state==='windup'&&e.timer<=0){e.state='printing';e.timer=.55;copyEnemy(g,e);}
-  else if(e.state==='printing'&&e.timer<=0){e.state='recover';e.timer=1.1;}
+   if(e.powered!==false&&e.timer<=0&&Math.abs(dx)<380&&Math.abs(dy)<200){e.copySourceId=source?.id||null;e.state='windup';e.timer=.9;g.emit('copyScan',{x:e.x,y:e.y,enemyType:e.type});}
+  }else if(e.state==='windup'&&e.timer<=0){e.state='preparing';e.timer=.35;}
+  else if(e.state==='preparing'&&e.timer<=0){e.state='printing';e.timer=.6;}
+  else if(e.state==='printing'&&e.timer<=0){copyEnemy(g,e);copyDecoy(g,e);e.state='recover';e.timer=1.1;}
   else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=2.4;}
  }else if(e.type==='cutter'){
   if(e.state==='patrol'){
