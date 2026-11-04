@@ -31,10 +31,10 @@ export function castAttack(g){
  if(!castInherited(g,b.ability)){
   if(['volley','broadcast'].includes(b.ability))aimed(g,'paper',b.ability==='broadcast'?4:3);
   else if(b.ability==='wave'){for(const dir of [1,-1])g.bolts.push({room:g.room,kind:'wave',x:dir>0?r.x+12:r.end-44,y:b.waveY,w:32,h:12,vx:dir*260*fast,vy:0,ttl:7,fixedY:true});}
-  else if(['rain','spotlight'].includes(b.ability))for(const x of b.targets)paper(g,x-8,12,0,335*fast,{kind:b.ability==='spotlight'?'frame':'rain',w:20,h:27,ttl:2});
+  else if(['rain','spotlight'].includes(b.ability))for(const x of b.targets)paper(g,x-8,12,0,335*fast,{kind:b.ability==='spotlight'?'frame':'rain',w:20,h:27,ttl:Math.max(2,(r.height-12)/(335*fast)+.2)});
   else if(b.ability==='swoop'||b.ability==='staticRush'){b.swoopFrom={x:b.x,y:b.y};b.swoopTo={x:clamp(b.aim.x-b.w/2,r.x+24,r.end-b.w-24),y:clamp(b.aim.y-b.h/2,70,r.height-80-b.h)};}
   else if(b.ability==='telecast'){b.telecastMoved=false;b.phased=false;g.emit('teleportOut',{x:b.x,y:b.y,enemyType:'informant'});}
-  else if(b.ability==='echoPulse')paper(g,clamp(b.aim.x-20,r.x+24,r.end-64),clamp(b.aim.y-19,60,400),0,0,{kind:'echoOrb',type:'echo',id:'boss-echo-'+(++g.tacticalSerial),w:40,h:38,ttl:6,state:'windup',timer:.65,warpCooldown:0});
+  else if(b.ability==='echoPulse')paper(g,clamp(b.aim.x-20,r.x+24,r.end-64),clamp(b.aim.y-19,60,r.multiStorey?r.height-100:400),0,0,{kind:'echoOrb',type:'echo',id:'boss-echo-'+(++g.tacticalSerial),w:40,h:38,ttl:6,state:'windup',timer:.65,warpCooldown:0});
  }
  if(b.phase===3&&['swoop','telecast','cut','staticRush'].includes(b.ability))castInherited(g,b.id==='spreader'?'ink':b.id==='agitator'?'alarm':b.id==='manipulator'?'summon':'lure');
  b.state='casting';b.timer=b.ability==='splice'?5:['swoop','staticRush'].includes(b.ability)?.8:b.ability==='scatter'?1.5:b.ability==='telecast'?1.25:b.phase===1?1.15:.9;g.emit('bossCast',{ability:b.ability,boss:b.id,x:b.x,y:b.y});
