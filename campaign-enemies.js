@@ -1,3 +1,4 @@
+import {tapeBridge} from './studio-systems.js?v=0.22.0';
 import {actorById} from './boss-actors.js?v=0.22.0';
 import {rooms,spawns} from './level.js?v=0.22.0';
 import {solidSurfaces} from './terrain.js?v=0.22.0';
@@ -48,9 +49,10 @@ export function stepEchoWarp(g,dt){
 }
 export function stepSplicer(g,e,dt,dx,dy){
  if(e.state==='patrol'){
-  e.x+=e.dir*e.speed*dt;
+  e.x+=e.dir*e.speed*dt;if(rooms[e.room].multiStorey&&e.timer<=0&&!(e.bridgeCooldown>0)&&tapeBridge(g,e)){e.state='bridging';e.timer=1;e.bridgeCooldown=9;e.attackFlash=.8;return;}
   if(Math.abs(dx)<285&&Math.abs(dy)<120&&e.timer<=0&&!g.tether&&!(g.player.glueGrace>0)){e.state='windup';e.timer=.7;g.emit('glueWarning',{x:e.x,y:e.y,enemyType:e.type});}
  }else if(e.state==='windup'&&e.timer<=0){e.state='pulling';e.timer=5;g.tether={ownerId:e.id,remaining:5,total:5};g.emit('gluePull',{x:e.x,y:e.y,enemyType:e.type});}
+ else if(e.state==='bridging'&&e.timer<=0){e.state='recover';e.timer=2;}
  else if(e.state==='pulling'&&e.timer<=0){releaseTether(g,e.id);e.state='recover';e.timer=2;}
  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=2.3;}
 }

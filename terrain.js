@@ -28,6 +28,7 @@ export function stepTacticalTerrain(g,dt){
   const owner=cut.ownerId==='boss:'+g.boss.id&&g.boss.active&&g.boss.hp>0?g.boss:g.enemies.find(e=>e.id===cut.ownerId&&!e.dead);
   if(cut.phase==='warning'&&(!owner||owner.hurtTime>0)){cut.time=0;continue;}
   cut.time-=dt;
+  if(cut.kind==='partition'){const part=g.partitions.find(w=>w.id===cut.partitionId);if(cut.phase==='warning'&&cut.time<=0&&part){part.open=true;cut.phase='open';cut.time=.4;g.emit('partitionOpen',{x:part.x,y:part.y});}continue;}
   if(cut.phase==='warning'&&cut.time<=0){cut.phase='gap';cut.time=3;g.emit('platformCut',{x:cut.x,y:cut.y,enemyType:'cutter'});}
   else if(cut.phase==='gap'&&cut.time<=0)g.emit('platformRestore',{x:cut.x,y:cut.y});
  }

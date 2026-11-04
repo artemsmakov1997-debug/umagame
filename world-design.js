@@ -1,5 +1,5 @@
 // Coordinates are local to a room; chapter enablement follows the staged redesign.
-export const enabledChapters=new Set([1,2]);
+export const enabledChapters=new Set([1,2,3]);
 const newsroom=[
  [0,460,260],[310,380,240],[590,460,200],[0,950,250],[290,890,270],[0,1000,280],[310,1000,450],[100,300,170],[470,320,180],[155,380,150],
  [800,460,260],[1100,380,230],[1360,460,210],[800,950,260],[1100,950,320],[790,1000,510],[1360,1000,200],[900,820,180],[1190,760,190],
@@ -30,8 +30,8 @@ pressArena.push([0,474,570],[640,474,460],[1180,474,356]);studioArena.push([0,47
 const layouts={1:newsroom,2:pressArena,3:roofs,4:roofArena,5:studio,6:studioArena,7:dimension,8:finalArena};
 export function designFor(index){if(!index||!enabledChapters.has(Math.ceil(index/2)))return null;const arena=index%2===0,theme=Math.ceil(index/2),layout=layouts[index].map(s=>s.slice()),stairs=arena?[240,590,1180]:[700,1480,2235];
  // Permanent stair landings guarantee a route independent of enemy powers and moving lifts.
- for(const x of stairs)for(const y of[440,580,720,860,1000])layout.push([x-35,y,100]);
- const motions=theme===1?{...(arena?{15:{axis:'y',amplitude:160,period:10}}:{27:{axis:'y',amplitude:240,period:12},28:{axis:'y',amplitude:230,period:12}})}:theme===2?{1:{axis:'x',amplitude:25,period:5},27:{axis:'y',amplitude:90,period:8}}:theme===3?{1:{axis:'x',amplitude:50,period:7},13:{axis:'x',amplitude:60,period:7},...(arena?{15:{axis:'y',amplitude:130,period:9}}:{27:{axis:'y',amplitude:220,period:12},30:{axis:'y',amplitude:230,period:12}})}:{13:{axis:'x',amplitude:25,period:7},27:{axis:'y',amplitude:70,period:8}};
+ for(const x of stairs)for(const y of[400,500,600,700,800,900,1000])layout.push([x-35,y,100]);
+ const motions=theme===1?{...(arena?{15:{axis:'y',amplitude:160,period:10}}:{27:{axis:'y',amplitude:240,period:12},28:{axis:'y',amplitude:230,period:12}})}:theme===2?{1:{axis:'x',amplitude:25,period:5},...(arena?{10:{axis:'y',amplitude:25,period:8}}:{27:{axis:'y',amplitude:90,period:8}})}:theme===3?{1:{axis:'x',amplitude:50,period:7},13:{axis:'x',amplitude:60,period:7},...(arena?{15:{axis:'y',amplitude:130,period:9}}:{27:{axis:'y',amplitude:220,period:12},30:{axis:'y',amplitude:230,period:12}})}:{13:{axis:'x',amplitude:25,period:7},27:{axis:'y',amplitude:70,period:8}};
  // Only indices that exist in this arena are used.
  const structural=theme===1?[0,2,10,12,19,21,5,6,15,16,24]:theme===3?[5,6,10,12,20,22,3,4,15,16,24]:[];if(theme===1||theme===3){const start=arena?18:theme===1?29:32;structural.push(start,start+1,start+2);}
  return{height:1056,floors:theme===2?[300,700,1000]:theme===4?[260,620,1000]:[460,1000],layout,motions,stairs,structural,theme,arena};

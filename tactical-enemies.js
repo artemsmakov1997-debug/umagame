@@ -1,3 +1,4 @@
+import {planPartitionCut} from './studio-systems.js?v=0.22.0';
 import {copyDecoy,blockWithInk} from './world-interactions.js?v=0.22.0';
 import {actorById} from './boss-actors.js?v=0.22.0';
 import {enemy,rooms} from './level.js?v=0.22.0';
@@ -36,7 +37,7 @@ function copyEnemy(g,e){
  const copy=enemy(original.type,e.room,x-rooms[e.room].x,s.index,{id:'copy-'+(++g.tacticalSerial),copyOwnerId:e.id,copyOf:original.id,active:true,noticed:true,spawnTime:.65,hp:1,maxHp:1,dir:g.player.x<x?-1:1,shieldBroken:2});
  copy.y=s.y-copy.h;copy.origin=start;copy.end=end;g.enemies.push(copy);g.emit('copySpawn',{x:copy.x,y:copy.y,enemyType:e.type});return true;
 }
-export function planCut(g,e){
+export function planCut(g,e){if(planPartitionCut(g,e))return true;
  const p=g.player,surfaces=g.platforms.filter(s=>s.room===e.room&&s.cuttable&&!g.cuts.some(c=>c.platformId===s.id));
  const s=surfaces.sort((a,b)=>Math.abs(a.x+a.w/2-p.x)+Math.abs(a.y-p.y-p.h)-Math.abs(b.x+b.w/2-p.x)-Math.abs(b.y-p.y-p.h))[0];if(!s||Math.abs(s.x+s.w/2-e.x)>520)return false;
  const w=Math.min(88,s.w-88),center=p.supportId===s.id?p.x+p.w/2:s.x+s.w/2,localX=clamp(center-s.x-w/2,44,s.w-w-44);

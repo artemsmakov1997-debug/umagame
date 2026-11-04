@@ -1,3 +1,5 @@
+import {stopAtWall} from './world-geometry.js?v=0.22.0';
+import {rideableTicker} from './studio-systems.js?v=0.22.0';
 import {emitGust} from './wind-systems.js?v=0.22.0';
 import {distractionTarget} from './world-interactions.js?v=0.22.0';
 import {canActivateEnemy} from './encounters.js?v=0.22.0';
@@ -44,14 +46,14 @@ export function stepEnemies(g,dt,paw,prevBottom){
    g.seenScenes.add('sighting:'+e.type);
    g.emit('enemyIntroduction',{enemyType:e.type,room:e.room});
   }
-  if(!e.active){if(g.enemies.filter(other=>other!==e&&other.room===g.room&&other.active&&!other.dead&&Math.abs(other.x-p.x)<620).length>=3)continue;if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
+  if(!e.active){if(g.enemies.filter(other=>other!==e&&other.room===g.room&&other.active&&!other.dead&&Math.abs(other.x-p.x)<620).length>=3)continue;if(rooms[e.room].multiStorey&&Math.abs(e.y-p.y)>(g.viewHeight||480)+80)continue;if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
-  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown','guardFlash'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
+  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown','guardFlash','boundTime','bridgeCooldown'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   updateEnemyInk(g,e);
   const target=distractionTarget(g,e),previousX=e.x,dx=target.x-e.x,dy=target.y+target.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&(p.sneaking||e.muffled);
   if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y,enemyType:e.type});}
   const traversing=stepEnemyFall(g,e,dt)||['fakenews','injection'].includes(e.type)&&(stepFakeJump(g,e,dt)||e.noticeTime===0&&beginFakeJump(g,e))||e.type==='informant'&&(stepInformantTeleport(g,e,dt)||beginInformantTeleport(g,e));
-  if(!traversing&&e.noticeTime===0&&e.hurtTime===0){
+  if(!traversing&&e.noticeTime===0&&e.hurtTime===0&&!(e.boundTime>0)){
    if(!e.flying)e.timer-=dt;if(e.type==='clickbait'&&e.state==='emerge')e.revealTime+=dt;
    if(e.flying)stepAirEnemy(g,e,dt);
    else if(e.type==='fakenews'){
@@ -61,7 +63,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.65;}
    }else if(e.type==='injection'){
     if(e.state==='patrol'){e.dir=(e.navWalkX??p.x)<e.x?-1:1;e.x+=e.dir*e.speed*dt;if(Math.abs(dx)<270&&Math.abs(dy)<80&&e.timer<=0){e.state='windup';e.timer=.6;e.aim={x:p.x+17,y:p.y+10};g.emit('tickerWarning',{x:e.x,y:e.y});}}
-    else if(e.state==='windup'&&e.timer<=0){const dir=e.aim.x<e.x?-1:1;g.bolts.push({room:e.room,kind:'ticker',x:e.x+24,y:e.aim.y,w:40,h:10,vx:dir*240,vy:0,ttl:2.5,sourceId:e.id});e.state='recover';e.timer=.95;e.attackFlash=.22;g.emit('tickerShot',{x:e.x,y:e.y});}
+    else if(e.state==='windup'&&e.timer<=0){const dir=e.aim.x<e.x?-1:1;e.tickerCount=(e.tickerCount||0)+1;if(rooms[e.room].multiStorey&&e.tickerCount%2===0)rideableTicker(g,e,dir);else g.bolts.push({room:e.room,kind:'ticker',x:e.x+24,y:e.aim.y,w:40,h:10,vx:dir*240,vy:0,ttl:2.5,sourceId:e.id});e.state='recover';e.timer=.95;e.attackFlash=.22;g.emit('tickerShot',{x:e.x,y:e.y});}
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.7;}
    }else if(e.type==='splicer')stepSplicer(g,e,dt,dx,dy);
    else if(e.type==='informant'){
@@ -99,6 +101,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
    }
    if((e.type==='inflator'||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*(e.inkSlow||1)*dt;
   }
+  if(!e.flying&&!e.phased)stopAtWall(g,e,previousX);
   if(!e.flying&&!e.jumpPhase&&!e.terrainFall&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
   e.moving=!e.teleport&&Math.abs(e.x-previousX)>.01;if(e.moving)e.walkTime+=Math.abs(e.x-previousX)/24;
   if(!e.phased&&p.attack>0&&e.lastSwing!==p.swing&&g.overlap(paw,e)){e.lastSwing=p.swing;if(e.type==='clickbait'&&!e.revealed)reveal(g,e,dx);g.hitEnemy(e);}

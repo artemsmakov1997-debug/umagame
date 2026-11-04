@@ -91,6 +91,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  const actor={id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:r.x+x,y:s.y-(flying?100:29),w:flying?40:48,h:flying?38:29,origin:s.x+12,end:s.x+s.w-60,
  dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,panicker:16,censor:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
+ actor.designX=x;if(r.multiStorey)actor.x=Math.max(actor.origin,Math.min(actor.end,actor.x));
  const kinds={fakenews:platformIndex%3?'papers':'bin',informant:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',censor:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
  if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
  actor.arrivalDuration=actor.spawnTime||.55;return actor;
@@ -107,7 +108,7 @@ export function createEnemies(){const all=[
  enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];
  const kept={1:[150,365,840,920,1250,1700,1610,1920,1980],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
- return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x))).map(e=>{if(rooms[e.room].multiStorey&&e.type==='inflator'&&e.platformIndex===17)e.windAxis='y';return e;});
+ return all.filter(e=>kept[e.room].includes(e.designX)).map(e=>{if(rooms[e.room].multiStorey&&e.type==='inflator'&&e.platformIndex===17)e.windAxis='y';return e;});
 }
 export function createFish(){return rooms.flatMap(r=>{
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
