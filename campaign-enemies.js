@@ -41,9 +41,9 @@ export function handleFlyingContact(g,e){
 export function stepEchoWarp(g,dt){
  const warp=g.echoWarp;if(!warp)return;warp.time=Math.min(warp.duration,warp.time+Math.min(dt,1/30));
  if(warp.time>=.24&&!warp.transferred){
-  warp.transferred=true;if(!g.testingInvulnerable)g.lives=Math.max(0,g.lives-1);Object.assign(g.player,warp.to,{h:48,vx:0,vy:0,grounded:true,climbing:false,sneaking:false,knock:0,dash:0,inv:1.2,hurtTime:.5,slipping:false,inkTime:0});g.echoImmunity=2.2;g.updateCamera();g.emit('echoArrive',{x:g.player.x,y:g.player.y});
+  warp.transferred=true;if(!g.testingInvulnerable){g.health=Math.max(0,g.health-1);if(!g.health){g.echoWarp=null;g.mode='playing';g.loseLife('echo');return;}}Object.assign(g.player,warp.to,{h:48,vx:0,vy:0,grounded:true,climbing:false,sneaking:false,knock:0,dash:0,inv:1.2,hurtTime:.5,slipping:false,inkTime:0});g.echoImmunity=2.2;g.updateCamera();g.emit('echoArrive',{x:g.player.x,y:g.player.y});
   if(g.lives===0){g.health=0;g.echoWarp=null;g.mode='lost';g.emit('lost',{reason:'echo'});return;}
-  if(g.testingInvulnerable)g.emit('testRescue',{reason:'echo'});else g.emit('lifeLost',{lives:g.lives,reason:'echo'});
+  if(g.testingInvulnerable)g.emit('testRescue',{reason:'echo'});else g.emit('hurt',{reason:'echo'});
  }
  if(warp.time>=warp.duration){g.echoWarp=null;g.mode='playing';g.emit('echoReady');}
 }

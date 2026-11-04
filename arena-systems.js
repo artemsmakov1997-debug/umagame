@@ -7,5 +7,7 @@ export function stepArenaSystems(g,dt){const b=g.boss,r=rooms[g.room];if(!r.aren
  if(b.id==='spreader'){for(const s of g.platforms)if(s.room===g.room&&[5,6,7].includes(s.index)){const jam=g.devices.some(d=>d.room===g.room&&d.jammed>0);s.belt=b.phase===1||jam?0:(b.phase===3&&cycle%2?-1:1)*(s.index%2?-36:36);}}
  if(b.id==='agitator'&&b.phase>=2&&Math.floor(a.time/3)!==a.windCycle){a.windCycle=Math.floor(a.time/3);const d=g.devices.find(d=>d.room===g.room&&d.jammed<=0);if(d)emitGust(g,{id:d.id,room:g.room,x:d.x,y:d.y,dir:a.windCycle%2?1:-1},{vertical:a.windCycle%2===0,duration:1.8});}
  if(b.id==='manipulator'&&b.phase>=2&&Math.floor(a.time/8)!==a.bridgeCycle){a.bridgeCycle=Math.floor(a.time/8);tapeBridge(g,{...b,id:'boss:'+b.id});}
+ if(b.id==='infoshum'&&b.phase===3&&Math.floor(a.time/6)!==a.riftCycle){a.riftCycle=Math.floor(a.time/6);for(const dir of[-1,1])addTemporarySurface(g,{kind:'rift',ownerId:'boss:'+b.id,x:Math.max(r.x+20,Math.min(r.end-180,g.player.x+dir*160)),y:Math.max(140,g.player.y+g.player.h-65),w:150,h:16,time:6});}
+ if(b.id==='infoshum')for(const s of g.platforms)if(s.room===g.room&&[9,10,12,13].includes(s.index))s.sceneryOffset=b.phase===3?Math.sin(a.time*.55+s.index)*70*Math.min(1,a.time/1.4):0;
  b.environmentGuard=b.phase===3&&a.exposure<=0;if(b.environmentGuard)b.guardFlash=Math.max(0,b.guardFlash||0);
 }

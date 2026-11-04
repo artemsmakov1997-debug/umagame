@@ -1,3 +1,4 @@
+import {projectileFrames} from './projectile-frames.js?v=0.22.0';
 import {architecturalLayer} from './architecture-art.js?v=0.22.0';
 function safeWarning(p){return p.collapseCharge>.35;}
 import {rooms,WIDTH} from './level.js?v=0.22.0';
@@ -46,6 +47,7 @@ export function drawSurface(c,a,p,time){
  if(p.room===0&&p.index===7)return;
  const bed=p.room===0&&p.index===0,x=bed?160:p.x,y=p.y,w=bed?p.w-160:p.w,theme=rooms[p.room].theme;
  rect(c,x+3,y+9,w,15,'#010714c9');rect(c,x-2,y-4,w+4,19,'#020611');
+ if(theme==='noise'&&rooms[p.room].multiStorey){c.save();c.beginPath();c.rect(x-3,y-5,w+6,36);c.clip();for(let xx=x-8;xx<x+w;xx+=62)c.drawImage(a.projectiles,...projectileFrames[0],xx,y-7,70,35);rect(c,x,y-4,w,2,'#c6dff3');rect(c,x+3,y+23,w-6,3,'#272747');c.restore();return;}
  if(p.building){rect(c,x-4,y-7,w+8,23,'#171b30');rect(c,x-2,y-5,w+4,4,'#dcb78a');rect(c,x,y-1,w,11,'#5c5161');for(let xx=x+3;xx<x+w;xx+=22){rect(c,xx,y+2,17,2,'#a88472');rect(c,xx+8,y+5,2,7,'#2f2c44');}rect(c,x,y+12,w,4,'#283247');return;}
  if(p.structural){rect(c,x,y+13,w,20,'#152638');for(let xx=x+4;xx<x+w;xx+=24){rect(c,xx,y+16,20,3,'#52616d');rect(c,xx+4,y+23,12,2,'#263e51');}rect(c,x,y+31,w,3,'#07111f');}
  const base=p.motion?'#397187':theme==='noise'?'#51456e':theme==='cozy'?'#876440':theme==='press'?'#896341':theme==='roofs'?'#8d665c':'#556a7c';

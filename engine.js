@@ -1,3 +1,4 @@
+import {stepDimension} from './dimension-systems.js?v=0.22.0';
 import {stepWinds} from './wind-systems.js?v=0.22.0';
 import {createInteractiveWorld,stepDevices,stepSynergies,silenceNetwork,stepChapterEvent} from './world-interactions.js?v=0.22.0';
 import {stepArenaSystems} from './arena-systems.js?v=0.22.0';
@@ -111,7 +112,7 @@ export class Game {
 
  push(dir,sourceX){const p=this.player;if(this.mode!=='playing'||p.dash>0)return;wakePlayer(p);p.sneaking=false;playerHeight(p,48);p.knock=.26;p.vx=dir*640;p.vy=-65;p.climbing=false;this.emit('pushed',{x:sourceX,y:p.y});}
  hitEnemy(e,stomp=false,amount=null,{reflected=false,sourceX=this.player.x+this.player.w/2}={}){
-  if(e.inv>0||e.dead||e.phased)return false;
+  if(e.inv>0||e.dead||e.phased)return false;if(e.type==='static')e.distortionSuppressed=3;
   if(e.type==='clickbait'||e.type==='inflator'&&(sourceX-e.x-e.w/2)*e.dir>=-6||e.type==='copier'&&!['printing','recover'].includes(e.state)){
    e.guardFlash=.24;this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
   }
@@ -142,7 +143,7 @@ export class Game {
   if(this.transition){this.transition.time+=dt;if(this.transition.time>=this.transition.duration)this.transition=null;}
   this.routeUpPressed=!!input.up&&!this.routeUpHeld;this.routeUpHeld=!!input.up;if(tryRouteShortcut(this))input={...input,up:false,jump:false};
   const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);
-  if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}this.loseLife('clickbait');this.updateCamera();}return;}
+  if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);if(input.dash&&this.abilities.dash&&p.dashCooldown===0){this.swallow=null;if(captor){captor.captureLock=3;captor.captureTime=null;captor.state='recover';captor.timer=3;captor.attackFlash=0;}p.dash=.2;p.dashCooldown=1.5;p.inv=Math.max(p.inv,.3);p.vx=p.dir*430;this.emit('dash');return;}this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}this.swallow=null;if(captor){captor.captureLock=3;captor.state='recover';captor.timer=3;}this.hurt(false,captor?.x??p.x);p.inv=Math.max(p.inv,1.3);this.updateCamera();}return;}
   stepArenaSystems(this,dt);stepSynergies(this);stepChapterEvent(this,dt);stepTemporarySurfaces(this,dt);stepWorldPlatforms(this,dt);
   stepTacticalTerrain(this,dt);
   for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace'])p[key]=Math.max(0,p[key]-dt);
@@ -172,6 +173,7 @@ export class Game {
   if(p.y>worldHeight(this)+30){this.hurt(true);return;}
   if(p.climbing)p.climbTime+=Math.abs(p.y-oldY)/18;if(p.sneaking)p.sneakTime+=Math.abs(p.x-oldX)/14;
   stepPlayerRest(this,input,dt);
+  stepDimension(this,dt,{x:p.dir>0?p.x+16:p.x-36,y:p.y-2,w:54,h:p.h+6});if(this.mode!=='playing'){this.updateCamera(dt);return;}
   this.unlockForRoom(this.room);this.updateTutorial(p.x-oldX,p.y-oldY,jumped);
   this.echoImmunity=Math.max(0,this.echoImmunity-dt);
   if(p.grounded&&p.supportId){this.visitedPlatforms.add(p.supportId);const last=this.safeTrail.at(-1);if(!last||Math.abs(last.x-p.x)>110||last.platformId!==p.supportId){this.safeTrail.push({platformId:p.supportId,x:p.x,y:p.y});this.safeTrail=this.safeTrail.slice(-80);}}

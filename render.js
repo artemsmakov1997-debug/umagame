@@ -1,3 +1,4 @@
+import {drawLocalDistortion,drawEchoTraces} from './dimension-art.js?v=0.22.0';
 import {drawInteractiveWorld,drawTemporaryPlatform,drawStudioPartitions} from './architecture-art.js?v=0.22.0';
 import {drawProjectile,drawCombatEffects} from './projectile-art.js?v=0.22.0';
 import {drawBossDefeat} from './boss-defeat-art.js?v=0.22.0';
@@ -43,7 +44,7 @@ export class Renderer{
   c.save();c.translate(worldInset,worldTop);c.scale(worldScale,worldScale);c.translate(-cam,-(g.cameraY||0));
   for(const [i,room] of rooms.entries()){
    if(i!==g.room)continue;if(room.x+room.width+150<cam||room.x-150>cam+worldWidth)continue;
-   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);
+   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);drawLocalDistortion(c,this.backdrops[i],g,t);
   }
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
@@ -65,7 +66,7 @@ export class Renderer{
   drawCampaignObjects(c,a,g,t);drawInteractiveWorld(c,a,g,t);drawStudioPartitions(c,a,g,t);drawTacticalTerrain(c,g,t);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   drawArenaBoss(c,a,g,t);
-  drawLifeCaches(c,g,t);
+  drawLifeCaches(c,g,t);drawEchoTraces(c,a,g,t);
   for(const f of g.fishes)if(f.room===g.room&&!opening&&!f.taken&&f.x>cam-20&&f.x<cam+worldWidth+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(soup.room===g.room&&!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
   for(const note of g.notebooks)if(note.room===g.room&&!note.taken&&Number.isFinite(note.readyAt)&&note.readyAt<=g.time+.5&&note.x>cam-30&&note.x<cam+worldWidth+30)drawNotebook(c,note,t);

@@ -14,12 +14,12 @@ export function summonPlaces(g,count=3){
  }}return result;
 }
 export function summonBossTroops(g,{types=null,copy=false,count=2}={}){
- const b=g.boss,roster=types||bossTroops[b.id],all=g.enemies.filter(e=>e.bossOwnerId===b.id&&!e.dead),alive=all.filter(e=>!!e.copyOwnerId===copy),limit=copy?1:2,free=Math.min(count,limit-alive.length),places=summonPlaces(g,free);if(free<=0)return[];
- const made=[];for(const t of places){let type;
+ const b=g.boss,roster=types||bossTroops[b.id],all=g.enemies.filter(e=>e.bossOwnerId===b.id&&!e.dead),alive=all.filter(e=>!!e.copyOwnerId===copy),limit=copy?1:2,free=Math.min(count,limit-alive.length),places=summonPlaces(g,free);if(free<=0)return[];b.summonRemaining??=8;if(b.summonRemaining<=0)return[];
+ const made=[];for(const t of places){if(b.summonRemaining<=0)break;let type;
   for(let attempt=0;attempt<roster.length;attempt++){const candidate=roster[b.summonCursor++%roster.length];if(candidate==='clickbait'&&all.some(e=>e.type==='clickbait'))continue;if(!copy&&alive.concat(made).some(e=>e.type===candidate))continue;type=candidate;break;}
   if(!type)continue;const e=enemy(type,g.room,t.x-rooms[g.room].x,t.index,{id:'boss-troop-'+(++g.tacticalSerial),bossOwnerId:b.id,minion:true,active:true,noticed:true,spawnTime:.6,dir:g.player.x<t.x?-1:1,...(copy?{copyOwnerId:bossActorId(b),copyOf:'boss-print',hp:1,maxHp:1}:{})});
   const surface=g.platforms.find(s=>s.room===g.room&&s.index===t.index);e.y=t.y-(e.flying?100:e.h);e.origin=surface.x+8;e.end=surface.x+surface.w-e.w-8;
-  g.enemies.push(e);made.push(e);g.emit(copy?'copySpawn':'bossSummon',{boss:b.id,enemyType:type,x:e.x,y:e.y});
+  b.summonRemaining--;g.enemies.push(e);made.push(e);g.emit(copy?'copySpawn':'bossSummon',{boss:b.id,enemyType:type,x:e.x,y:e.y});
  }return made;
 }
 export function castInherited(g,ability){
