@@ -3,7 +3,7 @@ import {openingSlides} from './prologue.js?v=0.22.0';
 import {endingSlides} from './finale.js?v=0.22.0';
 import {storyFrame,fitStoryImage} from './story-art.js?v=0.22.0';
 const $=id=>document.getElementById(id);
-export function finaleFrame(a,index){const slide=endingSlides[index]||endingSlides.at(-1),[key,n]=slide.art.split(':'),art=a[key],cols=key==='rewind'?4:2,rows=2,w=art.width/cols,h=art.height/rows,i=Number(n);return{a:art,box:[i%cols*w,Math.floor(i/cols)*h,w,h]};}
+export function finaleFrame(a,index){const slide=endingSlides[index]||endingSlides.at(-1),[key,n]=slide.art.split(':'),art=a[key],cols=key==='rewind'?4:2,rows=2,w=key==='chain'?art.width:art.width/cols,h=key==='chain'?art.height:art.height/rows,i=Number(n);return{a:art,box:[i%cols*w,Math.floor(i/cols)*h,w,h]};}
 export class EndingUI{
  constructor(game,assets,clearInput){this.game=game;this.assets=assets;this.clearInput=clearInput;this.lastIndex=null;$('ending-next').addEventListener('click',()=>this.advance(1));$('ending-prev').addEventListener('click',()=>this.advance(-1));$('ending-skip').addEventListener('click',()=>this.skip());}
  advance(direction){this.clearInput();if(this.game.mode==='prologue')this.game.advanceOpening(direction);else if(this.game.mode==='interlude')this.game.advanceInterlude(direction);else this.game.advanceEnding(direction);this.update(true);}
