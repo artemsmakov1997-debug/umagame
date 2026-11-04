@@ -1,12 +1,12 @@
-import {canActivateEnemy} from './encounters.js?v=0.20.0';
-import {actorById,bossProxy} from './boss-actors.js?v=0.20.0';
-import {solidSurfaces} from './terrain.js?v=0.20.0';
-import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.20.0';
-import {enemy,rooms} from './level.js?v=0.20.0';
-import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.20.0';
-import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.20.0';
-import {stepEnemyFall} from './terrain.js?v=0.20.0';
-import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.20.0';
+import {canActivateEnemy} from './encounters.js?v=0.21.0';
+import {actorById,bossProxy} from './boss-actors.js?v=0.21.0';
+import {solidSurfaces} from './terrain.js?v=0.21.0';
+import {stepAirEnemy,handleFlyingContact,stepSplicer} from './campaign-enemies.js?v=0.21.0';
+import {enemy,rooms} from './level.js?v=0.21.0';
+import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.21.0';
+import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.21.0';
+import {stepEnemyFall} from './terrain.js?v=0.21.0';
+import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.21.0';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
@@ -43,7 +43,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
   }
   if(!e.active){if(g.enemies.filter(other=>other!==e&&other.room===g.room&&other.active&&!other.dead&&Math.abs(other.x-p.x)<620).length>=3)continue;if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
-  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
+  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown','guardFlash'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   updateEnemyInk(g,e);
   const previousX=e.x,dx=p.x-e.x,dy=p.y+p.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&(p.sneaking||e.muffled);
   if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y,enemyType:e.type});}

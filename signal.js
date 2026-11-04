@@ -1,0 +1,2 @@
+export function signalProfile(room=0){const chapter=room<3?1:room<5?2:room<7?3:4;return{chapter,quality:[0,.9,.66,.42,.2][chapter],state:['','stable','frayed','echo','fading'][chapter]};}
+export function stepSignalStory(g,dt){if(!g.storyEnabled)return;const s=g.signal;if(s.echoTime>0)s.echoTime=Math.max(0,s.echoTime-dt);if(g.room===5&&g.player.x-g.platforms.find(p=>p.id==='5:0').x>1050&&!g.seenScenes.has('voice-echo')){g.seenScenes.add('voice-echo');s.echoTime=2.4;g.emit('voiceEcho',{text:'«Сюда…» — голос Юрия звучит сразу из двух экранов.'});}}

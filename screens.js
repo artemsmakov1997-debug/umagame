@@ -1,7 +1,7 @@
-import {chapters} from './level.js?v=0.20.0';
-import {monsters} from './catalog.js?v=0.20.0';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.20.0';
-import {idleFrame} from './menu-animation.js?v=0.20.0';
+import {chapters} from './level.js?v=0.21.0';
+import {monsters} from './catalog.js?v=0.21.0';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.21.0';
+import {idleFrame} from './menu-animation.js?v=0.21.0';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
  constructor(assets,onStart,onExit,onQuit=()=>{},onSettings=()=>{}){
@@ -11,7 +11,6 @@ export class ScreenManager{
    this.highlightMenu(index);if(button.dataset.menu==='start')this.onStart();else if(button.dataset.menu==='library')this.showLibrary();else if(button.dataset.menu==='settings')this.onSettings();else if(button.dataset.menu==='authors')this.show('authors');else if(button.dataset.menu==='exit')this.onQuit();
   });});
   for(const button of document.querySelectorAll('[data-back]'))button.addEventListener('click',()=>this.back());
-  document.querySelector('#exit-screen button').addEventListener('click',()=>{this.highlightMenu(0);this.show('menu');});
   this.chapterButtons=chapters.map((chapter,index)=>{const button=document.createElement('button');button.textContent=chapter.name;button.dataset.chapter=index;button.addEventListener('click',()=>this.selectChapter(index));$('library-chapters').append(button);return button;});
   this.monsterButtons=monsters.map((monster,index)=>{
    const button=document.createElement('button');button.className='monster-option';button.setAttribute('aria-label',monster.name);button.setAttribute('aria-pressed','false');
@@ -35,11 +34,11 @@ export class ScreenManager{
  selectChapter(index){const next=(index+chapters.length)%chapters.length;this.selectMonster(monsters.findIndex(m=>m.chapter===next),true);}
  show(view,focus=true){
   if(this.view==='game'&&view!=='game')this.onExit();this.view=view;$('app').dataset.screen=view;
-  for(const id of ['menu','library','authors','exit'])$(`${id}-screen`).hidden=id!==view;
+  for(const id of ['menu','library','authors'])$(`${id}-screen`).hidden=id!==view;
   const game=view==='game';$('pause').hidden=!game||!document.documentElement.classList.contains('has-touch');$('controls-bar').hidden=!game;$('touch-controls').hidden=!game;$('menu-hint').hidden=game;
   if(!game)$('overlay').hidden=true;
   if(game&&$('game').height!==480)$('game').height=480;
-  if(focus){if(view==='menu')this.menuItems[this.menuIndex].focus({preventScroll:true});else if(view==='library')this.monsterButtons[this.monsterIndex].focus({preventScroll:true});else if(view==='authors')document.querySelector('#authors-screen [data-back]').focus({preventScroll:true});else if(view==='exit')document.querySelector('#exit-screen button').focus({preventScroll:true});else $('game').focus({preventScroll:true});}
+  if(focus){if(view==='menu')this.menuItems[this.menuIndex].focus({preventScroll:true});else if(view==='library')this.monsterButtons[this.monsterIndex].focus({preventScroll:true});else if(view==='authors')document.querySelector('#authors-screen [data-back]').focus({preventScroll:true});else $('game').focus({preventScroll:true});}
  }
  key(event){
   if(this.view==='game')return false;

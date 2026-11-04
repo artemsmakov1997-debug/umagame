@@ -1,12 +1,12 @@
 {
   "name": "uma-vs-infoshum",
-  "version": "0.20.1",
+  "version": "0.21.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/engine.test.js && node tests/story.test.js && node tests/lives-bait.test.js && node tests/progression.test.js && node tests/teleport.test.js && node tests/world.test.js && node tests/tactical.test.js && node tests/campaign.test.js && node tests/finale-bosses.test.js && node tests/arrivals-echo.test.js && node tests/prologue-drop.test.js && node tests/chapter-expansion.test.js && node tests/investigation.test.js && node tests/settings-roofs.test.js",
+    "test": "node tests/engine.test.js && node tests/story.test.js && node tests/lives-bait.test.js && node tests/progression.test.js && node tests/teleport.test.js && node tests/world.test.js && node tests/tactical.test.js && node tests/campaign.test.js && node tests/finale-bosses.test.js && node tests/arrivals-echo.test.js && node tests/prologue-drop.test.js && node tests/chapter-expansion.test.js && node tests/investigation.test.js && node tests/settings-roofs.test.js && node tests/narrative.test.js",
     "start": "python3 -m http.server 8000",
-    "test:browser": "node tests/browser.cjs && node tests/story-browser.cjs && node tests/scene-browser.cjs && node tests/interaction-browser.cjs && node tests/teleport-browser.cjs && node tests/world-browser.cjs && node tests/tactical-browser.cjs && node tests/finale-browser.cjs && node tests/arrivals-browser.cjs && node tests/prologue-browser.cjs && node tests/chapter-browser.cjs && node tests/proportions-browser.cjs && node tests/interface-browser.cjs && node tests/settings-browser.cjs"
+    "test:browser": "node tests/browser.cjs && node tests/story-browser.cjs && node tests/scene-browser.cjs && node tests/interaction-browser.cjs && node tests/teleport-browser.cjs && node tests/world-browser.cjs && node tests/tactical-browser.cjs && node tests/finale-browser.cjs && node tests/arrivals-browser.cjs && node tests/prologue-browser.cjs && node tests/chapter-browser.cjs && node tests/proportions-browser.cjs && node tests/interface-browser.cjs && node tests/settings-browser.cjs && node tests/narrative-browser.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

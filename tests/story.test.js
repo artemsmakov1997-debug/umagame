@@ -21,8 +21,8 @@ test('each chapter introduces its assigned species before its own miniboss arena
 test('wake-up uses separate sleep, yawn and surprise frames without moving Uma or starting combat',()=>{
  const g=new Game();g.start();const x=g.player.x,y=g.player.y;assert.equal(wakePose(.2).name,'sleep');assert.equal(wakePose(2.5).name,'yawn');assert.equal(wakePose(3.5).name,'surprise');assert.equal(emotionFrames.length,8);tick(g,340,{right:true,attack:true});assert.equal(g.mode,'dialogue');assert.equal(g.dialogue.id,'intro');assert.equal(g.player.x,x);assert.equal(g.player.y,y);assert.ok(g.enemies.every(e=>!e.active));assert.equal('clock'in g,false);
 });
-test('intro remains two short pages; Yuri does not know where he is or what happened',()=>{
- const g=ready();assert.equal(scenes.intro.pages.length,2);assert.match(scenes.intro.pages[1],/не знаю/);for(const scene of Object.values(scenes))for(const text of scene.pages)assert.ok(text.length<=130,text);assert.equal(g.mode,'playing');assert.equal(g.room,0);assert.equal(g.player.swing,0);assert.ok(!('people'in g));
+test('intro has four short pages; Yuri does not know where he is or what happened',()=>{
+ const g=ready();assert.equal(scenes.intro.pages.length,4);assert.match(scenes.intro.pages[1],/не знаю/);for(const scene of Object.values(scenes))for(const text of scene.pages)assert.ok(text.length<=130,text);assert.equal(g.mode,'playing');assert.equal(g.room,0);assert.equal(g.player.swing,0);assert.ok(!('people'in g));
 });
 test('the tutorial teaches real walking, a gap jump and an actual ladder ascent in order',()=>{
  const g=ready();training(g);assert.equal(g.tutorial.complete,true);assert.equal(g.tutorial.step,3);assert.ok(g.tutorial.distance>=65);assert.ok(g.tutorial.jumped);assert.ok(g.tutorial.climbed>=65);assert.equal(g.player.y+g.player.h,ladders[0].y);assert.equal(g.health,4);assert.equal('clock'in g,false);assert.deepEqual(g.events.filter(e=>e.type==='lesson').map(e=>e.step),[1,2,3]);
@@ -40,7 +40,7 @@ test('no enemy activates during training; later enemies wait for their own trigg
  const g=ready();training(g);assert.ok(g.enemies.every(e=>!e.active));at(g,1,0,45);tick(g,1);assert.equal(g.dialogue,null);assert.ok(g.enemies.filter(e=>e.room===1).every(e=>!e.active));g.player.x=WIDTH+85;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.ok(g.notebooks.find(n=>n.id==='paw').taken);assert.equal(g.enemies[0].active,false);g.advanceDialogue(true);g.player.x=WIDTH+95;tick(g,1);assert.equal(g.enemies[0].active,true);assert.ok(g.enemies[0].spawnTime>0);assert.equal(g.enemies[1].active,false);tick(g,35);assert.ok(g.enemies[0].noticed);assert.equal(g.dialogue,null);
 });
 test('dialogues freeze physics, enemies, camera transitions and all game time',()=>{
- const g=new Game();g.start();g.finishWakeup();g.transition={from:0,to:1,time:.2,duration:.85};const before=JSON.stringify(g);tick(g,150,{right:true,jump:true,attack:true});assert.equal(JSON.stringify(g),before);g.advanceDialogue();assert.equal(g.dialogue.page,1);g.advanceDialogue();assert.equal(g.mode,'playing');
+ const g=new Game();g.start();g.finishWakeup();g.transition={from:0,to:1,time:.2,duration:.85};const before=JSON.stringify(g);tick(g,150,{right:true,jump:true,attack:true});assert.equal(JSON.stringify(g),before);g.advanceDialogue();assert.equal(g.dialogue.page,1);g.advanceDialogue(true);assert.equal(g.mode,'playing');
 });
 test('entering a chapter is silent; only picking up its notebook opens Yuri commentary',()=>{
  const g=ready();at(g,1,0,45);tick(g,1);assert.equal(g.dialogue,null);g.player.x=WIDTH+85;const time=g.time;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.equal(g.time,time);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);assert.equal(g.mode,'playing');
@@ -66,6 +66,6 @@ test('skipping every notebook never blocks the quiet-room tutorial exit',()=>{
  const g=ready();training(g);assert.equal(g.notebooks.some(n=>n.taken),false);for(let i=0;i<230&&g.room===0;i++)g.step(1/60,{right:true});while(g.mode==='loading')g.step(1/60);assert.equal(g.room,1);assert.equal(g.mode,'playing');assert.equal(g.notebooks.some(n=>n.taken),false);assert.equal(g.dialogue,null);
 });
 
-test('the five-slide finale reveals the source of noise and ends in Yuri embracing Uma',async()=>{
- const {endingSlides}=await import('../finale.js');const g=ready();g.enemies=[];at(g,LAST_ROOM,2,640);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.hp=1;g.boss.cooldown=0;g.boss.state='recover';damageBoss(g,1);assert.equal(g.mode,'ending');assert.equal(g.truthFound,true);assert.match(endingSlides[0].text,/Инфошум распадается/);assert.match(endingSlides[3].text,/обнимает/);const time=g.time;tick(g,200);assert.equal(g.time,time);for(let i=0;i<5;i++)g.advanceEnding();assert.equal(g.mode,'won');g.start();assert.equal(g.mode,'waking');assert.equal(g.evidence.length,0);assert.equal(g.tutorial.complete,false);
+test('the rewind finale reveals the source of noise and ends in Yuri embracing Uma',async()=>{
+ const {endingSlides}=await import('../finale.js');const g=ready();g.enemies=[];at(g,LAST_ROOM,2,640);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.hp=1;g.boss.cooldown=0;g.boss.state='recover';damageBoss(g,1);assert.equal(g.mode,'bossDefeat');g.skipBossDefeat();assert.equal(g.mode,'ending');assert.equal(g.truthFound,true);assert.match(endingSlides[0].text,/Инфошум распадается/);assert.match(endingSlides.at(-1).text,/обнимает/);const time=g.time;tick(g,200);assert.equal(g.time,time);while(g.mode==='ending')g.advanceEnding();g.advanceConclusion(true);assert.equal(g.mode,'won');g.start();assert.equal(g.mode,'waking');assert.equal(g.evidence.length,0);assert.equal(g.tutorial.complete,false);
 });

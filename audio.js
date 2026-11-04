@@ -1,5 +1,5 @@
-import {musicScores,sceneMusic} from './music-scores.js?v=0.20.0';
-import {rooms} from './level.js?v=0.20.0';
+import {musicScores,sceneMusic} from './music-scores.js?v=0.21.0';
+import {rooms} from './level.js?v=0.21.0';
 // Original chiptune score and procedural Foley. No downloads or external audio.
 function volume(key){try{const n=Number(globalThis.localStorage?.getItem('uma-volume-'+key)??'0.8');return Number.isFinite(n)?Math.max(0,Math.min(1,n)):.8;}catch{return .8;}}
 const midi=n=>440*Math.pow(2,(n-69)/12);
@@ -40,8 +40,8 @@ export class GameAudio{
  setScene(view,game){
   const pause=view==='exit'||view==='game'&&['paused','lost','respawning','exited','loading'].includes(game.mode);
   const theme=sceneMusic(view,game,rooms);
-  this.duck=view==='game'&&['dialogue','waking'].includes(game.mode);
-  if(theme!==this.theme||pause!==this.paused){this.stop('music');this.step=0;this.next=0;this.theme=theme;this.paused=pause;}
+  this.duck=view==='game'&&['dialogue','waking','conclusion'].includes(game.mode);
+  if(theme!==this.theme||pause!==this.paused){this.stop(pause?null:'music');this.step=0;this.next=0;this.theme=theme;this.paused=pause;}
   if(this.music)this.music.gain.setTargetAtTime(pause||this.hidden?0:this.duck?.12*this.musicVolume:.42*this.musicVolume,this.context.currentTime,.08);
  }
  voice({frequency=220,to=frequency,duration=.15,gain=.06,wave='square',start,pan=0,group='effects',noise=false,filter=1800}){
@@ -78,7 +78,10 @@ export class GameAudio{
   if(type==='enemyNoticed'){
    const pitches={fakenews:260,clickbait:100,inflator:145,informant:920,panicker:740,censor:180,copier:460,cutter:1100,splicer:320,injection:580,echo:660,static:190};tone(pitches[enemyType]||280,(pitches[enemyType]||280)*1.25,.08,.035,'triangle');return;
   }
-  if(type==='echoTeleport'){tone(880,140,.35,.06,'triangle');tone(660,100,.38,.035,'sine');}
+  if(type==='catMeow'){tone(620,900,.13,.04,'triangle');tone(900,590,.18,.035,'sine',.1);}
+  else if(type==='bossDefeatStart'){noise(.35,.06,event.boss==='agitator'?800:3500);tone(180,50,.5,.055,'triangle');}
+  else if(type==='brandReveal'){for(const [i,n]of [60,67,72].entries())tone(midi(n),midi(n),.6,.028,'triangle',i*.09);}
+  else if(type==='echoTeleport'){tone(880,140,.35,.06,'triangle');tone(660,100,.38,.035,'sine');}
   else if(type==='echoArrive')tone(160,660,.2,.06,'triangle');
   else if(type==='staticWarning')noise(.3,.045,4500);
   else if(type==='staticStrike'){noise(.16,.09,6200);tone(180,65,.13,.05,'sawtooth');}

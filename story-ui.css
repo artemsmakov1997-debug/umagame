@@ -1,0 +1,43 @@
+/* One picture, caption and control system for every illustrated story scene. */
+#app[data-story] .ending-screen{padding:12px;background:#030919}#app[data-story] .ending-panel{opacity:var(--story-reveal,1)}
+#app[data-story] .ending-panel{width:min(1200px,100%);height:calc(100dvh - 24px);padding:14px;gap:10px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)128px 48px;min-height:0;max-height:none}
+.story-picture{grid-column:1;grid-row:1;position:relative;min-width:0;min-height:0;overflow:hidden}
+#app[data-story] .story-picture #ending-art{position:absolute;inset:0;width:100%;height:100%;max-height:none;aspect-ratio:3/2;object-fit:contain}
+#app[data-story] #ending-caption{grid-column:1;grid-row:2;font:clamp(23px,2.1vw,32px)/1.2 UmaText,monospace;margin:0;padding:0 8px;align-self:center;text-align:center;max-height:100%;overflow:auto;scrollbar-width:thin}
+#app[data-story] .ending-actions{grid-column:1;grid-row:3;gap:10px;justify-content:space-between;min-width:0}
+#app[data-story] .ending-actions button{min-width:0;min-height:44px;white-space:nowrap;padding:9px 15px;font:24px/1 UmaText,monospace}
+#cinematic-skip{position:absolute;bottom:20px;right:20px;z-index:8;font:23px/1 UmaText,monospace;padding:10px 18px;min-height:44px}
+/* The portrait belongs to a receiver; interference never hides the readable transcript. */
+.dialogue-panel{position:relative}
+#dialogue[data-signal] #narrator-portrait{transform:translateX(var(--signal-shift,0));opacity:var(--signal-loss,1)}
+#dialogue[data-signal] .dialogue-panel::after{content:'';position:absolute;inset:0 auto 0 0;width:28%;height:100%;border:0;background:repeating-linear-gradient(0deg,transparent 0 8px,#81e8e026 8px 9px);pointer-events:none;z-index:2}
+#dialogue[data-signal="echo"] .dialogue-panel::after{background:repeating-linear-gradient(0deg,transparent 0 6px,#b68aed35 6px 8px)}
+#dialogue[data-signal="fading"] .dialogue-panel::after{background:repeating-linear-gradient(0deg,transparent 0 4px,#9ae3f14d 4px 6px)}
+.closing-screen{position:absolute;inset:0;z-index:9;background:#030919;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:28px max(22px,5%);color:#f5e7c9;overflow:hidden}
+.closing-screen[data-stage="fade"]{opacity:var(--fade,0)}
+.closing-screen[data-stage="fade"] .closing-copy,.closing-screen[data-stage="fade"] .closing-brand{visibility:hidden}
+.closing-copy{width:min(950px,100%);max-height:calc(100% - 80px);min-height:0;overflow:auto;scrollbar-width:thin;padding:4px 12px;font:clamp(21px,2.1vw,30px)/1.4 UmaText,monospace;text-align:left}
+.closing-copy h2{font:clamp(24px,2.5vw,38px)/1.2 UmaDisplay,monospace;color:#ffdf9c;margin:0 0 24px}
+.closing-copy p{margin:0 0 19px;min-height:0}.closing-copy p:empty{display:none}.closing-promise{font-weight:bold;color:#ffe0a0}
+.closing-cursor{opacity:var(--cursor,1);color:#83e6ee}
+.closing-screen[data-stage="read"] .closing-cursor{display:none}
+.closing-brand{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:clamp(34px,6vw,90px)/1 UmaDisplay,monospace;white-space:nowrap;letter-spacing:1px;opacity:0;pointer-events:none;text-shadow:0 4px #132b45}
+.closing-screen[data-stage="brand"] .closing-brand{opacity:var(--brand,0);transform:translateY(calc((1 - var(--brand,0))*8px))}
+.closing-screen[data-stage="brand"] .closing-copy{opacity:var(--copy,0);pointer-events:none}
+.closing-actions{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:18px;z-index:2}.closing-actions button{font:24px/1.1 UmaText,monospace;min-height:46px;padding:12px 20px}
+@media(max-width:700px) and (orientation:portrait){
+ #app[data-story] .ending-screen{padding:6px}#app[data-story] .ending-panel{height:calc(100dvh - 12px);padding:10px;gap:8px;grid-template-rows:minmax(0,1fr)168px 46px}
+ #app[data-story] #ending-caption{font-size:23px;line-height:1.15;padding:0}#app[data-story] .ending-actions{gap:6px}#app[data-story] .ending-actions button{font-size:20px;padding:8px 7px}
+ .closing-screen{padding:18px 14px;gap:14px}.closing-copy{font-size:22px;line-height:1.3;padding:0 4px;max-height:calc(100% - 64px)}.closing-copy h2{font-size:25px;margin-bottom:20px}.closing-copy p{margin-bottom:16px}.closing-actions{gap:10px;width:100%}.closing-actions button{font-size:22px;padding:10px 12px}.closing-brand{font-size:clamp(31px,8vw,56px)}
+}
+@media(max-width:700px) and (max-height:650px) and (orientation:portrait){#app[data-story] .ending-panel{grid-template-rows:minmax(0,1fr)156px 44px}#app[data-story] #ending-caption{font-size:20px;line-height:1.16}.closing-copy{font-size:20px;line-height:1.25}.closing-copy h2{font-size:23px}.closing-copy p{margin-bottom:13px}}
+@media(max-height:550px) and (orientation:landscape){
+ #app[data-story] .ending-screen{padding:6px}#app[data-story] .ending-panel{height:calc(100dvh - 12px);padding:10px;grid-template-columns:minmax(0,3fr)minmax(0,2fr);grid-template-rows:minmax(0,1fr)44px;gap:10px}
+ #app[data-story] .story-picture{grid-column:1;grid-row:1/3}#app[data-story] #ending-caption{grid-column:2;grid-row:1;font-size:22px;line-height:1.16;padding:0 3px}#app[data-story] .ending-actions{grid-column:2;grid-row:2;gap:5px}#app[data-story] .ending-actions button{font-size:18px;padding:7px 5px}
+ .closing-screen{padding:14px 5%;gap:10px}.closing-copy{font-size:20px;line-height:1.25;max-height:calc(100% - 54px)}.closing-copy h2{font-size:25px;margin-bottom:13px}.closing-copy p{margin-bottom:12px}.closing-actions button{font-size:21px;padding:9px 16px;min-height:42px}.closing-brand{font-size:clamp(36px,6vw,64px)}
+}
+
+@media(max-width:360px) and (orientation:portrait){#app[data-story] .ending-actions button{font-size:18px;padding:8px 6px}}
+.has-touch #app[data-screen="game"][data-ending="true"] #pause{top:12px;right:12px;width:40px;height:40px;background:#051527b8}
+
+#dialogue-text{overflow:auto;scrollbar-width:thin}

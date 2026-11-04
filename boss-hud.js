@@ -1,5 +1,5 @@
-import {drawMonster} from './art.js?v=0.20.0';
-import {rect} from './pixel.js?v=0.20.0';
+import {drawMonster} from './art.js?v=0.21.0';
+import {rect} from './pixel.js?v=0.21.0';
 export const bossStyles={
  spreader:{name:'Распространитель',edge:'#dcb87b',fill:'#f0d7a7',dark:'#47384a',portrait:'#17273b',kind:'paper'},
  agitator:{name:'Агитатор',edge:'#e69258',fill:'#f06361',dark:'#4b2237',portrait:'#281f35',kind:'broadcast'},
@@ -9,7 +9,7 @@ export const bossStyles={
 const portraits=new WeakMap();
 function portrait(assets,id){let map=portraits.get(assets);if(!map){map=new Map();portraits.set(assets,map);}if(!map.has(id)){const c=document.createElement('canvas');c.width=80;c.height=80;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;drawMonster(ctx,assets,id,2,2,76,76,0,false,{state:'patrol',projection:true});map.set(id,c);}return map.get(id);}
 export function drawBossHud(c,a,g,width,{y=8}={}){
- const b=g.boss;if(!b.active||b.hp<=0||b.room!==g.room)return;
+ const b=g.boss;if(b.room!==g.room||(!b.active||b.hp<=0)&&g.mode!=='bossDefeat'&&g.pausedFrom!=='bossDefeat')return;
  const style=bossStyles[b.id],w=Math.min(width<700?width-20:width-350,440),x=Math.round((width-w)/2),face=width<700?40:49,barX=x+face+9,barW=w-face-13;
  rect(c,x-2,y-3,w+4,58,'#02091be8');rect(c,x,y,face,face,style.edge);rect(c,x+2,y+2,face-4,face-4,style.portrait);c.drawImage(portrait(a,b.id),x+1,y+1,face-2,face-2);
  rect(c,barX-2,y+3,barW+4,16,style.edge);rect(c,barX,y+5,barW,12,style.dark);

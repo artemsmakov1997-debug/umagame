@@ -1,10 +1,10 @@
-import {phasePattern,stepBossPhase,phasePlans} from './boss-phases.js?v=0.20.0';
-import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.20.0';
-import {solidSurfaces} from './terrain.js?v=0.20.0';
-import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v=0.20.0';
-import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.20.0';
-import {stepEcho} from './echo-pull.js?v=0.20.0';
-export {bossTroops} from './boss-abilities.js?v=0.20.0';
+import {phasePattern,stepBossPhase,phasePlans} from './boss-phases.js?v=0.21.0';
+import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.21.0';
+import {solidSurfaces} from './terrain.js?v=0.21.0';
+import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v=0.21.0';
+import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.21.0';
+import {stepEcho} from './echo-pull.js?v=0.21.0';
+export {bossTroops} from './boss-abilities.js?v=0.21.0';
 export const BOSS_HEALTH=32;
 export const abilities=['volley','wave','rain','summon','echoPulse','staticRush','lure'];
 export const bossPatterns={spreader:['scatter','summon','ink','copy','swoop'],agitator:['telecast','summon','pressure','alarm','broadcast'],manipulator:['ticker','summon','cut','splice','spotlight'],infoshum:abilities};
@@ -23,7 +23,7 @@ export function planAttack(g){
  if(b.ability==='telecast'){b.nextDock=b.docks.map((d,i)=>({i,distance:Math.abs(d.x-p.x)})).filter(d=>d.i!==b.dock).sort((a,c)=>a.distance-c.distance)[0]?.i??(b.dock+1)%3;}
  g.emit('bossWarning',{ability:b.ability,boss:b.id,x:b.x,y:b.y});
 }
-function paper(g,x,y,vx,vy,extra={}){g.bolts.push({room:g.room,kind:'paper',x,y,w:17,h:16,vx,vy,ttl:6,...extra});}
+function paper(g,x,y,vx,vy,extra={}){g.bolts.push({room:g.room,kind:'paper',x,y,w:17,h:16,vx,vy,ttl:6,visual:g.boss.id,...extra});}
 function aimed(g,kind,count=3){const b=g.boss,source={x:b.x+b.w/2,y:b.y+b.h*.55},angle=Math.atan2(b.aim.y-source.y,b.aim.x-source.x),offsets=count===4?[-.25,-.08,.08,.25]:[-.18,0,.18];for(const offset of offsets.slice(0,count))paper(g,source.x-8,source.y,Math.cos(angle+offset)*220,Math.sin(angle+offset)*220,{kind});}
 export function castAttack(g){
  const b=g.boss,r=rooms[g.room],fast=b.phase===3?1.2:b.phase===2?1.15:1;b.castElapsed=0;b.dropTimer=0;b.shots=0;b.pressureHit=false;
@@ -51,15 +51,15 @@ function stepCast(g,b,dt){
 }
 export function stepBoss(g,dt){
  const b=g.boss;if(!b.active||b.hp<=0||b.room!==g.room)return;const support=g.platforms.find(s=>s.room===b.room&&s.index===b.platformIndex);if(support&&b.state!=='shift'&&!['swoop','staticRush'].includes(b.ability)){b.x+=support.dx||0;b.y+=support.dy||0;}b.docks=bossDocksForRoom(b.room,g.platforms);
- b.cooldown=Math.max(0,b.cooldown-dt);b.hurtTime=Math.max(0,b.hurtTime-dt);b.noticeTime=Math.max(0,b.noticeTime-dt);b.shieldBroken=Math.max(0,b.shieldBroken-dt);if(b.noticeTime>0)return;if(stepBossPhase(g,dt))return;b.timer-=dt;
+ b.guardFlash=Math.max(0,(b.guardFlash||0)-dt);b.shieldDissolve=Math.max(0,(b.shieldDissolve||0)-dt);const protectedNow=bossShielded(g);if(b.shieldWasActive&&!protectedNow){b.shieldDissolve=.45;g.emit('shieldBreak',{x:b.x+b.w/2,y:b.y});}b.shieldWasActive=protectedNow;b.cooldown=Math.max(0,b.cooldown-dt);b.hurtTime=Math.max(0,b.hurtTime-dt);b.noticeTime=Math.max(0,b.noticeTime-dt);b.shieldBroken=Math.max(0,b.shieldBroken-dt);if(b.noticeTime>0)return;if(stepBossPhase(g,dt))return;b.timer-=dt;
  if(b.state==='shift'){const next=b.docks[b.nextDock];if(['spreader','manipulator'].includes(b.id)){const t=clamp(1-b.timer/1.15,0,1);b.x=b.shiftFrom.x+(next.x-b.shiftFrom.x)*t;b.y=b.shiftFrom.y+(next.y-b.shiftFrom.y)*t-Math.sin(t*Math.PI)*(b.id==='spreader'?90:120);}else if(!b.shifted&&b.timer<=.56){Object.assign(b,next);b.dock=b.nextDock;b.shifted=true;g.emit('bossMove',{x:b.x,y:b.y,boss:b.id});}if(b.timer<=0){Object.assign(b,next);b.dock=b.nextDock;b.state='recover';b.timer=1.8;b.justMoved=true;}return;}
  if(b.state==='casting')stepCast(g,b,dt);if(b.timer>0)return;
  if(b.state==='windup')castAttack(g);else if(b.state==='casting'){if(b.ability==='splice')releaseTether(g,'boss:'+b.id);b.state='recover';b.timer=b.id==='spreader'?1.65:b.phase===1?1.7:b.phase===3?1.3:1.4;}
  else if(b.turn>0&&b.turn%3===0&&!b.justMoved){b.state='shift';b.timer=1.15;b.shifted=false;b.nextDock=(b.dock+1)%3;b.shiftFrom={x:b.x,y:b.y};g.emit('bossShift',{x:b.docks[b.nextDock].x,y:b.docks[b.nextDock].y,boss:b.id});}else planAttack(g);
 }
 export function damageBoss(g,amount,reflected=false,sourceX=g.player.x+g.player.w/2){
- const b=g.boss;if(!b.active||b.hp<=0||b.cooldown>0||['shift','phaseChange'].includes(b.state)||b.phased||bossShielded(g))return false;
- if(b.id==='agitator'&&(sourceX-b.x-b.w/2)*b.dir>=-6&&!b.shieldBroken){if(reflected){b.shieldBroken=2;b.state='recover';b.timer=1.4;}else return false;}
+ const b=g.boss;if(!b.active||b.hp<=0||b.cooldown>0||['shift','phaseChange'].includes(b.state)||b.phased)return false;if(bossShielded(g)){b.guardFlash=.24;return false;}
+ if(b.id==='agitator'&&(sourceX-b.x-b.w/2)*b.dir>=-6&&!b.shieldBroken){if(reflected){b.shieldBroken=2;b.state='recover';b.timer=1.4;}else{b.guardFlash=.24;return false;}}
  if(!reflected){const exposed=b.id==='spreader'?b.state==='recover'||b.ability!=='swoop':b.id==='agitator'?true:b.id==='manipulator'?b.state==='recover'||b.state==='casting'&&b.ability==='splice':b.state==='recover';if(!exposed)return false;}
  b.hp=Math.max(0,b.hp-amount);b.cooldown=.22;b.hurtTime=.28;releaseTether(g,'boss:'+b.id);for(const p of g.portals)if(p.ownerId==='boss:'+b.id)p.cancelled=true;g.emit('bossHit',{x:b.x+b.w/2,y:b.y+b.h-14,boss:b.id});if(b.hp===0){clearBossHelpers(g);g.bossDefeated();}return true;
 }
@@ -67,9 +67,10 @@ export function bossContact(g){const b=g.boss,p=g.player;if(['shift','phaseChang
 export function stepProjectiles(g,dt,paw){
  for(const bolt of g.bolts){if(bolt.room!==undefined&&bolt.room!==g.room)continue;if(bolt.kind==='echoOrb'){bolt.id??='boss-echo-'+(++g.tacticalSerial);bolt.state??='windup';bolt.timer??=.65;bolt.warpCooldown=Math.max(0,(bolt.warpCooldown||0)-dt);bolt.vx=0;bolt.vy=0;stepEcho(g,bolt,dt);}bolt.ttl-=dt;bolt.x+=bolt.vx*dt;bolt.y+=bolt.vy*dt;
   if(bolt.kind==='wave'&&!bolt.fixedY)bolt.y=surfaceAt(bolt.x,g.platforms||platforms)-bolt.h;
-  if(!bolt.friendly&&['paper','packet','frame','ticker'].includes(bolt.kind)&&g.player.attack>0&&g.overlap(paw,bolt)){bolt.friendly=true;const b=g.boss,owner=g.enemies.find(e=>!e.dead&&e.id===bolt.sourceId),target=owner?{x:owner.x+24,y:owner.y+14}:b.active?{x:b.x+b.w/2,y:b.y+b.h*.65}:{x:bolt.x-(Math.sign(bolt.vx)||g.player.dir)*300,y:bolt.y},dx=target.x-bolt.x,dy=target.y-bolt.y,len=Math.hypot(dx,dy)||1;bolt.vx=dx/len*350;bolt.vy=dy/len*350;bolt.ttl=7;g.parries=(g.parries||0)+1;g.player.dashCooldown=Math.max(0,g.player.dashCooldown-.3);g.emit('parry',{x:bolt.x,y:bolt.y});}
+  if(!bolt.friendly&&['paper','packet','frame','ticker'].includes(bolt.kind)&&g.player.attack>0&&g.overlap(paw,bolt)){bolt.friendly=true;const b=g.boss,owner=g.enemies.find(e=>!e.dead&&e.id===bolt.sourceId),target=owner?{x:owner.x+24,y:owner.y+14}:b.active?{x:b.x+b.w/2,y:b.y+b.h*.65}:{x:bolt.x-(Math.sign(bolt.vx)||g.player.dir)*300,y:bolt.y},dx=target.x-bolt.x,dy=target.y-bolt.y,len=Math.hypot(dx,dy)||1;bolt.vx=dx/len*350;bolt.vy=dy/len*350;bolt.ttl=7;g.parries=(g.parries||0)+1;g.player.dashCooldown=Math.max(0,g.player.dashCooldown-.3);g.emit('parry',{x:bolt.x,y:bolt.y,kind:bolt.kind,visual:bolt.visual});}
   if(bolt.friendly){if(g.boss.active&&g.boss.state!=='shift'&&!g.boss.phased&&g.overlap(bolt,g.boss)){if(!damageBoss(g,2,true,bolt.x+bolt.w/2-Math.sign(bolt.vx)*20))g.emit('blocked',{x:bolt.x,y:bolt.y});bolt.dead=true;}else for(const e of g.enemies)if(!e.dead&&!e.phased&&g.overlap(bolt,e)){g.hitEnemy(e,false,2,{reflected:true,sourceX:bolt.x+bolt.w/2-Math.sign(bolt.vx)*20});bolt.dead=true;break;}}
   else if(g.overlap(g.player,bolt)){if(bolt.kind==='echoOrb'){if(bolt.state==='pulling')handleFlyingContact(g,{...bolt,type:'echo'});}else{const safe=g.player.dash>0;g.hurt(false,bolt.x);if(bolt.push&&!safe&&g.mode==='playing')g.push(Math.sign(bolt.vx),bolt.x);bolt.dead=true;}}
+  if(bolt.dead)g.emit('boltImpact',{x:bolt.x+bolt.w/2,y:bolt.y+bolt.h/2,kind:bolt.kind,visual:bolt.visual});
  }
  const r=rooms[g.room];g.bolts=g.bolts.filter(v=>!v.dead&&v.ttl>0&&v.x>r.x-50&&v.x<r.end+50&&v.y<530&&(v.room===undefined||v.room===g.room)).slice(-90);
 }

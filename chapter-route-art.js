@@ -1,6 +1,6 @@
-import {rooms} from './level.js?v=0.20.0';
-import {rect,text} from './pixel.js?v=0.20.0';
-import {drawTargetSprite} from './target-art.js?v=0.20.0';
+import {rooms} from './level.js?v=0.21.0';
+import {rect,text} from './pixel.js?v=0.21.0';
+import {drawTargetSprite} from './target-art.js?v=0.21.0';
 const columns={server:0,power:1,console:2,anchor:3};
 export function drawMapProps(c,a,g,t){
  if(!a.destructibles)return;

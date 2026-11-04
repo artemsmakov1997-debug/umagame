@@ -4,7 +4,7 @@ const {open,begin,fixture,shot}=require('./browser-helpers.cjs');
  const b=await chromium.launch({executablePath:process.env.BROWSER_PATH,args:['--no-sandbox']}),errors=[];
  for(const [width,height]of [[1920,1080],[1280,960],[320,844],[844,390]]){
   const p=await b.newPage({viewport:{width,height},isMobile:width<1000,hasTouch:width<1000});p.on('pageerror',e=>errors.push(e.message));await open(p,{story:false,testing:true});
-  await p.evaluate(async()=>{const {GameAudio}=await import('./audio.js?v=0.20.0'),setScene=GameAudio.prototype.setScene;GameAudio.prototype.setScene=function(...args){window.testAudio=this;return setScene.apply(this,args);};});
+  await p.evaluate(async()=>{const {GameAudio}=await import('./audio.js?v=0.21.0'),setScene=GameAudio.prototype.setScene;GameAudio.prototype.setScene=function(...args){window.testAudio=this;return setScene.apply(this,args);};});
   await p.click('[data-menu=settings]');await p.locator('#settings-layer:not([hidden])').waitFor();
   await p.locator('#volume-music').evaluate(e=>{e.value=35;e.dispatchEvent(new Event('input',{bubbles:true}));});await p.locator('#volume-effects').evaluate(e=>{e.value=65;e.dispatchEvent(new Event('input',{bubbles:true}));});
   await p.waitForFunction(()=>window.testAudio?.music&&Math.abs(testAudio.music.gain.value-.42*.35)<.001&&Math.abs(testAudio.effects.gain.value-.66*.65)<.001);assert.equal(await p.locator('#value-music').textContent(),'35%');assert.equal(await p.locator('#value-effects').textContent(),'65%');

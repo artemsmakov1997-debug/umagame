@@ -1,30 +1,33 @@
-import {beginChapterStory,advanceChapterStory} from './chapter-story.js?v=0.20.0';
-import {createMapProps,createRoutePortals,stepMapProps,stepSection,stepLocationHazards,tryRouteShortcut} from './chapter-routes.js?v=0.20.0';
-import {advanceOpening} from './prologue.js?v=0.20.0';
-import {tryDrop} from './drop-through.js?v=0.20.0';
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.20.0';
-import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.20.0';
-import {stepEnemies,stepPortals} from './enemies.js?v=0.20.0';
-import {cancelInformantTeleport} from './informant-teleport.js?v=0.20.0';
-import {applyRelayEffect} from './chapter-systems.js?v=0.20.0';
-import {scenes,evidence,relayClues} from './story.js?v=0.20.0';
-import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.20.0';
-import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.20.0';
-import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.20.0';
-import {cleanCopies} from './tactical-enemies.js?v=0.20.0';
-import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.20.0';
-import {beginFinale,advanceFinale} from './finale.js?v=0.20.0';
-import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.20.0';
-import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.20.0';
-import {stepEchoPull,releaseEchoPull} from './echo-pull.js?v=0.20.0';
-export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.20.0';
+import {beginBossDefeat,stepBossDefeat,skipBossDefeat} from './boss-defeat.js?v=0.21.0';
+import {stepConclusion,advanceConclusion} from './conclusion.js?v=0.21.0';
+import {signalProfile,stepSignalStory} from './signal.js?v=0.21.0';
+import {beginChapterStory,advanceChapterStory} from './chapter-story.js?v=0.21.0';
+import {createMapProps,createRoutePortals,stepMapProps,stepSection,stepLocationHazards,tryRouteShortcut} from './chapter-routes.js?v=0.21.0';
+import {advanceOpening} from './prologue.js?v=0.21.0';
+import {tryDrop} from './drop-through.js?v=0.21.0';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.21.0';
+import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.21.0';
+import {stepEnemies,stepPortals} from './enemies.js?v=0.21.0';
+import {cancelInformantTeleport} from './informant-teleport.js?v=0.21.0';
+import {applyRelayEffect} from './chapter-systems.js?v=0.21.0';
+import {scenes,evidence,relayClues} from './story.js?v=0.21.0';
+import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.21.0';
+import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.21.0';
+import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.21.0';
+import {cleanCopies} from './tactical-enemies.js?v=0.21.0';
+import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.21.0';
+import {beginFinale,advanceFinale} from './finale.js?v=0.21.0';
+import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.21.0';
+import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.21.0';
+import {stepEchoPull,releaseEchoPull} from './echo-pull.js?v=0.21.0';
+export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.21.0';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export function playerHeight(p,height){const feet=p.y+p.h;p.h=height;p.y=feet-height;}
 export class Game {
  constructor({story=true,cinematic=false,testingInvulnerable=false}={}){this.testingInvulnerable=testingInvulnerable;this.hintsEnabled=true;this.overlap=overlap;this.storyEnabled=story;this.cinematic=cinematic;this.reset();}
  reset(){
   this.mode='ready';delete this.pausedFrom;this.time=0;this.fish=0;this.kills=0;this.health=MAX_HEALTH;this.lives=START_LIVES;this.respawnTime=0;this.camera=0;this.checkpoint=0;this.room=0;this.gateHint=-1;
-  this.dialogue=null;this.ending=null;this.finalScore=null;this.encounters={};this.seenScenes=new Set();this.evidence=[];this.clues=[];this.parries=0;this.truthFound=false;this.wakeTime=0;this.viewWidth=this.viewWidth||WIDTH;this.transition=null;this.loading=null;this.chapter=0;this.bossesDefeated=new Set();this.roomHistory=new Set([0]);this.visitedPlatforms=new Set(['0:0']);this.safeTrail=[];this.echoImmunity=0;this.echoWarp=null;this.tether=null;
+  this.dialogue=null;this.ending=null;this.conclusion=null;this.defeat=null;this.signal={...signalProfile(0),echoTime:0};this.finalScore=null;this.encounters={};this.seenScenes=new Set();this.evidence=[];this.clues=[];this.parries=0;this.truthFound=false;this.wakeTime=0;this.viewWidth=this.viewWidth||WIDTH;this.transition=null;this.loading=null;this.chapter=0;this.bossesDefeated=new Set();this.roomHistory=new Set([0]);this.visitedPlatforms=new Set(['0:0']);this.safeTrail=[];this.echoImmunity=0;this.echoWarp=null;this.tether=null;
   this.trainingHintShown=false;this.tutorial={step:0,distance:0,jumped:false,climbed:0,complete:false};
   this.abilities={attack:true,dash:true,sneak:true};this.notebooks=createNotebooks();
   this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;this.lifePickups=createLifePickups();
@@ -35,6 +38,7 @@ export class Game {
  emit(type,data={}){this.events.push({type,...data});}
  unlockForRoom(){return this.abilities;}
 
+ abandon(){this.mode='ready';delete this.pausedFrom;for(const key of ['dialogue','defeat','conclusion','ending','interlude','loading','arenaEntry','echoWarp','echoPull','tether','swallow'])this[key]=null;this.bolts=[];this.portals=[];this.inks=[];this.cuts=[];this.events=[];this.signal.echoTime=0;this.boss.active=false;Object.assign(this.player,{attack:0,dash:0,vx:0,vy:0,knock:0,climbing:false,pulled:false,echoPulled:false});}
  start(){this.reset();this.openingIndex=0;this.mode=this.storyEnabled?(this.cinematic?'prologue':'waking'):'playing';this.emit('start');}
  advanceInterlude(direction=1){return advanceChapterStory(this,direction);}
  advanceOpening(direction=1){return advanceOpening(this,direction);}
@@ -43,11 +47,11 @@ export class Game {
  finishWakeup(){if(this.mode!=='waking')return;this.wakeTime=WAKE_DURATION;this.mode='playing';this.openDialogue('intro');}
  openDialogue(id,after='playing',pages=scenes[id]?.pages){
   if(!this.storyEnabled||this.dialogue||this.seenScenes.has(id)||!pages?.length)return false;
-  this.seenScenes.add(id);this.dialogue={id,page:0,after,pages};this.mode='dialogue';this.player.attack=0;this.player.vx=0;this.emit('dialogue',{id});return true;
+  this.seenScenes.add(id);this.dialogue={id,page:0,after,pages,signal:signalProfile(this.room)};this.mode='dialogue';this.player.attack=0;this.player.vx=0;this.emit('dialogue',{id});return true;
  }
  advanceDialogue(skip=false){
   if(this.mode!=='dialogue'||!this.dialogue)return false;
-  const d=this.dialogue,pages=d.pages||scenes[d.id]?.pages||[];if(!skip&&d.page+1<pages.length){d.page++;this.emit('dialogue',{id:d.id});return true;}
+  const d=this.dialogue,pages=d.pages||scenes[d.id]?.pages||[];if(!skip&&d.page+1<pages.length){if(d.id==='intro'&&d.page===0){d.catReply=true;this.emit('catMeow');}else d.catReply=false;d.page++;this.emit('dialogue',{id:d.id});return true;}
   this.dialogue=null;this.mode=d.after;this.player.inv=Math.max(this.player.inv,.65);
   if(d.next){this.mode='playing';this.openDialogue(d.next,'won');return true;}
   this.emit(this.mode==='won'?'won':'dialogueEnd',{id:d.id});return true;
@@ -65,7 +69,10 @@ export class Game {
   if(record&&!this.evidence.some(e=>e.chapter===r.chapter)){this.evidence.push({...record,chapter:r.chapter,room});this.emit('evidence',{room,chapter:r.chapter});}
   const note=this.notebooks.find(n=>n.bossRecord&&n.room===room);if(note&&note.readyAt===Infinity)note.readyAt=this.time+.5;
  }
- bossDefeated(){const b=this.boss;if(!b.id||this.bossesDefeated.has(b.id))return;this.bossesDefeated.add(b.id);b.active=false;this.bolts=[];this.emit('miniBossDefeated',{boss:b.id,x:b.x,y:b.y});if(b.id==='infoshum')this.finish();else{this.completeChapter(this.room);beginChapterStory(this);}}
+ bossDefeated(){return beginBossDefeat(this);}
+ skipBossDefeat(){return skipBossDefeat(this);}
+ advanceConclusion(skip=false){return advanceConclusion(this,skip);}
+ resolveBossDefeat(){const b=this.boss;if(!b.id||this.bossesDefeated.has(b.id))return;this.bossesDefeated.add(b.id);b.active=false;this.bolts=[];this.emit('miniBossDefeated',{boss:b.id,x:b.x,y:b.y});if(b.id==='infoshum')this.finish();else{this.completeChapter(this.room);beginChapterStory(this);}}
 
  finish(){return beginFinale(this);}
  advanceEnding(direction=1){return advanceFinale(this,direction);}
@@ -101,7 +108,7 @@ export class Game {
  hitEnemy(e,stomp=false,amount=null,{reflected=false,sourceX=this.player.x+this.player.w/2}={}){
   if(e.inv>0||e.dead||e.phased)return false;
   if(e.type==='clickbait'||e.type==='inflator'&&(sourceX-e.x-e.w/2)*e.dir>=-6||e.type==='copier'&&!['printing','recover'].includes(e.state)){
-   this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
+   e.guardFlash=.24;this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
   }
   if(e.type==='informant'&&e.shieldBroken===0&&['windup','casting'].includes(e.state)&&!reflected){this.emit('blocked',{x:e.x,y:e.y});return false;}
   if(reflected)e.shieldBroken=3;
@@ -119,12 +126,14 @@ export class Game {
   if(q.step===2&&q.climbed>=65&&p.grounded&&p.y+p.h<=246){q.step=3;q.complete=true;this.emit('lesson',{step:3});}
  }
  step(dt,input={}){
+  if(this.mode==='bossDefeat'){stepBossDefeat(this,Math.min(dt,1/30));return;}
+  if(this.mode==='conclusion'){stepConclusion(this,Math.min(dt,1/30));return;}
   if(this.mode==='echoWarp'){this.time+=Math.min(dt,1/30);stepEchoWarp(this,dt);return;}
   if(this.mode==='loading'){this.time+=Math.min(dt,1/30);stepLocationTransition(this,dt);return;}
   if(this.mode==='enteringArena'){this.time+=Math.min(dt,1/30);stepArenaEntry(this,dt);return;}
   if(this.mode==='respawning'){dt=Math.min(dt,1/30);this.respawnTime=Math.max(0,this.respawnTime-dt);this.player.hurtTime=Math.max(0,this.player.hurtTime-dt);if(this.respawnTime===0)this.restoreCheckpoint();return;}
   if(this.mode==='waking'){const before=this.wakeTime;this.wakeTime=Math.min(WAKE_DURATION,this.wakeTime+Math.min(dt,1/30));if(before<2.7&&this.wakeTime>=2.7)this.emit('infection');if(this.wakeTime>=WAKE_DURATION)this.finishWakeup();return;}
-  if(this.mode!=='playing'||this.checkNotebooks())return;dt=Math.min(dt,1/30);this.time+=dt;
+  if(this.mode!=='playing'||this.checkNotebooks())return;dt=Math.min(dt,1/30);this.time+=dt;stepSignalStory(this,dt);
   if(this.transition){this.transition.time+=dt;if(this.transition.time>=this.transition.duration)this.transition=null;}
   this.routeUpPressed=!!input.up&&!this.routeUpHeld;this.routeUpHeld=!!input.up;if(tryRouteShortcut(this))input={...input,up:false,jump:false};
   const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);
