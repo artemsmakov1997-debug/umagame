@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030a1e"><meta name="description" content="УМА ПРОТИВ ИНФОШУМА — держи ухо востро. Пиксельная игра про кошку Уму и ожившие новости.">
 <title>УМА ПРОТИВ ИНФОШУМА — держи ухо востро</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.20.0">
+<link rel="preload" href="./assets/game-heading.png?v=0.20.1" as="image"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.20.1">
 </head>
 <body>
 <main id="app" data-screen="menu">
@@ -14,7 +14,7 @@
 <canvas id="game" width="768" height="480" tabindex="0" aria-label="Пиксельная игра: Ума против инфошума"></canvas>
 <button id="pause" aria-label="Меню игры" hidden><span></span><span></span><span></span></button>
 <section id="menu-screen" class="screen menu-screen" aria-label="Главное меню">
-<header class="game-heading"><h1>УМА ПРОТИВ ИНФОШУМА</h1></header>
+<header class="game-heading"><h1><span class="sr-only">УМА ПРОТИВ ИНФОШУМА</span><svg class="game-logo" viewBox="65 109 2063 525" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><image href="./assets/game-heading.png?v=0.20.1" width="2172" height="724"/></svg></h1></header>
 <nav class="pixel-panel menu-panel" aria-label="Меню"><h2>МЕНЮ</h2><div class="menu-options">
 <button id="start-game" class="menu-item selected" data-menu="start" disabled>Начать игру</button>
 <button class="menu-item" data-menu="library" disabled>Библиотека</button>
