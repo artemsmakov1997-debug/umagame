@@ -550,18 +550,18 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 #menu-screen{background:linear-gradient(90deg,#020b1f99 0%,#020b1f80 31%,#020b1f25 49%,transparent 62%)}
 #app[data-screen="menu"] .game-heading{left:8%;top:8%;width:49%;height:22%}
 #app[data-screen="menu"] .game-logo{overflow:visible}
-#app[data-screen="menu"] .menu-panel{left:8%;top:36%;width:32%;height:49%;padding:0;background:transparent;border:0;box-shadow:none}
+#app[data-screen="menu"] .menu-panel{left:16.5%;top:36%;width:32%;height:49%;padding:0;background:transparent;border:0;box-shadow:none}
 #app[data-screen="menu"] .menu-panel::before,#app[data-screen="menu"] .menu-panel::after{display:none}
 #app[data-screen="menu"] .menu-options{height:100%;gap:8px;align-items:stretch}
-#app[data-screen="menu"] .menu-item{justify-content:flex-start;text-align:left;min-height:0;padding:7px 20px;border:2px solid transparent;background:transparent;box-shadow:none;color:#ffe9ba;font-size:clamp(25px,2.4vw,44px);text-shadow:2px 3px #020919}
-#app[data-screen="menu"] .menu-item.selected,#app[data-screen="menu"] .menu-item:focus-visible{background:transparent;border-color:transparent;box-shadow:none;color:#ffe19a}
-#app[data-screen="menu"] .menu-item[data-menu="start"]{justify-content:center;text-align:center;border-color:#ffe5a2;background:#ffda83;box-shadow:inset 0 0 0 3px #b98b3d,2px 3px #020919;color:#102035;text-shadow:none}
+#app[data-screen="menu"] .menu-item{justify-content:center;text-align:center;min-height:0;padding:7px 20px;border:2px solid transparent;background:transparent;box-shadow:none;color:#ffe9ba;font-size:clamp(25px,2.4vw,44px);text-shadow:2px 3px #020919}
+#app[data-screen="menu"] .menu-item:focus-visible{background:transparent;border-color:transparent;box-shadow:none;color:#ffe9ba;outline:none}
+#app[data-screen="menu"] .menu-item.selected{justify-content:center;text-align:center;border-color:#ffe5a2;background:#ffda83;box-shadow:inset 0 0 0 3px #b98b3d,2px 3px #020919;color:#102035;text-shadow:none}
 #app[data-screen="menu"] .menu-item.selected::before{left:-32px;width:25px;height:29px}
-#app[data-screen="menu"] .media-link.selected .media-blue{color:#92e6ff}
+#app[data-screen="menu"] .media-link.selected .media-blue{color:#17679d}
 #app[data-screen="menu"] .menu-hint{display:none}
 @media(max-width:700px) and (orientation:portrait){
  #app[data-screen="menu"] .game-heading{left:6%;top:5%;width:88%;height:17%}
- #app[data-screen="menu"] .menu-panel{left:9%;top:28%;width:68%;height:44%}
+ #app[data-screen="menu"] .menu-panel{left:16%;top:28%;width:68%;height:44%}
  #app[data-screen="menu"] .menu-options{gap:4px}
  #app[data-screen="menu"] .menu-item{min-height:44px;font-size:clamp(23px,6.7vw,30px);padding:5px 12px}
  #app[data-screen="menu"] .menu-item.selected::before{left:-23px;width:18px;height:22px}
@@ -573,7 +573,7 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 }
 @media(max-height:550px) and (orientation:landscape){
  #app[data-screen="menu"] .game-heading{left:7%;top:5%;width:49%;height:25%}
- #app[data-screen="menu"] .menu-panel{left:7%;top:33%;width:34%;height:60%}
+ #app[data-screen="menu"] .menu-panel{left:14.5%;top:33%;width:34%;height:60%}
  #app[data-screen="menu"] .menu-options{gap:2px}
  #app[data-screen="menu"] .menu-item{min-height:30px;padding:3px 12px;font-size:clamp(20px,3vw,26px)}
  #app[data-screen="menu"] .menu-item.selected::before{left:-25px;width:19px;height:23px}
