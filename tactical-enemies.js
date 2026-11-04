@@ -35,7 +35,7 @@ function copyEnemy(g,e){
  const start=s.x+4,end=s.x+s.w-52,options=[e.x+e.dir*66,start,end,s.x+s.w*.25,s.x+s.w*.75];
  const x=options.map(x=>clamp(x,start,end)).find(x=>Math.abs(x-g.player.x)>62&&!g.enemies.some(other=>other.active&&!other.dead&&!other.phased&&other.room===e.room&&other.platformIndex===s.index&&x+50>other.x&&x-2<other.x+other.w));if(x===undefined)return false;
  const copy=enemy(original.type,e.room,x-rooms[e.room].x,s.index,{id:'copy-'+(++g.tacticalSerial),copyOwnerId:e.id,copyOf:original.id,active:true,noticed:true,spawnTime:.65,hp:1,maxHp:1,dir:g.player.x<x?-1:1,shieldBroken:2});
- copy.y=s.y-copy.h;copy.origin=start;copy.end=end;g.enemies.push(copy);g.emit('copySpawn',{x:copy.x,y:copy.y,enemyType:e.type});return true;
+ copy.x=x;copy.y=s.y-copy.h;copy.origin=start;copy.end=end;g.enemies.push(copy);g.emit('copySpawn',{x:copy.x,y:copy.y,enemyType:e.type});return true;
 }
 export function planCut(g,e){if(planPartitionCut(g,e))return true;
  const p=g.player,surfaces=g.platforms.filter(s=>s.room===e.room&&s.cuttable&&!g.cuts.some(c=>c.platformId===s.id));

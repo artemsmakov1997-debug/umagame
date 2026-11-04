@@ -1,6 +1,6 @@
 import {stepDimension} from './dimension-systems.js?v=0.22.0';
 import {stepWinds} from './wind-systems.js?v=0.22.0';
-import {createInteractiveWorld,stepDevices,stepSynergies,silenceNetwork,stepChapterEvent} from './world-interactions.js?v=0.22.0';
+import {createInteractiveWorld,resetInteractiveRoom,stepDevices,stepSynergies,silenceNetwork,stepChapterEvent} from './world-interactions.js?v=0.22.0';
 import {stepArenaSystems} from './arena-systems.js?v=0.22.0';
 import {createWorldGeometry,worldHeight,stopAtWall,stopAtCeiling,stepTemporarySurfaces} from './world-geometry.js?v=0.22.0';
 import {beginBossDefeat,stepBossDefeat,skipBossDefeat} from './boss-defeat.js?v=0.22.0';
@@ -43,7 +43,7 @@ export class Game {
  emit(type,data={}){this.events.push({type,...data});}
  unlockForRoom(){return this.abilities;}
 
- abandon(){this.mode='ready';delete this.pausedFrom;for(const key of ['dialogue','defeat','conclusion','ending','interlude','loading','arenaEntry','echoWarp','echoPull','tether','swallow'])this[key]=null;this.bolts=[];this.portals=[];this.inks=[];this.cuts=[];this.temporarySurfaces=[];this.events=[];this.signal.echoTime=0;this.gusts=[];this.decoys=[];this.echoTraces=[];this.chapterEvent=null;this.boss.active=false;Object.assign(this.player,{attack:0,dash:0,vx:0,vy:0,knock:0,climbing:false,pulled:false,echoPulled:false});}
+ abandon(){this.mode='ready';delete this.pausedFrom;for(const key of ['dialogue','defeat','conclusion','ending','interlude','loading','arenaEntry','echoWarp','echoPull','tether','swallow'])this[key]=null;this.bolts=[];this.portals=[];this.inks=[];this.cuts=[];this.temporarySurfaces=[];this.events=[];this.signal.echoTime=0;this.gusts=[];this.decoys=[];this.echoTraces=[];this.inkGates=[];this.motionHistory=[];this.chapterEvent=null;this.boss.active=false;Object.assign(this.player,{attack:0,dash:0,vx:0,vy:0,knock:0,climbing:false,pulled:false,echoPulled:false});}
  start(){this.reset();this.openingIndex=0;this.mode=this.storyEnabled?(this.cinematic?'prologue':'waking'):'playing';this.emit('start');}
  advanceInterlude(direction=1){return advanceChapterStory(this,direction);}
  advanceOpening(direction=1){return advanceOpening(this,direction);}
@@ -88,7 +88,7 @@ export class Game {
   this.health=MAX_HEALTH;this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(local);this.dialogue=null;this.arenaEntry=null;this.loading=null;activateRoom(this,this.checkpoint,{heal:false});this.mode='playing';this.emit('lifeRestored',{lives:this.lives});
  }
  retryLocation(){
-  const index=this.checkpoint;for(const d of this.mapProps)if(d.room===index){d.hp=1;d.breakTime=0;d.lastSwing=-1;}for(const r of this.routePortals)if(r.room===index)r.cooldown=0;this.visitedSections=new Set([...this.visitedSections].filter(key=>!key.startsWith(index+':')));this.lives=START_LIVES;for(const d of this.relays)if(d.room===index){d.hp=1;d.breakTime=0;d.lastSwing=-1;}
+  const index=this.checkpoint;resetInteractiveRoom(this,index);for(const d of this.mapProps)if(d.room===index){d.hp=1;d.breakTime=0;d.lastSwing=-1;}for(const r of this.routePortals)if(r.room===index)r.cooldown=0;this.visitedSections=new Set([...this.visitedSections].filter(key=>!key.startsWith(index+':')));this.lives=START_LIVES;for(const d of this.relays)if(d.room===index){d.hp=1;d.breakTime=0;d.lastSwing=-1;}
   if(rooms[index].boss)this.bossesDefeated.delete(rooms[index].boss);
   this.restoreCheckpoint();this.emit('locationRetry',{room:index});
  }
@@ -144,12 +144,12 @@ export class Game {
   this.routeUpPressed=!!input.up&&!this.routeUpHeld;this.routeUpHeld=!!input.up;if(tryRouteShortcut(this))input={...input,up:false,jump:false};
   const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);
   if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);if(input.dash&&this.abilities.dash&&p.dashCooldown===0){this.swallow=null;if(captor){captor.captureLock=3;captor.captureTime=null;captor.state='recover';captor.timer=3;captor.attackFlash=0;}p.dash=.2;p.dashCooldown=1.5;p.inv=Math.max(p.inv,.3);p.vx=p.dir*430;this.emit('dash');return;}this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}this.swallow=null;if(captor){captor.captureLock=3;captor.state='recover';captor.timer=3;}this.hurt(false,captor?.x??p.x);p.inv=Math.max(p.inv,1.3);this.updateCamera();}return;}
-  stepArenaSystems(this,dt);stepSynergies(this);stepChapterEvent(this,dt);stepTemporarySurfaces(this,dt);stepWorldPlatforms(this,dt);
+  stepArenaSystems(this,dt);stepSynergies(this,dt);stepChapterEvent(this,dt);stepTemporarySurfaces(this,dt);stepWorldPlatforms(this,dt);
   stepTacticalTerrain(this,dt);
   for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace'])p[key]=Math.max(0,p[key]-dt);
   const keyboardAxis=(input.right?1:0)-(input.left?1:0),axis=keyboardAxis||Math.max(-1,Math.min(1,input.axisX||0));if(Math.abs(axis)>.05&&p.dash===0)p.dir=axis>0?1:-1;
   const ladder=ladders.find(l=>p.x+p.w>l.x&&p.x<l.x+l.w&&p.y+p.h>=l.y&&p.y<l.y+l.h);
-  let useLadder=ladder&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);
+  let useLadder=ladder&&!input.jump&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);
   const dropping=tryDrop(this,input,dt);if(dropping)useLadder=false;
   const canAttack=input.attack&&!input.down&&this.abilities.attack,canDash=input.dash&&this.abilities.dash;
   p.sneaking=!!(this.abilities.sneak&&input.down&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&p.attack===0&&!canAttack&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);

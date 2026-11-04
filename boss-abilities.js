@@ -18,7 +18,7 @@ export function summonBossTroops(g,{types=null,copy=false,count=2}={}){
  const made=[];for(const t of places){if(b.summonRemaining<=0)break;let type;
   for(let attempt=0;attempt<roster.length;attempt++){const candidate=roster[b.summonCursor++%roster.length];if(candidate==='clickbait'&&all.some(e=>e.type==='clickbait'))continue;if(!copy&&alive.concat(made).some(e=>e.type===candidate))continue;type=candidate;break;}
   if(!type)continue;const e=enemy(type,g.room,t.x-rooms[g.room].x,t.index,{id:'boss-troop-'+(++g.tacticalSerial),bossOwnerId:b.id,minion:true,active:true,noticed:true,spawnTime:.6,dir:g.player.x<t.x?-1:1,...(copy?{copyOwnerId:bossActorId(b),copyOf:'boss-print',hp:1,maxHp:1}:{})});
-  const surface=g.platforms.find(s=>s.room===g.room&&s.index===t.index);e.y=t.y-(e.flying?100:e.h);e.origin=surface.x+8;e.end=surface.x+surface.w-e.w-8;
+  const surface=g.platforms.find(s=>s.room===g.room&&s.index===t.index);e.x=t.x;e.y=t.y-(e.flying?100:e.h);e.origin=surface.x+8;e.end=surface.x+surface.w-e.w-8;
   b.summonRemaining--;g.enemies.push(e);made.push(e);g.emit(copy?'copySpawn':'bossSummon',{boss:b.id,enemyType:type,x:e.x,y:e.y});
  }return made;
 }

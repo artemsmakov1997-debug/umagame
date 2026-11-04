@@ -1,3 +1,4 @@
+import {collisionWalls} from './world-geometry.js?v=0.22.0';
 import {solidSurfaces} from './terrain.js?v=0.22.0';
 import {platforms} from './level.js?v=0.22.0';
 export const TELEPORT_PHASES={charge:.45,out:.24,blink:.1,in:.32};
@@ -6,7 +7,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function teleportLandingClear(g,e,target){
  if(g.cuts?.some(c=>c.phase==='gap')&&!solidSurfaces(g).some(s=>s.room===e.room&&s.index===target.index&&target.x>=s.x&&target.x+e.w<=s.x+s.w&&Math.abs(target.y+e.h-s.y)<3))return false;
  const area={x:target.x-10,y:target.y-36,w:e.w+20,h:e.h+40};
- if(g.overlap(g.player,area))return false;
+ if(g.overlap(g.player,area)||collisionWalls(g,e).some(w=>g.overlap(area,w)))return false;
  return !g.enemies.some(other=>{
   if(other===e||!other.active||other.dead||other.room!==e.room)return false;
   const reserved=other.teleport&&!other.teleport.cancelled?other.teleport.target:null;

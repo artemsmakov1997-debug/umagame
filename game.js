@@ -84,6 +84,9 @@ async function boot(){
   audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup','controlBreak'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
   if(event.type==='worldEvent')notify(({newsroom:'Печатный цех ожил! Уходи по лестницам и конвейерам.',roofs:'Передатчики перегружены: ищи безопасный воздушный поток.',studio:'Декорации перестраиваются. Пульт наверху останавливает сцену.',noise:'Твои прошлые шаги оживают. Меняй маршрут и используй рывок.'})[event.theme],5000);
+  if(event.type==='mechanismChanged')notify('Узел заклинило. Защита ядра ослабла.',2400);
+  if(event.type==='tickerPlatform')notify('Голубая строка выдержит Уму. Прыгай на неё.',2600);
+  if(event.type==='signalRedirected')notify('Сигнал перенаправлен.',1800);
   if(event.type==='generatorOff')notify('Источник отключён. Новых копий не будет.');
   if(event.type==='voiceEcho')notify(event.text,4800);
   if(event.type==='bossDefeatStart'){clearInput();clearEffects();}

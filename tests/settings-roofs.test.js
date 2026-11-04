@@ -10,11 +10,11 @@ const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function ready(protectedMode=false){const g=new Game({story:false,testingInvulnerable:protectedMode});g.start();activateRoom(g,3);g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];return g;}
 test('temporary protection covers ordinary damage, capture and a real fall, without removing platform hazards',()=>{
  const g=ready(true);g.health=2;g.hurt();assert.equal(g.health,2);g.loseLife('clickbait');assert.equal(g.lives,3);assert.equal(g.mode,'playing');
- Object.assign(g.player,{y:560,grounded:false});tick(g,1);assert.equal(g.lives,3);assert.equal(g.health,2);assert.equal(g.player.supportId,'3:0');assert.ok(g.events.some(e=>e.type==='testRescue'&&e.reason==='fall'));
+ Object.assign(g.player,{y:rooms[3].height+35,grounded:false});tick(g,1);assert.equal(g.lives,3);assert.equal(g.health,2);assert.equal(g.player.supportId,'3:0');assert.ok(g.events.some(e=>e.type==='testRescue'&&e.reason==='fall'));
  g.start();assert.equal(g.testingInvulnerable,true);g.testingInvulnerable=false;g.start();assert.equal(g.testingInvulnerable,false);
 });
 test('disabling protection restores full stock loss on falling, even during dash invulnerability',()=>{
- const g=ready(true);g.testingInvulnerable=false;Object.assign(g.player,{y:560,grounded:false,dash:.2,inv:99});g.health=3;tick(g,1);assert.equal(g.lives,2);assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.health,4);assert.equal(g.mode,'playing');assert.equal(g.room,3);
+ const g=ready(true);g.testingInvulnerable=false;Object.assign(g.player,{y:rooms[3].height+35,grounded:false,dash:.2,inv:99});g.health=3;tick(g,1);assert.equal(g.lives,2);assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.health,4);assert.equal(g.mode,'playing');assert.equal(g.room,3);
 });
 test('a fragile roof warns, actually drops its passenger, freezes in pause and then returns',()=>{
  const g=ready(true),s=g.platforms.find(s=>s.id==='3:3');Object.assign(g.player,{x:s.x+40,y:s.y-48,grounded:true,supportId:s.id});tick(g,25);assert.ok(s.collapseCharge>.35);assert.ok(solidSurfaces(g).some(p=>p.id===s.id));tick(g,20);assert.ok(s.collapseTime>2);assert.ok(!solidSurfaces(g).some(p=>p.id===s.id));tick(g,8);assert.ok(g.player.y+48>s.y+5);

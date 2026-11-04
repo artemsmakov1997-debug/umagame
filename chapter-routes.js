@@ -1,3 +1,4 @@
+import {silenceNetwork} from './world-interactions.js?v=0.22.0';
 import {rooms,platforms} from './level.js?v=0.22.0';
 export const sectionNames={1:['Архив редакции','Печатный зал','Серверная'],3:['Переулок антенн','Рекламные крыши','Мачтовый квартал'],5:['За кулисами','Подвижная сцена','Монтажная'],7:['Бумажные острова','Разбитые отражения','Порог Инфошума']};
 export const propKinds={1:'server',3:'power',5:'console',7:'anchor'};
@@ -5,8 +6,8 @@ export function createMapProps(){return [1,3,5,7].flatMap(room=>(room===5?[12,22
 export function createRoutePortals(){return [3,5,7].flatMap(room=>[0,1].map(i=>({room,id:`burrow-${room}-${i}`,fromIndex:room===3?(i?12:9):room===5?(i?24:15):(i?22:13),toIndex:room===3?(i?25:17):room===5?(i?27:19):(i?25:17),cooldown:0})));}
 export function stepMapProps(g,dt,paw){
  const p=g.player;
- for(const d of g.mapProps||[]){if(d.room!==g.room)continue;const s=g.platforms.find(s=>s.room===d.room&&s.index===d.platformIndex);d.x=s.x+s.w-66;d.y=s.y-62;d.breakTime=Math.max(0,d.breakTime-dt);
-  if(d.hp&&p.attack>0&&d.lastSwing!==p.swing&&g.overlap(paw,d)){d.lastSwing=p.swing;d.hp=0;d.breakTime=.7;g.emit('controlBreak',{kind:d.kind,x:d.x+24,y:d.y+30});}
+ for(const d of g.mapProps||[]){if(d.room!==g.room)continue;const s=g.platforms.find(s=>s.room===d.room&&s.index===d.platformIndex);d.x=s.x+s.w-66;d.y=s.y-62;d.breakTime=Math.max(0,d.breakTime-dt);d.blocked=Math.max(0,(d.blocked||0)-dt);
+  if(d.hp&&p.attack>0&&d.lastSwing!==p.swing&&g.overlap(paw,d)){d.lastSwing=p.swing;if(d.blocked>0){d.blocked=0;continue;}d.hp=0;silenceNetwork(g,d);d.breakTime=.7;g.emit('controlBreak',{kind:d.kind,x:d.x+24,y:d.y+30});}
  }
  for(const route of g.routePortals||[])if(route.room===g.room)route.cooldown=Math.max(0,route.cooldown-dt);
 }

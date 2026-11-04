@@ -29,7 +29,7 @@ export function stepPortals(g,dt){
   if(portal.spawned<(portal.targetCount||1)&&portal.time>=.7+portal.spawned*.5){
    portal.spawned++;const count=g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===portal.room).length;if(count>=3||g.enemies.filter(e=>e.portalOwnerId===portal.ownerId&&!e.dead).length>=2)continue;
    let x=portal.x;const p=g.player;if(Math.abs(x-p.x)<60)x=p.x<=(owner.origin+owner.end)/2?owner.end:owner.origin;
-   const e=enemy('fakenews',portal.room,x-rooms[portal.room].x,portal.platformIndex,{id:`portal-${portal.id}-${portal.spawned}`,active:true,spawnTime:.45,portalMinion:true,portalOwnerId:portal.ownerId,hp:1,maxHp:1,dir:p.x<x?-1:1,noticed:true});const surface=g.platforms?.find(s=>s.room===e.room&&s.index===e.platformIndex);if(surface){e.y=surface.y-e.h;e.origin=surface.x+12;e.end=surface.x+surface.w-60;}g.enemies.push(e);g.emit('portalSpawn',{x:e.x,y:e.y});
+   const e=enemy('fakenews',portal.room,x-rooms[portal.room].x,portal.platformIndex,{id:`portal-${portal.id}-${portal.spawned}`,active:true,spawnTime:.45,portalMinion:true,portalOwnerId:portal.ownerId,hp:1,maxHp:1,dir:p.x<x?-1:1,noticed:true});const surface=g.platforms?.find(s=>s.room===e.room&&s.index===e.platformIndex);if(surface){e.x=x;e.y=surface.y-e.h;e.origin=surface.x+12;e.end=surface.x+surface.w-60;}g.enemies.push(e);g.emit('portalSpawn',{x:e.x,y:e.y});
   }
  }
  g.portals=g.portals.filter(p=>p.cancelled?(p.closeTime||0)<.3:p.time<2.8);
@@ -48,7 +48,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
   }
   if(!e.active){if(g.enemies.filter(other=>other!==e&&other.room===g.room&&other.active&&!other.dead&&Math.abs(other.x-p.x)<620).length>=3)continue;if(rooms[e.room].multiStorey&&Math.abs(e.y-p.y)>(g.viewHeight||480)+80)continue;if(p.x-rooms[e.room].x<e.trigger||!canActivateEnemy(g,e))continue;e.active=true;e.spawnTime=.55;g.emit('enemySpawn',{x:e.x,y:e.y});}
   if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);e.moving=false;continue;}
-  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown','guardFlash','boundTime','bridgeCooldown','captureLock'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
+  for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown','guardFlash','boundTime','bridgeCooldown','captureLock','navRetry'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   updateEnemyInk(g,e);
   const target=distractionTarget(g,e),previousX=e.x,dx=target.x-e.x,dy=target.y+target.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&(p.sneaking||e.muffled);
   if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y,enemyType:e.type});}

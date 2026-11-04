@@ -8,7 +8,7 @@ import {chooseInformantLanding,beginInformantTeleport,TELEPORT_PHASES,TELEPORT_C
 import {monitorPoint,MENU_GLASS} from '../menu-monitor.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function stand(g,index=2,x=604){const s=platforms.find(s=>s.room===4&&s.index===index);Object.assign(g.player,{x:campaignRooms[4].x+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,climbing:false,inv:0});}
-function ready(){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.room=4;g.checkpoint=4;g.relays.filter(r=>r.room<4).forEach(r=>r.hp=0);g.fishes=[];g.soups=[];stand(g);const e=enemy('informant',4,365,1,{active:true,noticed:true,teleportCooldown:0});g.enemies=[e];return{g,e};}
+function ready(){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.room=4;g.checkpoint=4;g.relays.filter(r=>r.room<4).forEach(r=>r.hp=0);g.fishes=[];g.soups=[];for(const s of g.platforms)s.motion=null;stand(g);const e=enemy('informant',4,365,1,{active:true,noticed:true,teleportCooldown:0});g.enemies=[e];return{g,e};}
 function phase(g,e,name){for(let i=0;i<180&&e.teleport?.phase!==name;i++)g.step(1/60);assert.equal(e.teleport?.phase,name);}
 function finish(g,e){for(let i=0;i<180&&e.teleport;i++)g.step(1/60);assert.equal(e.teleport,null);}
 test('Informant selects Uma’s actual platform, keeps space and chooses a landing inside its edges',()=>{

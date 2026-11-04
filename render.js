@@ -29,7 +29,7 @@ export class Renderer{
   const c=this.c,a=this.assets,bounds=c.canvas.getBoundingClientRect(),vw=Math.max(160,Math.round(HEIGHT*bounds.width/Math.max(1,bounds.height)));
   if(c.canvas.width!==vw)c.canvas.width=vw;if(c.canvas.height!==HEIGHT)c.canvas.height=HEIGHT;
   const hudBounds=this.hud?.getBoundingClientRect();if(hudBounds?.width&&hudBounds.height){const hw=Math.round(hudBounds.width),hh=Math.round(hudBounds.height);if(this.hud.width!==hw)this.hud.width=hw;if(this.hud.height!==hh)this.hud.height=hh;const hc=this.hud.getContext('2d');hc.imageSmoothingEnabled=false;drawHud(hc,a,g,hw,hh);}
-  const cozyFit=g.room===0&&!g.touchEnabled,worldScale=cozyFit?Math.min(vw/WIDTH,HEIGHT/512):!g.touchEnabled&&rooms[g.room].multiStorey?.82:1,worldWidth=cozyFit?WIDTH:vw/worldScale,worldInset=cozyFit?(vw-WIDTH*worldScale)/2:0,worldTop=cozyFit?(HEIGHT-512*worldScale)/2:0;
+  const cozyFit=g.room===0&&!g.touchEnabled,worldScale=cozyFit?Math.min(vw/WIDTH,HEIGHT/512):!g.touchEnabled&&rooms[g.room].multiStorey?.68:1,worldWidth=cozyFit?WIDTH:vw/worldScale,worldInset=cozyFit?(vw-WIDTH*worldScale)/2:0,worldTop=cozyFit?(HEIGHT-512*worldScale)/2:0;
   if(g.mode!=='paused'&&(g.viewWidth!==worldWidth||g.viewHeight!==HEIGHT/worldScale)){g.viewWidth=worldWidth;g.viewHeight=HEIGHT/worldScale;g.updateCamera();}
   const t=g.time,p=g.player,b=g.boss,cam=Math.round(g.camera),opening=g.room===0&&(g.mode==='waking'||g.pausedFrom==='waking'||g.dialogue?.id==='intro');
   if(['ending','conclusion','won'].includes(g.mode)||['ending','conclusion','won'].includes(g.pausedFrom)){c.imageSmoothingEnabled=false;drawFinaleBackdrop(c,a,g,vw);return;}

@@ -2,7 +2,9 @@ import {rooms} from './level.js?v=0.22.0';
 import {platforms} from './level.js?v=0.22.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function solidSurfaces(g){
- const all=[...(g.platforms||platforms),...(g.temporarySurfaces||[])].filter(s=>!(s.collapseTime>0));if(!g.cuts?.some(c=>c.phase==='gap'))return all;
+ let all=[...(g.platforms||platforms),...(g.temporarySurfaces||[])].filter(s=>!(s.collapseTime>0));
+ const shafts=(g.platforms||platforms).filter(s=>s.room===g.room&&s.motion?.axis==='y');
+ all=all.flatMap(s=>{if(!s.structural||s.room!==g.room||s.y>rooms[s.room].height-80)return[s];let parts=[s];for(const lift of shafts){if(s.y<lift.baseY-lift.motion.amplitude-80||s.y>lift.baseY+lift.motion.amplitude+50)continue;parts=parts.flatMap(p=>{const left=lift.baseX-3,right=lift.baseX+lift.w+3;if(right<=p.x||left>=p.x+p.w)return[p];const out=[];if(left>p.x+3)out.push({...p,w:left-p.x});if(right<p.x+p.w-3)out.push({...p,x:right,w:p.x+p.w-right,prevX:right});return out;});}return parts;});if(!g.cuts?.some(c=>c.phase==='gap'))return all;
  return all.flatMap(s=>{
   const cut=g.cuts.find(c=>c.platformId===s.id&&c.phase==='gap');if(!cut)return [s];
   const left=clamp(cut.localX,0,s.w),right=clamp(cut.localX+cut.w,0,s.w),parts=[];
