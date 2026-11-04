@@ -1,11 +1,12 @@
-import {rooms} from './level.js?v=0.21.0';
-import {rect,text} from './pixel.js?v=0.21.0';
-import {drawTargetSprite} from './target-art.js?v=0.21.0';
+import {rooms} from './level.js?v=0.22.0';
+import {rect,text} from './pixel.js?v=0.22.0';
+import {drawTargetSprite} from './target-art.js?v=0.22.0';
 const columns={server:0,power:1,console:2,anchor:3};
 export function drawMapProps(c,a,g,t){
  if(!a.destructibles)return;
  for(const d of g.mapProps||[]){if(d.room!==g.room||d.x<g.camera-100||d.x>g.camera+(g.viewWidth||768)+100)continue;
   const col=columns[d.kind],row=d.hp?0:d.breakTime>.25?1:2,sw=a.destructibles.width/4,sh=a.destructibles.height/3;drawTargetSprite(c,a.destructibles,[col*sw,row*sh,sw,sh],d.x-21,d.y-18,90,80,t,d.hp>0);
+  if(d.blocked>0){rect(c,d.x-2,d.y+20,d.w+4,9,'#643388');rect(c,d.x+8,d.y+12,12,24,'#38184d');}
   if(d.hp){rect(c,d.x+20,d.y-18,8,2,'#ffda8a');rect(c,d.x+23,d.y-21,2,8,'#ffda8a');}
  }
  for(const r of g.routePortals||[]){if(r.room!==g.room||!a.burrows)continue;for(const index of[r.fromIndex,r.toIndex]){const s=g.platforms.find(s=>s.room===r.room&&s.index===index),x=s.x+s.w/2;if(x<g.camera-80||x>g.camera+(g.viewWidth||768)+80)continue;

@@ -46,15 +46,15 @@ test('ink mutes Panicker and closes its existing portal before reinforcements ap
 test('ink and scan footprints stay attached to moving platforms and pause freezes them',()=>{
  const g=setup(5,0,20),c=actor('censor',5,365,1);stampInk(g,c);const ink=g.inks[0],s=g.platforms.find(s=>s.id===ink.platformId),x=s.x+ink.localX;tick(g,45);assert.notEqual(s.x+ink.localX,x);const state=JSON.stringify(g);g.mode='paused';const paused=JSON.stringify(g);tick(g,180);assert.equal(JSON.stringify(g),paused);assert.notEqual(state,paused);
 });
-function copierSetup(){const g=setup(4,0,45),c=actor('copier',4,420,1,{timer:0,speed:0,scanStart:18,scanW:145}),original=actor('fakenews',4,340,1,{speed:0,timer:999,jumpCooldown:999});g.enemies=[c,original];g.player.inv=999;return {g,c,original};}
+function copierSetup(){const g=setup(4,9,110),c=actor('copier',4,420,1,{timer:0,speed:0,scanStart:18,scanW:145}),original=actor('fakenews',4,340,1,{speed:0,timer:999,jumpCooldown:999});g.enemies=[c,original];g.player.inv=999;return {g,c,original};}
 test('Copier scans an original on its lit platform and prints a real one-health enemy with a warning',()=>{
- const {g,c,original}=copierSetup();assert.equal(scanSource(g,c),original);tick(g,1);assert.equal(c.state,'windup');tick(g,56);const copy=g.enemies.find(e=>e.copyOwnerId===c.id);assert.ok(copy);assert.equal(copy.type,'fakenews');assert.equal(copy.hp,1);assert.ok(copy.spawnTime>0);assert.ok(Math.abs(copy.x-g.player.x)>62);assert.equal(copy.copyOf,original.id);assert.ok(!g.enemies.some(other=>other!==copy&&!other.dead&&g.overlap(copy,other)));
+ const {g,c,original}=copierSetup();assert.equal(scanSource(g,c),original);tick(g,1);assert.equal(c.state,'windup');tick(g,112);const copy=g.enemies.find(e=>e.copyOwnerId===c.id);assert.ok(copy);assert.equal(copy.type,'fakenews');assert.equal(copy.hp,1);assert.ok(copy.spawnTime>0);assert.ok(Math.abs(copy.x-g.player.x)>62);assert.equal(copy.copyOf,original.id);assert.ok(!g.enemies.some(other=>other!==copy&&!other.dead&&g.overlap(copy,other)));
 });
 test('moving the original off the scan patch prevents duplication and copies cannot copy themselves',()=>{
- const {g,c,original}=copierSetup();tick(g,1);original.x=campaignRooms[4].x+460;tick(g,60);assert.equal(g.enemies.filter(e=>e.copyOwnerId).length,0);assert.equal(c.state,'printing');original.x=campaignRooms[4].x+340;original.copyOwnerId=c.id;assert.equal(scanSource(g,c),null);
+ const {g,c,original}=copierSetup();tick(g,1);original.x=campaignRooms[4].x+460;tick(g,80);assert.equal(g.enemies.filter(e=>e.copyOwnerId).length,0);assert.equal(c.state,'printing');original.x=campaignRooms[4].x+340;original.copyOwnerId=c.id;assert.equal(scanSource(g,c),null);
 });
 test('Copier remains vulnerable periodically even with an empty scanner or a full copy limit',()=>{
- const {g,c,original}=copierSetup();g.enemies=[c];assert.equal(g.hitEnemy(c),false);tick(g,58);assert.equal(c.state,'printing');assert.equal(g.hitEnemy(c),true);assert.equal(c.hp,2);assert.equal(g.enemies.some(e=>e.id===original.id),false);
+ const {g,c,original}=copierSetup();g.enemies=[c];assert.equal(g.hitEnemy(c),false);tick(g,80);assert.equal(c.state,'printing');assert.equal(g.hitEnemy(c),true);assert.equal(c.hp,2);assert.equal(g.enemies.some(e=>e.id===original.id),false);
 });
 test('copies are capped and destroying their Copier dissolves every owned duplicate immediately',()=>{
  const {g,c}=copierSetup();tick(g,1500);const copies=g.enemies.filter(e=>e.copyOwnerId===c.id&&!e.dead);assert.equal(copies.length,1);assert.ok(g.enemies.filter(e=>e.copyOwnerId&&!e.dead).length<=3);c.state='printing';c.inv=0;assert.equal(g.hitEnemy(c,false,99),true);assert.ok(copies.every(e=>e.dead));

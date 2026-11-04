@@ -31,7 +31,7 @@ test('Clickbait emergence and capture advance through different jaw poses and fr
  const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];tick(g,1);const first=clickbaitAppearanceFrame(e);tick(g,4);assert.notEqual(clickbaitAppearanceFrame(e),first);g.mode='paused';const snapshot=JSON.stringify(g);tick(g,60);assert.equal(JSON.stringify(g),snapshot);g.mode='playing';tick(g,7);assert.ok(g.swallow);assert.equal(clickbaitAppearanceFrame(e),3);tick(g,12);assert.equal(clickbaitAppearanceFrame(e),4);
 });
 test('a lethal Clickbait grab consumes one life and cannot repeatedly damage a captured Uma',()=>{
- const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];assert.equal(g.health,4);tick(g,45,{attack:false});assert.equal(g.mode,'respawning');assert.equal(g.lives,2);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.swallow,null);
+ const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];assert.equal(g.health,4);g.health=1;tick(g,45,{attack:false});assert.equal(g.mode,'respawning');assert.equal(g.lives,2);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.swallow,null);
 });
 test('a dash escapes the immortal fish trap and never grants a fish reward',()=>{
  const g=isolated(2,1,365),e=enemy('clickbait',2,365,1,{active:true,noticed:true});g.enemies=[e];tick(g,1,{dash:true,right:true});tick(g,18,{right:true});assert.equal(g.swallow,null);assert.equal(g.health,4);assert.equal(g.fish,0);assert.equal(e.revealed,true);assert.equal(e.hp,e.maxHp);assert.equal(e.dead,false);

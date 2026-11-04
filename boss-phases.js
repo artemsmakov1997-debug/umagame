@@ -2,7 +2,7 @@ export const phasePlans={
  spreader:[['Газетный дождь',['scatter','summon']],['Чёрная печать',['ink','copy','scatter']],['Последний тираж',['swoop','copy','summon']]],
  agitator:[['Обращение',['broadcast','telecast']],['Тревожный эфир',['pressure','alarm','summon','telecast']],['Охват любой ценой',['telecast','pressure','alarm','summon','broadcast']]],
  manipulator:[['Прямой эфир',['ticker','spotlight']],['Потерянный контекст',['cut','ticker','splice']],['Финальная склейка',['splice','cut','summon','spotlight']]],
- infoshum:[['Шумовой фон',['volley','wave','summon']],['Поток искажений',['rain','echoPulse','wave','summon']],['Поглощение',['copy','rain','cut','splice','wave','staticRush','lure','echoPulse','summon','volley']]]
+ infoshum:[['Шумовой фон',['volley','wave','summon']],['Поток искажений',['rain','ink','cut','echoPulse','wave','copy','summon']],['Поглощение',['copy','rain','cut','splice','wave','staticRush','lure','echoPulse','summon','volley']]]
 };
 export function phasePattern(b){return phasePlans[b.id][Math.min(2,b.phase-1)][1];}
 export function stepBossPhase(g,dt){

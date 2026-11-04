@@ -1,7 +1,8 @@
-import {actorById} from './boss-actors.js?v=0.21.0';
-import {rooms,spawns} from './level.js?v=0.21.0';
-import {solidSurfaces} from './terrain.js?v=0.21.0';
-import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.21.0';
+import {tapeBridge} from './studio-systems.js?v=0.22.0';
+import {actorById} from './boss-actors.js?v=0.22.0';
+import {rooms,spawns} from './level.js?v=0.22.0';
+import {solidSurfaces} from './terrain.js?v=0.22.0';
+import {stepEcho,releaseEchoPull} from './echo-pull.js?v=0.22.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function stepAirEnemy(g,e,dt){
  const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+p.h/2-e.y-e.h/2,distance=Math.hypot(dx,dy)||1;
@@ -15,7 +16,7 @@ export function stepAirEnemy(g,e,dt){
   else if(e.state==='lunge'){e.x+=e.charge.vx*dt;e.y+=e.charge.vy*dt;if(e.timer<=0){e.state='recover';e.timer=1.1;}}
   else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.5;}
  }
- e.x=clamp(e.x,r.x+8,r.end-e.w-8);e.y=clamp(e.y,48,480-e.h-12);if(Math.abs(dx)>5)e.dir=dx<0?-1:1;
+ e.x=clamp(e.x,r.x+8,r.end-e.w-8);e.y=clamp(e.y,48,r.height-e.h-12);if(Math.abs(dx)>5)e.dir=dx<0?-1:1;
 }
 function warpLanding(g){
  const p=g.player,r=rooms[g.room],surfaces=solidSurfaces(g).filter(s=>s.room===g.room&&s.w>=88);
@@ -40,17 +41,18 @@ export function handleFlyingContact(g,e){
 export function stepEchoWarp(g,dt){
  const warp=g.echoWarp;if(!warp)return;warp.time=Math.min(warp.duration,warp.time+Math.min(dt,1/30));
  if(warp.time>=.24&&!warp.transferred){
-  warp.transferred=true;if(!g.testingInvulnerable)g.lives=Math.max(0,g.lives-1);Object.assign(g.player,warp.to,{h:48,vx:0,vy:0,grounded:true,climbing:false,sneaking:false,knock:0,dash:0,inv:1.2,hurtTime:.5,slipping:false,inkTime:0});g.echoImmunity=2.2;g.updateCamera();g.emit('echoArrive',{x:g.player.x,y:g.player.y});
+  warp.transferred=true;if(!g.testingInvulnerable){g.health=Math.max(0,g.health-1);if(!g.health){g.echoWarp=null;g.mode='playing';g.loseLife('echo');return;}}Object.assign(g.player,warp.to,{h:48,vx:0,vy:0,grounded:true,climbing:false,sneaking:false,knock:0,dash:0,inv:1.2,hurtTime:.5,slipping:false,inkTime:0});g.echoImmunity=2.2;g.updateCamera();g.emit('echoArrive',{x:g.player.x,y:g.player.y});
   if(g.lives===0){g.health=0;g.echoWarp=null;g.mode='lost';g.emit('lost',{reason:'echo'});return;}
-  if(g.testingInvulnerable)g.emit('testRescue',{reason:'echo'});else g.emit('lifeLost',{lives:g.lives,reason:'echo'});
+  if(g.testingInvulnerable)g.emit('testRescue',{reason:'echo'});else g.emit('hurt',{reason:'echo'});
  }
  if(warp.time>=warp.duration){g.echoWarp=null;g.mode='playing';g.emit('echoReady');}
 }
 export function stepSplicer(g,e,dt,dx,dy){
  if(e.state==='patrol'){
-  e.x+=e.dir*e.speed*dt;
+  e.x+=e.dir*e.speed*dt;if(rooms[e.room].multiStorey&&e.timer<=0&&!(e.bridgeCooldown>0)&&tapeBridge(g,e)){e.state='bridging';e.timer=1;e.bridgeCooldown=9;e.attackFlash=.8;return;}
   if(Math.abs(dx)<285&&Math.abs(dy)<120&&e.timer<=0&&!g.tether&&!(g.player.glueGrace>0)){e.state='windup';e.timer=.7;g.emit('glueWarning',{x:e.x,y:e.y,enemyType:e.type});}
  }else if(e.state==='windup'&&e.timer<=0){e.state='pulling';e.timer=5;g.tether={ownerId:e.id,remaining:5,total:5};g.emit('gluePull',{x:e.x,y:e.y,enemyType:e.type});}
+ else if(e.state==='bridging'&&e.timer<=0){e.state='recover';e.timer=2;}
  else if(e.state==='pulling'&&e.timer<=0){releaseTether(g,e.id);e.state='recover';e.timer=2;}
  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=2.3;}
 }

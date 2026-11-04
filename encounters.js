@@ -1,4 +1,4 @@
-import {rooms} from './level.js?v=0.21.0';
+import {rooms} from './level.js?v=0.22.0';
 // Introduce one species at a time; optional notebooks never gate encounters.
 export const introductionOrder={1:['fakenews','copier','censor'],3:['informant','inflator','panicker'],5:['injection','cutter','splicer'],7:['static','echo','clickbait']};
 export const introductionDistance={1:[90,700,1200],3:[100,820,1400],5:[100,800,1400],7:[130,800,1400]};

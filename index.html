@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030a1e"><meta name="description" content="УМА ПРОТИВ ИНФОШУМА — держи ухо востро. Пиксельная игра про кошку Уму и ожившие новости.">
 <title>УМА ПРОТИВ ИНФОШУМА — держи ухо востро</title>
-<link rel="preload" href="./assets/game-heading.png?v=0.21.0" as="image"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.21.0"><link rel="stylesheet" href="story-ui.css?v=0.21.0">
+<link rel="preload" href="./assets/game-heading.png?v=0.22.0" as="image"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.22.0"><link rel="stylesheet" href="story-ui.css?v=0.22.0">
 </head>
 <body>
 <main id="app" data-screen="menu">
@@ -14,7 +14,7 @@
 <canvas id="game" width="768" height="480" tabindex="0" aria-label="Пиксельная игра: Ума против инфошума"></canvas>
 <button id="pause" aria-label="Меню игры" hidden><span></span><span></span><span></span></button>
 <section id="menu-screen" class="screen menu-screen" aria-label="Главное меню">
-<header class="game-heading"><h1><span class="sr-only">УМА ПРОТИВ ИНФОШУМА</span><svg class="game-logo" viewBox="65 109 2063 525" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><image href="./assets/game-heading.png?v=0.21.0" width="2172" height="724"/></svg></h1></header>
+<header class="game-heading"><h1><span class="sr-only">УМА ПРОТИВ ИНФОШУМА</span><svg class="game-logo" viewBox="65 109 2063 525" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><image href="./assets/game-heading.png?v=0.22.0" width="2172" height="724"/></svg></h1></header>
 <nav class="pixel-panel menu-panel" aria-label="Меню"><h2>МЕНЮ</h2><div class="menu-options">
 <button id="start-game" class="menu-item selected" data-menu="start" disabled>Начать игру</button>
 <button class="menu-item" data-menu="library" disabled>Библиотека</button>
@@ -42,7 +42,7 @@
 <section id="closing-screen" class="closing-screen" role="dialog" aria-modal="true" aria-label="Обращение автора" hidden><div class="closing-copy"><h2 data-closing-part="0"></h2><p data-closing-part="1"></p><p data-closing-part="2"></p><p data-closing-part="3"></p><p class="closing-promise" data-closing-part="4"></p><span class="closing-cursor" aria-hidden="true">▌</span></div><div class="closing-brand" aria-label="МЕДИА.СТРАЖ"><span>МЕДИА.</span><span class="media-blue">СТРАЖ</span></div><p id="closing-readable" class="sr-only" aria-live="polite"></p><div class="closing-actions"><button id="closing-next" class="gold-button">Показать текст</button><button id="closing-skip" class="dialogue-secondary">Пропустить</button></div></section>
 <section id="overlay" class="overlay" aria-label="Результат игры" hidden><div class="pixel-panel result-panel"><canvas id="defeat-art" width="640" height="420" role="img" aria-label="Торжествующий Инфошум" hidden></canvas><h2 id="result-title">РЕЗУЛЬТАТ</h2><p id="result-text"></p><p id="result-purpose" hidden></p><div id="result-score" class="result-score" hidden><span>ВАШ СЧЁТ</span><strong id="result-points"></strong><p id="result-breakdown"></p></div><div class="result-actions"><a id="result-media" class="gold-button media-link" href="https://media-strazh.ru/" target="_blank" rel="noopener noreferrer" hidden><span>МЕДИА.</span><span class="media-blue">СТРАЖ</span></a><button class="gold-button" id="retry-location">Повторить локацию</button><button class="gold-button" id="play">Начать заново</button><button class="back-button" id="result-library">Библиотека</button><button class="back-button" id="return-menu">В главное меню</button></div></div></section>
 <section id="dialogue" class="dialogue-screen" role="dialog" aria-modal="true" aria-labelledby="dialogue-speaker" aria-describedby="dialogue-text" hidden>
-<div class="pixel-panel dialogue-panel"><img id="narrator-portrait" alt="Портрет Юрия" width="224" height="280">
+<div class="pixel-panel dialogue-panel"><canvas id="narrator-portrait" role="img" aria-label="Юрий на экране" width="224" height="280"></canvas>
 <div class="dialogue-content"><div class="dialogue-heading"><div><h2 id="dialogue-speaker">Юрий</h2><p class="narrator-role">редактор</p></div></div>
 <p id="dialogue-text" aria-live="polite"></p><div class="dialogue-actions"><button id="dialogue-next" class="gold-button">Далее</button><button id="dialogue-skip" class="dialogue-secondary">Пропустить</button></div></div></div></section>
 <div id="wake-caption" class="wake-caption" hidden><button id="wake-skip" class="dialogue-secondary">Пропустить</button></div>
@@ -69,5 +69,5 @@
 
 <div id="hud-status" class="sr-only" aria-live="polite"></div>
 <div id="accessible-state" class="sr-only" aria-live="polite"></div>
-</main><script type="module" src="game.js?v=0.21.0"></script>
+</main><script type="module" src="game.js?v=0.22.0"></script>
 </body></html>

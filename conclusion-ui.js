@@ -1,4 +1,4 @@
-import {closingParagraphs,closingText} from './conclusion.js?v=0.21.0';
+import {closingParagraphs,closingText} from './conclusion.js?v=0.22.0';
 const $=id=>document.getElementById(id);
 export class ConclusionUI{
  constructor(game,clearInput){this.game=game;this.clearInput=clearInput;this.keyState=null;this.parts=[...document.querySelectorAll('[data-closing-part]')];$('closing-next').addEventListener('click',()=>this.advance());$('closing-skip').addEventListener('click',()=>this.advance(true));}

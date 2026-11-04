@@ -1,3 +1,4 @@
+import {designFor} from './world-design.js?v=0.22.0';
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const chapters=[
  {id:'newsroom',name:'РЕДАКЦИЯ',room:1,arena:2,monsters:['fakenews','copier','censor'],boss:'spreader'},
@@ -17,7 +18,7 @@ const definitions=[
  {name:'СЕРДЦЕ ИНФОШУМА',theme:'noise',chapter:4,arena:true,boss:'infoshum',width:ARENA_WIDTH}
 ];
 let cursor=0;
-export const rooms=definitions.map((r,index)=>{const room={...r,index,x:cursor,end:cursor+r.width};cursor+=r.width;return room;});
+export const rooms=definitions.map((r,index)=>{const design=designFor(index),room={...r,index,x:cursor,end:cursor+r.width,height:design?.height||480,multiStorey:!!design};cursor+=r.width;return room;});
 export const LAST_ROOM=rooms.length-1,FINAL_X=rooms[LAST_ROOM].x,WORLD=cursor,PORTAL_ROOM=7,PORTAL_X=rooms[PORTAL_ROOM].end-96;
 export function roomAt(x){return rooms.find(r=>x>=r.x&&x<r.end)?.index??(x<0?0:LAST_ROOM);}
 export const layouts=[];
@@ -70,9 +71,11 @@ const motions={
  '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,motion:motions[r.index+':'+index]||null})));
+for(const room of rooms){const design=designFor(room.index);if(design)layouts[room.index]=design.layout;}
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,building:r.theme==='roofs'&&!!designFor(r.index)&&(r.arena?[0,1,2,3,4]:[0,2,10,12,19,21]).includes(index),structural:designFor(r.index)?.structural.includes(index)||false,motion:designFor(r.index)?designFor(r.index).motions[index]||null:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
+ const design=designFor(r.index);if(design)return design.stairs.map(x=>({x:r.x+x,y:design.ladderTop,w:31,h:1000-design.ladderTop,room:r.index}));
  if(r.arena)return [];
  return [r.x+730,r.x+1498,r.end-50].map((x,i)=>{const s=platforms.find(p=>p.room===r.index&&p.index===[2,12,21][i]);return{x,y:s.y,w:31,h:474-s.y,room:r.index};});
 });
@@ -88,6 +91,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  const actor={id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:r.x+x,y:s.y-(flying?100:29),w:flying?40:48,h:flying?38:29,origin:s.x+12,end:s.x+s.w-60,
  dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,panicker:16,censor:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
+ actor.designX=x;if(r.multiStorey)actor.x=type==='inflator'&&actor.ledge?actor.end:Math.max(actor.origin,Math.min(actor.end,actor.x));
  const kinds={fakenews:platformIndex%3?'papers':'bin',informant:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',censor:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
  if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
  actor.arrivalDuration=actor.spawnTime||.55;return actor;
@@ -104,7 +108,7 @@ export function createEnemies(){const all=[
  enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];
  const kept={1:[150,365,840,920,1250,1700,1610,1920,1980],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
- return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
+ return all.filter(e=>kept[e.room].includes(e.designX)).map(e=>{if(rooms[e.room].multiStorey&&e.type==='inflator'&&e.platformIndex===17)e.windAxis='y';return e;});
 }
 export function createFish(){return rooms.flatMap(r=>{
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
@@ -128,6 +132,6 @@ export function createNotebooks(){
  {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:10,x:845,scenes:['echo']},{id:'clickbait',room:7,index:12,x:1410,scenes:['clickbait']},{id:'infoshum',room:7,index:21,x:2195,scenes:['infoshum']},
  ...[2,4,6].map((room,i)=>({id:'record'+(i+1),room,index:4,x:1400,scenes:['chapter'+(i+1)],bossRecord:true}))
  ];
- return entries.map(n=>({...n,x:rooms[n.room].x+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.bossRecord?Infinity:0}));
+ return entries.map(n=>{const s=platforms.find(p=>p.room===n.room&&p.index===n.index),x=rooms[n.room].x+n.x;return{...n,x:Math.max(s.x+24,Math.min(s.x+s.w-24,x)),y:s.y-23,taken:false,readyAt:n.bossRecord?Infinity:0};});
 }
 export function surfaceAt(x,list=platforms){const room=roomAt(x),covered=list.filter(p=>p.room===room&&x>=p.x&&x<=p.x+p.w);return covered.sort((a,b)=>a.y-b.y)[0]?.y??474;}
