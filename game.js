@@ -1,3 +1,4 @@
+import {projectileStyle} from './projectile-art.js?v=0.21.0';
 import {ConclusionUI} from './conclusion-ui.js?v=0.21.0';
 import {SettingsUI} from './settings.js?v=0.21.0';
 import {buildControls,drawControls} from './controls-art.js?v=0.21.0';
@@ -79,7 +80,7 @@ async function boot(){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady','locationExit','locationEnter','locationReady','echoTeleport','echoArrive','echoReady','endingSlide','victory'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
   if(event.type==='notebook'){updateControls();renderer.burst(event.x,event.y,'#ffe0a0');}
-  if(['parry','blocked','boltImpact'].includes(event.type)){renderer.combatEffects.push({kind:event.type,x:event.x,y:event.y,time:0,frame:event.kind==='packet'?2:event.kind==='ticker'?3:0});renderer.combatEffects=renderer.combatEffects.slice(-18);}
+  if(['parry','blocked','boltImpact'].includes(event.type)){renderer.combatEffects.push({kind:event.type,x:event.x,y:event.y,time:0,frame:projectileStyle(game,{kind:event.kind,visual:event.visual})});renderer.combatEffects=renderer.combatEffects.slice(-18);}
   audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup','controlBreak'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
 
   if(event.type==='voiceEcho')notify(event.text,4800);
