@@ -12,7 +12,7 @@ function future(g,s,seconds){
  return{...s,x:s.motion.axis==='x'?s.baseX+offset:s.x,y:s.motion.axis==='y'?s.baseY+offset:s.y};
 }
 export function chooseFakeLanding(g,e){
- const surfaces=solidSurfaces(g).filter(s=>s.room===e.room&&s.w>=60);if(e.detourIndex!==undefined){const d=surfaces.find(s=>s.index===e.detourIndex);if(!d||Math.abs(e.y+e.h-d.y)<5&&e.x+e.w/2>d.x&&e.x+e.w/2<d.x+d.w){delete e.detourIndex;delete e.blockedBy;}}
+ const surfaces=solidSurfaces(g).filter(s=>s.room===e.room&&!s.temporary&&s.w>=60);if(e.detourIndex!==undefined){const d=surfaces.find(s=>s.index===e.detourIndex);if(!d||Math.abs(e.y+e.h-d.y)<5&&e.x+e.w/2>d.x&&e.x+e.w/2<d.x+d.w){delete e.detourIndex;delete e.blockedBy;}}
  if(e.blockedBy&&e.detourIndex===undefined){const wall=e.blockedBy,dir=g.player.x>e.x?1:-1,choices=surfaces.filter(s=>s.y<wall.y-35&&(dir>0?s.x+s.w/2>wall.x+wall.w+50:s.x+s.w/2<wall.x-50)).sort((a,b)=>Math.abs(a.x+a.w/2-wall.x)+Math.abs(a.y-wall.y)-Math.abs(b.x+b.w/2-wall.x)-Math.abs(b.y-wall.y));if(choices[0])e.detourIndex=choices[0].index;}
  const detour=surfaces.find(s=>s.index===e.detourIndex),p=detour?{...g.player,x:detour.x+detour.w/2,y:detour.y-g.player.h,supportId:detour.id}:g.player,source=surfaces.find(s=>s.index===e.platformIndex&&e.x+e.w>s.x&&e.x<s.x+s.w&&Math.abs(e.y+e.h-s.y)<4);
  if(!source)return null;
@@ -60,7 +60,7 @@ export function stepFakeJump(g,e,dt){
  if(e.jumpPhase==='land'){e.timer-=dt;if(e.timer<=0){e.jumpPhase=null;e.jumpTarget=null;e.state='patrol';e.timer=.55;}return true;}
  e.dropGrace=Math.max(0,(e.dropGrace||0)-dt);const oldBottom=e.y+e.h,nextX=e.x+e.jumpVx*dt;e.x=e.jumpTarget&&(e.jumpVx>0&&nextX>=e.jumpTarget.x||e.jumpVx<0&&nextX<=e.jumpTarget.x)?e.jumpTarget.x:nextX;e.vy=Math.min(580,e.vy+GRAVITY*dt);e.y+=e.vy*dt;
  e.x=clamp(e.x,rooms[e.room].x+8,rooms[e.room].end-e.w-8);
- if(e.vy>=0){const surfaces=solidSurfaces(g).filter(s=>s.room===e.room&&!(e.dropGrace>0&&s.index===e.jumpSourceIndex)&&e.x+e.w>s.x+2&&e.x<s.x+s.w-2&&oldBottom<=(s.prevY??s.y)+1&&e.y+e.h>=s.y).sort((a,b)=>a.y-b.y);if(surfaces.length){land(g,e,surfaces[0]);g.emit('fakeLand',{x:e.x,y:e.y+e.h,enemyType:e.type});}}
+ if(e.vy>=0){const surfaces=solidSurfaces(g).filter(s=>s.room===e.room&&!s.temporary&&!(e.dropGrace>0&&s.index===e.jumpSourceIndex)&&e.x+e.w>s.x+2&&e.x<s.x+s.w-2&&oldBottom<=(s.prevY??s.y)+1&&e.y+e.h>=s.y).sort((a,b)=>a.y-b.y);if(surfaces.length){land(g,e,surfaces[0]);g.emit('fakeLand',{x:e.x,y:e.y+e.h,enemyType:e.type});}}
  if(e.y>(rooms[e.room].multiStorey?rooms[e.room].height+8:520)){const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);e.x=clamp(e.x,s.x+8,s.x+s.w-e.w-8);e.y=s.y-e.h;e.jumpPhase=null;e.vy=0;e.state='recover';e.timer=.8;e.jumpCooldown=1.5;}
  return true;
 }

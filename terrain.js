@@ -38,7 +38,7 @@ export function stepTacticalTerrain(g,dt){
 }
 export function stepEnemyFall(g,e,dt){
  if(e.flying||e.phased||e.teleport||e.jumpPhase==='air')return false;
- const surfaces=solidSurfaces(g),feet=e.y+e.h;
+ const surfaces=solidSurfaces(g).filter(s=>!s.temporary),feet=e.y+e.h;
  if(!e.terrainFall){
   const base=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);
   if(!base||!(base.collapseTime>0||g.cuts.some(c=>c.platformId===base.id&&c.phase==='gap'))||surfaces.some(s=>s.id===base.id&&Math.abs(s.y-feet)<4&&e.x+e.w>s.x+1&&e.x<s.x+s.w-1))return false;
