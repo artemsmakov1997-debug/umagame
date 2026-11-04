@@ -59,3 +59,6 @@ export function stepInformantTeleport(g,e,dt){
  e.phased=t.phase==='blink'||t.phase==='in'||t.phase==='out'&&t.elapsed>=TELEPORT_PHASES.out/2;
  return true;
 }
+
+export function redirectInformant(g,e){const t=e.teleport;if(!t||!['charge','out'].includes(t.phase))return false;const options=solidSurfaces(g).filter(s=>s.room===e.room&&s.w>110&&Math.abs(s.y-t.target.y-e.h)<360).map(s=>{const x=s.x+(s.w-e.w)/2;return{x,y:s.y-e.h,index:s.index,localX:(s.w-e.w)/2,origin:s.x+8,end:s.x+s.w-e.w-8};}).filter(p=>Math.abs(p.x-t.target.x)>90&&Math.hypot(p.x-g.player.x,p.y-g.player.y)>140&&teleportLandingClear(g,e,p)).sort((a,b)=>Math.hypot(a.x-t.target.x,a.y-t.target.y)-Math.hypot(b.x-t.target.x,b.y-t.target.y));if(!options.length)return false;t.target=options[0];t.redirected=true;t.phase='charge';t.elapsed=0;e.state='teleportCharge';g.emit('signalRedirected',{x:t.target.x,y:t.target.y});return true;}
+export function redirectMarkedSignal(g,paw){if(g.player.attack<=0)return;for(const e of g.enemies){const t=e.teleport;if(e.room!==g.room||!t||t.redirectSwing===g.player.swing)continue;const mark={x:t.target.x-12,y:t.target.y-22,w:e.w+24,h:e.h+35};if(g.overlap(paw,mark)){t.redirectSwing=g.player.swing;redirectInformant(g,e);}}}

@@ -1,5 +1,5 @@
 // Coordinates are local to a room; chapter enablement follows the staged redesign.
-export const enabledChapters=new Set([1]);
+export const enabledChapters=new Set([1,2]);
 const newsroom=[
  [0,460,260],[310,380,240],[590,460,200],[0,950,250],[290,890,270],[0,1000,280],[310,1000,450],[100,300,170],[470,320,180],[155,380,150],
  [800,460,260],[1100,380,230],[1360,460,210],[800,950,260],[1100,950,320],[790,1000,510],[1360,1000,200],[900,820,180],[1190,760,190],

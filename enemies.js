@@ -1,3 +1,4 @@
+import {emitGust} from './wind-systems.js?v=0.22.0';
 import {distractionTarget} from './world-interactions.js?v=0.22.0';
 import {canActivateEnemy} from './encounters.js?v=0.22.0';
 import {actorById,bossProxy} from './boss-actors.js?v=0.22.0';
@@ -12,9 +13,10 @@ export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
  g.emit('alarm',{x:caller.x+24,y:caller.y,attracted:targets.length});
- if(!g.portals.some(p=>p.ownerId===caller.id&&!p.cancelled)&&g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===caller.room).length<3){
+ const budget=g.alarmBudgets??={};budget[caller.id]??=3;
+ if(budget[caller.id]>0&&!g.portals.some(p=>p.ownerId===caller.id&&!p.cancelled)&&g.enemies.filter(e=>e.portalMinion&&!e.dead&&e.room===caller.room).length<3){
   const preferred=caller.x+caller.dir*75,x=Math.max(caller.origin,Math.min(caller.end,preferred));
-  g.portals.push({id:++g.portalSerial,ownerId:caller.id,room:caller.room,platformIndex:caller.platformIndex,x,y:caller.y+29,time:0,spawned:0,targetCount:1,cancelled:false});g.emit('portal',{x,y:caller.y});
+  budget[caller.id]--;g.portals.push({id:++g.portalSerial,ownerId:caller.id,room:caller.room,platformIndex:caller.platformIndex,x,y:caller.y+29,time:0,spawned:0,targetCount:1,cancelled:false});g.emit('portal',{x,y:caller.y});
  }
 }
 export function stepPortals(g,dt){
@@ -72,13 +74,15 @@ export function stepEnemies(g,dt,paw,prevBottom){
      g.bolts.push({kind:'packet',x:e.x+24,y:e.y-6,w:16,h:12,vx:tx/len*205,vy:ty/len*205,ttl:4,sourceId:e.id});e.shots++;e.attackFlash=.2;e.timer=.22;g.emit('enemyShot',{x:e.x,y:e.y});if(e.shots>=2){e.state='recover';e.timer=1.35;}
     }else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.8;}
    }else if(e.type==='inflator'){
-    if(e.state==='patrol'&&Math.abs(dx)<360&&Math.abs(dy)<85){e.dir=dx<0?-1:1;e.state='windup';e.timer=.55;e.blastHit=false;g.emit('inflatorWarning',{x:e.x,y:e.y});}
-    else if(e.state==='windup'&&e.timer<=0){e.state='blast';e.timer=.23;g.emit('blast',{x:e.x,y:e.y});for(const other of g.enemies)if(other.active&&!other.dead&&other.type==='fakenews'&&other.room===e.room&&Math.abs(other.x-e.x)<360){other.pressureTime=4;g.emit('inflate',{x:other.x,y:other.y});}}
+    if(e.state==='patrol'&&Math.abs(dx)<360&&Math.abs(dy)<(e.windAxis==='y'?600:85)){e.dir=dx<0?-1:1;e.state='windup';e.timer=.55;e.blastHit=false;g.emit('inflatorWarning',{x:e.x,y:e.y});}
+    else if(e.state==='windup'&&e.timer<=0){e.state='blast';e.timer=e.windAxis==='y'?1.5:.23;emitGust(g,e);g.emit('blast',{x:e.x,y:e.y});for(const other of g.enemies)if(other.active&&!other.dead&&other.type==='fakenews'&&other.room===e.room&&Math.abs(other.x-e.x)<360){other.pressureTime=4;g.emit('inflate',{x:other.x,y:other.y});}}
     else if(e.state==='blast'&&e.timer<=0){e.state='recover';e.timer=2;}
     else if(e.state==='recover'&&e.timer<=0)e.state='patrol';
-    if(e.state==='blast'&&!e.blastHit){const beam={x:e.dir>0?e.x+40:e.x-360,y:e.y-6,w:360,h:42};if(g.overlap(p,beam)){e.blastHit=true;if(p.dash===0)g.push(e.dir,e.x);}}
+    if(e.state==='blast'&&e.windAxis!=='y'&&!e.blastHit){const beam={x:e.dir>0?e.x+40:e.x-360,y:e.y-6,w:360,h:42};if(g.overlap(p,beam)){e.blastHit=true;if(p.dash===0)g.push(e.dir,e.x);}}
    }else if(e.type==='panicker'){
-    if(e.state==='patrol'&&e.alarmCooldown===0&&!silent&&(e.alertedOnce||Math.abs(dx)<215&&Math.abs(dy)<110)){e.state='windup';e.timer=.6;}
+    if(e.networkSilenced){e.state='recover';e.timer=2;e.noticed=false;}
+    if(silent&&Math.abs(dx)<90&&Math.abs(dy)<85){for(const portal of g.portals)if(portal.ownerId===e.id)portal.cancelled=true;if(e.state==='alarm'){e.state='recover';e.timer=2.5;}for(const other of g.enemies)if(other.room===e.room&&Math.abs(other.x-e.x)<420)other.alert=0;}
+    if(e.state==='patrol'&&!e.networkSilenced&&e.alarmCooldown===0&&!silent&&(e.alertedOnce||Math.abs(dx)<215&&Math.abs(dy)<110)){e.state='windup';e.timer=.6;}
     else if(e.state==='windup'&&silent){e.state='patrol';e.timer=.6;e.noticed=false;}
     else if(e.state==='windup'&&e.timer<=0){e.state='alarm';e.timer=1.25;e.alarmCooldown=9.4;e.alertedOnce=true;alertNearby(g,e);}
     else if(e.state==='alarm'&&e.timer<=0){e.state='recover';e.timer=Math.max(.5,e.alarmCooldown);}

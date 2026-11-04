@@ -1,6 +1,6 @@
 import {rooms,platforms} from './level.js?v=0.22.0';
 import {designFor} from './world-design.js?v=0.22.0';
-export function createWorldGeometry(){const walls=[];for(const room of rooms){const d=designFor(room.index);if(!d)continue;for(const x of d.arena?[room.width*.5]:[768,1536])for(const y of[35,535])walls.push({room:room.index,x:room.x+x-12,y,w:24,h:300,kind:'lintel'});}return walls;}
+export function createWorldGeometry(){const walls=[];for(const room of rooms){const d=designFor(room.index);if(!d||!['newsroom','studio'].includes(room.theme))continue;for(const x of d.arena?[room.width*.5]:[768,1536])for(const y of[35,535])walls.push({room:room.index,x:room.x+x-12,y,w:24,h:300,kind:'lintel'});}return walls;}
 export function worldHeight(g,room=g.room){return rooms[room]?.height||512;}
 export function collisionWalls(g){return[...(g.walls||[]),...(g.partitions||[]).filter(p=>!p.open),...(g.player.dash>0?[]:g.inkGates||[])].filter(w=>w.room===g.room);}
 export function stopAtWall(g,p,oldX){for(const w of collisionWalls(g)){if(!g.overlap(p,w))continue;if(oldX+p.w<=w.x+2){p.x=w.x-p.w;p.vx=Math.min(0,p.vx);}else if(oldX>=w.x+w.w-2){p.x=w.x+w.w;p.vx=Math.max(0,p.vx);}}}

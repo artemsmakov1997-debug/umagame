@@ -1,3 +1,4 @@
+import {stepWinds} from './wind-systems.js?v=0.22.0';
 import {createInteractiveWorld,stepDevices,stepSynergies,silenceNetwork,stepChapterEvent} from './world-interactions.js?v=0.22.0';
 import {stepArenaSystems} from './arena-systems.js?v=0.22.0';
 import {createWorldGeometry,worldHeight,stopAtWall,stopAtCeiling,stepTemporarySurfaces} from './world-geometry.js?v=0.22.0';
@@ -153,7 +154,7 @@ export class Game {
   p.sneaking=!!(this.abilities.sneak&&input.down&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&p.attack===0&&!canAttack&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
   p.coyote=p.grounded?.1:Math.max(0,p.coyote-dt);p.jumpBuffer=input.jump&&!input.down?.13:Math.max(0,p.jumpBuffer-dt);
   if(canDash&&p.dashCooldown===0){p.dash=.2;p.dashCooldown=1.5;p.climbing=false;p.knock=0;p.hurtTime=0;p.vy=0;this.emit('dash');}
-  playerHorizontal(this,axis,dt);stepTether(this,dt);stepEchoPull(this,dt);
+  playerHorizontal(this,axis,dt);stepWinds(this,dt);stepTether(this,dt);stepEchoPull(this,dt);
   if(useLadder){p.climbing=true;p.vy=(input.down?1:-1)*110;p.jumpBuffer=0;p.vx=0;}else if(!ladder||axis||p.dash>0)p.climbing=false;
   let jumped=false;if(p.jumpBuffer>0&&(p.coyote>0||p.climbing)){p.vy=-500;p.grounded=false;p.coyote=0;p.jumpBuffer=0;p.climbing=false;jumped=true;this.emit('jump');}
   if(canAttack&&p.cooldown===0){p.attack=.19;p.cooldown=.36;p.swing++;this.emit('swat');}

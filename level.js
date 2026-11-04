@@ -72,7 +72,7 @@ const motions={
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
 for(const room of rooms){const design=designFor(room.index);if(design)layouts[room.index]=design.layout;}
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,structural:designFor(r.index)?.structural.includes(index)||false,motion:designFor(r.index)?designFor(r.index).motions[index]||null:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,building:r.theme==='roofs'&&!!designFor(r.index)&&(r.arena?[0,1,2,3,4]:[0,2,10,12,19,21]).includes(index),structural:designFor(r.index)?.structural.includes(index)||false,motion:designFor(r.index)?designFor(r.index).motions[index]||null:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
  const design=designFor(r.index);if(design)return design.stairs.map(x=>({x:r.x+x,y:280,w:31,h:720,room:r.index}));
@@ -107,7 +107,7 @@ export function createEnemies(){const all=[
  enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];
  const kept={1:[150,365,840,920,1250,1700,1610,1920,1980],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
- return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
+ return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x))).map(e=>{if(rooms[e.room].multiStorey&&e.type==='inflator'&&e.platformIndex===17)e.windAxis='y';return e;});
 }
 export function createFish(){return rooms.flatMap(r=>{
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);

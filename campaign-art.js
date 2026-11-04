@@ -46,6 +46,7 @@ export function drawSurface(c,a,p,time){
  if(p.room===0&&p.index===7)return;
  const bed=p.room===0&&p.index===0,x=bed?160:p.x,y=p.y,w=bed?p.w-160:p.w,theme=rooms[p.room].theme;
  rect(c,x+3,y+9,w,15,'#010714c9');rect(c,x-2,y-4,w+4,19,'#020611');
+ if(p.building){rect(c,x-4,y-7,w+8,23,'#171b30');rect(c,x-2,y-5,w+4,4,'#dcb78a');rect(c,x,y-1,w,11,'#5c5161');for(let xx=x+3;xx<x+w;xx+=22){rect(c,xx,y+2,17,2,'#a88472');rect(c,xx+8,y+5,2,7,'#2f2c44');}rect(c,x,y+12,w,4,'#283247');return;}
  if(p.structural){rect(c,x,y+13,w,20,'#152638');for(let xx=x+4;xx<x+w;xx+=24){rect(c,xx,y+16,20,3,'#52616d');rect(c,xx+4,y+23,12,2,'#263e51');}rect(c,x,y+31,w,3,'#07111f');}
  const base=p.motion?'#397187':theme==='noise'?'#51456e':theme==='cozy'?'#876440':theme==='press'?'#896341':theme==='roofs'?'#8d665c':'#556a7c';
  rect(c,x,y,w,13,base);rect(c,x+2,y+4,w-4,6,'#21394c');
