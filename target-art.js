@@ -1,4 +1,4 @@
-import {sprite} from './assets.js?v=0.21.1';
+import {sprite} from './assets.js?v=0.21.5';
 
 // Cache a silhouette at gameplay resolution, so the contour follows the artwork.
 const outlines=new WeakMap();

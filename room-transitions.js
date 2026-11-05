@@ -1,7 +1,7 @@
-import {signalProfile} from './signal.js?v=0.21.1';
-import {rooms,spawns,MAX_HEALTH,LAST_ROOM} from './level.js?v=0.21.1';
-import {createBoss} from './boss.js?v=0.21.1';
-import {wakePlayer} from './player-rest.js?v=0.21.1';
+import {signalProfile} from './signal.js?v=0.21.5';
+import {rooms,spawns,MAX_HEALTH,LAST_ROOM} from './level.js?v=0.21.5';
+import {createBoss} from './boss.js?v=0.21.5';
+import {wakePlayer} from './player-rest.js?v=0.21.5';
 export const LOCATION_LOAD_TIME=1.1;
 export function remainingAntennas(g,room=g.room){return g.relays.filter(d=>d.room===room&&d.hp>0);}
 export function canLeaveRoom(g,room=g.room){

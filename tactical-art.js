@@ -1,6 +1,6 @@
-import {drawPixelBarrier} from './shield-art.js?v=0.21.1';
-import {rect,text} from './pixel.js?v=0.21.1';
-import {scanArea} from './tactical-enemies.js?v=0.21.1';
+import {drawPixelBarrier} from './shield-art.js?v=0.21.5';
+import {rect,text} from './pixel.js?v=0.21.5';
+import {scanArea} from './tactical-enemies.js?v=0.21.5';
 export function drawTacticalTerrain(c,g,time){
  for(const ink of g.inks){
   if(ink.room!==g.room)continue;const s=g.platforms.find(s=>s.id===ink.platformId);if(!s)continue;const x=s.x+ink.localX,y=s.y;
