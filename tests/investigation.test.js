@@ -53,16 +53,16 @@ test('Infoshum enters the final phase after precisely two destroyed monitors',()
  const g=new Game({story:false});g.start();g.tutorial.complete=true;
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
  const n=g.boss.network;
- for(const index of [0,1]){
+ for(const index of [0,1,2]){
   const m=n.monitors[index];m.state='open';m.openTime=5;
   Object.assign(g.player,{x:m.terminalX-34,y:m.terminalY-46,h:48,dir:1,attack:.18,swing:g.player.swing+1});
   assert.equal(strikeInfoshum(g,{x:g.player.x+16,y:g.player.y-2,w:54,h:54}),true);
  }
- assert.equal(n.defeatedMonitors,2);assert.equal(n.stage,'rupture');
- assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===3));
+ assert.equal(n.defeatedMonitors,3);assert.equal(n.stage,'rupture');
+ assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
  for(let i=0;i<150;i++)stepBoss(g,1/60);
- assert.equal(n.stage,'free');assert.equal(g.boss.phase,3);
- assert.equal(n.monitors.filter(m=>m.state==='broken').length,2);
+ assert.equal(n.stage,'free');assert.equal(g.boss.phase,2);
+ assert.equal(n.monitors.filter(m=>m.state==='broken').length,3);
 });
 
 test('projectile deflections reward an active counterattack',()=>{

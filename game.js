@@ -86,9 +86,10 @@ async function boot(){
   if(event.type==='voiceEcho')notify(event.text,4800);
   if(event.type==='bossDefeatStart'){clearInput();clearEffects();}
    if(event.type==='infoshumTransfer')notify('Инфошум ушёл из экрана! Бей по засветившемуся пульту.',3500);
-   if(event.type==='infoshumMonitorDestroyed')notify('Монитор разрушен. Осталось: '+(2-game.boss.network.defeatedMonitors),2400);
+   if(event.type==='infoshumMonitorDestroyed')notify('Монитор разрушен. Осталось: '+(3-game.boss.network.defeatedMonitors),2400);
    if(event.type==='infoshumRupture')notify('Последний экран не выдерживает! Инфошум вырывается наружу.',3700);
-   if(event.type==='infoshumFreed')notify('Уклоняйся от щупальца и бей по раскрытому ядру!',4500);
+   if(event.type==='infoshumTerminalOpen')notify('Последний пульт открыт — перегрузи монитор!',3500);
+   if(event.type==='infoshumFreed')notify('Уклоняйся от атак и бей по раскрытому ядру!',4500);
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');
 
   if(event.type==='lifePickup')notify('+1 жизнь!');

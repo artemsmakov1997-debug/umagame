@@ -2,6 +2,7 @@ import {rooms} from './level.js?v=0.21.5';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function spreaderDeck(g){return g.platforms.find(s=>s.room===g.boss.room&&s.index===4);}
 export const paperFeeders=[{x:126,y:103,vx:140,vy:137,stopY:272},{x:744,y:215,vx:-95,vy:135,stopY:326}];
+export function paperFeederPositions(time){return paperFeeders.map((f,i)=>{const offset=Math.sin(time*Math.PI*2/(i?7.2:6)+i*Math.PI)*(i?38:44);return {...f,offset,y:f.y+offset};});}
 function paper(g,x,y,vx,vy,extra={}){g.bolts.push({room:g.room,kind:'paper',visual:'spreader',x,y,w:19,h:17,vx,vy,ttl:3,...extra});}
 export function summonServants(g){
  const b=g.boss,r=rooms[b.room],alive=g.enemies.filter(e=>e.bossOwnerId===b.id&&!e.dead),made=[];if(b.phase===2)return made;
@@ -16,7 +17,7 @@ function moveTo(g,s,state,duration){const b=g.boss;b.from={x:b.x,y:b.y};b.to={x:
 export function stepSpreader(g,dt){
  const b=g.boss,s=spreaderDeck(g),r=rooms[b.room],p=g.player;if(!s)return;b.timer-=dt;
  b.feedClock=(b.feedClock||0)+dt;
- if(b.feedClock>=.34){b.feedClock%=.34;for(const f of paperFeeders)paper(g,r.x+f.x,f.y,f.vx,f.vy,{feeder:true,stopY:f.stopY});}
+ if(b.feedClock>=.34){b.feedClock%=.34;for(const f of paperFeederPositions(g.time)){const hit=g.platforms.filter(q=>q.room===b.room&&q.y>f.y+10).map(q=>({q,t:(q.y-f.y)/f.vy})).filter(({q,t})=>{const x=r.x+f.x+f.vx*t;return x+19>q.x&&x<q.x+q.w;}).sort((a,c)=>a.t-c.t)[0];paper(g,r.x+f.x,f.y,f.vx,f.vy,{feeder:true,stopY:hit?.q.y??416});}}
  if(b.phase===1){
   b.x=s.x+(s.w-b.w)/2;b.y=s.y-b.h;b.platformIndex=s.index;b.state='guarding';b.ability='summon';
   if(b.timer<=0){summonServants(g);b.timer=3.4;}

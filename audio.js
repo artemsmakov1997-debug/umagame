@@ -107,6 +107,10 @@ export class GameAudio{
   else if(type==='cutWarning'){noise(.045,.07,5600);tone(1400,1000,.055,.035,'triangle');}
   else if(type==='platformCut'){noise(.11,.12,4500);noise(.08,.08,2700,.12);tone(1000,340,.09,.04);}
   else if(type==='platformRestore')tone(350,660,.15,.035,'triangle');
+  else if(type==='infoshumWarning'){tone(145,290,.25,.045,'triangle');}
+  else if(type==='infoshumTransfer'){tone(420,90,.35,.04,'sawtooth');}
+  else if(type==='infoshumSlam'){noise(.18,.09,1800);tone(100,45,.18,.06,'sawtooth');}
+  else if(type==='infoshumRupture'){noise(.65,.08,2200);tone(65,180,.65,.08,'triangle');}
   else if(type==='bossCast'){tone(90,45,.3,.12,'sawtooth');if(event.ability==='rain')noise(.5,.06,3400);else noise(.2,.06,700);}
   else if(type==='bossWarning'){const base={spreader:240,agitator:110,manipulator:440,infoshum:75}[event.boss]||110;tone(base,base*1.4,.25,.05,'triangle');}
   else if(type==='arenaPull'||type==='infection'){tone(140,35,.8,.09,'sawtooth');noise(.5,.06,400);}

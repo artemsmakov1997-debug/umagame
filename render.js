@@ -1,3 +1,4 @@
+import {drawInfoshumProjectile} from './infoshum-sprites.js?v=0.21.5';
 import {drawSpreaderEquipment} from './spreader-arena-art.js?v=0.21.5';
 import {drawInfoshumBackdrop,drawInfoshumPlatform} from './infoshum-art.js?v=0.21.5';
 import {drawServant} from './spreader-minion-art.js?v=0.21.5';
@@ -101,7 +102,7 @@ export class Renderer{
   }
   for(const bolt of g.bolts){
    if(bolt.kind==='echoOrb'){drawEchoVortex(c,bolt,t);drawMonster(c,a,'echo',bolt.x-8,bolt.y-10,48,48,t,false,{...bolt,flying:true});continue;}
-   drawProjectile(c,a,g,bolt,t);
+   if(!drawInfoshumProjectile(c,a,bolt,t))drawProjectile(c,a,g,bolt,t);
   }
   drawCombatEffects(c,a,this.combatEffects,dt);this.combatEffects=this.combatEffects.filter(e=>e.time<.32);
   if((!p.grounded&&Math.abs(p.vx)>0||p.dash>0)&&g.mode==='playing'){
