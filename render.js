@@ -51,7 +51,7 @@ export class Renderer{
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
   if(g.room!==2)drawPassages(c,a,g);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
-  drawMovingRails(c,g.platforms.filter(s=>s.room===g.room),t);
+  drawMovingRails(c,g.platforms.filter(s=>s.room===g.room&&!s.bossHidden),t);
   for(const platform of solidSurfaces(g)){
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
