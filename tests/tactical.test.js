@@ -34,7 +34,7 @@ test('Censor stamps a bounded patch on its actual platform, with warning and a f
  const g=setup(3,3,20),e=actor('censor',3,125,3,{timer:0,speed:0});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');assert.equal(g.inks.length,0);tick(g,32);assert.equal(g.inks.length,1);const ink=g.inks[0],s=g.platforms.find(s=>s.id===ink.platformId);assert.ok(ink.localX>=0&&ink.localX+ink.w<=s.w);g.enemies=[];tick(g,560);assert.equal(g.inks.length,0);
 });
 test('ink slows Fakenews patrols and lunges but does not slow Censor',()=>{
- const distance=(type,ink,state='patrol')=>{const g=setup(2,1,295),e=actor(type,2,350,1,{dir:1,timer:99,jumpCooldown:99,state});g.enemies=[e];if(ink)stampInk(g,actor('censor',2,350,1));const x=e.x;tick(g,12);return Math.abs(e.x-x);};
+ const distance=(type,ink,state='patrol')=>{const g=setup(4,1,295),e=actor(type,4,350,1,{dir:1,timer:99,jumpCooldown:99,state});g.enemies=[e];if(ink)stampInk(g,actor('censor',4,350,1));const x=e.x;tick(g,12);return Math.abs(e.x-x);};
  assert.ok(distance('fakenews',true)<distance('fakenews',false)*.5);assert.ok(distance('fakenews',true,'lunge')<distance('fakenews',false,'lunge')*.5);assert.ok(Math.abs(distance('censor',true)-distance('censor',false))<.01);
 });
 test('Uma has real ink inertia after releasing movement and distinct slipping animation poses',()=>{

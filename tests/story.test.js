@@ -46,7 +46,7 @@ test('entering a chapter is silent; only picking up its notebook opens Yuri comm
  const g=ready();at(g,1,0,45);tick(g,1);assert.equal(g.dialogue,null);g.player.x=WIDTH+85;const time=g.time;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.equal(g.time,time);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);assert.equal(g.mode,'playing');
 });
 test('a defeated miniboss yields one record and an optional notebook that survive life loss',()=>{
- const g=ready();g.enemies=[];at(g,2,4,1400);g.checkpoint=2;g.completeChapter(2);assert.equal(g.dialogue,null);assert.equal(g.evidence[0].id,'autopublish');tick(g,40);assert.equal(g.dialogue.id,'notebook:record1');g.completeChapter(2);assert.equal(g.evidence.length,1);g.advanceDialogue(true);g.health=1;g.player.inv=0;g.hurt();tick(g,70);assert.equal(g.evidence.length,1);assert.ok(g.seenScenes.has('chapter1'));
+ const g=ready();g.enemies=[];at(g,2,4,760);g.checkpoint=2;g.completeChapter(2);assert.equal(g.dialogue,null);assert.equal(g.evidence[0].id,'autopublish');tick(g,40);assert.equal(g.dialogue.id,'notebook:record1');g.completeChapter(2);assert.equal(g.evidence.length,1);g.advanceDialogue(true);g.health=1;g.player.inv=0;g.hurt();tick(g,70);assert.equal(g.evidence.length,1);assert.ok(g.seenScenes.has('chapter1'));
 });
 
 test('printing belts and all other chapters are frozen until Uma enters them',()=>{

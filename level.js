@@ -8,7 +8,7 @@ export const chapters=[
 const definitions=[
  {name:'ТИХАЯ КОМНАТА',theme:'cozy',chapter:0,tutorial:true,width:WIDTH},
  {name:'РЕДАКЦИЯ',theme:'newsroom',chapter:1,width:WIDTH*3},
- {name:'ПРОЛЁТ РАСПРОСТРАНИТЕЛЯ',theme:'newsroom',chapter:1,arena:true,boss:'spreader',width:ARENA_WIDTH},
+ {name:'ПРОЛЁТ РАСПРОСТРАНИТЕЛЯ',theme:'newsroom',chapter:1,arena:true,boss:'spreader',width:864},
  {name:'КРЫШИ',theme:'roofs',chapter:2,width:WIDTH*3},
  {name:'МАЧТА АГИТАТОРА',theme:'roofs',chapter:2,arena:true,boss:'agitator',width:ARENA_WIDTH},
  {name:'СТУДИЯ',theme:'studio',chapter:3,width:WIDTH*3},
@@ -16,8 +16,9 @@ const definitions=[
  {name:'ИЗМЕРЕНИЕ',theme:'noise',chapter:4,width:WIDTH*3},
  {name:'СЕРДЦЕ ИНФОШУМА',theme:'noise',chapter:4,arena:true,boss:'infoshum',width:ARENA_WIDTH}
 ];
+// Keep later chapters at their existing world coordinates; the compact arena uses its original reserved slot.
 let cursor=0;
-export const rooms=definitions.map((r,index)=>{const room={...r,index,x:cursor,end:cursor+r.width};cursor+=r.width;return room;});
+export const rooms=definitions.map((r,index)=>{const room={...r,index,x:cursor,end:cursor+r.width};cursor+=index===2?ARENA_WIDTH:r.width;return room;});
 export const LAST_ROOM=rooms.length-1,FINAL_X=rooms[LAST_ROOM].x,WORLD=cursor,PORTAL_ROOM=7,PORTAL_X=rooms[PORTAL_ROOM].end-96;
 export function roomAt(x){return rooms.find(r=>x>=r.x&&x<r.end)?.index??(x<0?0:LAST_ROOM);}
 export const layouts=[];
@@ -58,6 +59,8 @@ const arenaOffsets={
 for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>{
  const [dx,dy]=arenaOffsets[index][i]||[0,0];return[x+dx,y+dy,w];
 });
+// Reference arena: one continuous floor, six ascending decks and two side shelves.
+layouts[2]=[[0,416,864],[136,346,102],[208,306,100],[278,272,160],[592,154,250],[402,218,120],[472,182,138],[592,326,120],[64,262,55]];
 // Additional side routes: a paper lift, fire escape, stage wagon and drifting islands.
 for(const [room,extra] of [[1,[[760,352,130],[1520,356,126]]],[3,[[760,355,120],[1500,350,110]]],[5,[[760,350,130],[1510,350,130]]],[7,[[790,225,140],[1515,235,130]]]])layouts[room].push(...extra);
 // Exposed roof spans replace the broad safety floor; upper routes remain connected.
@@ -70,7 +73,7 @@ const motions={
  '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):r.index===2&&[5,6].includes(index)?(index===5?24:-24):0,motion:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):0,motion:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
  if(r.arena)return [];
@@ -107,15 +110,16 @@ export function createEnemies(){const all=[
  return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
 }
 export function createFish(){return rooms.flatMap(r=>{
+ if(r.index===2)return [];
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
-export function createSoup(){return rooms.filter(r=>!r.tutorial).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
-const antennaPlaces=[[1,7],[1,18],[1,26],[2,13],[3,8],[3,18],[3,26],[4,13],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
+export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+const antennaPlaces=[[1,7],[1,18],[1,26],[2,4],[3,8],[3,18],[3,26],[4,13],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
 export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
  const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
- return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:1,lastSwing:-1,breakTime:0,kind,ordinal};});}
-export function createLifePickups(){return [[1,17],[1,22],[2,9],[3,7],[3,22],[4,9],[5,7],[5,24],[6,9],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+ return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:1,lastSwing:-1,breakTime:0,kind,ordinal,scripted:room===2};});}
+export function createLifePickups(){return [[1,17],[1,22],[2,8],[3,7],[3,22],[4,9],[5,7],[5,24],[6,9],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews']},
@@ -126,7 +130,7 @@ export function createNotebooks(){
  {id:'studio',room:5,index:0,x:95,scenes:['arrival3','injection']},{id:'splicer',room:5,index:14,x:1385,scenes:['splicer']},{id:'cutter',room:5,index:12,x:850,scenes:['cutter']},
  {id:'manipulator',room:5,index:14,x:1410,scenes:['manipulator']},
  {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:10,x:845,scenes:['echo']},{id:'clickbait',room:7,index:12,x:1410,scenes:['clickbait']},{id:'infoshum',room:7,index:21,x:2195,scenes:['infoshum']},
- ...[2,4,6].map((room,i)=>({id:'record'+(i+1),room,index:4,x:1400,scenes:['chapter'+(i+1)],bossRecord:true}))
+ ...[2,4,6].map((room,i)=>({id:'record'+(i+1),room,index:4,x:room===2?760:1400,scenes:['chapter'+(i+1)],bossRecord:true}))
  ];
  return entries.map(n=>({...n,x:rooms[n.room].x+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.bossRecord?Infinity:0}));
 }

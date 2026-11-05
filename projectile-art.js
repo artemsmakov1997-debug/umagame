@@ -5,7 +5,7 @@ export function drawProjectile(c,a,g,b,t){
  const i=projectileStyle(g,b),frame=projectileFrames[i],w=b.w,h=b.h;c.save();c.imageSmoothingEnabled=false;
  // The complete painted body occupies exactly the collision box, not an oversized halo.
  if(b.friendly){c.fillStyle='#a9ffe8';c.fillRect(Math.round(b.x-1),Math.round(b.y+h/2),1,3);c.fillRect(Math.round(b.x+w),Math.round(b.y+h/2),1,3);}
- c.drawImage(a.projectiles,...frame,Math.round(b.x),Math.round(b.y),w,h);
+ if(b.visual==='spreader'&&a.spreaderPages){const frames=[[91,199,338,365],[674,218,279,317],[1199,200,340,355],[1697,305,376,166]],index=b.feeder?3:Math.floor(t*6)%3;c.drawImage(a.spreaderPages,...frames[index],Math.round(b.x),Math.round(b.y),w,h);}else c.drawImage(a.projectiles,...frame,Math.round(b.x),Math.round(b.y),w,h);
  const sign=Math.sign(b.vx)||1;if(['packet','ticker'].includes(b.kind))for(let n=1;n<=2;n++){c.globalAlpha=.32/n;rect(c,b.x-sign*n*4,b.y+h*.55,3,1,b.friendly?'#a9ffe8':'#72dce7');}
  c.globalAlpha=.45;const shine=Math.floor(t*9)%Math.max(2,w-2);rect(c,b.x+shine,b.y+2,2,1,b.friendly?'#d9fff0':'#effaff');c.restore();
 }

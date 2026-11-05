@@ -1,5 +1,5 @@
 export const phasePlans={
- spreader:[['Газетная бомбардировка',['scatter']],['Рывок и Прислужники',['swoop','summon']],['Последний тираж',['swoop','scatter','summon']]],
+ spreader:[['Подъём к Распространителю',['summon']],['Газетная бомбардировка',['rain']],['Открытый тираж',['scatter','summon']]],
  agitator:[['Обращение',['broadcast','telecast']],['Тревожный эфир',['pressure','alarm','summon','telecast']],['Охват любой ценой',['telecast','pressure','alarm','summon','broadcast']]],
  manipulator:[['Прямой эфир',['ticker','spotlight']],['Потерянный контекст',['cut','ticker','splice']],['Финальная склейка',['splice','cut','summon','spotlight']]],
  infoshum:[['Шумовой фон',['volley','wave','summon']],['Поток искажений',['rain','echoPulse','wave','summon']],['Поглощение',['copy','rain','cut','splice','wave','staticRush','lure','echoPulse','summon','volley']]]
