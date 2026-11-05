@@ -1,3 +1,4 @@
+import {stepSpreader} from './spreader-combat.js?v=0.21.5';
 import {phasePattern,stepBossPhase,phasePlans} from './boss-phases.js?v=0.21.5';
 import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
@@ -7,7 +8,7 @@ import {stepEcho} from './echo-pull.js?v=0.21.5';
 export {bossTroops} from './boss-abilities.js?v=0.21.5';
 export const BOSS_HEALTH=32;
 export const abilities=['volley','wave','rain','summon','echoPulse','staticRush','lure'];
-export const bossPatterns={spreader:['scatter','summon','ink','copy','swoop'],agitator:['telecast','summon','pressure','alarm','broadcast'],manipulator:['ticker','summon','cut','splice','spotlight'],infoshum:abilities};
+export const bossPatterns={spreader:['scatter','summon','swoop'],agitator:['telecast','summon','pressure','alarm','broadcast'],manipulator:['ticker','summon','cut','splice','spotlight'],infoshum:abilities};
 export const phaseTwoPatterns=Object.fromEntries(Object.entries(phasePlans).map(([id,p])=>[id,p[1][1]]));
 export const phaseThreePatterns=Object.fromEntries(Object.entries(phasePlans).map(([id,p])=>[id,p[2][1]]));
 export const abilityNames={volley:'ЗАЛП',wave:'ВОЛНА',rain:'ДОЖДЬ',summon:'ПРИЗЫВ',scatter:'ГАЗЕТНЫЙ ДОЖДЬ',swoop:'ПИКИРОВАНИЕ',broadcast:'ЛОЗУНГИ',pressure:'НАПОР',spotlight:'РАМКА',cut:'РАЗРЕЗ',ink:'ЧЕРНИЛА',copy:'КОПИРОВАНИЕ',alarm:'ТРЕВОГА',telecast:'РАССЫЛКА',ticker:'ВБРОС',splice:'ПРИТЯГИВАНИЕ',echoPulse:'ЭХО',staticRush:'ПОМЕХА',lure:'ПРИМАНКА'};
@@ -35,7 +36,7 @@ export function castAttack(g){
   else if(b.ability==='telecast'){b.telecastMoved=false;b.phased=false;g.emit('teleportOut',{x:b.x,y:b.y,enemyType:'informant'});}
   else if(b.ability==='echoPulse')paper(g,clamp(b.aim.x-20,r.x+24,r.end-64),clamp(b.aim.y-19,60,400),0,0,{kind:'echoOrb',type:'echo',id:'boss-echo-'+(++g.tacticalSerial),w:40,h:38,ttl:6,state:'windup',timer:.65,warpCooldown:0});
  }
- if(b.phase===3&&['swoop','telecast','cut','staticRush'].includes(b.ability))castInherited(g,b.id==='spreader'?'ink':b.id==='agitator'?'alarm':b.id==='manipulator'?'summon':'lure');
+ if(b.id!=='spreader'&&b.phase===3&&['swoop','telecast','cut','staticRush'].includes(b.ability))castInherited(g,b.id==='spreader'?'ink':b.id==='agitator'?'alarm':b.id==='manipulator'?'summon':'lure');
  b.state='casting';b.timer=b.ability==='splice'?5:['swoop','staticRush'].includes(b.ability)?.8:b.ability==='scatter'?1.5:b.ability==='telecast'?1.25:b.phase===1?1.15:.9;g.emit('bossCast',{ability:b.ability,boss:b.id,x:b.x,y:b.y});
 }
 function stepCast(g,b,dt){
@@ -51,7 +52,7 @@ function stepCast(g,b,dt){
 }
 export function stepBoss(g,dt){
  const b=g.boss;if(!b.active||b.hp<=0||b.room!==g.room)return;const support=g.platforms.find(s=>s.room===b.room&&s.index===b.platformIndex);if(support&&b.state!=='shift'&&!['swoop','staticRush'].includes(b.ability)){b.x+=support.dx||0;b.y+=support.dy||0;}b.docks=bossDocksForRoom(b.room,g.platforms);
- b.guardFlash=Math.max(0,(b.guardFlash||0)-dt);b.shieldDissolve=Math.max(0,(b.shieldDissolve||0)-dt);const protectedNow=bossShielded(g);if(b.shieldWasActive&&!protectedNow){b.shieldDissolve=.45;g.emit('shieldBreak',{x:b.x+b.w/2,y:b.y});}b.shieldWasActive=protectedNow;b.cooldown=Math.max(0,b.cooldown-dt);b.hurtTime=Math.max(0,b.hurtTime-dt);b.noticeTime=Math.max(0,b.noticeTime-dt);b.shieldBroken=Math.max(0,b.shieldBroken-dt);if(b.noticeTime>0)return;if(stepBossPhase(g,dt))return;b.timer-=dt;
+ b.guardFlash=Math.max(0,(b.guardFlash||0)-dt);b.shieldDissolve=Math.max(0,(b.shieldDissolve||0)-dt);const protectedNow=bossShielded(g);if(b.shieldWasActive&&!protectedNow){b.shieldDissolve=.45;g.emit('shieldBreak',{x:b.x+b.w/2,y:b.y});}b.shieldWasActive=protectedNow;b.cooldown=Math.max(0,b.cooldown-dt);b.hurtTime=Math.max(0,b.hurtTime-dt);b.noticeTime=Math.max(0,b.noticeTime-dt);b.shieldBroken=Math.max(0,b.shieldBroken-dt);if(b.noticeTime>0)return;if(b.id==='spreader'){stepSpreader(g,dt);return;}if(stepBossPhase(g,dt))return;b.timer-=dt;
  if(b.state==='shift'){const next=b.docks[b.nextDock];if(['spreader','manipulator'].includes(b.id)){const t=clamp(1-b.timer/1.15,0,1);b.x=b.shiftFrom.x+(next.x-b.shiftFrom.x)*t;b.y=b.shiftFrom.y+(next.y-b.shiftFrom.y)*t-Math.sin(t*Math.PI)*(b.id==='spreader'?90:120);}else if(!b.shifted&&b.timer<=.56){Object.assign(b,next);b.dock=b.nextDock;b.shifted=true;g.emit('bossMove',{x:b.x,y:b.y,boss:b.id});}if(b.timer<=0){Object.assign(b,next);b.dock=b.nextDock;b.state='recover';b.timer=1.8;b.justMoved=true;}return;}
  if(b.state==='casting')stepCast(g,b,dt);if(b.timer>0)return;
  if(b.state==='windup')castAttack(g);else if(b.state==='casting'){if(b.ability==='splice')releaseTether(g,'boss:'+b.id);b.state='recover';b.timer=b.id==='spreader'?1.65:b.phase===1?1.7:b.phase===3?1.3:1.4;}
@@ -60,10 +61,11 @@ export function stepBoss(g,dt){
 export function damageBoss(g,amount,reflected=false,sourceX=g.player.x+g.player.w/2){
  const b=g.boss;if(!b.active||b.hp<=0||b.cooldown>0||['shift','phaseChange'].includes(b.state)||b.phased)return false;if(bossShielded(g)){b.guardFlash=.24;return false;}
  if(b.id==='agitator'&&(sourceX-b.x-b.w/2)*b.dir>=-6&&!b.shieldBroken){if(reflected){b.shieldBroken=2;b.state='recover';b.timer=1.4;}else{b.guardFlash=.24;return false;}}
- if(!reflected){const exposed=b.id==='spreader'?b.state==='recover'||b.ability!=='swoop':b.id==='agitator'?true:b.id==='manipulator'?b.state==='recover'||b.state==='casting'&&b.ability==='splice':b.state==='recover';if(!exposed)return false;}
+ if(!reflected){const exposed=b.id==='spreader'?b.state==='recover':b.id==='agitator'?true:b.id==='manipulator'?b.state==='recover'||b.state==='casting'&&b.ability==='splice':b.state==='recover';if(!exposed)return false;}
+ if(b.id==='spreader'){if(b.state!=='recover'||b.counterHit)return false;b.counterHit=true;amount=Math.max(3,amount);}
  b.hp=Math.max(0,b.hp-amount);b.cooldown=.22;b.hurtTime=.28;releaseTether(g,'boss:'+b.id);for(const p of g.portals)if(p.ownerId==='boss:'+b.id)p.cancelled=true;g.emit('bossHit',{x:b.x+b.w/2,y:b.y+b.h-14,boss:b.id});if(b.hp===0){clearBossHelpers(g);g.bossDefeated();}return true;
 }
-export function bossContact(g){const b=g.boss,p=g.player;if(['shift','phaseChange'].includes(b.state)||b.phased||!g.overlap(p,b))return;const before=g.health;g.hurt(false,b.x);if(b.id==='infoshum'&&b.ability==='staticRush'&&b.state==='casting'&&g.mode==='playing'&&g.health<before){p.vx=(p.x>b.x?1:-1)*280;p.vy=150;p.knock=.24;p.grounded=false;g.emit('staticPush',{x:b.x,y:b.y});}}
+export function bossContact(g){const b=g.boss,p=g.player;if(b.id==='spreader'&&(b.phase===1||b.state==='recover'||b.state==='retreat'))return;if(['shift','phaseChange'].includes(b.state)||b.phased||!g.overlap(p,b))return;const before=g.health;g.hurt(false,b.x);if(b.id==='infoshum'&&b.ability==='staticRush'&&b.state==='casting'&&g.mode==='playing'&&g.health<before){p.vx=(p.x>b.x?1:-1)*280;p.vy=150;p.knock=.24;p.grounded=false;g.emit('staticPush',{x:b.x,y:b.y});}}
 export function stepProjectiles(g,dt,paw){
  for(const bolt of g.bolts){if(bolt.room!==undefined&&bolt.room!==g.room)continue;if(bolt.kind==='echoOrb'){bolt.id??='boss-echo-'+(++g.tacticalSerial);bolt.state??='windup';bolt.timer??=.65;bolt.warpCooldown=Math.max(0,(bolt.warpCooldown||0)-dt);bolt.vx=0;bolt.vy=0;stepEcho(g,bolt,dt);}bolt.ttl-=dt;bolt.x+=bolt.vx*dt;bolt.y+=bolt.vy*dt;
   if(bolt.kind==='wave'&&!bolt.fixedY)bolt.y=surfaceAt(bolt.x,g.platforms||platforms)-bolt.h;

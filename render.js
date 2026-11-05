@@ -1,3 +1,4 @@
+import {drawServant} from './spreader-minion-art.js?v=0.21.5';
 import {drawProjectile,drawCombatEffects} from './projectile-art.js?v=0.21.5';
 import {drawBossDefeat} from './boss-defeat-art.js?v=0.21.5';
 import {drawYuriSignal} from './signal-art.js?v=0.21.5';
@@ -75,6 +76,7 @@ export class Renderer{
    if(e.spawnTime>0){const progress=Math.max(0,Math.min(1,(1-e.spawnTime/(e.arrivalDuration||.55)-.12)/.88));c.beginPath();c.rect(e.x-140,e.y-170,328,e.h+170);c.clip();c.translate(0,(1-progress)*78);c.globalAlpha=progress>.01?1:0;}
    else if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
    if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
+   if(e.type==='servant')drawServant(c,a,e,t);
    if(['censor','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
    if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
    if(e.type==='echo'){const squeeze=e.state==='windup'?.65+.35*Math.max(0,Math.min(1,e.timer/.65)):e.state==='pulling'?.8+Math.sin(t*12)*.06:1;c.save();c.translate(e.x+20,e.y+19);c.scale(squeeze,1);drawMonster(c,a,e.type,-37,-43,74,66,t,false,e);c.restore();}

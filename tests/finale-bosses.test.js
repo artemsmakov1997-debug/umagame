@@ -21,11 +21,8 @@ test('pause preserves the selected slide and the result waits for the closing sc
 test('score counts fish, actual kills, destroyed dishes and defeated bosses without introducing a timer',()=>{
  const g=game();assert.equal(scoreBreakdown(g).total,0);g.fish=4;g.kills=2;g.relays[0].hp=0;g.bossesDefeated.add('spreader');assert.equal(scoreBreakdown(g).total,1240);g.time=999999;assert.equal(scoreBreakdown(g).total,1240);
 });
-test('every boss cycles through its own three species in small waves, with safe delayed arrivals and a cap',()=>{
- for(const room of[2,4,6,8]){const g=game(room);const seen=new Set();for(let i=0;i<7;i++){summonBossTroops(g).forEach(e=>seen.add(e.type));assert.ok(g.enemies.filter(e=>!e.dead).length<=2);g.enemies.forEach(e=>e.dead=true);}g.enemies=[];summonBossTroops(g);const helpers=g.enemies.filter(e=>e.bossOwnerId===g.boss.id&&!e.dead);assert.equal(helpers.length,2,g.boss.id);assert.deepEqual(seen,new Set(bossTroops[g.boss.id]));assert.ok(helpers.every(e=>e.spawnTime>=.5&&!g.overlap(e,g.player)));assert.ok(helpers.every(e=>e.room===room));}
-});
-test('Spreader inherits ink and copying; his printed copies persist while he lives and vanish with him',()=>{
- const g=game(2);prepare(g,'ink');castAttack(g);assert.equal(g.inks.length,2);prepare(g,'copy');castAttack(g);assert.equal(g.enemies.filter(e=>e.copyOwnerId==='boss:spreader').length,1);cleanCopies(g);assert.ok(g.enemies.every(e=>!e.dead));g.relays.forEach(d=>d.hp=0);g.boss.cooldown=0;g.boss.state='recover';g.boss.ability='swoop';assert.equal(damageBoss(g,1),true,'recovery after a dive is vulnerable');g.boss.cooldown=0;assert.equal(damageBoss(g,99),true);assert.ok(g.enemies.every(e=>e.dead));assert.equal(g.inks.length,0);
+test('other bosses cycle through their own three species in small waves, with safe delayed arrivals and a cap',()=>{
+ for(const room of[4,6,8]){const g=game(room);const seen=new Set();for(let i=0;i<7;i++){summonBossTroops(g).forEach(e=>seen.add(e.type));assert.ok(g.enemies.filter(e=>!e.dead).length<=2);g.enemies.forEach(e=>e.dead=true);}g.enemies=[];summonBossTroops(g);const helpers=g.enemies.filter(e=>e.bossOwnerId===g.boss.id&&!e.dead);assert.equal(helpers.length,2,g.boss.id);assert.deepEqual(seen,new Set(bossTroops[g.boss.id]));assert.ok(helpers.every(e=>e.spawnTime>=.5&&!g.overlap(e,g.player)));assert.ok(helpers.every(e=>e.room===room));}
 });
 test('Agitator inherits the Panicker portal, releasing one actual Fakenews',()=>{
  const g=game(4);prepare(g,'alarm');castAttack(g);assert.equal(g.portals.length,1);for(let i=0;i<150;i++)stepPortals(g,1/60);assert.equal(g.enemies.filter(e=>e.portalOwnerId==='boss:agitator').length,1);assert.ok(g.enemies.every(e=>e.type==='fakenews'));assert.ok(g.enemies.every(e=>Math.abs(e.x-g.player.x)>=60));
