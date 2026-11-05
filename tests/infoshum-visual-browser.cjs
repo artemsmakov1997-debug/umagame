@@ -46,7 +46,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
   assert.notEqual(result.ruptureScene,result.freedScene,'freed form has a distinct illustrated arena');
   assert.equal(result.stage,'free');assert.ok(result.hidden>0);
   await shot(page,'infoshum-approved-freed-'+width);
-  await page.evaluate(()=>{testGame.boss.network.stage='network';testGame.boss.network.mode='recover';testGame.boss.network.monitors.forEach(m=>m.state='idle');testGame.boss.network.activeIndex=1;testRenderer.draw(testGame,0,8);});
+  await page.evaluate(async()=>{const {activateRoom}=await import('./room-transitions.js?v=0.21.5');activateRoom(testGame,8);testGame.mode='playing';testGame.boss.active=true;testGame.boss.network.activeIndex=1;testGame.boss.network.mode='recover';testRenderer.draw(testGame,0,8);});
   await shot(page,'infoshum-approved-network-'+width);
   await page.close();
  }
