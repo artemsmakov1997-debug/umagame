@@ -114,7 +114,7 @@ test('camera eases through normal rooms and the separate arena is hidden before 
 test('Infoshum is invulnerable in a live screen and its exposed console takes one hit per paw swing',()=>{
  const g=bossGame(),n=g.boss.network;assert.equal(damageBoss(g,2,true),false);
  assert.equal(g.boss.hp,32);assert.equal(n.monitors[0].state,'idle');
- assert.equal(breakScreen(g,0),true);assert.equal(g.boss.hp,24);
+ assert.equal(breakScreen(g,0),true);assert.equal(g.boss.hp,28);
  assert.equal(strikeInfoshum(g,{x:g.player.x+16,y:g.player.y-2,w:54,h:54}),false);
  assert.equal(n.defeatedMonitors,1);assert.equal(n.monitors[0].state,'broken');
 });
@@ -124,20 +124,20 @@ test('Infoshum uses three distinct monitor stations instead of summoning helpers
  assert.equal(g.boss.maxHp,32);assert.equal(damageBoss(g,99,true),false);
  assert.equal(n.monitors.filter(m=>m.state==='broken').length,0);
 });
-test('destroying two monitors releases Infoshum without destroying the last screen',()=>{
+test('destroying all three monitors releases Infoshum after the last screen ruptures',()=>{
  const g=bossGame(),n=g.boss.network;
- assert.equal(breakScreen(g,0),true);assert.equal(g.boss.hp,24);assert.equal(g.boss.phase,2);
- assert.equal(breakScreen(g,1),true);assert.equal(g.boss.hp,16);assert.equal(n.stage,'rupture');
- assert.equal(n.monitors.filter(m=>m.state==='broken').length,2);
+ assert.equal(breakScreen(g,0),true);assert.equal(g.boss.hp,28);assert.equal(g.boss.phase,1);
+ assert.equal(breakScreen(g,1),true);assert.equal(g.boss.hp,24);assert.equal(n.stage,'network');assert.equal(breakScreen(g,2),true);assert.equal(g.boss.hp,20);assert.equal(n.stage,'rupture');
+ assert.equal(n.monitors.filter(m=>m.state==='broken').length,3);
  for(let i=0;i<160;i++)stepBoss(g,1/60);
- assert.equal(n.stage,'free');assert.equal(g.boss.phase,3);
- assert.equal(n.monitors.filter(m=>m.state==='broken').length,2);
+ assert.equal(n.stage,'free');assert.equal(g.boss.phase,2);
+ assert.equal(n.monitors.filter(m=>m.state==='broken').length,3);
  assert.ok(g.platforms.some(s=>s.room===8&&s.bossHidden));
 });
-test('four final core hits end the boss fight and preserve the existing finale flow',()=>{
+test('five final core hits end the boss fight and preserve the existing finale flow',()=>{
  const g=bossGame(),n=g.boss.network;
- breakScreen(g,0);breakScreen(g,1);for(let i=0;i<160;i++)stepBoss(g,1/60);
- for(let i=0;i<4;i++){
+ breakScreen(g,0);breakScreen(g,1);breakScreen(g,2);for(let i=0;i<160;i++)stepBoss(g,1/60);
+ for(let i=0;i<5;i++){
   n.mode='weak';n.target={x:g.player.x+25,y:g.player.y+g.player.h};
   g.player.attack=.18;g.player.swing++;
   const paw={x:g.player.x,y:g.player.y-2,w:60,h:g.player.h+6};
@@ -156,7 +156,7 @@ test('Infoshum moves visibly between all three monitors after telegraphed attack
   for(const e of g.events)if(e.type==='infoshumWarning')warnings.add(e.attack);
   g.events=[];
  }
- assert.equal(visited.size,3);assert.ok(warnings.has('tentacle'));
+ assert.equal(visited.size,3);assert.ok(warnings.has('packet'));assert.ok(warnings.has('rain'));
  assert.ok(warnings.has('wave'));assert.equal(g.boss.hp,32);
  assert.equal(n.monitors.filter(m=>m.state==='broken').length,0);
 });
