@@ -7,6 +7,7 @@ import {advanceOpening} from './prologue.js?v=0.21.5';
 import {tryDrop} from './drop-through.js?v=0.21.5';
 import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.21.5';
 import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.21.5';
+import {strikeInfoshum} from './infoshum-combat.js?v=0.21.5';
 import {stepEnemies,stepPortals} from './enemies.js?v=0.21.5';
 import {cancelInformantTeleport} from './informant-teleport.js?v=0.21.5';
 import {applyRelayEffect} from './chapter-systems.js?v=0.21.5';
@@ -181,12 +182,12 @@ export class Game {
   for(const life of this.lifePickups)if(!life.taken&&this.lives<MAX_LIVES&&Math.abs(p.x+17-life.x)<25&&Math.abs(p.y+p.h/2-life.y)<32){life.taken=true;this.lives++;this.emit('lifePickup',{x:life.x,y:life.y});}
   for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;this.health=Math.min(MAX_HEALTH,this.health+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
-  for(const relay of this.relays){relay.breakTime=Math.max(0,relay.breakTime-dt);if(!relay.scripted&&relay.hp>0&&p.attack>0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;relay.hp=0;relay.breakTime=.65;this.emit('dishBreak',{x:relay.x+relay.w/2,y:relay.y+25});this.emit('relay',{room:relay.room,id:relay.id});
+  for(const relay of this.relays){relay.breakTime=Math.max(0,relay.breakTime-dt);if(!relay.scripted&&relay.room!==8&&relay.hp>0&&p.attack>0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;relay.hp=0;relay.breakTime=.65;this.emit('dishBreak',{x:relay.x+relay.w/2,y:relay.y+25});this.emit('relay',{room:relay.room,id:relay.id});
     const effect=applyRelayEffect(this,relay),clue=relayClues[relay.room]?.[relay.ordinal];
     if(clue){this.clues.push({id:relay.id,room:relay.room,text:clue,effect});this.emit('clue',{room:relay.room,text:clue,effect,x:relay.x});}}}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
   const b=this.boss;
-  if(b.active&&b.room===this.room&&b.hp>0){stepBoss(this,dt);if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y});}bossContact(this);}
+  if(b.active&&b.room===this.room&&b.hp>0){stepBoss(this,dt);if(b.id==='infoshum'&&b.network){strikeInfoshum(this,paw);}else if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y});}bossContact(this);}
   if(this.mode==='playing')stepProjectiles(this,dt,paw);this.updateCamera(dt);
  }
 }

@@ -14,7 +14,7 @@ export function createInfoshumNetwork(room=STAGE_ROOM){
   {x:1188,y:159,w:212,h:154,terminalX:1266,terminalY:351}
  ];
  return {
-  stage:'network',mode:'charge',timer:1.35,turn:0,cycle:0,activeIndex:0,
+  stage:'network',mode:'recover',timer:1.35,turn:0,cycle:0,activeIndex:0,
   fromIndex:0,toIndex:1,transitTime:0,transitDuration:.9,
   monitors:layouts.map((m,index)=>({
    ...m,x:base+m.x,terminalX:base+m.terminalX,index,

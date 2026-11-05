@@ -61,6 +61,14 @@ for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>{
 });
 // Reference arena: one continuous floor, six ascending decks and two side shelves.
 layouts[2]=[[0,416,864],[136,346,102],[208,306,100],[278,272,160],[592,154,250],[402,218,120],[472,182,138],[592,326,120],[64,262,55]];
+// The last boss uses a readable continuous floor and three reachable CRT stations.
+layouts[8]=[
+ [0,474,1536],[80,386,322],[609,338,324],[1107,386,323],
+ [405,413,170],[947,413,170],[170,260,150],[699,217,160],
+ [1216,260,150],[469,288,147],[970,288,150],[241,440,170],
+ [686,440,160],[1330,300,138],[0,426,125],[1410,426,126],
+ [396,354,103],[1032,354,98]
+];
 // Additional side routes: a paper lift, fire escape, stage wagon and drifting islands.
 for(const [room,extra] of [[1,[[760,352,130],[1520,356,126]]],[3,[[760,355,120],[1500,350,110]]],[5,[[760,350,130],[1510,350,130]]],[7,[[790,225,140],[1515,235,130]]]])layouts[room].push(...extra);
 // Exposed roof spans replace the broad safety floor; upper routes remain connected.
