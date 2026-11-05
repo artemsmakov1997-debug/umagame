@@ -9,9 +9,9 @@ const EXPOSE_SECONDS=5.4;
 export function createInfoshumNetwork(room=STAGE_ROOM){
  const base=rooms[room].x;
  const layouts=[
-  {x:140,y:159,w:212,h:154,terminalX:220,terminalY:351},
-  {x:656,y:99,w:224,h:166,terminalX:742,terminalY:303},
-  {x:1188,y:159,w:212,h:154,terminalX:1266,terminalY:351}
+  {x:125,y:145,w:222,h:156,terminalX:233,terminalY:305},
+  {x:658,y:89,w:222,h:174,terminalX:766,terminalY:251},
+  {x:1173,y:145,w:222,h:156,terminalX:1277,terminalY:305}
  ];
  return {
   stage:'network',mode:'recover',timer:1.35,turn:0,cycle:0,activeIndex:0,
@@ -93,9 +93,10 @@ function beginRupture(g){
 function rebuildArena(g){
  const r=rooms[g.room];
  const shapes={
-  0:[0,474,1536],1:[92,361,296],2:[617,328,300],
-  3:[1131,361,296],4:[411,413,165],5:[965,413,165],
-  9:[464,264,145],10:[961,264,145]
+  0:[0,474,460],1:[92,366,296],2:[617,332,300],
+  3:[1131,366,296],4:[411,413,165],5:[965,413,165],
+  9:[464,272,145],10:[961,272,145],
+  11:[520,474,530],12:[1110,474,426]
  };
  for(const p of g.platforms)if(p.room===g.room){
   const shape=shapes[p.index];p.bossHidden=!shape;
