@@ -1,63 +1,61 @@
-// Only the Spreader uses this encounter. Geometry and the other boss controllers stay intact.
-export function spreaderDeck(g){return g.platforms.filter(s=>s.room===g.boss.room&&s.y<=200&&s.w>=200).sort((a,b)=>b.x-a.x)[0];}
+import {rooms} from './level.js?v=0.21.5';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-function warning(g,ability,time){const b=g.boss;b.state='windup';b.ability=ability;b.timer=time;g.emit('bossWarning',{boss:b.id,ability,x:b.x,y:b.y});}
+export function spreaderDeck(g){return g.platforms.find(s=>s.room===g.boss.room&&s.index===4);}
+export const paperFeeders=[{x:126,y:103,vx:140,vy:137,stopY:272},{x:744,y:215,vx:-95,vy:135,stopY:326}];
+function paper(g,x,y,vx,vy,extra={}){g.bolts.push({room:g.room,kind:'paper',visual:'spreader',x,y,w:19,h:17,vx,vy,ttl:3,...extra});}
 export function summonServants(g){
- const b=g.boss,s=spreaderDeck(g);if(!s||b.phase<2||b.state==='casting'&&b.ability==='swoop')return [];
- const alive=g.enemies.filter(e=>e.bossOwnerId==='spreader'&&!e.dead),made=[];
- for(const x of [s.x+8,s.x+s.w-42]){
+ const b=g.boss,r=rooms[b.room],alive=g.enemies.filter(e=>e.bossOwnerId===b.id&&!e.dead),made=[];if(b.phase===2)return made;
+ for(const [local,side] of [[b.x-110,-1],[b.x+b.w+35,1],[g.player.x-140,-1],[g.player.x+140,1]]){
   if(alive.length+made.length>=2)break;
-  const y=s.y-90;if(Math.hypot(x-g.player.x,y-g.player.y)<82||alive.concat(made).some(e=>Math.hypot(x-e.x,y-e.y)<45))continue;
-  const e={id:'servant-'+(++g.tacticalSerial),type:'servant',name:'Прислужник',room:b.room,bossOwnerId:'spreader',platformIndex:s.index,x,y,w:32,h:23,hp:1,maxHp:1,active:true,noticed:true,flying:true,dir:g.player.x<x?-1:1,state:'patrol',flank:x<s.x+s.w/2?-1:1,timer:.8,spawnTime:.55,arrivalDuration:.55,inv:0,hurtTime:0,lastSwing:-1,dead:false,deathTime:0,walkTime:0};
-  g.enemies.push(e);made.push(e);g.emit('bossSummon',{boss:b.id,enemyType:e.type,x,y});
+  const x=clamp(local,r.x+20,r.end-50),y=clamp(b.phase===1?b.y+60:g.player.y-65,30,350);
+  if(Math.hypot(x-g.player.x,y-g.player.y)<90||alive.concat(made).some(e=>Math.hypot(x-e.x,y-e.y)<50))continue;
+  const e={id:'servant-'+(++g.tacticalSerial),type:'servant',name:'Прислужник',room:b.room,bossOwnerId:b.id,platformIndex:4,x,y,w:32,h:23,hp:1,maxHp:1,active:true,noticed:true,flying:true,dir:side,state:'patrol',flank:side,timer:.9,spawnTime:.6,arrivalDuration:.6,inv:0,hurtTime:0,lastSwing:-1,dead:false,deathTime:0,walkTime:0};g.enemies.push(e);made.push(e);g.emit('bossSummon',{boss:b.id,enemyType:e.type,x,y});
  }return made;
 }
-function bomb(g){const b=g.boss;for(const offset of [25,75])g.bolts.push({room:b.room,kind:'paper',visual:'spreader',x:b.x+offset,y:b.y+b.h*.65,w:17,h:16,vx:0,vy:205,ttl:2.5});}
+function moveTo(g,s,state,duration){const b=g.boss;b.from={x:b.x,y:b.y};b.to={x:s.x+(s.w-b.w)/2,y:s.y-b.h};b.moveDuration=duration;b.timer=duration;b.state=state;b.platformIndex=s.index;}
 export function stepSpreader(g,dt){
- const b=g.boss,s=spreaderDeck(g),p=g.player;if(!s)return;
- b.timer-=dt;
- if(b.phase===1&&p.grounded&&p.supportId===s.id){b.phase=2;b.phaseName='Рывок и Прислужники';b.state='phaseChange';b.timer=.7;b.ability=null;g.bolts=[];g.emit('bossPhase',{boss:b.id,phase:2,name:b.phaseName});}
- if(b.phase===2&&b.hp<=b.maxHp/3&&b.state!=='casting'&&b.state!=='recover'){b.phase=3;b.phaseName='Последний тираж';g.emit('bossPhase',{boss:b.id,phase:3,name:b.phaseName});}
+ const b=g.boss,s=spreaderDeck(g),r=rooms[b.room],p=g.player;if(!s)return;b.timer-=dt;
+ b.feedClock=(b.feedClock||0)+dt;
+ if(b.feedClock>=.34){b.feedClock%=.34;for(const f of paperFeeders)paper(g,r.x+f.x,f.y,f.vx,f.vy,{feeder:true,stopY:f.stopY});}
  if(b.phase===1){
-  if(b.state==='recover')b.state='idle';
-  b.x+=(clamp(p.x+145,s.x-1100,s.x+s.w-b.w)-b.x)*Math.min(1,dt*2);b.y=Math.max(76,p.y-180);
-  if(b.timer<=0){if(b.state==='windup'){bomb(g);b.state='casting';b.timer=1.6;g.emit('bossCast',{boss:b.id,ability:'scatter',x:b.x,y:b.y});}else warning(g,'scatter',.65);}return;
+  b.x=s.x+(s.w-b.w)/2;b.y=s.y-b.h;b.platformIndex=s.index;b.state='guarding';b.ability='summon';
+  if(b.timer<=0){summonServants(g);b.timer=3.4;}
+  if(p.grounded&&p.supportId===s.id){
+   b.phase=2;b.state='takeoff';b.ability='rain';b.timer=.7;b.from={x:b.x,y:b.y};g.relays.filter(d=>d.room===b.room).forEach(d=>{d.hp=0;d.breakTime=.45;});b.shieldDissolve=.45;g.emit('bossPhase',{boss:b.id,phase:2,name:'Газетная бомбардировка'});
+   for(const e of g.enemies)if(e.bossOwnerId===b.id&&!e.dead){e.state='recover';e.timer=2.8;}
+  }return;
  }
- if(b.state==='phaseChange'&&b.timer>0)return;
- if(b.state==='retreat'){
-  const dx=b.edge-b.x;b.x+=Math.sign(dx)*Math.min(Math.abs(dx),dt*320);b.y+=(s.y-b.h-b.y)*Math.min(1,dt*8);
-  if(Math.abs(dx)<2&&Math.abs(b.y-(s.y-b.h))<2){b.x=b.edge;b.y=s.y-b.h;b.dir=b.x<s.x+s.w/2?1:-1;warning(g,'swoop',b.phase===3?.7:.8);}return;
+ if(b.phase===2){
+  if(b.state==='takeoff'){b.y=b.from.y-65*clamp(1-b.timer/.7,0,1);if(b.timer<=0){b.state='bombWarning';b.timer=.9;g.emit('bossWarning',{boss:b.id,ability:'rain',x:b.x,y:b.y});}return;}
+  if(b.state==='bombWarning'&&b.timer<=0){for(let x=s.x-15;x<s.x+s.w+20;x+=30)paper(g,x,8,0,420,{w:23,h:24,bombardment:true,ttl:1.1});b.bombardments=(b.bombardments||0)+1;b.state='bombWave';b.timer=.8;g.emit('bossCast',{boss:b.id,ability:'rain',x:b.x,y:b.y});return;}
+  if(b.state==='bombWave'&&b.timer<=0){moveTo(g,g.platforms.find(q=>q.room===b.room&&q.index===6),'landing',.75);return;}
+  if(b.state==='landing'){const t=clamp(1-b.timer/.75,0,1);b.x=b.from.x+(b.to.x-b.from.x)*t;b.y=b.from.y+(b.to.y-b.from.y)*t;if(b.timer<=0){b.phase=3;b.state='recover';b.timer=1.4;b.ability=null;g.emit('bossPhase',{boss:b.id,phase:3,name:'Открытый тираж'});}return;}
+  return;
  }
- if(b.state==='casting'&&b.ability==='swoop'){
-  const t=clamp(1-b.timer/.48,0,1);b.x=b.rushFrom+(b.rushTo-b.rushFrom)*t;b.y=s.y-b.h;
-  if(b.timer<=0){b.x=b.rushTo;b.state='recover';b.timer=b.phase===3?1.25:1.4;b.counterHit=false;b.recoveryPaper=false;if(b.phase===3)g.emit('bossWarning',{boss:b.id,ability:'scatter',x:b.x,y:b.y});}return;
+ if(b.state==='moving'){
+  const t=clamp(1-b.timer/b.moveDuration,0,1);b.x=b.from.x+(b.to.x-b.from.x)*t;b.y=b.from.y+(b.to.y-b.from.y)*t-Math.sin(t*Math.PI)*35;
+  if(b.timer<=0){b.x=b.to.x;b.y=b.to.y;b.state='recover';b.timer=1.3;}return;
  }
- if(b.phase===3&&b.state==='recover'&&b.timer<=.6&&!b.recoveryPaper){bomb(g);b.recoveryPaper=true;}
  if(b.timer>0)return;
  if(b.state==='windup'){
-  if(b.ability==='swoop'){b.rushFrom=b.x;b.rushTo=b.x<s.x+s.w/2?s.x+s.w-b.w:s.x;b.dir=b.rushTo>b.x?1:-1;b.state='casting';b.timer=.48;g.emit('bossCast',{boss:b.id,ability:'swoop',x:b.x,y:b.y});}
-  else{bomb(g);b.state='casting';b.timer=.6;}return;
+  const dx=b.aim.x-(b.x+b.w/2),dy=b.aim.y-(b.y+b.h*.5),len=Math.hypot(dx,dy)||1;paper(g,b.x+b.w/2,b.y+b.h*.5,dx/len*190,dy/len*190);summonServants(g);b.state='casting';b.timer=.8;return;
  }
- if(b.state==='recover'){
-  b.cycles=(b.cycles||0)+1;
+ if(b.state==='casting'){
+  const choices=g.platforms.filter(q=>q.room===b.room&&q.index!==b.platformIndex&&q.index!==0&&q.w>=100&&Math.hypot(q.x+q.w/2-b.x-b.w/2,q.y-b.y-b.h)<310).sort((a,c)=>Math.abs(a.x+a.w/2-p.x)-Math.abs(c.x+c.w/2-p.x));
+  if(choices.length){moveTo(g,choices[0],'moving',1.1);return;}
  }
- // Summon in the quiet interval, never during a rush or on top of Uma.
- if(b.phase===3||!(b.cycles%2))summonServants(g);b.state='retreat';b.ability=null;b.edge=p.x<s.x+s.w/2?s.x+s.w-b.w:s.x;
+ b.state='windup';b.ability='scatter';b.timer=.65;b.aim={x:p.x+p.w/2,y:p.y+p.h/2};b.dir=b.aim.x<b.x?-1:1;g.emit('bossWarning',{boss:b.id,ability:'scatter',x:b.x,y:b.y});
 }
 export function stepServant(g,e,dt,paw){
- if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);return;}
- if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);return;}
- e.inv=Math.max(0,e.inv-dt);e.timer-=dt;e.walkTime+=dt;
- const p=g.player,s=spreaderDeck(g),dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+12-e.y;
- if(e.state==='patrol'){
-  e.dir=dx<0?-1:1;e.x+=clamp(dx+e.flank*70,-64,64)*dt;e.y+=clamp(p.y-38-e.y,-48,48)*dt;
-  if(Math.abs(dx)<110&&Math.abs(dy)<65&&e.timer<=0){e.state='windup';e.timer=.5;e.aimX=p.x;e.aimY=p.y;}
- }else if(e.state==='windup'&&e.timer<=0){const len=Math.hypot(e.aimX-e.x,e.aimY-e.y)||1;e.vx=(e.aimX-e.x)/len*210;e.vy=(e.aimY-e.y)/len*210;e.state='lunge';e.timer=.28;}
- else if(e.state==='lunge'){e.x+=e.vx*dt;e.y+=e.vy*dt;if(e.timer<=0){e.state='recover';e.timer=1;}}
+ if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);return;}if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);return;}
+ e.inv=Math.max(0,e.inv-dt);e.timer-=dt;e.walkTime+=dt;const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+12-e.y;
+ if(e.state==='patrol'){e.dir=dx<0?-1:1;e.x+=clamp(dx+e.flank*65,-80,80)*dt;e.y+=clamp(p.y-38-e.y,-65,65)*dt;if(Math.abs(dx)<120&&Math.abs(dy)<75&&e.timer<=0){e.state='windup';e.timer=.5;e.aimX=p.x;e.aimY=p.y;}}
+ else if(e.state==='windup'&&e.timer<=0){const len=Math.hypot(e.aimX-e.x,e.aimY-e.y)||1;e.vx=(e.aimX-e.x)/len*225;e.vy=(e.aimY-e.y)/len*225;e.state='lunge';e.timer=.3;e.contactHit=false;}
+ else if(e.state==='lunge'){e.x+=e.vx*dt;e.y+=e.vy*dt;if(e.timer<=0){e.state='recover';e.timer=1.1;}}
  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.7;}
- if(s){e.x=clamp(e.x,s.x-80,s.x+s.w+45);e.y=clamp(e.y,s.y-145,s.y-28);}
- // During the boss rush, helpers rise clear of the ordinary jump corridor.
- if(g.boss.state==='casting'&&g.boss.ability==='swoop'){e.y=Math.min(e.y,s.y-135);e.state='recover';e.timer=.8;}
+ e.x=clamp(e.x,r.x+5,r.end-e.w-5);e.y=clamp(e.y,15,390);
  if(p.attack>0&&e.lastSwing!==p.swing&&g.overlap(paw,e)){e.lastSwing=p.swing;g.hitEnemy(e);}
- if(!e.dead&&e.state==='lunge'&&g.overlap(p,e))g.hurt(false,e.x);
+ if(!e.dead&&e.state==='lunge'&&!e.contactHit&&g.overlap(p,e)&&!p.dash&&(p.inv===0||g.testingInvulnerable)){
+  e.contactHit=true;g.hurt(false,e.x);const dir=Math.sign(e.vx)||e.dir;g.push(dir,e.x);p.vx=dir*180;p.vy=70;p.knock=.23;p.grounded=false;
+ }
 }

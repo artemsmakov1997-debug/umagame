@@ -8,6 +8,7 @@ const dishFrames=[
  {box:[0,512,512,512],pivot:[318,988]}, {box:[512,512,512,512],pivot:[811,988]}, {box:[1024,512,512,512],pivot:[1328,988]}
 ];
 export function drawDish(c,a,d,time){
+ if(d.scripted)return;
  if(d.kind!=='dish'&&a.destructibles){const col={printer:0,broadcast:1,edit:2,signal:3}[d.kind]??0,row=d.hp?0:d.breakTime>.25?1:2,sw=a.destructibles.width/4,sh=a.destructibles.height/3;drawTargetSprite(c,a.destructibles,[col*sw,row*sh,sw,sh],d.x+d.w/2-45,d.y+d.h-80,90,80,time,d.hp>0);return;}
  const index=d.hp>0?Math.floor(time*3)%2:d.breakTime>.52?2:d.breakTime>.32?3:d.breakTime>.1?4:5,{box,pivot}=dishFrames[index],scale=80/480,cx=d.x+d.w/2,feet=d.y+d.h;
  drawTargetSprite(c,a.dishes,box,cx+(box[0]-pivot[0])*scale,feet+(box[1]-pivot[1])*scale,box[2]*scale,box[3]*scale,time,d.hp>0);

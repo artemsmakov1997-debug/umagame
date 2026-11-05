@@ -8,6 +8,7 @@ import {drawDish,drawTowerPortal} from './stage-art.js?v=0.21.5';
 export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
+  if(room.index===2){canvas.height=480;const image=assets.spreaderArena,scale=Math.max(canvas.width/image.width,480/image.height);c.drawImage(image,(canvas.width-image.width*scale)/2,(480-image.height*scale)/2,image.width*scale,image.height*scale);return canvas;}
   if(room.tutorial){c.drawImage(assets.cozy,0,0,768,512);return canvas;}
   const index={newsroom:0,roofs:1,studio:2,noise:3}[room.theme],sw=assets.backdrops.width/2,sh=assets.backdrops.height/2;
   c.filter='saturate(.62) brightness(.65)';
@@ -29,7 +30,7 @@ export function sceneLayers(assets){
 }
 export function backgroundLayers(layers){
  return layers.map((base,index)=>{
-  if(index===0)return base;
+  if(index===0||index===2)return base;
   const canvas=document.createElement('canvas');canvas.width=base.width+160;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
   c.save();c.translate(80,0);c.scale(-1,1);c.drawImage(base,0,0,80,512,0,0,80,512);c.restore();
   c.drawImage(base,80,0);
@@ -39,7 +40,7 @@ export function backgroundLayers(layers){
  });
 }
 export function backgroundOffset(room,camera){return room.index===0||room.theme==='cozy'?0:Math.max(-64,Math.min(64,(camera-(room.x+WIDTH*.25))*.16));}
-export function drawBackdrop(c,layer,room,camera,darkness=0){c.save();if(room.theme==='cozy'&&darkness>0)c.filter=`brightness(${1-darkness*.8})`;c.drawImage(layer,Math.round(room.x-(room.theme==='cozy'?0:80)+backgroundOffset(room,camera)),0);if(room.theme==='cozy')for(const x of[room.x-4,room.x+room.width]){rect(c,x,0,4,512,'#241b25');rect(c,x+1,0,1,512,'#836140');}c.restore();}
+export function drawBackdrop(c,layer,room,camera,darkness=0){c.save();if(room.theme==='cozy'&&darkness>0)c.filter=`brightness(${1-darkness*.8})`;if(room.index===2){c.drawImage(layer,room.x,0);c.restore();return;}c.drawImage(layer,Math.round(room.x-(room.theme==='cozy'?0:80)+backgroundOffset(room,camera)),0);if(room.theme==='cozy')for(const x of[room.x-4,room.x+room.width]){rect(c,x,0,4,512,'#241b25');rect(c,x+1,0,1,512,'#836140');}c.restore();}
 export function drawSurface(c,a,p,time){
  if(p.room===0&&p.index===7)return;
  const bed=p.room===0&&p.index===0,x=bed?160:p.x,y=p.y,w=bed?p.w-160:p.w,theme=rooms[p.room].theme;
