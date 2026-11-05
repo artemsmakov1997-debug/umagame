@@ -1,4 +1,4 @@
-import {rect} from './pixel.js?v=0.21.1';
+import {rect} from './pixel.js?v=0.21.5';
 export function drawPixelBarrier(c,cx,cy,rx,ry,{half=0,alpha=1,flash=0,time=0,color='#81e5f0'}={}){
  c.save();c.globalAlpha=alpha;for(let yy=-ry;yy<=ry;yy+=3){const edge=Math.round(Math.sqrt(Math.max(0,1-yy*yy/(ry*ry)))*rx),nextY=Math.min(ry,yy+3),next=Math.round(Math.sqrt(Math.max(0,1-nextY*nextY/(ry*ry)))*rx),near=Math.min(edge,next),far=Math.max(edge,next),left=half===1?0:-edge,right=half===-1?0:edge;
   rect(c,cx+left,cy+yy,Math.max(1,right-left),3,flash>0?'#b8f3ff45':'#397dbd20');

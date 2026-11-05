@@ -1,9 +1,9 @@
-import {enemy,rooms,chapters} from './level.js?v=0.21.1';
-import {solidSurfaces} from './terrain.js?v=0.21.1';
-import {stampInk} from './tactical-enemies.js?v=0.21.1';
-import {alertNearby} from './enemies.js?v=0.21.1';
-import {bossProxy,bossActorId} from './boss-actors.js?v=0.21.1';
-import {releaseEchoPull} from './echo-pull.js?v=0.21.1';
+import {enemy,rooms,chapters} from './level.js?v=0.21.5';
+import {solidSurfaces} from './terrain.js?v=0.21.5';
+import {stampInk} from './tactical-enemies.js?v=0.21.5';
+import {alertNearby} from './enemies.js?v=0.21.5';
+import {bossProxy,bossActorId} from './boss-actors.js?v=0.21.5';
+import {releaseEchoPull} from './echo-pull.js?v=0.21.5';
 export const bossTroops=Object.fromEntries(chapters.map(c=>[c.boss,c.monsters]));
 export function summonPlaces(g,count=3){
  const b=g.boss,p=g.player,choices=solidSurfaces(g).filter(s=>s.room===g.room&&s.w>=120).sort((a,c)=>Math.abs(a.x+a.w/2-p.x)+Math.abs(a.y-p.y-p.h)-Math.abs(c.x+c.w/2-p.x)-Math.abs(c.y-p.y-p.h)),result=[];

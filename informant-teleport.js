@@ -1,5 +1,5 @@
-import {solidSurfaces} from './terrain.js?v=0.21.1';
-import {platforms} from './level.js?v=0.21.1';
+import {solidSurfaces} from './terrain.js?v=0.21.5';
+import {platforms} from './level.js?v=0.21.5';
 export const TELEPORT_PHASES={charge:.45,out:.24,blink:.1,in:.32};
 export const TELEPORT_COOLDOWN=4.2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));

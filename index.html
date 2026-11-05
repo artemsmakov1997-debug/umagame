@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030a1e"><meta name="description" content="УМА ПРОТИВ ИНФОШУМА — держи ухо востро. Пиксельная игра про кошку Уму и ожившие новости.">
 <title>УМА ПРОТИВ ИНФОШУМА — держи ухо востро</title>
-<link rel="preload" href="./assets/game-heading.png?v=0.21.1" as="image"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.21.4"><link rel="stylesheet" href="story-ui.css?v=0.21.2">
+<link rel="preload" href="./assets/game-heading.png?v=0.21.5" as="image"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=0.21.5"><link rel="stylesheet" href="story-ui.css?v=0.21.5">
 </head>
 <body>
 <main id="app" data-screen="menu">
@@ -14,14 +14,13 @@
 <canvas id="game" width="768" height="480" tabindex="0" aria-label="Пиксельная игра: Ума против инфошума"></canvas>
 <button id="pause" aria-label="Меню игры" hidden><span></span><span></span><span></span></button>
 <section id="menu-screen" class="screen menu-screen" aria-label="Главное меню">
-<header class="game-heading"><h1><span class="sr-only">УМА ПРОТИВ ИНФОШУМА</span><svg class="game-logo" viewBox="65 109 2063 525" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><image href="./assets/game-heading.png?v=0.21.1" width="2172" height="724"/></svg></h1></header>
+<header class="game-heading"><h1><span class="sr-only">УМА ПРОТИВ ИНФОШУМА</span><svg class="game-logo" viewBox="65 109 2063 525" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><image href="./assets/game-heading.png?v=0.21.5" width="2172" height="724"/></svg></h1></header>
 <nav class="menu-panel" aria-label="Меню"><div class="menu-options">
 <button id="start-game" class="menu-item selected" data-menu="start" disabled>Начать игру</button>
 <button class="menu-item" data-menu="library" disabled>Библиотека</button>
 <button class="menu-item" data-menu="settings" disabled>Настройки</button>
 <button class="menu-item" data-menu="authors" disabled>Авторы</button>
 <a class="menu-item media-link" data-menu="media" href="https://media-strazh.ru/" target="_blank" rel="noopener noreferrer"><span>МЕДИА.</span><span class="media-blue">СТРАЖ</span></a>
-<button class="menu-item" data-menu="exit" disabled>Выход</button>
 </div></nav><p id="loading" class="loading" role="status">Готовлю редакцию…</p>
 </section>
 <section id="library-screen" class="screen library-screen" aria-label="Библиотека монстров" hidden>
@@ -69,5 +68,5 @@
 
 <div id="hud-status" class="sr-only" aria-live="polite"></div>
 <div id="accessible-state" class="sr-only" aria-live="polite"></div>
-</main><script type="module" src="game.js?v=0.21.1"></script>
+</main><script type="module" src="game.js?v=0.21.5"></script>
 </body></html>

@@ -1,8 +1,8 @@
-import {creatures,newCreatures,sprite} from './assets.js?v=0.21.1';
-import {rect} from './pixel.js?v=0.21.1';
-import {idlePlacement} from './menu-animation.js?v=0.21.1';
-import {drawMonitorEyes} from './menu-monitor.js?v=0.21.1';
-import {motion,monsterFrame,monsterReaction,previewActor,clickbaitAppearanceFrame,baitEmergenceFrames,locomotionFrame} from './monster-animation.js?v=0.21.1';
+import {creatures,newCreatures,sprite} from './assets.js?v=0.21.5';
+import {rect} from './pixel.js?v=0.21.5';
+import {idlePlacement} from './menu-animation.js?v=0.21.5';
+import {drawMonitorEyes} from './menu-monitor.js?v=0.21.5';
+import {motion,monsterFrame,monsterReaction,previewActor,clickbaitAppearanceFrame,baitEmergenceFrames,locomotionFrame} from './monster-animation.js?v=0.21.5';
 export function drawCrt(c,x,y,w,h,time=0){
  rect(c,x,y,w,h,'#080f22');rect(c,x+2,y+2,w-4,h-5,'#8792ab');rect(c,x+5,y+5,w-10,h-15,'#303f61');rect(c,x+9,y+9,w-18,h-23,'#062c51');
  for(let i=0;i<9;i++){const yy=y+12+i*(h-30)/9;rect(c,x+12,yy,w-24,2,'#0b658b');for(let j=0;j<6;j++)if((i*3+j+Math.floor(time*7))%4===0)rect(c,x+13+j*(w-28)/6,yy,Math.max(2,w/14),2,'#77ecff');}
@@ -25,7 +25,15 @@ export function drawLure(c,a,x,y,time){
 }
 export function drawSoup(c,a,x,y,h=30){const b=newCreatures.soup,w=h*b[2]/b[3];sprite(c,a.monsters,b,x-w/2,y-h/2,w,h);}
 export function drawMenuScene(c,a,time,cat=true){
- const height=c.canvas.height,width=c.canvas.width,tall=height>700,scale=Math.max(width/a.menu.width,height/a.menu.height),x=tall?width*.82-1260*scale:(width-a.menu.width*scale)/2,y=height-a.menu.height*scale+(tall?0:Math.max(0,Math.min(30,(440-height)*.5)));
+ const height=c.canvas.height,width=c.canvas.width;
+ if(cat&&a.menuPortrait&&c.canvas.getBoundingClientRect().width<=700&&width/height<.75){
+  const bg=a.menuPortrait,scale=height/bg.height,w=bg.width*scale,x=(width-w)/2;
+  c.imageSmoothingEnabled=false;c.clearRect(0,0,width,height);c.drawImage(bg,x,0,w,height);
+  // Extend only the painted edge strips on wider phones; keep the full hero visible.
+  if(x>0){c.save();c.translate(x,0);c.scale(-1,1);c.drawImage(bg,0,0,x/scale,bg.height,0,0,x,height);c.restore();c.save();c.translate(width,0);c.scale(-1,1);c.drawImage(bg,bg.width-x/scale,0,x/scale,bg.height,0,0,x,height);c.restore();}
+  const pose=idlePlacement(time,height,{x:x+bg.width*.62*scale,y:height*.795,height:height*.12});sprite(c,a.idle,pose.box,pose.x,pose.y,pose.w,pose.h);return;
+ }
+ const tall=height>700,scale=Math.max(width/a.menu.width,height/a.menu.height),x=tall?width*.82-1260*scale:(width-a.menu.width*scale)/2,y=height-a.menu.height*scale+(tall?0:Math.max(0,Math.min(30,(440-height)*.5)));
  c.imageSmoothingEnabled=false;c.clearRect(0,0,width,height);c.drawImage(a.menu,x,y,a.menu.width*scale,a.menu.height*scale);
  if(cat){const pose=idlePlacement(time,height,{x:x+1260*scale,y:y+765*scale,height:tall?260:Math.min(160,height*.47)});sprite(c,a.idle,pose.box,pose.x,pose.y,pose.w,pose.h);}
 }

@@ -4,7 +4,7 @@ const {open,begin,fixture,shot}=require('./browser-helpers.cjs');
 async function setupTeleport(page){
  await fixture(page,4,2,604);
  await page.evaluate(async()=>{
-  const {enemy}=await import('./level.js?v=0.21.1'),g=testGame;g.enemies=[enemy('informant',4,365,1,{active:true,noticed:true,teleportCooldown:0})];
+  const {enemy}=await import('./level.js?v=0.21.5'),g=testGame;g.enemies=[enemy('informant',4,365,1,{active:true,noticed:true,teleportCooldown:0})];
   const step=g.step.bind(g);g.haltAt='charge';g.haltDelay=.18;
   g.step=(dt,input)=>{step(dt,input);const t=g.enemies[0]?.teleport;if(g.haltAt==='done'&&!t||t&&t.phase===g.haltAt&&t.elapsed>=g.haltDelay){g.mode='paused';g.haltAt=null;}};
  });await page.waitForFunction(()=>testGame.mode==='paused'&&testGame.enemies[0].teleport?.phase==='charge');await page.waitForTimeout(35);

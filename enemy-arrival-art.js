@@ -1,4 +1,4 @@
-import {rect} from './pixel.js?v=0.21.1';
+import {rect} from './pixel.js?v=0.21.5';
 export function sourcePosition(g,e){
  const s=e.source,p=s&&g.platforms.find(p=>p.room===e.room&&p.index===s.platformIndex);
  return p?{x:p.x+s.localX,y:p.y-(s.kind==='rift'?81:0)}:null;

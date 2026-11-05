@@ -1,10 +1,10 @@
-import {phasePattern,stepBossPhase,phasePlans} from './boss-phases.js?v=0.21.1';
-import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.21.1';
-import {solidSurfaces} from './terrain.js?v=0.21.1';
-import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v=0.21.1';
-import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.21.1';
-import {stepEcho} from './echo-pull.js?v=0.21.1';
-export {bossTroops} from './boss-abilities.js?v=0.21.1';
+import {phasePattern,stepBossPhase,phasePlans} from './boss-phases.js?v=0.21.5';
+import {LAST_ROOM,platforms,rooms,surfaceAt} from './level.js?v=0.21.5';
+import {solidSurfaces} from './terrain.js?v=0.21.5';
+import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v=0.21.5';
+import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.21.5';
+import {stepEcho} from './echo-pull.js?v=0.21.5';
+export {bossTroops} from './boss-abilities.js?v=0.21.5';
 export const BOSS_HEALTH=32;
 export const abilities=['volley','wave','rain','summon','echoPulse','staticRush','lure'];
 export const bossPatterns={spreader:['scatter','summon','ink','copy','swoop'],agitator:['telecast','summon','pressure','alarm','broadcast'],manipulator:['ticker','summon','cut','splice','spotlight'],infoshum:abilities};

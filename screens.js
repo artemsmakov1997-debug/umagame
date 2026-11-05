@@ -1,7 +1,7 @@
-import {chapters} from './level.js?v=0.21.1';
-import {monsters} from './catalog.js?v=0.21.1';
-import {drawMenuScene,drawPortrait} from './art.js?v=0.21.1';
-import {idleFrame} from './menu-animation.js?v=0.21.1';
+import {chapters} from './level.js?v=0.21.5';
+import {monsters} from './catalog.js?v=0.21.5';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.21.5';
+import {idleFrame} from './menu-animation.js?v=0.21.5';
 const $=id=>document.getElementById(id);
 export class ScreenManager{
  constructor(assets,onStart,onExit,onQuit=()=>{},onSettings=()=>{}){
@@ -54,7 +54,7 @@ export class ScreenManager{
   this.time=time;this.idleAction=idleFrame(time).action;const bounds=canvas.getBoundingClientRect(),height=Math.max(1,Math.round(768*bounds.height/bounds.width));if(canvas.height!==height)canvas.height=height;
   const c=canvas.getContext('2d');
   if(this.view==='library'){
-   c.imageSmoothingEnabled=false;if(height===480)c.drawImage(this.assets.library,0,0,768,512);else{const w=height*1.5;c.drawImage(this.assets.library,(768-w)/2,0,w,height);}
+   c.imageSmoothingEnabled=false;const image=this.assets.library,scale=Math.max(768/image.width,height/image.height);c.drawImage(image,(768-image.width*scale)/2,(height-image.height*scale)/2,image.width*scale,image.height*scale);
    // Animate the selected illustration and list poses at a pixel animation cadence.
    if(this.lastPortraitTick!==Math.floor(time*12)||this.lastPortraitIndex!==this.monsterIndex){
     drawPortrait($('monster-art'),this.assets,monsters[this.monsterIndex].id,time);
