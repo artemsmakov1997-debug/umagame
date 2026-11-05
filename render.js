@@ -1,5 +1,5 @@
 import {drawSpreaderEquipment} from './spreader-arena-art.js?v=0.21.5';
-import {drawInfoshumBackdrop} from './infoshum-art.js?v=0.21.5';
+import {drawInfoshumBackdrop,drawInfoshumPlatform} from './infoshum-art.js?v=0.21.5';
 import {drawServant} from './spreader-minion-art.js?v=0.21.5';
 import {drawProjectile,drawCombatEffects} from './projectile-art.js?v=0.21.5';
 import {drawBossDefeat} from './boss-defeat-art.js?v=0.21.5';
@@ -55,7 +55,7 @@ export class Renderer{
   for(const platform of solidSurfaces(g)){
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
-   drawSurface(c,a,platform,t);
+   if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
   }
   for(const ladder of ladders){
    if(ladder.room!==g.room)continue;
