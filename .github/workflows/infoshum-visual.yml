@@ -1,0 +1,30 @@
+name: Infoshum visual regression
+on:
+  push:
+    branches: [main, visual/infoshum-approved-art]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start local game server
+        run: python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/uma-http.log 2>&1 &
+      - name: Check actual screens, animation frames and map transformation
+        run: node tests/infoshum-visual-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: infoshum-visuals
+          path: /tmp/uma-browser/infoshum-approved-*.png
+          if-no-files-found: ignore
