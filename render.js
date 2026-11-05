@@ -1,4 +1,5 @@
 import {drawSpreaderEquipment} from './spreader-arena-art.js?v=0.21.5';
+import {drawInfoshumBackdrop} from './infoshum-art.js?v=0.21.5';
 import {drawServant} from './spreader-minion-art.js?v=0.21.5';
 import {drawProjectile,drawCombatEffects} from './projectile-art.js?v=0.21.5';
 import {drawBossDefeat} from './boss-defeat-art.js?v=0.21.5';
@@ -44,13 +45,13 @@ export class Renderer{
   c.save();c.translate(worldInset,worldTop);c.scale(worldScale,worldScale);c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
    if(i!==g.room)continue;if(room.x+room.width+150<cam||room.x-150>cam+vw)continue;
-   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);
+   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);if(room.index===8)drawInfoshumBackdrop(c,a,g,t);
   }
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
   if(g.room!==2)drawPassages(c,a,g);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
-  drawMovingRails(c,g.platforms.filter(s=>s.room===g.room),t);
+  drawMovingRails(c,g.platforms.filter(s=>s.room===g.room&&!s.bossHidden),t);
   for(const platform of solidSurfaces(g)){
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;

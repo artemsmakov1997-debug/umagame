@@ -5,12 +5,14 @@ import {Game,WIDTH,WORLD,HEIGHT,MAX_HEALTH,LAST_ROOM,FINAL_X,platforms,ladders,r
 import {enemy as makeEnemy,createEnemies} from '../level.js';
 import {alertNearby,stepPortals} from '../enemies.js';
 import {abilities,castAttack,stepBoss,damageBoss,stepProjectiles} from '../boss.js';
+import {strikeInfoshum} from '../infoshum-combat.js';
 import {monsters} from '../catalog.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 const enemy=(type,room,x,index=0,extra={})=>makeEnemy(type,room,x,index,{active:true,noticed:true,...extra});
 function stand(g,room=1,index=0,x=45){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,sneaking:false,climbing:false,inv:0,attack:0,cooldown:0,knock:0,dash:0});g.room=room;g.checkpoint=room;g.updateCamera();}
 function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);stand(g,room,index,x);return g;}
 function bossGame(){const g=isolated(LAST_ROOM,2,633);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.state='recover';g.boss.timer=2;return g;}
+function breakScreen(g,index){const m=g.boss.network.monitors[index],p=g.player;m.state='open';m.openTime=5;Object.assign(p,{x:m.terminalX-34,y:m.terminalY-46,dir:1,attack:.18,swing:p.swing+1});return strikeInfoshum(g,{x:p.x+16,y:p.y-2,w:54,h:p.h+6});}
 test('catalogue has four equal groups of three regular enemies and one boss',()=>{
  assert.equal(monsters.length,16);for(let chapter=0;chapter<4;chapter++){const group=monsters.filter(m=>m.chapter===chapter);assert.equal(group.length,4);assert.equal(group.filter(m=>m.boss).length,1);}assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>!m.boss).map(m=>m.id)));for(const m of monsters){assert.ok(m.description.length>20);assert.equal(m.abilities.length,2);assert.ok(m.tip);}assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));
 });
@@ -109,18 +111,52 @@ test('camera eases through normal rooms and the separate arena is hidden before 
  const g=isolated();g.viewWidth=300;g.camera=0;g.player.x=WIDTH+600;g.updateCamera(1/60);assert.ok(g.camera>0&&g.camera<g.player.x-120);const first=g.camera;tick(g,15);assert.ok(g.camera>first);g.room=7;g.player.x=FINAL_X-40;g.updateCamera();assert.equal(g.camera,FINAL_X-300);g.room=LAST_ROOM;g.player.x=WORLD-50;g.updateCamera();assert.equal(g.camera,WORLD-300);
 });
 
-test('boss shield, recovery, reflected damage and one-damage-per-swing rules remain intact',()=>{
- const g=bossGame();g.boss.state='windup';assert.equal(damageBoss(g,1),false);assert.equal(damageBoss(g,2,true),true);g.boss.cooldown=0;g.boss.state='recover';const hp=g.boss.hp;g.step(1/60,{attack:true});tick(g,8);assert.equal(g.boss.hp,hp-1);
+test('Infoshum is invulnerable in a live screen and its exposed console takes one hit per paw swing',()=>{
+ const g=bossGame(),n=g.boss.network;assert.equal(damageBoss(g,2,true),false);
+ assert.equal(g.boss.hp,32);assert.equal(n.monitors[0].state,'idle');
+ assert.equal(breakScreen(g,0),true);assert.equal(g.boss.hp,24);
+ assert.equal(strikeInfoshum(g,{x:g.player.x+16,y:g.player.y-2,w:54,h:54}),false);
+ assert.equal(n.defeatedMonitors,1);assert.equal(n.monitors[0].state,'broken');
 });
-test('Infoshum combines its arsenal with all three native enemy abilities and summons',()=>{
- const g=bossGame();assert.deepEqual(abilities,['volley','wave','rain','summon','echoPulse','staticRush','lure']);for(const ability of abilities){g.boss.ability=ability;g.boss.aim={x:FINAL_X+450,y:250};g.boss.targets=[FINAL_X+400,FINAL_X+500,FINAL_X+600];castAttack(g);}assert.ok(g.bolts.some(b=>b.kind==='paper'));assert.ok(g.bolts.some(b=>b.kind==='wave'));assert.ok(g.bolts.some(b=>b.kind==='rain'));assert.ok(g.bolts.some(b=>b.kind==='echoOrb'));assert.ok(g.enemies.some(e=>e.type==='clickbait'));assert.ok(g.enemies.every(e=>['echo','clickbait','static'].includes(e.type)));
+test('Infoshum uses three distinct monitor stations instead of summoning helpers',()=>{
+ const g=bossGame(),n=g.boss.network;assert.equal(n.monitors.length,3);
+ assert.equal(n.stage,'network');assert.ok(n.monitors.every(m=>m.terminalY>250));
+ assert.equal(g.boss.maxHp,32);assert.equal(damageBoss(g,99,true),false);
+ assert.equal(n.monitors.filter(m=>m.state==='broken').length,0);
 });
-test('half health changes phase; only paper and packets are reflectable',()=>{
- const g=bossGame();g.boss.hp=12;stepBoss(g,1/60);assert.equal(g.boss.phase,2);g.player.attack=.18;const x=g.player.x+40,y=g.player.y+10;g.bolts=[{kind:'wave',x,y,w:20,h:12,vx:0,vy:0,ttl:2},{kind:'rain',x,y,w:17,h:26,vx:0,vy:0,ttl:2}];stepProjectiles(g,1/60,{x,y:y-3,w:50,h:50});assert.ok(g.bolts.every(b=>!b.friendly));
+test('destroying two monitors releases Infoshum without destroying the last screen',()=>{
+ const g=bossGame(),n=g.boss.network;
+ assert.equal(breakScreen(g,0),true);assert.equal(g.boss.hp,24);assert.equal(g.boss.phase,2);
+ assert.equal(breakScreen(g,1),true);assert.equal(g.boss.hp,16);assert.equal(n.stage,'rupture');
+ assert.equal(n.monitors.filter(m=>m.state==='broken').length,2);
+ for(let i=0;i<160;i++)stepBoss(g,1/60);
+ assert.equal(n.stage,'free');assert.equal(g.boss.phase,3);
+ assert.equal(n.monitors.filter(m=>m.state==='broken').length,2);
+ assert.ok(g.platforms.some(s=>s.room===8&&s.bossHidden));
 });
-test('victory stops simulation and a long session has no hidden countdown',()=>{
- const g=bossGame();g.boss.hp=1;damageBoss(g,1);assert.equal(g.mode,'bossDefeat');g.skipBossDefeat();assert.equal(g.mode,'ending');while(g.mode==='ending')g.advanceEnding();g.advanceConclusion(true);assert.equal(g.mode,'won');const time=g.time;tick(g,120,{attack:true,right:true});assert.equal(g.time,time);const t=isolated();t.time=99999;tick(t,1);assert.equal(t.mode,'playing');assert.equal('clock'in t,false);
+test('four final core hits end the boss fight and preserve the existing finale flow',()=>{
+ const g=bossGame(),n=g.boss.network;
+ breakScreen(g,0);breakScreen(g,1);for(let i=0;i<160;i++)stepBoss(g,1/60);
+ for(let i=0;i<4;i++){
+  n.mode='weak';n.target={x:g.player.x+25,y:g.player.y+g.player.h};
+  g.player.attack=.18;g.player.swing++;
+  const paw={x:g.player.x,y:g.player.y-2,w:60,h:g.player.h+6};
+  assert.equal(strikeInfoshum(g,paw),true);
+ }
+ assert.equal(g.boss.hp,0);assert.equal(g.mode,'bossDefeat');
+ g.skipBossDefeat();assert.equal(g.mode,'ending');
+ while(g.mode==='ending')g.advanceEnding();g.advanceConclusion(true);
+ assert.equal(g.mode,'won');const time=g.time;tick(g,120,{attack:true,right:true});assert.equal(g.time,time);
+ const t=isolated();t.time=99999;tick(t,1);assert.equal(t.mode,'playing');assert.equal('clock'in t,false);
 });
-test('Infoshum alternates all attacks and relocates between three distant arena docks across three phases',()=>{
- const g=bossGame(),casts=new Set(),positions=new Set([g.boss.x]);for(let i=0;i<6900;i++){if(i===1300)g.boss.hp=15;if(i===2700)g.boss.hp=8;stepBoss(g,1/60);positions.add(g.boss.x);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.equal(casts.size,10);assert.ok(positions.size>3);assert.equal(g.boss.phase,3);assert.ok(Math.max(...positions)-Math.min(...positions)>800);assert.equal(g.boss.maxHp,32);
+test('Infoshum moves visibly between all three monitors after telegraphed attacks',()=>{
+ const g=bossGame(),n=g.boss.network,visited=new Set([n.activeIndex]),warnings=new Set();
+ for(let i=0;i<2500;i++){
+  stepBoss(g,1/60);visited.add(n.activeIndex);
+  for(const e of g.events)if(e.type==='infoshumWarning')warnings.add(e.attack);
+  g.events=[];
+ }
+ assert.equal(visited.size,3);assert.ok(warnings.has('tentacle'));
+ assert.ok(warnings.has('wave'));assert.equal(g.boss.hp,32);
+ assert.equal(n.monitors.filter(m=>m.state==='broken').length,0);
 });

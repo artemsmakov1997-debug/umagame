@@ -4,7 +4,8 @@ import {Game} from '../engine.js';
 import {layouts,rooms} from '../level.js';
 import {scenes,relayClues} from '../story.js';
 import {endingSlides} from '../finale.js';
-import {createBoss,planAttack,stepBoss,stepProjectiles} from '../boss.js';
+import {createBoss,stepBoss,stepProjectiles} from '../boss.js';
+import {strikeInfoshum} from '../infoshum-combat.js';
 
 test('monster origins remain a mystery until the full chain is shown in the epilogue',()=>{
  for(const id of ['intro','chapter1','chapter2','chapter3']){
@@ -48,16 +49,20 @@ test('destroying a signal node permanently adds a clue, with no premature answer
  assert.equal(g.clues.length,1);
 });
 
-test('Infoshum learns previous bosses attacks in a distinctive final phase',()=>{
+test('Infoshum enters the final phase after precisely two destroyed monitors',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
- Object.assign(g.boss,{hp:8,phase:2,turn:4,timer:2,state:'recover',noticeTime:0});
- stepBoss(g,1/60);
- assert.equal(g.boss.phase,3);
- assert.equal(g.boss.turn,0);
+ const n=g.boss.network;
+ for(const index of [0,1]){
+  const m=n.monitors[index];m.state='open';m.openTime=5;
+  Object.assign(g.player,{x:m.terminalX-34,y:m.terminalY-46,h:48,dir:1,attack:.18,swing:g.player.swing+1});
+  assert.equal(strikeInfoshum(g,{x:g.player.x+16,y:g.player.y-2,w:54,h:54}),true);
+ }
+ assert.equal(n.defeatedMonitors,2);assert.equal(n.stage,'rupture');
  assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===3));
- planAttack(g);
- assert.equal(g.boss.ability,'copy');
+ for(let i=0;i<150;i++)stepBoss(g,1/60);
+ assert.equal(n.stage,'free');assert.equal(g.boss.phase,3);
+ assert.equal(n.monitors.filter(m=>m.state==='broken').length,2);
 });
 
 test('projectile deflections reward an active counterattack',()=>{
