@@ -134,7 +134,7 @@ export function drawInfoshumBackdrop(c,a,g,time){
  }
  wire(c,g,n,time);
  for(const m of n.monitors){
-  if(n.stage==='free'){if(m.state==='broken')wreck(c,m,time);continue;}
+  if(n.stage==='free'){wreck(c,m,time,m.state!=='broken');continue;}
   monitor(c,a,m,n.stage==='network'&&m.index===n.activeIndex&&n.mode!=='transit',time,n);
   if(n.stage==='network')terminal(c,m,time,n.stage);
  }

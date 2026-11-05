@@ -1,5 +1,5 @@
 import {signalProfile} from './signal.js?v=0.21.5';
-import {rooms,spawns,MAX_HEALTH,LAST_ROOM} from './level.js?v=0.21.5';
+import {rooms,spawns,platforms,MAX_HEALTH,LAST_ROOM} from './level.js?v=0.21.5';
 import {createBoss} from './boss.js?v=0.21.5';
 import {wakePlayer} from './player-rest.js?v=0.21.5';
 export const LOCATION_LOAD_TIME=1.1;
@@ -12,6 +12,7 @@ export function canLeaveRoom(g,room=g.room){
 }
 export function activateRoom(g,index,{heal=true}={}){
  const r=rooms[index],p=g.player;if(!r)return;
+ if(index===LAST_ROOM){for(const surface of g.platforms.filter(s=>s.room===index)){const original=platforms.find(s=>s.id===surface.id);if(original)Object.assign(surface,{...original,baseX:original.x,baseY:original.y,prevX:original.x,prevY:original.y,dx:0,dy:0,bossHidden:false});}}
  g.defeat=null;g.signal={...signalProfile(index),echoTime:0};g.sectionTransition=null;g.room=index;g.checkpoint=index;g.chapter=r.chapter;g.roomHistory.add(index);g.transition=null;g.bolts=[];g.portals=[];g.swallow=null;g.inks=[];g.cuts=[];g.tether=null;g.echoWarp=null;g.echoPull=null;p.echoPulled=false;p.echoGrace=0;
  wakePlayer(p);Object.assign(p,spawns[index],{w:34,h:48,vx:0,vy:0,grounded:true,supportId:index+':0',climbing:false,sneaking:false,dropTime:0,dropId:null,dropHeld:false,slipping:false,inkTime:0,glueGrace:0,pulled:false,knock:0,dash:0,dashCooldown:0,attack:0,inv:1.5,hurtTime:0});delete p.warpScale;
  g.visitedPlatforms=new Set([index+':0']);g.safeTrail=[{platformId:index+':0',x:p.x,y:p.y}];g.echoImmunity=1.5;
