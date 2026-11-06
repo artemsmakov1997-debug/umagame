@@ -10,11 +10,13 @@ import {monsters} from '../catalog.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 const enemy=(type,room,x,index=0,extra={})=>makeEnemy(type,room,x,index,{active:true,noticed:true,...extra});
 function stand(g,room=1,index=0,x=45){const s=platforms.find(p=>p.room===room&&p.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,sneaking:false,climbing:false,inv:0,attack:0,cooldown:0,knock:0,dash:0});g.room=room;g.checkpoint=room;g.updateCamera();}
-function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);stand(g,room,index,x);return g;}
+// The newsroom conveyor is stopped in this sandbox so generic mechanics can be measured on its floor.
+function isolated(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.platforms.find(s=>s.id==='1:0').belt=0;g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);stand(g,room,index,x);return g;}
 function bossGame(){const g=isolated(LAST_ROOM,2,633);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.state='recover';g.boss.timer=2;return g;}
 function breakScreen(g,index){const m=g.boss.network.monitors[index],p=g.player;m.state='open';m.openTime=5;Object.assign(p,{x:m.terminalX-34,y:m.terminalY-46,dir:1,attack:.18,swing:p.swing+1});return strikeInfoshum(g,{x:p.x+16,y:p.y-2,w:54,h:p.h+6});}
 test('catalogue has four equal groups of three regular enemies and one boss',()=>{
- assert.equal(monsters.length,16);for(let chapter=0;chapter<4;chapter++){const group=monsters.filter(m=>m.chapter===chapter);assert.equal(group.length,4);assert.equal(group.filter(m=>m.boss).length,1);}assert.deepEqual(new Set(createEnemies().map(e=>e.type)),new Set(monsters.filter(m=>!m.boss).map(m=>m.id)));for(const m of monsters){assert.ok(m.description.length>20);assert.equal(m.abilities.length,2);assert.ok(m.tip);}assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));
+ assert.equal(monsters.length,16);for(let chapter=0;chapter<4;chapter++){const group=monsters.filter(m=>m.chapter===chapter);assert.equal(group.length,4);assert.equal(group.filter(m=>m.boss).length,1);}// The Censor grows out of the newsroom conveyor (newsroom-systems.js) instead of patrolling as a roster enemy.
+ assert.deepEqual(new Set([...createEnemies().map(e=>e.type),'censor']),new Set(monsters.filter(m=>!m.boss).map(m=>m.id)));for(const m of monsters){assert.ok(m.description.length>20);assert.equal(m.abilities.length,2);assert.ok(m.tip);}assert.throws(()=>enemy('infonoise',1,100));assert.throws(()=>enemy('headline',1,100));
 });
 test('training is physically separate, has no enemies, relays, soup or time pressure',()=>{
  const g=new Game({story:false});g.start();assert.equal(g.room,0);assert.equal(rooms[0].tutorial,true);assert.ok(g.enemies.every(e=>e.room>0&&!e.active));assert.ok(g.relays.every(r=>r.room>0));assert.ok(g.soups.every(s=>s.x>=WIDTH));tick(g,120);assert.equal('clock'in g,false);assert.equal(g.health,4);assert.equal(g.bolts.length,0);
@@ -98,7 +100,7 @@ test('all gameplay timers, warnings, portal growth, buffs and transitions freeze
  const g=isolated(5);g.enemies=[enemy('panicker',5,125)];alertNearby(g,g.enemies[0]);g.player.powerTime=7;g.transition={from:4,to:5,time:.2,duration:.85};g.mode='paused';const snapshot=JSON.stringify(g);tick(g,150,{right:true,attack:true});assert.equal(JSON.stringify(g),snapshot);
 });
 test('one paw destroys a satellite dish and opens its gate even while a defender is alive',()=>{
- const g=isolated(1,6,572),r=g.relays[0],e=enemy('fakenews',1,640,6,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence.length,0);assert.equal(g.relays.filter(d=>d.room===1&&d.hp>0).length,2);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,0);
+ const relay=platforms.find(p=>p.room===3&&p.index===8),local=relay.x-campaignRooms[3].x+relay.w/2-20;const g=isolated(3,8,local-40),r=g.relays.find(d=>d.room===3&&d.platformIndex===8),e=enemy('fakenews',3,local+70,8,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence.length,0);assert.equal(g.relays.filter(d=>d.room===3&&d.hp>0).length,2);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,0);
 });
 
 test('checkpoint retry preserves records, open gates and collections but resets local enemies and portals',()=>{

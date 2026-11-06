@@ -8,7 +8,8 @@ function gateway(c,a,center,theme,open,height=330,mirror=false){
 export function drawPassages(c,a,g){
  const room=rooms[g.room],theme=themes[room.theme];if(theme===undefined)return;
  // Internal architecture is always passable: the same world continues through the arch.
- if(!room.arena)for(const offset of[768,1536]){
+ // The newsroom conveyor is one continuous hall: no internal arches.
+ if(!room.arena&&room.index!==1)for(const offset of[768,1536]){
   const x=room.x+offset;if(x>g.camera-180&&x<g.camera+(g.viewWidth||768)+180)gateway(c,a,x,theme,true,390);
  }
  // The chapter exit keeps its existing unlock rules, presented as a substantial gate.

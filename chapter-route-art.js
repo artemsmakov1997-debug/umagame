@@ -5,7 +5,7 @@ import {drawTargetSprite} from './target-art.js?v=0.21.5';
 import {drawNewsroomMachines} from './newsroom-art.js?v=0.21.5';
 const columns={server:0,power:1,console:2,anchor:3};
 export function drawMapProps(c,a,g,t){
- drawNewsroomMachines(c,g,t);
+ drawNewsroomMachines(c,g,t,a);
  if(!a.destructibles)return;
  for(const d of g.mapProps||[]){if(d.room!==g.room||d.x<g.camera-100||d.x>g.camera+(g.viewWidth||768)+100)continue;
   const col=columns[d.kind],row=d.hp?0:d.breakTime>.25?1:2,sw=a.destructibles.width/4,sh=a.destructibles.height/3;drawTargetSprite(c,a.destructibles,[col*sw,row*sh,sw,sh],d.x-21,d.y-18,90,80,t,d.hp>0);

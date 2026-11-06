@@ -13,13 +13,13 @@ const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function ready(room=1,story=false){const g=new Game({story});g.start();if(story){g.finishWakeup();g.advanceDialogue(true);}g.tutorial.complete=true;activateRoom(g,room);g.player.inv=0;g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];return g;}
 const actor=(type,room,x,index=0,extra={})=>enemy(type,room,x,index,{active:true,noticed:true,spawnTime:0,...extra});
 test('four large chapters each have a separate complete boss arena and three assigned regular species',()=>{
- assert.equal(rooms.length,9);for(const chapter of chapters){const main=rooms[chapter.room],arena=rooms[chapter.arena];assert.equal(main.width,WIDTH*3);assert.equal(arena.width,chapter.boss==='spreader'?864:WIDTH*2);assert.equal(arena.boss,chapter.boss);assert.deepEqual(new Set(createEnemies().filter(e=>e.room===chapter.room).map(e=>e.type)),new Set(chapter.monsters));assert.equal(createEnemies().filter(e=>e.room===chapter.arena).length,0);assert.ok(new Game().platforms.filter(s=>s.room===chapter.arena).length>=(chapter.boss==='spreader'?8:18));}
+ assert.equal(rooms.length,9);for(const chapter of chapters){const main=rooms[chapter.room],arena=rooms[chapter.arena];assert.equal(main.width,WIDTH*3);assert.equal(arena.width,chapter.boss==='spreader'?864:WIDTH*2);assert.equal(arena.boss,chapter.boss);assert.deepEqual(new Set(createEnemies().filter(e=>e.room===chapter.room).map(e=>e.type)),new Set(chapter.monsters.filter(type=>type!=='censor')),'the Censor grows from the conveyor instead of the roster');assert.equal(createEnemies().filter(e=>e.room===chapter.arena).length,0);assert.ok(new Game().platforms.filter(s=>s.room===chapter.arena).length>=(chapter.boss==='spreader'?8:18));}
 });
 test('all legacy one-hit antennas remain reachable; the final boss uses CRT terminals instead',()=>{
- let broken=0;for(const room of rooms.filter(r=>!r.tutorial&&r.index!==2&&r.index!==6&&r.index!==8)){const g=ready(room.index);g.boss.active=false;const route=room.arena?[14,9,10,11,12,13]:antennaRoutes[room.index];for(const index of route){if(room.index===5&&index===10)for(let i=0;i<650;i++){const lift=g.platforms.find(s=>s.id==='5:10');if(lift.dy<0&&lift.y>300)break;g.step(1/60);}assert.equal(jumpTo(g,room.index,index),true,room.name+':'+index);const d=g.relays.find(d=>d.room===room.index&&d.platformIndex===index);if(d){const s=g.platforms.find(s=>s.id===g.player.supportId);assert.equal(walkTo(g,Math.max(s.x+4,Math.min(s.x+s.w-38,d.x-37))),true);g.player.cooldown=0;g.step(1/60,{attack:true,right:true});assert.equal(d.hp,0,d.id);broken++;}}assert.equal(remainingAntennas(g).length,0);assert.equal(g.health,4);}assert.equal(broken,13);
+ let broken=0;for(const room of rooms.filter(r=>!r.tutorial&&r.index!==1&&r.index!==2&&r.index!==6&&r.index!==8)){const g=ready(room.index);g.boss.active=false;const route=room.arena?[14,9,10,11,12,13]:antennaRoutes[room.index];for(const index of route){if(room.index===5&&index===10)for(let i=0;i<650;i++){const lift=g.platforms.find(s=>s.id==='5:10');if(lift.dy<0&&lift.y>300)break;g.step(1/60);}assert.equal(jumpTo(g,room.index,index),true,room.name+':'+index);const d=g.relays.find(d=>d.room===room.index&&d.platformIndex===index);if(d){const s=g.platforms.find(s=>s.id===g.player.supportId);assert.equal(walkTo(g,Math.max(s.x+4,Math.min(s.x+s.w-38,d.x-37))),true);g.player.cooldown=0;g.step(1/60,{attack:true,right:true});assert.equal(d.hp,0,d.id);broken++;}}assert.equal(remainingAntennas(g).length,0);assert.equal(g.health,4);}assert.equal(broken,10);
 });
 test('an open chapter exit pauses for loading, transfers once, and freezes in Esc pause',()=>{
- const g=ready();assert.equal(g.leaveRoom(),false);g.relays.filter(d=>d.room===1).forEach(d=>d.hp=0);assert.equal(g.leaveRoom(),true);assert.equal(g.mode,'loading');tick(g,15,{attack:true,right:true});assert.equal(g.room,1);const load=JSON.stringify(g.loading);g.mode='paused';tick(g,120);assert.equal(JSON.stringify(g.loading),load);g.mode='loading';tick(g,55);assert.equal(g.room,2);assert.equal(g.checkpoint,2);assert.equal(g.mode,'playing');assert.equal(g.boss.id,'spreader');assert.equal(g.events.filter(e=>e.type==='locationEnter'&&e.room===2).length,1);
+ const g=ready();assert.equal(g.relays.filter(d=>d.room===1).length,0,'the conveyor exit needs no nodes');assert.equal(g.leaveRoom(),true);assert.equal(g.mode,'loading');tick(g,15,{attack:true,right:true});assert.equal(g.room,1);const load=JSON.stringify(g.loading);g.mode='paused';tick(g,120);assert.equal(JSON.stringify(g.loading),load);g.mode='loading';tick(g,55);assert.equal(g.room,2);assert.equal(g.checkpoint,2);assert.equal(g.mode,'playing');assert.equal(g.boss.id,'spreader');assert.equal(g.events.filter(e=>e.type==='locationEnter'&&e.room===2).length,1);
 });
 test('Spreader must be defeated to leave; a retry restores the ascent without a shield',()=>{
  const g=ready(2);assert.equal(canLeaveRoom(g),false);g.relays.filter(d=>d.room===2).forEach(d=>d.hp=0);assert.equal(canLeaveRoom(g),false);g.health=1;g.hurt();tick(g,70);assert.equal(g.room,2);assert.equal(remainingAntennas(g).length,0);assert.equal(g.boss.hp,g.boss.maxHp);g.relays.filter(d=>d.room===2).forEach(d=>d.hp=0);g.boss.state='recover';g.boss.cooldown=0;assert.equal(damageBoss(g,99),true);assert.equal(canLeaveRoom(g),false);g.skipBossDefeat();assert.equal(canLeaveRoom(g),true);assert.equal(g.evidence.length,1);
@@ -45,7 +45,7 @@ test('a protected dash ignores Echo and the Static lunge; Static otherwise damag
  for(const type of ['echo','static'])for(const dash of [0,.2]){const g=ready(7),e=actor(type,7,45,0,{state:'lunge',strikeHit:false});Object.assign(e,{x:g.player.x,y:g.player.y});g.enemies=[e];g.echoImmunity=0;g.player.dash=dash;handleFlyingContact(g,e);if(dash){assert.equal(g.mode,'playing');assert.equal(g.health,4);}else if(type==='echo')assert.equal(g.mode,'echoWarp');else{assert.equal(g.health,3);assert.ok(g.player.vy>0);assert.ok(Math.abs(g.player.vx)>=280);}}
 });
 test('Fakenews and Vbros select real detours toward a distant player and never teleport',()=>{
- for(const type of ['fakenews','injection']){const g=ready(type==='fakenews'?1:5),r=g.room,s=g.platforms.find(s=>s.room===r&&s.index===12);Object.assign(g.player,{x:s.x+60,y:s.y-48,supportId:s.id});const e=actor(type,r,100,0,{jumpCooldown:0});g.enemies=[e];const target=chooseFakeLanding(g,e);assert.ok(target);assert.ok(target.platform.x<g.player.x-500);assert.ok(target.walkTarget!==undefined||Math.abs(target.vx)<=250);const x=e.x;tick(g,1);assert.ok(Math.abs(e.x-x)<12);assert.ok(e.navWalkX!==undefined||e.jumpPhase==='prepare');}
+ for(const type of ['fakenews','injection']){const g=ready(type==='fakenews'?3:5),r=g.room,s=g.platforms.find(s=>s.room===r&&s.index===12);Object.assign(g.player,{x:s.x+60,y:s.y-48,supportId:s.id});const e=actor(type,r,100,0,{jumpCooldown:0});g.enemies=[e];const target=chooseFakeLanding(g,e);assert.ok(target);assert.ok(target.platform.x<g.player.x-500);assert.ok(target.walkTarget!==undefined||Math.abs(target.vx)<=250);const x=e.x;tick(g,1);assert.ok(Math.abs(e.x-x)<12);assert.ok(e.navWalkX!==undefined||e.jumpPhase==='prepare');}
  const g=ready(5),e=actor('injection',5,180,0,{state:'windup',timer:0,aim:{x:g.player.x,y:g.player.y+10}});g.enemies=[e];tick(g,1);assert.ok(g.events.some(e=>e.type==='tickerShot'));assert.equal(monsterFrame('injection',g.time,e),4,'the actual shot displays the attack pose');
 });
 test('all decorated big screens and ladder tops allow a normal jump without frozen input',async()=>{
@@ -56,21 +56,9 @@ test('location retry restores local boss and antennas while keeping earlier camp
 });
 
 test('the numerous primary enemies can pursue through a complete chapter rather than remaining on the first screen',()=>{
- for(const [type,room,index]of [['fakenews',1,19],['injection',5,23],['informant',3,21],['static',7,21]]){
+ for(const [type,room,index]of [['fakenews',3,21],['injection',5,23],['informant',3,21],['static',7,21]]){
   const g=ready(room),s=g.platforms.find(s=>s.room===room&&s.index===index),px=s.x+45,py=s.y-48,e=actor(type,room,100,0,{jumpCooldown:0,teleportCooldown:0});g.enemies=[e];let reached=false;
   for(let i=0;i<11000;i++){Object.assign(g.player,{x:px,y:py,grounded:true,supportId:s.id,inv:999});g.updateCamera();const before=e.x;g.step(1/60);if(['fakenews','injection'].includes(type))assert.ok(Math.abs(e.x-before)<65,'physical pursuit');if(Math.abs(e.x-px)<195&&Math.abs(e.y+e.h-s.y)<145){reached=true;break;}}
   assert.equal(reached,true,type+' crosses the chapter');assert.ok(e.x>rooms[room].x+1900,type+' reaches the final sector');
  }
-});
-test('the newsroom is one left-to-right route: three blocks, one node per block, ordinary jumps to the exit deck',()=>{
- const g=ready(1);g.boss.active=false;const r=rooms[1],nodes=g.relays.filter(d=>d.room===1).sort((a,b)=>a.x-b.x);
- assert.deepEqual(nodes.map(d=>Math.floor((d.x-r.x)/WIDTH)),[0,1,2]);
- let x=r.x;for(const index of [1,2,6,7,8,9,10,11,12,16,17,18,19]){assert.ok(jumpTo(g,1,index),'newsroom:'+index);assert.ok(g.player.x>x-60,'route keeps moving right at '+index);x=g.player.x;}
- assert.ok(g.player.x>r.x+2*WIDTH+300);assert.equal(g.health,4);
-});
-test('each newsroom block holds exactly one diary, placed evenly near its threshold on the main route',()=>{
- const notes=createNotebooks().filter(n=>n.room===1&&!n.bossRecord),r=rooms[1];
- assert.equal(notes.length,3);const offsets=notes.map(n=>n.x-r.x).sort((a,b)=>a-b);
- assert.deepEqual(offsets.map(x=>Math.floor(x/WIDTH)),[0,1,2]);for(const x of offsets)assert.ok(x%WIDTH>=60&&x%WIDTH<=140,'diary near block threshold: '+x);
- assert.deepEqual(notes.find(n=>n.id==='censor').scenes,['censor','spreader']);
 });
