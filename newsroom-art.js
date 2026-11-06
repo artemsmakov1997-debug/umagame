@@ -1,6 +1,6 @@
 import {rooms} from './level.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
-import {PRESS} from './chapter-routes.js?v=0.21.5';
+import {PRESS,machineActive} from './chapter-routes.js?v=0.21.5';
 // Newsroom block identity. Backdrops for the print shop and server room come from
 // assets/newsroom-blocks.png (see campaign-art.js); the press is drawn here from
 // assets/newsroom-press.png in world space so it stays locked to the conveyor.
@@ -12,8 +12,7 @@ const ROD_COLORS=['#0a0e26','#3b4d85','#796a84','#edd5ae','#0d1129'];
 export const PRESS_REST=300,PRESS_STRIKE=371;
 
 export function pressState(g,t){
- const control=g.mapProps?.find(d=>d.room===1&&d.section===PRESS.section);
- if(!control?.hp)return{active:false,drop:0,warn:false};
+ if(!machineActive(g,1,PRESS.section))return{active:false,drop:0,warn:false};
  const phase=(t+PRESS.section*.8)%5,warn=phase<1.2,strike=phase>=1.2&&phase<=2.2;
  const drop=strike?Math.min(1,(phase-1.2)/.12):phase>2.2&&phase<2.7?1-(phase-2.2)/.5:0;
  return{active:true,drop,warn};
