@@ -2,14 +2,14 @@ import {actorById} from './boss-actors.js?v=0.21.5';
 import {enemy,rooms} from './level.js?v=0.21.5';
 import {inkAt,solidSurfaces} from './terrain.js?v=0.21.5';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export const TACTICAL_TYPES=['censor','copier','cutter'];
+export const TACTICAL_TYPES=['stamp','copier','cutter'];
 export function scanArea(g,e){
  const s=g.platforms.find(s=>s.room===e.room&&s.index===(e.scanIndex??e.platformIndex));if(!s)return null;
  const w=Math.min(e.scanW||136,s.w-24),localX=clamp(e.scanStart??32,12,s.w-w-12);return {x:s.x+localX,y:s.y-52,w,h:54,surface:s};
 }
 export function scanSource(g,e){
  const area=scanArea(g,e);if(!area)return null;
- return g.enemies.filter(other=>other!==e&&other.room===e.room&&other.active&&!other.dead&&!other.copyOwnerId&&!other.phased&&!other.terrainFall&&other.jumpPhase!=='air'&&['fakenews','informant','panicker','inflator'].includes(other.type)&&other.platformIndex===area.surface.index&&other.x+other.w/2>=area.x&&other.x+other.w/2<=area.x+area.w&&Math.abs(other.y+other.h-area.surface.y)<3).sort((a,b)=>(a.type==='fakenews'?0:1)-(b.type==='fakenews'?0:1))[0]||null;
+ return g.enemies.filter(other=>other!==e&&other.room===e.room&&other.active&&!other.dead&&!other.copyOwnerId&&!other.phased&&!other.terrainFall&&other.jumpPhase!=='air'&&['fakenews','stamp','informant','panicker','inflator'].includes(other.type)&&other.platformIndex===area.surface.index&&other.x+other.w/2>=area.x&&other.x+other.w/2<=area.x+area.w&&Math.abs(other.y+other.h-area.surface.y)<3).sort((a,b)=>(a.type==='fakenews'?0:1)-(b.type==='fakenews'?0:1))[0]||null;
 }
 export function cleanCopies(g){
  for(const copy of g.enemies){
@@ -42,7 +42,7 @@ export function planCut(g,e){
  const cut={id:'cut-'+(++g.tacticalSerial),ownerId:e.id,room:e.room,platformId:s.id,localX,w,phase:'warning',time:1.8,x:s.x+localX+w/2,y:s.y};g.cuts.push(cut);e.cutId=cut.id;g.emit('cutWarning',{x:cut.x,y:cut.y,enemyType:e.type});return true;
 }
 export function stepTacticalEnemy(g,e,dt,dx,dy){
- if(e.type==='censor'){
+ if(e.type==='stamp'){
   if(e.state==='patrol'){
    e.x+=e.dir*e.speed*dt;
    if(e.timer<=0&&Math.abs(dx)<300&&Math.abs(dy)<170){e.state='windup';e.timer=.48;g.emit('inkWarning',{x:e.x,y:e.y,enemyType:e.type});}
@@ -66,7 +66,7 @@ export function stepTacticalEnemy(g,e,dt,dx,dy){
  }
 }
 export function updateEnemyInk(g,e){
- const ink=e.type!=='censor'&&inkAt(g,e);e.inkSlow=ink?.38:1;
+ const ink=e.type!=='stamp'&&inkAt(g,e);e.inkSlow=ink?.38:1;
  if(e.type==='panicker'){
   const was=e.muffled;e.muffled=!!ink;
   if(ink){e.alertedOnce=false;if(!was)g.emit('alarmMuffled',{x:e.x,y:e.y,enemyType:e.type});e.state='patrol';e.timer=Math.max(e.timer,.65);e.noticed=false;for(const portal of g.portals)if(portal.ownerId===e.id)portal.cancelled=true;}

@@ -9,7 +9,7 @@ import {drawProjectile,drawCombatEffects} from './projectile-art.js?v=0.21.5';
 import {drawBossDefeat} from './boss-defeat-art.js?v=0.21.5';
 import {drawYuriSignal} from './signal-art.js?v=0.21.5';
 import {drawPassages} from './passage-art.js?v=0.21.5';
-import {drawNewsroomScenery} from './newsroom-art.js?v=0.21.5';
+import {drawNewsroomScenery,drawNewsroomConveyor} from './newsroom-art.js?v=0.21.5';
 import {drawMapProps} from './chapter-route-art.js?v=0.21.5';
 import {drawExitArrow} from './navigation-art.js?v=0.21.5';
 import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.21.5';
@@ -50,7 +50,7 @@ export class Renderer{
   c.save();c.translate(worldInset,worldTop);c.scale(worldScale,worldScale);c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
    if(i!==g.room)continue;if(room.x+room.width+150<cam||room.x-150>cam+vw)continue;
-   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawNewsroomScenery(c,g);drawAmbience(c,room,t);if(room.index===8)drawInfoshumBackdrop(c,a,g,t);if(room.index===6)drawStudioBackdrop(c,a,g,t);if(room.index===4)drawAgitatorBackdrop(c,a,g,t);
+   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawNewsroomScenery(c,a,g,t);drawAmbience(c,room,t);if(room.index===8)drawInfoshumBackdrop(c,a,g,t);if(room.index===6)drawStudioBackdrop(c,a,g,t);if(room.index===4)drawAgitatorBackdrop(c,a,g,t);
   }
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
@@ -61,7 +61,7 @@ export class Renderer{
   for(const platform of solidSurfaces(g)){
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
-   if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
+   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
   }
   for(const ladder of ladders){
    if(ladder.room!==g.room)continue;
@@ -85,7 +85,7 @@ export class Renderer{
    else if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
    if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
    if(e.type==='servant')drawServant(c,a,e,t);
-   if(['censor','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
+   if(['stamp','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
    if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
    if(e.type==='echo'){const squeeze=e.state==='windup'?.65+.35*Math.max(0,Math.min(1,e.timer/.65)):e.state==='pulling'?.8+Math.sin(t*12)*.06:1;c.save();c.translate(e.x+20,e.y+19);c.scale(squeeze,1);drawMonster(c,a,e.type,-37,-43,74,66,t,false,e);c.restore();}
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}

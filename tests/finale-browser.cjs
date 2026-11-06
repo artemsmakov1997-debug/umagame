@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  for(const viewport of[{width:1280,height:960},{width:320,height:844},{width:390,height:844},{width:844,height:390}]){
   const p=await b.newPage({viewport,hasTouch:viewport.width!==1280,isMobile:viewport.width!==1280});p.on('pageerror',e=>errors.push(e.message));await open(p);await begin(p);assert.ok(await p.evaluate(()=>Object.values(testGame.abilities).every(Boolean)));
   assert.ok(await p.evaluate(()=>document.getElementById('hud').getBoundingClientRect().bottom<=document.getElementById('game').getBoundingClientRect().top+1),'health and lives have their own panel');
-  await p.evaluate(()=>{testGame.fish=7;testGame.kills=3;testGame.relays.forEach(d=>d.hp=1);testGame.relays.slice(0,2).forEach(d=>d.hp=0);testGame.bossesDefeated=new Set(['infoshum']);testGame.finish();});await p.locator('#ending-slides:not([hidden])').waitFor();assert.equal(await p.locator('#overlay').isVisible(),false);assert.equal(await p.locator('#ending-prev').isDisabled(),true);
+  await p.evaluate(()=>{testGame.fish=7;testGame.kills=3;testGame.relays.forEach(d=>d.hp=1);testGame.relays.filter(d=>d.room===3).slice(0,2).forEach(d=>d.hp=0);testGame.bossesDefeated=new Set(['infoshum']);testGame.finish();});await p.locator('#ending-slides:not([hidden])').waitFor();assert.equal(await p.locator('#overlay').isVisible(),false);assert.equal(await p.locator('#ending-prev').isDisabled(),true);
   const pictures=[];
   for(let i=0;i<11;i++){
    await p.waitForFunction(i=>testGame.ending.index===i,i);pictures.push(await p.locator('#ending-art').evaluate(c=>c.toDataURL()));

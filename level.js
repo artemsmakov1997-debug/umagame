@@ -1,6 +1,6 @@
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const chapters=[
- {id:'newsroom',name:'РЕДАКЦИЯ',room:1,arena:2,monsters:['fakenews','copier','censor'],boss:'spreader'},
+ {id:'newsroom',name:'РЕДАКЦИЯ',room:1,arena:2,monsters:['fakenews','stamp','censor'],boss:'spreader'},
  {id:'roofs',name:'КРЫШИ',room:3,arena:4,monsters:['informant','inflator','panicker'],boss:'agitator'},
  {id:'studio',name:'СТУДИЯ',room:5,arena:6,monsters:['injection','cutter','splicer'],boss:'manipulator'},
  {id:'dimension',name:'ИЗМЕРЕНИЕ',room:7,arena:8,monsters:['echo','clickbait','static'],boss:'infoshum'}
@@ -23,36 +23,17 @@ export const LAST_ROOM=rooms.length-1,FINAL_X=rooms[LAST_ROOM].x,WORLD=cursor,PO
 export function roomAt(x){return rooms.find(r=>x>=r.x&&x<r.end)?.index??(x<0?0:LAST_ROOM);}
 export const layouts=[];
 layouts[0]=[[0,305,208],[266,365,185],[542,245,226],[0,445,248],[266,445,355],[0,474,768],[640,365,128],[0,305,75],[414,245,192]];
-// Newsroom: one readable left-to-right route through three blocks.
-// Редакционный зал (0-768) -> Печатный цех (768-1536) -> Серверная (1536-2304).
-// Each block ends at its signal node (У1/У2/У3); optional upper shelves hold rewards.
-// Steps stay within ~95 px up and ~60 px across, so every main-route move is an ordinary jump.
+// Newsroom «Конвейер»: one newspaper conveyor runs the whole location towards Uma (right to left).
+// Presses stand over the belt; a few short catwalks above are rest spots, checkpoints and caches.
+// Catwalks sit 85 px above the belt (an ordinary jump), upper caches another 85 px higher.
 layouts[1]=[
- [0,474,770],     // 0  floor, editorial hall (spawn)
- [190,410,140],   // 1  first desk step
- [300,350,210],   // 2  long desk run
- [60,300,190],    // 3  office desks (optional left loop)
- [0,205,140],     // 4  archive cabinet top (optional)
- [440,255,150],   // 5  upper shelf with a life cache
- [560,420,150],   // 6  У1 deck
- [690,362,90],    // 7  step into the print shop
- [770,300,220],   // 8  print shop entry gantry
- [1000,340,110],  // 9  paper-stack dip
- [1120,290,190],  // 10 press deck (press controller)
- [1320,345,120],  // 11 step down from the press
- [1430,420,190],  // 12 У2 deck at the server-room threshold
- [880,430,380],   // 13 conveyor under the press (lower alternative)
- [1020,250,80],   // 14 paper lift
- [880,180,130],   // 15 gantry above the conveyor (optional)
- [1630,380,160],  // 16 first server cabinets
- [1810,310,130],  // 17 rack top (server controller)
- [1960,400,140],  // 18 У3 deck
- [2110,330,194],  // 19 exit deck towards the Spreader
- [1560,290,130],  // 20 upper cable tray (optional)
- [1720,215,150],  // 21 upper cable tray with a life cache
- [1910,170,140],  // 22 top rack, drops onto the exit deck
- [768,474,770],   // 23 floor, print shop
- [1536,474,768]   // 24 floor, server room
+ [0,430,2304],    // 0 the conveyor
+ [260,345,120],   // 1 rest catwalk before the first press
+ [860,345,120],   // 2 catwalk, checkpoint
+ [960,260,110],   // 3 upper cache (life)
+ [1460,345,120],  // 4 catwalk, checkpoint (soup)
+ [1880,345,90],   // 5 catwalk, checkpoint between the last two presses
+ [1860,260,100]   // 6 upper cache (life)
 ];
 layouts[3]=[
  [0,330,230],[290,290,208],[560,264,240],[0,424,252],[312,414,310],[0,474,240],[300,474,488],[0,194,112],[460,184,166],[150,250,132],
@@ -104,22 +85,22 @@ for(const [room,extra] of [[3,[[760,355,120],[1500,350,110]]],[5,[[760,350,130],
 for(const [i,shape]of Object.entries({3:[0,424,145],4:[350,414,140],5:[0,474,130],6:[330,474,130],13:[840,414,140],14:[1160,414,145],15:[820,474,120],16:[1380,474,120],22:[1610,412,145],23:[1940,414,135],24:[1640,474,125]}))layouts[3][Number(i)]=shape;
 const motions={
  '3:1':{axis:'x',amplitude:24,period:4.4},'3:10':{axis:'y',amplitude:22,period:4.8},'3:19':{axis:'x',amplitude:26,period:4.7},'3:6':{axis:'x',amplitude:35,period:3.8},'3:14':{axis:'y',amplitude:20,period:4.2},
- '1:14':{axis:'y',amplitude:40,period:6},'3:27':{axis:'x',amplitude:45,period:5.7},'3:28':{axis:'y',amplitude:44,period:6.2},'5:30':{axis:'x',amplitude:55,period:6},'5:31':{axis:'y',amplitude:50,period:6},'7:27':{axis:'y',amplitude:28,period:6},'7:28':{axis:'x',amplitude:42,period:7},
+ '3:27':{axis:'x',amplitude:45,period:5.7},'3:28':{axis:'y',amplitude:44,period:6.2},'5:30':{axis:'x',amplitude:55,period:6},'5:31':{axis:'y',amplitude:50,period:6},'7:27':{axis:'y',amplitude:28,period:6},'7:28':{axis:'x',amplitude:42,period:7},
  '5:1':{axis:'x',amplitude:68,period:6.2},'5:10':{axis:'y',amplitude:94,period:5.4},'5:13':{axis:'x',amplitude:62,period:5.8},'5:29':{axis:'y',amplitude:86,period:5.2},
  '6:1':{axis:'x',amplitude:46,period:5.6},'6:3':{axis:'y',amplitude:46,period:6},'6:10':{axis:'y',amplitude:30,period:5.8},
  '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===13?20:0,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===0?-45:0,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
  if(r.arena)return [];
- if(r.index===1)return [[740,7],[1270,10],[2140,19]].map(([x,index])=>{const s=platforms.find(p=>p.room===1&&p.index===index);return{x:r.x+x,y:s.y,w:31,h:474-s.y,room:1};});
+ if(r.index===1)return [];
  return [r.x+730,r.x+1498,r.end-50].map((x,i)=>{const s=platforms.find(p=>p.room===r.index&&p.index===[2,12,21][i]);return{x,y:s.y,w:31,h:474-s.y,room:r.index};});
 });
 export const ladder=ladders[0];
 export const spawns=rooms.map(r=>({x:r.x+(r.tutorial?78:r.arena?74:45),y:layouts[r.index][0][1]-48}));
-export const enemyTypes=['fakenews','clickbait','inflator','informant','panicker','censor','copier','cutter','splicer','injection','echo','static'];
+export const enemyTypes=['fakenews','clickbait','inflator','informant','panicker','stamp','copier','cutter','splicer','injection','echo','static'];
 export function enemy(type,room,x,platformIndex,extra={}){
  if(type==='montager')type='cutter';
  if(!enemyTypes.includes(type))throw new Error('Unknown enemy type: '+type);
@@ -127,16 +108,16 @@ export function enemy(type,room,x,platformIndex,extra={}){
  const hp=['fakenews','injection'].includes(type)?1:['inflator','informant','copier','splicer'].includes(type)?3:2;
  const r=rooms[room],flying=['echo','static'].includes(type);
  const actor={id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:r.x+x,y:s.y-(flying?100:29),w:flying?40:48,h:flying?38:29,origin:s.x+12,end:s.x+s.w-60,
- dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,panicker:16,censor:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
+ dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,panicker:16,stamp:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
- const kinds={fakenews:platformIndex%3?'papers':'bin',informant:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',censor:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
+ const kinds={fakenews:platformIndex%3?'papers':'bin',informant:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',stamp:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
  if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
  actor.arrivalDuration=actor.spawnTime||.55;return actor;
 }
 export function createEnemies(){const all=[
- enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,400,2),enemy('copier',1,920,8,{trigger:640,scanIndex:8,scanStart:18,scanW:145}),
- enemy('fakenews',1,1180,10),enemy('copier',1,1470,12,{scanIndex:12,scanStart:12,scanW:120}),
- enemy('censor',1,1720,16,{trigger:1450}),enemy('fakenews',1,1600,20),enemy('censor',1,1850,24),enemy('fakenews',1,1950,22,{hp:2,maxHp:2}),
+ enemy('fakenews',1,330,0,{trigger:90}),enemy('fakenews',1,760,0),
+ enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,300,1),
+ enemy('stamp',1,1580,0),enemy('fakenews',1,1900,6),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
  enemy('informant',3,150,0,{trigger:100}),enemy('inflator',3,1010,17,{ledge:true,trigger:820}),enemy('panicker',3,1450,12,{trigger:1400}),enemy('informant',3,865,10),
  enemy('informant',3,1120,11),enemy('inflator',3,1245,11,{ledge:true}),enemy('panicker',3,1980,23),enemy('informant',3,1660,19),enemy('informant',3,1940,20),enemy('inflator',3,2045,20,{ledge:true}),enemy('panicker',3,2000,23),
  enemy('injection',5,160,0,{trigger:100}),enemy('injection',5,360,1),enemy('splicer',5,1430,14,{trigger:1400}),enemy('cutter',5,1110,13,{trigger:800}),enemy('injection',5,850,12),
@@ -144,25 +125,27 @@ export function createEnemies(){const all=[
  enemy('static',7,200,0,{trigger:130}),enemy('echo',7,1000,17,{trigger:800}),enemy('clickbait',7,1510,12,{trigger:1400}),enemy('static',7,870,10),enemy('static',7,1150,11),
  enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];
- const kept={1:[150,400,920,1180,1470,1720,1600,1850,1950],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
- return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
+ const kept={1:[330,760,1120,1420,300,1580,1900,2250],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
+ const roster=all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
+ // Conveyor walkers patrol their own stretch of belt instead of the whole location.
+ for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
+ return roster;
 }
 export function createFish(){return rooms.flatMap(r=>{
  if(r.index===2)return [];
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
-export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:r.index===1?15:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
-const antennaPlaces=[[1,6],[1,12],[1,18],[2,4],[3,8],[3,18],[3,26],[4,2],[4,3],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
+export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:r.index===1?4:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+const antennaPlaces=[[2,4],[3,8],[3,18],[3,26],[4,2],[4,3],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
 export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
  const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
  return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:room===4?3:[2,6].includes(room)?0:1,maxHp:room===4?3:1,rewardWhenOverloaded:room===4,lastSwing:-1,breakTime:0,kind,ordinal,scripted:[2,4,6].includes(room)};});}
-export function createLifePickups(){return [[1,5],[1,21],[2,7],[3,7],[3,22],[4,14],[5,7],[5,24],[6,3],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createLifePickups(){return [[1,3],[1,6],[2,7],[3,7],[3,22],[4,14],[5,7],[5,24],[6,3],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
- {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews']},
- // Newsroom: exactly one diary per block, ~100 px past each block's threshold on the main route.
- {id:'copier',room:1,index:8,x:868,scenes:['copier']},{id:'censor',room:1,index:16,x:1646,scenes:['censor','spreader']},
+ {id:'paw',room:1,index:0,x:70,scenes:['arrival1','fakenews','stamp','censor','press']},
+
  {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','informant']},
  {id:'inflator',room:3,index:17,x:950,scenes:['inflator']},{id:'panicker',room:3,index:12,x:1390,scenes:['panicker']},
  {id:'agitator',room:3,index:12,x:1460,scenes:['agitator']},

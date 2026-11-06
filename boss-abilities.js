@@ -30,7 +30,7 @@ export function castInherited(g,ability){
  if(ability==='copy'){summonBossTroops(g,{types:['fakenews'],copy:true,count:2});g.emit('copyScan',{x:b.x,y:b.y,enemyType:'copier'});return true;}
  if(ability==='ink'){
   const supports=solidSurfaces(g).filter(s=>s.room===g.room&&s.w>=110).sort((a,c)=>Math.abs(a.x+a.w/2-p.x)+Math.abs(a.y-p.y-p.h)-Math.abs(c.x+c.w/2-p.x)-Math.abs(c.y-p.y-p.h));
-  for(const s of supports.slice(0,2))stampInk(g,{...bossProxy(g),platformIndex:s.index,x:Math.max(s.x+16,Math.min(s.x+s.w-64,p.x)),type:'censor'});return true;
+  for(const s of supports.slice(0,2))stampInk(g,{...bossProxy(g),platformIndex:s.index,x:Math.max(s.x+16,Math.min(s.x+s.w-64,p.x)),type:'stamp'});return true;
  }
  if(ability==='alarm'){if(!p.sneaking){alertNearby(g,bossProxy(g));b.alarmActive=true;}return true;}
  if(ability==='splice'){g.tether={ownerId:bossActorId(b),remaining:5,total:5};g.emit('gluePull',{x:b.x,y:b.y,enemyType:'splicer'});return true;}
