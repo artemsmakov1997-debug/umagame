@@ -3,6 +3,11 @@ export const sectionNames={1:['Редакционный зал','Печатны�
 // The newsroom press: its head spans this local x range; the lower-path hazard of that block follows it.
 export const PRESS={x:1007,w:153,section:1};
 export function hazardZone(room,section){return room===1&&section===PRESS.section?[PRESS.x-768,PRESS.x-768+PRESS.w]:[260,370];}
+// Newsroom node rule: while a block's printing node works the block serves it; a broken node calms the block.
+export function newsroomNodes(g){return(g.relays||[]).filter(d=>d.room===1).sort((a,b)=>a.x-b.x);}
+export function blockCalm(g,room,section){return room===1&&newsroomNodes(g)[section]?.hp===0;}
+// A location machine runs while its controller is intact and (in the newsroom) its block is not calm.
+export function machineActive(g,room,section){const control=g.mapProps?.find(d=>d.room===room&&d.section===section);return !!control?.hp&&!blockCalm(g,room,section);}
 export const propKinds={1:'server',3:'power',5:'console',7:'anchor'};
 export function createMapProps(){return [1,3,5,7].flatMap(room=>(room===5?[12,22]:room===1?[10,17]:[10,20]).map((index,i)=>{const p=platforms.find(p=>p.room===room&&p.index===index);return{id:`control-${room}-${i}`,room,platformIndex:index,kind:propKinds[room],x:p.x+p.w-66,y:p.y-62,w:48,h:62,hp:1,breakTime:0,lastSwing:-1,section:i+1};}));}
 export function createRoutePortals(){return [3,5,7].flatMap(room=>[0,1].map(i=>({room,id:`burrow-${room}-${i}`,fromIndex:room===3?(i?12:9):room===5?(i?24:15):(i?22:13),toIndex:room===3?(i?25:17):room===5?(i?27:19):(i?25:17),cooldown:0})));}
@@ -30,8 +35,8 @@ export function stepSection(g){
 
 export function stepLocationHazards(g,dt){
  if(!g.cinematic||!sectionNames[g.room]||g.player.inv>0||g.player.dash>0)return;
- const p=g.player,index=Math.min(2,Math.max(0,Math.floor((p.x-rooms[g.room].x)/768))),control=g.mapProps.find(d=>d.room===g.room&&d.section===index);
- if(index===0||!control?.hp)return;
+ const p=g.player,index=Math.min(2,Math.max(0,Math.floor((p.x-rooms[g.room].x)/768)));
+ if(index===0||!machineActive(g,g.room,index))return;
  const t=(g.time+index*.8)%5,local=p.x-rooms[g.room].x-index*768;
  const [from,to]=hazardZone(g.room,index);if(t<1.2||t>2.2||local<from||local>to)return;
  if(g.room===3){if(!p.knock)g.push(-1,p.x+100);}

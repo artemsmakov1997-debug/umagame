@@ -9,7 +9,7 @@ export function scanArea(g,e){
 }
 export function scanSource(g,e){
  const area=scanArea(g,e);if(!area)return null;
- return g.enemies.filter(other=>other!==e&&other.room===e.room&&other.active&&!other.dead&&!other.copyOwnerId&&!other.phased&&!other.terrainFall&&other.jumpPhase!=='air'&&['fakenews','informant','panicker','inflator'].includes(other.type)&&other.platformIndex===area.surface.index&&other.x+other.w/2>=area.x&&other.x+other.w/2<=area.x+area.w&&Math.abs(other.y+other.h-area.surface.y)<3).sort((a,b)=>(a.type==='fakenews'?0:1)-(b.type==='fakenews'?0:1))[0]||null;
+ return g.enemies.filter(other=>other!==e&&other.room===e.room&&other.active&&!other.dead&&!other.copyOwnerId&&!other.phased&&!other.terrainFall&&other.jumpPhase!=='air'&&['fakenews','censor','informant','panicker','inflator'].includes(other.type)&&other.platformIndex===area.surface.index&&other.x+other.w/2>=area.x&&other.x+other.w/2<=area.x+area.w&&Math.abs(other.y+other.h-area.surface.y)<3).sort((a,b)=>(a.type==='fakenews'?0:1)-(b.type==='fakenews'?0:1))[0]||null;
 }
 export function cleanCopies(g){
  for(const copy of g.enemies){

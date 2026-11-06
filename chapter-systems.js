@@ -7,7 +7,7 @@ export function applyRelayEffect(g,relay){
    if(e.copyOwnerId){e.dead=true;e.hp=0;e.deathTime=.25;}
    else if(e.type==='copier')e.noticeTime=Math.max(e.noticeTime,2.5);
   }
-  return 'Копии распались, печатные машины замерли.';
+  return 'Узел отключён: копии распались, зал затих.';
  }
  if(relay.kind==='broadcast'){
   for(const portal of g.portals)if(portal.room===relay.room)portal.cancelled=true;

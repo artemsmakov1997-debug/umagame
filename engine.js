@@ -11,6 +11,7 @@ import {strikeInfoshum} from './infoshum-combat.js?v=0.21.5';
 import {stepEnemies,stepPortals} from './enemies.js?v=0.21.5';
 import {cancelInformantTeleport} from './informant-teleport.js?v=0.21.5';
 import {applyRelayEffect} from './chapter-systems.js?v=0.21.5';
+import {stepNewsroom,keepCalmBlocks,placeAtNewsroomCheckpoint} from './newsroom-systems.js?v=0.21.5';
 import {scenes,evidence,relayClues} from './story.js?v=0.21.5';
 import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.21.5';
 import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.21.5';
@@ -77,11 +78,11 @@ export class Game {
 
  finish(){return beginFinale(this);}
  advanceEnding(direction=1){return advanceFinale(this,direction);}
- respawn(){releaseEchoPull(this);this.swallow=null;wakePlayer(this.player);Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0,slipping:false,onInk:false,inkTime:0,slideTime:0});delete this.player.warpScale;this.bolts=[];this.updateCamera();}
+ respawn(){releaseEchoPull(this);this.swallow=null;wakePlayer(this.player);Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0,slipping:false,onInk:false,inkTime:0,slideTime:0});placeAtNewsroomCheckpoint(this);delete this.player.warpScale;this.bolts=[];this.updateCamera();}
  restoreCheckpoint(){
-  const revealed=this.enemies.filter(e=>e.room===this.checkpoint&&e.type==='clickbait'&&e.revealed&&!e.dead);
+  const before=this.enemies,revealed=this.enemies.filter(e=>e.room===this.checkpoint&&e.type==='clickbait'&&e.revealed&&!e.dead);
   const local=createEnemies().filter(e=>e.room===this.checkpoint).map(e=>alignEnemyToPlatform(this,e)).map(e=>{const old=revealed.find(old=>e.type==='clickbait'&&old.platformIndex===e.platformIndex);return old?{...e,revealed:true,active:true,noticed:true,state:'patrol',timer:1,x:Math.max(e.origin,Math.min(e.end,old.x)),walkTime:old.walkTime}:e;});
-  this.health=MAX_HEALTH;this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(local);this.dialogue=null;this.arenaEntry=null;this.loading=null;activateRoom(this,this.checkpoint,{heal:false});this.mode='playing';this.emit('lifeRestored',{lives:this.lives});
+  this.health=MAX_HEALTH;this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(local);this.dialogue=null;this.arenaEntry=null;this.loading=null;activateRoom(this,this.checkpoint,{heal:false});keepCalmBlocks(this,before);this.mode='playing';this.emit('lifeRestored',{lives:this.lives});
  }
  retryLocation(){
   const index=this.checkpoint;for(const d of this.mapProps)if(d.room===index){d.hp=1;d.breakTime=0;d.lastSwing=-1;}for(const r of this.routePortals)if(r.room===index)r.cooldown=0;this.visitedSections=new Set([...this.visitedSections].filter(key=>!key.startsWith(index+':')));this.lives=START_LIVES;for(const d of this.relays)if(d.room===index){d.hp=1;d.breakTime=0;d.lastSwing=-1;}
@@ -175,7 +176,7 @@ export class Game {
   if(this.room===PORTAL_ROOM&&p.x+p.w>PORTAL_X-35&&p.vx>40&&!this.arenaEntered&&canLeaveRoom(this)){this.enterArena();this.updateCamera(dt);return;}
   if(this.room!==PORTAL_ROOM&&this.room<LAST_ROOM&&p.x+p.w>=bounds.end-20&&p.vx>40&&canLeaveRoom(this)){this.leaveRoom();this.updateCamera(dt);return;}
 
-  const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepSection(this,dt);
+  const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepNewsroom(this,dt);stepSection(this,dt);
   stepEnemies(this,dt,paw,prevBottom);if(this.mode==='playing')stepPortals(this,dt);
   if(this.mode!=='playing'||this.swallow)return;
   for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
