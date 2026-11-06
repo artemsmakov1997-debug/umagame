@@ -23,11 +23,36 @@ export const LAST_ROOM=rooms.length-1,FINAL_X=rooms[LAST_ROOM].x,WORLD=cursor,PO
 export function roomAt(x){return rooms.find(r=>x>=r.x&&x<r.end)?.index??(x<0?0:LAST_ROOM);}
 export const layouts=[];
 layouts[0]=[[0,305,208],[266,365,185],[542,245,226],[0,445,248],[266,445,355],[0,474,768],[640,365,128],[0,305,75],[414,245,192]];
-// Upper, middle and lower routes connect the whole three-screen chapter.
+// Newsroom: one readable left-to-right route through three blocks.
+// Редакционный зал (0-768) -> Печатный цех (768-1536) -> Серверная (1536-2304).
+// Each block ends at its signal node (У1/У2/У3); optional upper shelves hold rewards.
+// Steps stay within ~95 px up and ~60 px across, so every main-route move is an ordinary jump.
 layouts[1]=[
- [0,303,224],[286,300,218],[570,275,236],[0,404,238],[295,412,290],[0,474,244],[300,474,485],[0,169,112],[470,203,158],[158,224,132],
- [780,305,228],[1062,272,214],[1336,300,230],[796,410,248],[1096,412,300],[784,474,470],[1308,474,260],[908,194,174],[1190,166,174],
- [1570,314,236],[1850,278,208],[2114,252,190],[1540,414,292],[1880,404,260],[1560,474,744],[1700,208,196],[1990,164,166]
+ [0,474,770],     // 0  floor, editorial hall (spawn)
+ [190,410,140],   // 1  first desk step
+ [300,350,210],   // 2  long desk run
+ [60,300,190],    // 3  office desks (optional left loop)
+ [0,205,140],     // 4  archive cabinet top (optional)
+ [440,255,150],   // 5  upper shelf with a life cache
+ [560,420,150],   // 6  У1 deck
+ [690,362,90],    // 7  step into the print shop
+ [770,300,220],   // 8  print shop entry gantry
+ [1000,340,110],  // 9  paper-stack dip
+ [1120,290,190],  // 10 press deck (press controller)
+ [1320,345,120],  // 11 step down from the press
+ [1430,420,190],  // 12 У2 deck at the server-room threshold
+ [880,430,380],   // 13 conveyor under the press (lower alternative)
+ [1020,250,80],   // 14 paper lift
+ [880,180,130],   // 15 gantry above the conveyor (optional)
+ [1630,380,160],  // 16 first server cabinets
+ [1810,310,130],  // 17 rack top (server controller)
+ [1960,400,140],  // 18 У3 deck
+ [2110,330,194],  // 19 exit deck towards the Spreader
+ [1560,290,130],  // 20 upper cable tray (optional)
+ [1720,215,150],  // 21 upper cable tray with a life cache
+ [1910,170,140],  // 22 top rack, drops onto the exit deck
+ [768,474,770],   // 23 floor, print shop
+ [1536,474,768]   // 24 floor, server room
 ];
 layouts[3]=[
  [0,330,230],[290,290,208],[560,264,240],[0,424,252],[312,414,310],[0,474,240],[300,474,488],[0,194,112],[460,184,166],[150,250,132],
@@ -72,21 +97,22 @@ layouts[8]=[
  [396,354,103],[1032,354,98]
 ];
 // Additional side routes: a paper lift, fire escape, stage wagon and drifting islands.
-for(const [room,extra] of [[1,[[760,352,130],[1520,356,126]]],[3,[[760,355,120],[1500,350,110]]],[5,[[760,350,130],[1510,350,130]]],[7,[[790,225,140],[1515,235,130]]]])layouts[room].push(...extra);
+for(const [room,extra] of [[3,[[760,355,120],[1500,350,110]]],[5,[[760,350,130],[1510,350,130]]],[7,[[790,225,140],[1515,235,130]]]])layouts[room].push(...extra);
 // Exposed roof spans replace the broad safety floor; upper routes remain connected.
 for(const [i,shape]of Object.entries({3:[0,424,145],4:[350,414,140],5:[0,474,130],6:[330,474,130],13:[840,414,140],14:[1160,414,145],15:[820,474,120],16:[1380,474,120],22:[1610,412,145],23:[1940,414,135],24:[1640,474,125]}))layouts[3][Number(i)]=shape;
 const motions={
  '3:1':{axis:'x',amplitude:24,period:4.4},'3:10':{axis:'y',amplitude:22,period:4.8},'3:19':{axis:'x',amplitude:26,period:4.7},'3:6':{axis:'x',amplitude:35,period:3.8},'3:14':{axis:'y',amplitude:20,period:4.2},
- '1:27':{axis:'y',amplitude:40,period:6},'1:28':{axis:'x',amplitude:45,period:6.4},'3:27':{axis:'x',amplitude:45,period:5.7},'3:28':{axis:'y',amplitude:44,period:6.2},'5:30':{axis:'x',amplitude:55,period:6},'5:31':{axis:'y',amplitude:50,period:6},'7:27':{axis:'y',amplitude:28,period:6},'7:28':{axis:'x',amplitude:42,period:7},
+ '1:14':{axis:'y',amplitude:40,period:6},'3:27':{axis:'x',amplitude:45,period:5.7},'3:28':{axis:'y',amplitude:44,period:6.2},'5:30':{axis:'x',amplitude:55,period:6},'5:31':{axis:'y',amplitude:50,period:6},'7:27':{axis:'y',amplitude:28,period:6},'7:28':{axis:'x',amplitude:42,period:7},
  '5:1':{axis:'x',amplitude:68,period:6.2},'5:10':{axis:'y',amplitude:94,period:5.4},'5:13':{axis:'x',amplitude:62,period:5.8},'5:29':{axis:'y',amplitude:86,period:5.2},
  '6:1':{axis:'x',amplitude:46,period:5.6},'6:3':{axis:'y',amplitude:46,period:6},'6:10':{axis:'y',amplitude:30,period:5.8},
  '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&[13,14].includes(index)?(index===13?20:-20):0,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:r.index===6?null:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===13?20:0,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:r.index===6?null:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
  if(r.arena)return [];
+ if(r.index===1)return [[740,7],[1270,10],[2140,19]].map(([x,index])=>{const s=platforms.find(p=>p.room===1&&p.index===index);return{x:r.x+x,y:s.y,w:31,h:474-s.y,room:1};});
  return [r.x+730,r.x+1498,r.end-50].map((x,i)=>{const s=platforms.find(p=>p.room===r.index&&p.index===[2,12,21][i]);return{x,y:s.y,w:31,h:474-s.y,room:r.index};});
 });
 export const ladder=ladders[0];
@@ -106,9 +132,9 @@ export function enemy(type,room,x,platformIndex,extra={}){
  actor.arrivalDuration=actor.spawnTime||.55;return actor;
 }
 export function createEnemies(){const all=[
- enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,365,1),enemy('fakenews',1,180,9,{hp:2,maxHp:2}),enemy('copier',1,840,10,{trigger:700,scanIndex:10,scanStart:18,scanW:145}),
- enemy('censor',1,1250,14,{trigger:1200}),enemy('fakenews',1,90,3,{trigger:340}),enemy('fakenews',1,920,10),enemy('copier',1,1150,11,{scanIndex:11,scanStart:20}),enemy('fakenews',1,1090,11),
- enemy('censor',1,1700,22),enemy('fakenews',1,1430,12),enemy('fakenews',1,1610,19),enemy('fakenews',1,1920,20,{hp:2,maxHp:2}),enemy('copier',1,1980,20,{scanIndex:20,scanStart:18}),enemy('censor',1,1990,23),
+ enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,400,2),enemy('copier',1,860,8,{trigger:640,scanIndex:8,scanStart:18,scanW:145}),
+ enemy('fakenews',1,1180,10),enemy('copier',1,1470,12,{scanIndex:12,scanStart:12,scanW:120}),
+ enemy('censor',1,1700,16,{trigger:1450}),enemy('fakenews',1,1600,20),enemy('censor',1,1850,24),enemy('fakenews',1,1950,22,{hp:2,maxHp:2}),
  enemy('informant',3,150,0,{trigger:100}),enemy('inflator',3,1010,17,{ledge:true,trigger:820}),enemy('panicker',3,1450,12,{trigger:1400}),enemy('informant',3,865,10),
  enemy('informant',3,1120,11),enemy('inflator',3,1245,11,{ledge:true}),enemy('panicker',3,1980,23),enemy('informant',3,1660,19),enemy('informant',3,1940,20),enemy('inflator',3,2045,20,{ledge:true}),enemy('panicker',3,2000,23),
  enemy('injection',5,160,0,{trigger:100}),enemy('injection',5,360,1),enemy('splicer',5,1430,14,{trigger:1400}),enemy('cutter',5,1110,13,{trigger:800}),enemy('injection',5,850,12),
@@ -116,7 +142,7 @@ export function createEnemies(){const all=[
  enemy('static',7,200,0,{trigger:130}),enemy('echo',7,1000,17,{trigger:800}),enemy('clickbait',7,1510,12,{trigger:1400}),enemy('static',7,870,10),enemy('static',7,1150,11),
  enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];
- const kept={1:[150,365,840,920,1250,1700,1610,1920,1980],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
+ const kept={1:[150,400,860,1180,1470,1700,1600,1850,1950],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
  return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
 }
 export function createFish(){return rooms.flatMap(r=>{
@@ -124,16 +150,16 @@ export function createFish(){return rooms.flatMap(r=>{
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
-export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
-const antennaPlaces=[[1,7],[1,18],[1,26],[2,4],[3,8],[3,18],[3,26],[4,13],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
+export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:r.index===1?15:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+const antennaPlaces=[[1,6],[1,12],[1,18],[2,4],[3,8],[3,18],[3,26],[4,13],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
 export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
  const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
  return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:[2,6].includes(room)?0:1,lastSwing:-1,breakTime:0,kind,ordinal,scripted:[2,6].includes(room)};});}
-export function createLifePickups(){return [[1,17],[1,22],[2,7],[3,7],[3,22],[4,9],[5,7],[5,24],[6,3],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createLifePickups(){return [[1,5],[1,21],[2,7],[3,7],[3,22],[4,9],[5,7],[5,24],[6,3],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews']},
- {id:'copier',room:1,index:10,x:805,scenes:['copier']},{id:'censor',room:1,index:14,x:1170,scenes:['censor']},{id:'spreader',room:1,index:12,x:1450,scenes:['spreader']},
+ {id:'copier',room:1,index:8,x:805,scenes:['copier']},{id:'censor',room:1,index:16,x:1650,scenes:['censor']},{id:'spreader',room:1,index:19,x:2200,scenes:['spreader']},
  {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','informant']},
  {id:'inflator',room:3,index:17,x:950,scenes:['inflator']},{id:'panicker',room:3,index:12,x:1390,scenes:['panicker']},
  {id:'agitator',room:3,index:12,x:1460,scenes:['agitator']},
