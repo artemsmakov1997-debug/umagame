@@ -50,7 +50,7 @@ export class Renderer{
   c.save();c.translate(worldInset,worldTop);c.scale(worldScale,worldScale);c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
    if(i!==g.room)continue;if(room.x+room.width+150<cam||room.x-150>cam+vw)continue;
-   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawNewsroomScenery(c,g);drawAmbience(c,room,t);if(room.index===8)drawInfoshumBackdrop(c,a,g,t);if(room.index===6)drawStudioBackdrop(c,a,g,t);if(room.index===4)drawAgitatorBackdrop(c,a,g,t);
+   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawNewsroomScenery(c,a,g,t);drawAmbience(c,room,t);if(room.index===8)drawInfoshumBackdrop(c,a,g,t);if(room.index===6)drawStudioBackdrop(c,a,g,t);if(room.index===4)drawAgitatorBackdrop(c,a,g,t);
   }
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
