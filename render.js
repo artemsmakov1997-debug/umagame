@@ -1,4 +1,5 @@
-import {drawAgitatorEquipment,drawAgitatorBackdrop,drawAgitatorPlatform,drawAgitatorProjectile,drawBroadcastOverlay} from './agitator-art.js?v=0.21.5';
+import {drawAgitatorEquipment,drawAgitatorBackdrop,drawAgitatorPlatform,drawAgitatorProjectile} from './agitator-art.js?v=0.21.5';
+import {drawInterferenceOverlay} from './interference-art.js?v=0.21.5';
 import {drawRouteTransition} from './route-transition-art.js?v=0.21.5';
 import {drawStudioBackdrop,drawStudioPlatform} from './manipulator-art.js?v=0.21.5';
 import {drawInfoshumProjectile} from './infoshum-sprites.js?v=0.21.5';
@@ -140,7 +141,7 @@ export class Renderer{
   if(g.tether){const e=g.tether.ownerId==='boss:'+g.boss.id?g.boss:g.enemies.find(e=>e.id===g.tether.ownerId);if(e){c.strokeStyle='#c9a4ed';c.lineWidth=3;c.setLineDash([5,4]);c.beginPath();c.moveTo(e.x+24,e.y+2);c.lineTo(p.x+17,p.y+28);c.stroke();c.setLineDash([]);for(let i=0;i<5;i++)rect(c,e.x+5+i*8,e.y-58,5,3,i<Math.ceil(g.tether.remaining)?'#ffdb9b':'#263a55');}}
   drawYuriSignal(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawBossDefeat(c,a,g);
   drawExitArrow(c,g,t,worldWidth);c.restore();
-  drawBroadcastOverlay(c,g,vw);drawArenaTransfer(c,g,vw);if(!drawRouteTransition(c,a,g,vw))drawLocationLoading(c,g,vw);
+  drawInterferenceOverlay(c,g,vw);drawArenaTransfer(c,g,vw);if(!drawRouteTransition(c,a,g,vw))drawLocationLoading(c,g,vw);
   if(g.defeat&&(g.mode==='bossDefeat'||g.mode==='paused'&&g.pausedFrom==='bossDefeat')){c.save();c.globalAlpha=Math.max(0,Math.min(1,(g.defeat.time-1.42)/.28));rect(c,0,0,vw,HEIGHT,'#030919');c.restore();}
   if(g.mode==='respawning'||g.pausedFrom==='respawning'){
    const progress=1-g.respawnTime/1.1;c.globalAlpha=Math.max(0,(progress-.25)/.75)*.86;rect(c,0,47,vw,HEIGHT-47,'#030a1e');c.globalAlpha=1;

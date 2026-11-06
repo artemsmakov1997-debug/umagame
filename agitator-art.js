@@ -42,17 +42,6 @@ export function drawAgitator(c,a,g,t){
  }
  if(n.wave){const wave=n.wave,boxes=[[173,98,128,214],[136,66,181,282],[93,33,262,353],[54,3,352,409]],f=Math.min(3,Math.floor(wave.age*4)),box=boxes[f];for(const side of[-1,1]){c.save();c.globalAlpha=Math.min(.85,(2.5-wave.age)*2);c.translate(wave.x,wave.y);if(side<0)c.scale(-1,1);c.drawImage(a.agitatorEffects,f*443.5+box[0],443.5+box[1],box[2],box[3],0,-wave.radius,wave.radius,wave.radius*2);c.restore();}}
 }
-export function drawBroadcastOverlay(c,g,width){
- const n=g.boss.broadcast;if(g.room!==4||!n||n.stage!=='chase'||g.boss.hp<=0)return;
- const fill=n.fill;
- c.save();c.globalAlpha=Math.min(.72,.08+fill*.6);
- const lines=Math.floor(fill*110);
- for(let i=0;i<lines;i++){const x=(i*109+Math.floor(g.time*24)*17)%width,y=25+(i*47+Math.floor(g.time*8)*3)%440,w=20+(i*73)%Math.max(40,width*.35);rect(c,x,y,w,i%4?2:4,i%3?'#b746f1':'#2acde9');}
- c.restore();
- if(fill>=.99){rect(c,0,0,width,480,'#101337');for(let y=0;y<480;y+=4){const x=(y*31+Math.floor(g.time*40)*13)%width;rect(c,0,y,width,2,'#294267');rect(c,x,y,Math.min(width-x,80+(y*47)%300),3,y%12?'#be3da7':'#4acbd5');}}
- const w=Math.min(190,width-90);rect(c,10,10,w,31,'#030c21ed');c.font='14px UmaText,monospace';c.fillStyle='#8bedff';c.textAlign='left';c.fillText('ПОМЕХИ '+Math.floor(fill*100)+'%',17,23);
- rect(c,17,29,w-14,5,'#233455');rect(c,17,29,(w-14)*fill,5,fill>.75?'#fa73ce':'#66e9ee');
-}
 export function drawAgitatorProjectile(c,a,bolt,t){
  if(bolt.kind!=='headline')return false;const f=Math.floor(t*9)%4;
  const boxes=[[29,187,389,105],[32,168,374,128],[21,155,393,141],[23,174,393,146]],box=boxes[f],scale=Math.min(bolt.w/box[2],bolt.h/box[3]),w=box[2]*scale,h=box[3]*scale;c.drawImage(a.agitatorEffects,f*443.5+box[0],box[1],box[2],box[3],bolt.x+(bolt.w-w)/2,bolt.y+(bolt.h-h)/2,w,h);return true;
