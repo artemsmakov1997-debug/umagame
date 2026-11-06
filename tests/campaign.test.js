@@ -68,3 +68,9 @@ test('the newsroom is one left-to-right route: three blocks, one node per block,
  let x=r.x;for(const index of [1,2,6,7,8,9,10,11,12,16,17,18,19]){assert.ok(jumpTo(g,1,index),'newsroom:'+index);assert.ok(g.player.x>x-60,'route keeps moving right at '+index);x=g.player.x;}
  assert.ok(g.player.x>r.x+2*WIDTH+300);assert.equal(g.health,4);
 });
+test('each newsroom block holds exactly one diary, placed evenly near its threshold on the main route',()=>{
+ const notes=createNotebooks().filter(n=>n.room===1&&!n.bossRecord),r=rooms[1];
+ assert.equal(notes.length,3);const offsets=notes.map(n=>n.x-r.x).sort((a,b)=>a-b);
+ assert.deepEqual(offsets.map(x=>Math.floor(x/WIDTH)),[0,1,2]);for(const x of offsets)assert.ok(x%WIDTH>=60&&x%WIDTH<=140,'diary near block threshold: '+x);
+ assert.deepEqual(notes.find(n=>n.id==='censor').scenes,['censor','spreader']);
+});

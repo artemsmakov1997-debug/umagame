@@ -132,9 +132,9 @@ export function enemy(type,room,x,platformIndex,extra={}){
  actor.arrivalDuration=actor.spawnTime||.55;return actor;
 }
 export function createEnemies(){const all=[
- enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,400,2),enemy('copier',1,860,8,{trigger:640,scanIndex:8,scanStart:18,scanW:145}),
+ enemy('fakenews',1,150,0,{trigger:90}),enemy('fakenews',1,400,2),enemy('copier',1,920,8,{trigger:640,scanIndex:8,scanStart:18,scanW:145}),
  enemy('fakenews',1,1180,10),enemy('copier',1,1470,12,{scanIndex:12,scanStart:12,scanW:120}),
- enemy('censor',1,1700,16,{trigger:1450}),enemy('fakenews',1,1600,20),enemy('censor',1,1850,24),enemy('fakenews',1,1950,22,{hp:2,maxHp:2}),
+ enemy('censor',1,1720,16,{trigger:1450}),enemy('fakenews',1,1600,20),enemy('censor',1,1850,24),enemy('fakenews',1,1950,22,{hp:2,maxHp:2}),
  enemy('informant',3,150,0,{trigger:100}),enemy('inflator',3,1010,17,{ledge:true,trigger:820}),enemy('panicker',3,1450,12,{trigger:1400}),enemy('informant',3,865,10),
  enemy('informant',3,1120,11),enemy('inflator',3,1245,11,{ledge:true}),enemy('panicker',3,1980,23),enemy('informant',3,1660,19),enemy('informant',3,1940,20),enemy('inflator',3,2045,20,{ledge:true}),enemy('panicker',3,2000,23),
  enemy('injection',5,160,0,{trigger:100}),enemy('injection',5,360,1),enemy('splicer',5,1430,14,{trigger:1400}),enemy('cutter',5,1110,13,{trigger:800}),enemy('injection',5,850,12),
@@ -142,7 +142,7 @@ export function createEnemies(){const all=[
  enemy('static',7,200,0,{trigger:130}),enemy('echo',7,1000,17,{trigger:800}),enemy('clickbait',7,1510,12,{trigger:1400}),enemy('static',7,870,10),enemy('static',7,1150,11),
  enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];
- const kept={1:[150,400,860,1180,1470,1700,1600,1850,1950],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
+ const kept={1:[150,400,920,1180,1470,1720,1600,1850,1950],3:[150,1010,1450,865,1660,2045],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
  return all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
 }
 export function createFish(){return rooms.flatMap(r=>{
@@ -159,7 +159,8 @@ export function createLifePickups(){return [[1,5],[1,21],[2,7],[3,7],[3,22],[4,9
 export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:100,scenes:['arrival1','fakenews']},
- {id:'copier',room:1,index:8,x:805,scenes:['copier']},{id:'censor',room:1,index:16,x:1650,scenes:['censor']},{id:'spreader',room:1,index:19,x:2200,scenes:['spreader']},
+ // Newsroom: exactly one diary per block, ~100 px past each block's threshold on the main route.
+ {id:'copier',room:1,index:8,x:868,scenes:['copier']},{id:'censor',room:1,index:16,x:1646,scenes:['censor','spreader']},
  {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','informant']},
  {id:'inflator',room:3,index:17,x:950,scenes:['inflator']},{id:'panicker',room:3,index:12,x:1390,scenes:['panicker']},
  {id:'agitator',room:3,index:12,x:1460,scenes:['agitator']},
