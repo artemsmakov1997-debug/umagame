@@ -40,14 +40,7 @@ test('Agitator aborts a warned teleport when Uma moves into its landing rectangl
 test('Agitator forward pressure pushes only its own line and respects a protected dash',()=>{
  for(const dash of[0,.2]){const g=game(4),b=prepare(g,'pressure');b.dir=1;castAttack(g);Object.assign(g.player,{x:b.x+b.w+20,y:b.y+b.h-48,dash,inv:0});stepBoss(g,1/60);assert.equal(g.player.knock>0,!dash);if(!dash)assert.equal(g.player.vx,640);}
 });
-test('Manipulator combines real cuts with a five-second pull; Shift and hitting the reel break its tape',()=>{
- const g=game(6),b=g.boss;b.phase=2;b.hp=9;b.turn=0;planAttack(g);assert.ok(g.cuts.length);assert.ok(g.cuts.every(c=>c.ownerId==='boss:manipulator'&&c.phase==='warning'));
- prepare(g,'splice');castAttack(g);assert.equal(g.tether.remaining,5);Object.assign(g.player,{x:b.x-120,y:b.y+b.h-48});stepTether(g,1/60);assert.equal(g.player.pulled,true);g.player.dash=.2;stepTether(g,1/60);assert.equal(g.tether,null);assert.equal(b.state,'recover');
- g.player.dash=0;prepare(g,'splice');castAttack(g);g.relays.forEach(d=>d.hp=0);b.cooldown=0;assert.equal(damageBoss(g,1),true);assert.equal(g.tether,null);
-});
-test('Manipulator ticker bursts and physical hops differ from the other bosses',()=>{
- const g=game(6),b=prepare(g,'ticker');castAttack(g);for(let i=0;i<60;i++)stepBoss(g,1/60);assert.equal(g.bolts.filter(b=>b.kind==='ticker').length,3);b.state='shift';b.timer=1.15;b.shiftFrom={x:b.x,y:b.y};b.nextDock=0;const y=b.y;for(let i=0;i<30;i++)stepBoss(g,1/60);assert.ok(b.y<y-15);assert.notEqual(b.x,b.docks[0].x);
-});
+test('Manipulator fires a warned beam, recovers and relocates after a successful hit',()=>{const g=game(6),b=g.boss;g.relays.forEach(d=>d.hp=0);const modes=new Set();for(let i=0;i<480;i++){stepBoss(g,1/60);modes.add(b.studio.mode);}for(const mode of['rewrite','charge','beam','recover'])assert.ok(modes.has(mode));b.state='recover';b.cooldown=0;const dock=b.dock;assert.ok(damageBoss(g,1));assert.equal(b.studio.mode,'relocate');assert.equal(b.phased,true);for(let i=0;i<60;i++)stepBoss(g,1/60);assert.notEqual(b.dock,dock);assert.equal(b.phased,false);assert.equal(g.tether,null);assert.equal(g.cuts.length,0);});
 test('Infoshum Echo attack warps Uma back without draining hearts; dash protects her',()=>{
  for(const dash of[0,.2]){const g=game(8);g.echoImmunity=0;g.player.dash=dash;g.bolts=[{kind:'echoOrb',type:'echo',room:8,state:'pulling',timer:2,x:g.player.x,y:g.player.y,w:28,h:28,vx:0,vy:0,ttl:2}];stepProjectiles(g,1/60,{x:0,y:0,w:0,h:0});assert.equal(g.mode,dash?'playing':'echoWarp');assert.equal(g.health,4);}
 });

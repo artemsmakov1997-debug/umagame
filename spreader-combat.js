@@ -1,8 +1,8 @@
 import {rooms} from './level.js?v=0.21.5';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function spreaderDeck(g){return g.platforms.find(s=>s.room===g.boss.room&&s.index===4);}
-export const paperFeeders=[{x:126,y:103,vx:140,vy:137,stopY:272},{x:744,y:215,vx:-95,vy:135,stopY:326}];
-export function paperFeederPositions(time){return paperFeeders.map((f,i)=>{const offset=Math.sin(time*Math.PI*2/(i?7.2:6)+i*Math.PI)*(i?38:44);return {...f,offset,y:f.y+offset};});}
+export const paperFeeders=[{x:126,y:103,vx:140,vy:137,stopY:272},{x:452,y:70,vx:-20,vy:160,stopY:218}];
+export function paperFeederPositions(){return paperFeeders.map(f=>({...f,offset:0}));}
 function paper(g,x,y,vx,vy,extra={}){g.bolts.push({room:g.room,kind:'paper',visual:'spreader',x,y,w:19,h:17,vx,vy,ttl:3,...extra});}
 export function summonServants(g){
  const b=g.boss,r=rooms[b.room],alive=g.enemies.filter(e=>e.bossOwnerId===b.id&&!e.dead),made=[];if(b.phase===2)return made;
@@ -22,7 +22,7 @@ export function stepSpreader(g,dt){
   b.x=s.x+(s.w-b.w)/2;b.y=s.y-b.h;b.platformIndex=s.index;b.state='guarding';b.ability='summon';
   if(b.timer<=0){summonServants(g);b.timer=3.4;}
   if(p.grounded&&p.supportId===s.id){
-   b.phase=2;b.state='takeoff';b.ability='rain';b.timer=.7;b.from={x:b.x,y:b.y};g.relays.filter(d=>d.room===b.room).forEach(d=>{d.hp=0;d.breakTime=.45;});b.shieldDissolve=.45;g.emit('bossPhase',{boss:b.id,phase:2,name:'Газетная бомбардировка'});
+   b.phase=2;b.state='takeoff';b.ability='rain';b.timer=.7;b.from={x:b.x,y:b.y};g.relays.filter(d=>d.room===b.room).forEach(d=>{d.hp=0;d.breakTime=.45;});b.shieldDissolve=0;g.emit('bossPhase',{boss:b.id,phase:2,name:'Газетная бомбардировка'});
    for(const e of g.enemies)if(e.bossOwnerId===b.id&&!e.dead){e.state='recover';e.timer=2.8;}
   }return;
  }
