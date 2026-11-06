@@ -7,7 +7,6 @@ import {stepStudioPlatforms,studioDock} from '../manipulator-combat.js';
 import {solidSurfaces} from '../terrain.js';
 import {jumpTo} from './navigation.js';
 import {rooms} from '../level.js';
-import {paperFeederPositions} from '../spreader-combat.js';
 import {routeInfo} from '../route-transition-art.js';
 function ready(){const g=new Game({story:false,cinematic:true,testingInvulnerable:true});g.start();activateRoom(g,6);g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.boss.noticeTime=0;return g;}
 function ticks(g,n){for(let i=0;i<n;i++)g.step(1/60,{});}
@@ -58,4 +57,4 @@ test('three chapter maps use the right landmarks, transfer once and respect paus
   g.mode='paused';const before=JSON.stringify(g);ticks(g,90);assert.equal(JSON.stringify(g),before);g.mode='loading';ticks(g,120);assert.equal(g.room,to);assert.equal(g.mode,'playing');assert.equal(g.events.filter(e=>e.type==='locationReady').length,1);
  }
 });
-test('Spreader has no shield, no lower-right shelf and two stationary ceiling sources aimed at ascent decks',()=>{const g=ready();activateRoom(g,2);assert.equal(bossShielded(g),false);assert.equal(g.platforms.filter(s=>s.room===2).length,8);assert.deepEqual(paperFeederPositions(0),paperFeederPositions(123));for(const f of paperFeederPositions())assert.ok(f.x<rooms[2].width*.6);});
+test('Spreader has no shield and an arena of floor, two shelters and two side ledges',()=>{const g=ready();activateRoom(g,2);assert.equal(bossShielded(g),false);const s=g.platforms.filter(s=>s.room===2);assert.equal(s.length,5);assert.equal(s.filter(p=>p.shelter).length,2);});

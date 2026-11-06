@@ -66,7 +66,8 @@ for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>{
  const [dx,dy]=arenaOffsets[index][i]||[0,0];return[x+dx,y+dy,w];
 });
 // Reference arena: one continuous floor, six ascending decks and two side shelves.
-layouts[2]=[[0,416,864],[136,346,102],[208,306,100],[278,272,160],[592,154,250],[402,218,120],[472,182,138],[64,262,55]];
+// Spreader arena: floor, two shelter tables (crouch beneath, climb on top) and two side ledges.
+layouts[2]=[[0,416,864],[150,364,200],[514,364,200],[24,285,104],[736,285,104]];
 // Three permanent camera docks and a reversible holographic chase route.
 layouts[6]=[[0,422,210],[550,220,210],[1160,198,230],[70,220,180],[520,422,375],[1320,422,216],[195,352,125],[350,284,125],[240,224,145],[780,280,140],[955,226,140],[1010,348,140],[1190,360,125],[430,357,125],[700,350,125],[850,410,125],[1410,300,126],[20,320,125]];
 // Rooftop broadcast arena: two console roofs, central shield dock and linked chase decks.
@@ -91,7 +92,7 @@ const motions={
  '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===0?-45:0,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:r.index===3&&[3,13,22].includes(index),cuttable:(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===0?-45:0,shelter:r.index===2&&[1,2].includes(index)?y+16:null,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [{x:430,y:245,w:31,h:200,room:0}];
  if(r.arena)return [];
@@ -136,12 +137,12 @@ export function createFish(){return rooms.flatMap(r=>{
  const points=r.tutorial?[[130,330],[290,330],[432,325],[433,285],[550,211],[665,211]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
-export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.arena?5:r.index===1?4:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.index===2?4:r.arena?5:r.index===1?4:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 const antennaPlaces=[[2,4],[3,8],[3,18],[3,26],[4,2],[4,3],[5,11],[5,20],[5,28],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
 export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
  const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
  return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:room===4?3:[2,6].includes(room)?0:1,maxHp:room===4?3:1,rewardWhenOverloaded:room===4,lastSwing:-1,breakTime:0,kind,ordinal,scripted:[2,4,6].includes(room)};});}
-export function createLifePickups(){return [[1,3],[1,6],[2,7],[3,7],[3,22],[4,14],[5,7],[5,24],[6,3],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,7],[3,22],[4,14],[5,7],[5,24],[6,3],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:70,scenes:['arrival1','fakenews','stamp','censor','press']},

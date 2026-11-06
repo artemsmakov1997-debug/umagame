@@ -12,6 +12,7 @@ import {strikeInfoshum} from './infoshum-combat.js?v=0.21.5';
 import {stepEnemies,stepPortals} from './enemies.js?v=0.21.5';
 import {cancelInformantTeleport} from './informant-teleport.js?v=0.21.5';
 import {applyRelayEffect} from './chapter-systems.js?v=0.21.5';
+import {applyLowCeilings} from './shelters.js?v=0.21.5';
 import {stepNewsroom,newsroomRestore,placeAtNewsroomCheckpoint,resetNewsroom} from './newsroom-systems.js?v=0.21.5';
 import {scenes,evidence,relayClues} from './story.js?v=0.21.5';
 import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.21.5';
@@ -149,7 +150,7 @@ export class Game {
   let useLadder=ladder&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);
   const dropping=tryDrop(this,input,dt);if(dropping)useLadder=false;
   const canAttack=input.attack&&!input.down&&this.abilities.attack,canDash=input.dash&&this.abilities.dash;
-  p.sneaking=!!(this.abilities.sneak&&input.down&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&p.attack===0&&!canAttack&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
+  p.sneaking=!!((this.abilities.sneak&&input.down||p.forcedCrouch)&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&p.attack===0&&!canAttack&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
   p.coyote=p.grounded?.1:Math.max(0,p.coyote-dt);p.jumpBuffer=input.jump&&!input.down?.13:Math.max(0,p.jumpBuffer-dt);
   if(canDash&&p.dashCooldown===0){p.dash=.2;p.dashCooldown=1.5;p.climbing=false;p.knock=0;p.hurtTime=0;p.vy=0;this.emit('dash');}
   playerHorizontal(this,axis,dt);stepTether(this,dt);stepEchoPull(this,dt);
@@ -167,6 +168,7 @@ export class Game {
    else if(input.down&&p.y+p.h>=ladder.y+ladder.h){p.y=ladder.y+ladder.h-p.h;p.vy=0;p.grounded=true;p.climbing=false;}
   }
   if(p.vy>=0&&!p.climbing){const surface=solidSurfaces(this).filter(s=>!(p.dropTime>0&&s.id===p.dropId)&&p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=(s.id===carriedSupport?s.y:s.prevY)+1&&p.y+p.h>=s.y).sort((a,b)=>a.y-b.y)[0];if(surface){p.y=surface.y-p.h;p.vy=0;p.grounded=true;p.supportId=surface.id;}}
+  applyLowCeilings(this,oldX);
   if(p.y>HEIGHT+30){this.hurt(true);return;}
   if(p.climbing)p.climbTime+=Math.abs(p.y-oldY)/18;if(p.sneaking)p.sneakTime+=Math.abs(p.x-oldX)/14;
   stepPlayerRest(this,input,dt);
