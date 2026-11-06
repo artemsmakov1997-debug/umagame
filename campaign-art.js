@@ -79,7 +79,7 @@ export function drawCampaignObjects(c,a,g,time){
   rect(c,-r,-r*1.6,r*2,r*1.6,'#19104099');for(let i=0;i<18;i++){const angle=i*Math.PI/9+time*2;rect(c,Math.cos(angle)*r,Math.sin(angle)*r*.55-9,3,3,i%3?'#8e8aff':'#68ecf4');}c.restore();
  }
 
- for(const dish of g.relays)if(dish.room===g.room&&g.room!==8)drawDish(c,a,dish,time);
+ for(const dish of g.relays)if(dish.room===g.room&&g.room!==8&&g.room!==4)drawDish(c,a,dish,time);
 
  drawTowerPortal(c,g,time,a);
 }

@@ -1,3 +1,4 @@
+import {drawAgitator} from './agitator-art.js?v=0.21.5';
 import {drawManipulator} from './manipulator-art.js?v=0.21.5';
 import {drawBossBarrier} from './shield-art.js?v=0.21.5';
 import {drawInfoshumForeground} from './infoshum-art.js?v=0.21.5';
@@ -6,7 +7,7 @@ import {drawMonster} from './art.js?v=0.21.5';
 import {bossShielded} from './boss.js?v=0.21.5';
 import {rooms} from './level.js?v=0.21.5';
 export function drawArenaBoss(c,a,g,time){
- const b=g.boss;if(!rooms[g.room].arena||b.room!==g.room||b.hp<=0)return;if(b.id==='infoshum'&&b.network){drawInfoshumForeground(c,a,g,time);return;}if(b.id==='manipulator'&&b.studio){drawManipulator(c,a,g,time);return;}const room=rooms[g.room],final=b.id==='infoshum';
+ const b=g.boss;if(!rooms[g.room].arena||b.room!==g.room||b.hp<=0)return;if(b.id==='infoshum'&&b.network){drawInfoshumForeground(c,a,g,time);return;}if(b.id==='agitator'&&b.broadcast){drawAgitator(c,a,g,time);return;}if(b.id==='manipulator'&&b.studio){drawManipulator(c,a,g,time);return;}const room=rooms[g.room],final=b.id==='infoshum';
  for(const d of b.docks){rect(c,d.x-9,d.y+b.h+2,b.w+18,3,'#3e4a79');rect(c,d.x+12,d.y+b.h+2,b.w-24,2,b.x===d.x?'#b199ec':'#536680');}
  c.save();if(b.ability==='telecast'&&b.state==='casting')c.globalAlpha=b.castElapsed<.22?Math.max(0,1-b.castElapsed/.22):Math.min(1,(b.castElapsed-.22)/.28);if(b.state==='shift')c.globalAlpha=Math.min(1,Math.abs(b.timer-.56)/.5);
  drawMonster(c,a,b.id,b.x-(final?76:28),b.y-(final?100:62),final?280:156,final?236:138,time,b.dir<0,{...b,moving:b.id==='spreader',walkTime:time});c.restore();

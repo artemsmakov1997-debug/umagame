@@ -11,6 +11,6 @@ export function drawInfoshumSprite(c,a,kind,index,x,y,w,h){
 }
 export function drawInfoshumProjectile(c,a,b,t){
  if(!b.infoshumAttack)return false;
- const frame=b.infoshumAttack==='rain'?2:b.infoshumAttack==='wave'?1:3;
+ const frame=['rain','pulse'].includes(b.infoshumAttack)?2:b.infoshumAttack==='wave'?1:3;
  drawInfoshumSprite(c,a,'effect',frame,b.x,b.y,b.w,b.h);return true;
 }

@@ -57,7 +57,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
  await shot(overview,'infoshum-approved-full-network');
  await overview.evaluate(async()=>{const g=testGame,n=g.boss.network,{stepBoss}=await import('./boss.js?v=0.21.5');n.monitors.forEach(m=>m.state='broken');n.defeatedMonitors=3;n.lastMonitorIndex=2;n.stage='rupture';n.mode='rupture';n.timer=.001;g.boss.hp=20;stepBoss(g,1/60);g.notice=null;testRenderer.draw(g,0,1);});
  await shot(overview,'infoshum-approved-full-free');
- const modes=['slamWarning','slam','weak','waveWarning','rain','scan'];
+ const modes=['slamWarning','slam','weak','waveWarning','rain','scan','platformWarning','platformPulse'];
  for(const mode of modes){
   const state=await overview.evaluate(async mode=>{const g=testGame,n=g.boss.network,{stepBoss,stepProjectiles}=await import('./boss.js?v=0.21.5');for(let i=0;i<2400&&n.mode!==mode;i++){stepBoss(g,1/60);stepProjectiles(g,1/60,{x:0,y:0,w:0,h:0});g.time+=1/60;}if(n.mode!==mode)throw Error('Attack never occurred: '+mode);if(mode==='rain')for(let i=0;i<14;i++){stepBoss(g,1/60);stepProjectiles(g,1/60,{x:0,y:0,w:0,h:0});g.time+=1/60;}g.notice=null;testRenderer.draw(g,0,g.time);return{stage:n.stage,mode:n.mode,bolts:g.bolts.map(b=>b.infoshumAttack)};},mode);
   assert.equal(state.stage,'free');assert.equal(state.mode,mode);if(mode==='rain')assert.ok(state.bolts.includes('rain'));

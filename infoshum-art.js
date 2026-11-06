@@ -1,3 +1,5 @@
+import {drawInfoshumTentacle} from './infoshum-tentacle-art.js?v=0.21.5';
+import {drawPixelBarrier} from './shield-art.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
 // Rendered production assets for the two-stage Infoshum encounter.
 // Frame atlases are original pixel PNG assets, preloaded in assets.js and drawn with pixel smoothing off.
@@ -22,7 +24,7 @@ function cables(c,n,time){
 function monitorFrame(m,n,time){
  if(m.state==='broken')return m.destroyTime>.45?4:5;
  if(n.stage==='rupture'||n.stage==='free')return 4;
- if(m.state==='open')return 2;
+ if(m.state==='open')return m.shieldTime>0?1:2;
  if(n.mode==='transit'&&(m.index===n.fromIndex||m.index===n.toIndex))return 2;
  if(n.mode==='transferWarning'&&m.index===n.activeIndex)return Math.floor(time*8)%3===0?2:1;
  if(m.index===n.activeIndex)return n.mode==='charge'?3:1;
@@ -35,14 +37,16 @@ function crt(c,a,m,n,time){
  if(frame<4){c.save();c.globalAlpha=.16;rect(c,m.x+20,m.y+20+(time*24+m.index*25)%(m.h-35),m.w-40,2,'#94f5ff');c.restore();}
  if(frame===3){point(c,m.x+m.w/2,m.y+m.h/2,48,time,magenta);}
  if(frame===4){point(c,m.x+m.w/2,m.y+m.h/2,72,time,magenta);}
- if(m.state==='open'){c.save();c.strokeStyle='#ff74d5';c.lineWidth=3;c.globalAlpha=.5+.5*Math.abs(Math.sin(time*8));c.strokeRect(m.x-16,m.y-14,m.w+32,m.h+34);c.restore();}
+ if((m.state!=='open'||m.shieldTime>0)&&m.state!=='broken'&&n.stage==='network')drawPixelBarrier(c,m.x+m.w/2,m.y+55,m.w*.56,105,{time,alpha:m.shieldTime>0?.8:.45,flash:m.guardFlash});
+ if(m.state==='open'&&m.shieldTime<=0){c.save();c.strokeStyle='#ff74d5';c.lineWidth=3;c.globalAlpha=.5+.5*Math.abs(Math.sin(time*8));c.strokeRect(m.x-16,m.y-14,m.w+32,m.h+34);c.restore();}
 }
 function terminal(c,a,m,n,time){
  if(n.stage!=='network')return;
- const frame=m.destroyTime>.45?2:m.state==='broken'?3:m.state==='open'?1:0;
+ const frame=m.destroyTime>.45?2:m.state==='broken'?3:m.state==='open'&&m.shieldTime<=0?1:0;
  const x=m.terminalX-40,y=m.terminalY-27;
  atlas(c,a.infoshumTerminal,frame,terminalFrame,terminalHeight,x,y,80,60,a,'terminal');
- if(m.state==='open'){point(c,m.terminalX,m.terminalY+19,29,time,magenta);}
+ for(let i=0;i<2;i++)rect(c,m.terminalX-10+i*12,m.terminalY+30,8,3,i<(m.armor??2)?'#72edff':'#553b69');
+ if(m.state==='open'&&m.shieldTime<=0){point(c,m.terminalX,m.terminalY+19,29,time,magenta);}
 }
 function transfer(c,a,n,time){
  if(n.mode!=='transit')return;
@@ -73,10 +77,7 @@ function tendril(c,a,b,n,time){
   c.save();c.strokeStyle='#fd76d4';c.lineWidth=3;c.setLineDash([7,5]);c.strokeRect(x-30,y-5,60,30);c.restore();
   point(c,x,y,25,time,magenta);return;
  }
- const strength=n.mode==='weak'?1:Math.min(1,1-n.timer/.34),ex=headX+(x-headX)*strength,ey=headY+(y-headY)*strength;
- for(let i=0;i<=28;i++){const t=i/28,px=headX+(ex-headX)*t+Math.sin(t*Math.PI)*30,py=headY+(ey-headY)*t-Math.sin(t*Math.PI)*40;rect(c,px-6,py-6,12,12,'#06132d');rect(c,px-3,py-3,6,6,'#25c7ee');rect(c,px-2,py-3,2,2,'#b9fbff');}
- if(n.mode==='slam')drawInfoshumSprite(c,a,'effect',0,x-50,y-75,100,90);
- if(n.mode==='weak'){const pulse=1+Math.sin(time*8)*.08;drawInfoshumSprite(c,a,'effect',3,x-34*pulse,y-31*pulse,68*pulse,62*pulse);point(c,x,y,38,time,magenta);}
+ drawInfoshumTentacle(c,a,b,n,time);
 }
 export function drawInfoshumBackdrop(c,a,g,time){
  const b=g.boss,n=b.network;if(g.room!==8||!n)return;
@@ -105,7 +106,7 @@ export function drawInfoshumForeground(c,a,g,time){
   for(const m of n.monitors)terminal(c,a,m,n,time);
   transfer(c,a,n,time);
   if(n.mode==='charge'&&n.target){
-   const t=n.target;colorWarning(c,t,time,n.attackKind);
+   for(const t of[n.target,...(n.extraTargets||[])])colorWarning(c,t,time,n.attackKind);
   }
   if(n.mode==='transferWarning'){
    const t=n.monitors[n.toIndex];if(t)point(c,t.x+t.w/2,t.y+t.h/2,48,time,cyan);
@@ -124,7 +125,7 @@ export function drawInfoshumForeground(c,a,g,time){
  const w=350*spread,h=302*spread;
  atlas(c,a.infoshumBody,frame,bodyFrame,bodyHeight,b.x+b.w/2-w/2,b.y-74+wobble,w,h,a,'body');
  tendril(c,a,b,n,time);
- if(['waveWarning','rainWarning','beamWarning'].includes(n.mode)&&n.target){colorWarning(c,n.target,time,n.mode==='rainWarning'?'rain':n.mode==='beamWarning'?'beam':'wave');}
+ if(['waveWarning','rainWarning','beamWarning','platformWarning','slamWarning'].includes(n.mode)&&n.target){for(const t of[n.target,...(n.extraTargets||[])])colorWarning(c,t,time,n.mode==='rainWarning'?'rain':n.mode==='beamWarning'?'beam':'wave');}
  if(n.mode==='scan'&&n.target){const x=n.scanX;rect(c,x-7,20,14,n.target.y-20,'#c642b54d');rect(c,x-2,20,4,n.target.y-20,'#ffa5f2');drawInfoshumSprite(c,a,'effect',3,x-24,n.target.y-30,48,44);}
 
 }

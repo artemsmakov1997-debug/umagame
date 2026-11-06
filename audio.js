@@ -107,6 +107,9 @@ export class GameAudio{
   else if(type==='cutWarning'){noise(.045,.07,5600);tone(1400,1000,.055,.035,'triangle');}
   else if(type==='platformCut'){noise(.11,.12,4500);noise(.08,.08,2700,.12);tone(1000,340,.09,.04);}
   else if(type==='platformRestore')tone(350,660,.15,.035,'triangle');
+  else if(type==='antennaHit'){tone(350,800,.18,.05,'triangle');noise(.08,.04,2200);}
+  else if(type==='broadcastShieldBreak'){noise(.4,.08,3000);tone(180,800,.5,.05,'triangle');}
+  else if(type==='infoshumArmorHit'){tone(480,120,.22,.04,'sawtooth');}
   else if(type==='infoshumWarning'){tone(145,290,.25,.045,'triangle');}
   else if(type==='infoshumTransfer'){tone(420,90,.35,.04,'sawtooth');}
   else if(type==='infoshumSlam'){noise(.18,.09,1800);tone(100,45,.18,.06,'sawtooth');}
