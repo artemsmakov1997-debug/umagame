@@ -31,7 +31,7 @@ test('each playable chapter has its own interactive devices and distinct boss ar
  }
  assert.equal(new Set([2,4,6,8].map(room=>JSON.stringify(layouts[room]))).size,4);
  assert.ok(g.platforms.some(s=>s.room===8&&s.cuttable));
- assert.ok(g.platforms.some(s=>s.room===4&&s.motion));
+ assert.ok(g.platforms.filter(s=>s.room===4).every(s=>!s.motion));
 });
 
 test('destroying a signal node permanently adds a clue, with no premature answer',()=>{
@@ -49,12 +49,12 @@ test('destroying a signal node permanently adds a clue, with no premature answer
  assert.equal(g.clues.length,1);
 });
 
-test('Infoshum enters the final phase after precisely two destroyed monitors',()=>{
+test('Infoshum enters the final phase after three monitors each lose two protection layers',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
  const n=g.boss.network;
- for(const index of [0,1,2]){
-  const m=n.monitors[index];m.state='open';m.openTime=5;
+ for(const index of [0,1,2])for(let hit=0;hit<2;hit++){
+  const m=n.monitors[index];m.state='open';m.openTime=5;m.shieldTime=0;
   Object.assign(g.player,{x:m.terminalX-34,y:m.terminalY-46,h:48,dir:1,attack:.18,swing:g.player.swing+1});
   assert.equal(strikeInfoshum(g,{x:g.player.x+16,y:g.player.y-2,w:54,h:54}),true);
  }

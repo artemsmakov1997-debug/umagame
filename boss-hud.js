@@ -12,7 +12,7 @@ function portrait(assets,id){
  if(!map.has(id)){
   const c=document.createElement('canvas');c.width=100;c.height=100;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;
   if(id==='infoshum')drawInfoshumSprite(ctx,assets,'body',0,0,0,100,100);
-  else {const box=id==='spreader'?[105,126,137,145]:id==='agitator'?[27,410,210,180]:[39,25,182,151],image=id==='manipulator'?assets.manipulator:assets.minibosses,scale=Math.min(100/box[2],100/box[3]),w=box[2]*scale,h=box[3]*scale;ctx.drawImage(image,...box,(100-w)/2,(100-h)/2,w,h);}
+  else {const box=id==='spreader'?[105,126,137,145]:id==='agitator'?[40,35,175,145]:[39,25,182,151],image=id==='agitator'?assets.agitator:id==='manipulator'?assets.manipulator:assets.minibosses,scale=Math.min(100/box[2],100/box[3]),w=box[2]*scale,h=box[3]*scale;ctx.drawImage(image,...box,(100-w)/2,(100-h)/2,w,h);}
   map.set(id,c);
  }return map.get(id);
 }
@@ -25,7 +25,7 @@ export function drawBossHud(c,a,g,width,{y=8}={}){
  for(const fraction of b.network?[20/32,24/32,28/32]:[1/3,2/3])rect(c,barX+barW*fraction,y+5,2,12,'#020817');
  c.save();c.font=`${width<360?17:20}px UmaText, monospace`;c.fillStyle='#ffe4b1';c.textAlign='center';c.textBaseline='top';c.fillText(style.name,barX+barW/2,y+24,barW);c.restore();
  if(style.kind==='paper')for(let i=0;i<3;i++)rect(c,x+7+i*7,y+43,4,3,style.edge);
- if(style.kind==='broadcast')for(let i=0;i<6;i++)rect(c,barX+i*8,y+48,3,3+i%3,style.edge);
+ if(style.kind==='broadcast')for(let i=0;i<6;i++){const hit=b.broadcast?.antennas[Math.floor(i/3)]?.hits??0;rect(c,barX+i*10+(i>=3?5:0),y+47,7,5,i%3<hit?'#73f6ff':'#455776');}
  if(style.kind==='film')for(let i=0;i<Math.floor(w/12);i++)rect(c,x+i*12,y+49,5,3,style.edge);
  if(style.kind==='static'){if(b.network)for(const m of b.network.monitors){rect(c,barX+m.index*22,y+45,15,9,m.state==='broken'?'#3c3658':m.index===b.network.activeIndex&&b.network.stage==='network'?'#ff6cda':'#70dfe8');rect(c,barX+m.index*22+2,y+47,11,5,'#10182d');}else for(let i=0;i<8;i++)rect(c,barX+i*barW/8,y+48+i%2,8,2,i%2?style.fill:style.edge);}
  const sx=b.x+b.w/2-g.camera,world=g.viewWidth||768;if(sx<24||sx>world-24){const right=sx>world-24,px=right?x+w-10:x+7;for(let i=0;i<4;i++)rect(c,px+(right?i:-i),y+45+i,1,8-i*2,style.edge);}

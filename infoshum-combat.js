@@ -2,7 +2,7 @@
 import {rooms} from './level.js?v=0.21.5';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const STAGE_ROOM=8;
-const MONITOR_DAMAGE=4;
+const MONITOR_DAMAGE=2;
 const CORE_DAMAGE=4;
 const EXPOSE_SECONDS=5.4;
 
@@ -18,9 +18,9 @@ export function createInfoshumNetwork(room=STAGE_ROOM){
   fromIndex:0,toIndex:1,transitTime:0,transitDuration:.9,
   monitors:layouts.map((m,index)=>({
    ...m,x:base+m.x,terminalX:base+m.terminalX,index,
-   state:'idle',openTime:0,lastSwing:-1,charge:0
+   state:'idle',openTime:0,lastSwing:-1,charge:0,armor:2,shieldTime:0,guardFlash:0
   })),
-  lastMonitorIndex:0,scanX:0,target:null,lastSwing:-1,attackKind:'tentacle',hitDelivered:false,
+  lastMonitorIndex:0,scanX:0,volley:0,extraTargets:[],target:null,lastSwing:-1,attackKind:'tentacle',hitDelivered:false,
   defeatedMonitors:0,transitionProgress:0
  };
 }
@@ -48,17 +48,20 @@ function nextMonitor(n){
 function chooseAttack(g){
  const n=g.boss.network;
  n.target=targetSurface(g);
- n.attackKind=['packet','rain','wave'][n.turn%3];
+ n.attackKind=['rain','wave','platformPulse','packet'][(n.turn+n.volley)%4];
+ n.extraTargets=neighborTargets(g,n.target);
  n.mode='charge';n.timer=1.12;
  g.emit('infoshumWarning',{x:n.target.x,y:n.target.y,attack:n.attackKind});
 }
+function neighborTargets(g,primary){return g.platforms.filter(s=>s.room===g.room&&!s.bossHidden&&s.id!==primary.platformId&&Math.abs(s.x+s.w/2-primary.x)>110&&s.y<430&&s.w>=100).sort((a,b)=>Math.hypot(a.x+a.w/2-primary.x,a.y-primary.y)-Math.hypot(b.x+b.w/2-primary.x,b.y-primary.y)).slice(0,1).map(s=>({x:s.x+s.w/2,y:s.y,platformId:s.id,left:s.x,right:s.x+s.w}));}
+function platformPulse(g,n){for(const t of[n.target,...(n.extraTargets||[])])g.bolts.push({room:g.room,kind:'platformPulse',infoshumAttack:'pulse',visual:'infoshum',x:t.x-38,y:t.y-66,w:76,h:66,vx:0,vy:0,ttl:.3});g.emit('bossCast',{boss:'infoshum',ability:'platformPulse',x:n.target.x,y:n.target.y});}
 function createWave(g,n){
  const r=rooms[g.room],t=n.target;
  const fromLeft=t.x<r.x+r.width/2,x=fromLeft?r.x+12:r.end-48,dir=fromLeft?1:-1;
  g.bolts.push({room:g.room,kind:'wave',x,y:t.y-13,w:52,h:18,infoshumAttack:'wave',vx:dir*225,vy:0,ttl:5.5,fixedY:true,visual:'infoshum'});
  g.emit('bossCast',{boss:'infoshum',ability:'wave',x,y:t.y});
 }
-function createRain(g,n){const t=n.target;for(const dx of[-38,-12,14,40])g.bolts.push({room:g.room,kind:'dataRain',infoshumAttack:'rain',visual:'infoshum',x:t.x+dx-6,y:Math.max(12,t.y-190),w:12,h:34,vx:0,vy:320,ttl:1.5,stopY:t.y+4});g.emit('bossCast',{boss:'infoshum',ability:'rain',x:t.x,y:t.y});}
+function createRain(g,n){for(const t of[n.target,...(n.extraTargets||[])])for(const dx of[-38,-12,14,40])g.bolts.push({room:g.room,kind:'dataRain',infoshumAttack:'rain',visual:'infoshum',x:t.x+dx-6,y:Math.max(12,t.y-190),w:12,h:34,vx:0,vy:320,ttl:1.5,stopY:t.y+4});g.emit('bossCast',{boss:'infoshum',ability:'rain',x:n.target.x,y:n.target.y});}
 function createPacket(g,n){const m=currentInfoshumMonitor(g.boss),x=m.x+m.w/2,y=m.y+m.h/2,dx=n.target.x-x,dy=n.target.y-24-y,len=Math.hypot(dx,dy)||1;g.bolts.push({room:g.room,kind:'packet',visual:'infoshum',x,y,w:18,h:16,vx:dx/len*180,vy:dy/len*180,ttl:5});}
 function strikeSurface(g,n){
  const t=n.target,p=g.player;
@@ -69,7 +72,7 @@ function strikeSurface(g,n){
 function beginDeparture(g){
  const b=g.boss,n=b.network,source=n.monitors[n.activeIndex];
  n.fromIndex=n.activeIndex;n.toIndex=nextMonitor(n);
- if(n.toIndex===n.fromIndex){source.state='open';source.openTime=EXPOSE_SECONDS;source.charge=1;n.mode='isolated';n.timer=EXPOSE_SECONDS;g.emit('infoshumTerminalOpen',{index:source.index,x:source.terminalX,y:source.terminalY});return;}
+ if(n.toIndex===n.fromIndex){if(source.shieldTime>0){n.mode='recover';n.timer=.7;return;}source.state='open';source.openTime=EXPOSE_SECONDS;source.charge=1;n.mode='isolated';n.timer=EXPOSE_SECONDS;g.emit('infoshumTerminalOpen',{index:source.index,x:source.terminalX,y:source.terminalY});return;}
  for(const m of n.monitors)if(m.state==='open'){m.state='idle';m.openTime=0;}
  n.mode='transit';n.transitTime=0;n.timer=n.transitDuration;
  source.state='open';source.openTime=EXPOSE_SECONDS;source.charge=1;
@@ -79,7 +82,7 @@ function moveToNewScreen(g){
  const b=g.boss,n=b.network;n.activeIndex=n.toIndex;
  n.turn++;
  const dest=n.monitors[n.activeIndex];dest.state='occupied';
- syncBoss(b);n.mode='recover';n.timer=.65;
+ syncBoss(b);n.mode='recover';n.timer=.65;n.volley=0;
  g.emit('infoshumArrive',{index:n.activeIndex,x:dest.x+dest.w/2,y:dest.y+dest.h/2});
 }
 function beginRupture(g){
@@ -115,20 +118,21 @@ function rebuildArena(g){
 function beginFreed(g){
  const b=g.boss,n=b.network,r=rooms[g.room];
  rebuildArena(g);n.stage='free';n.mode='rest';n.timer=1;
- n.target=null;n.cycle=0;n.hitDelivered=false;
+ n.target=null;n.extraTargets=[];n.cycle=0;n.hitDelivered=false;
  b.phase=2;b.state='recover';b.x=r.x+r.width/2-b.w/2;b.y=92;
  b.dir=-1;b.cooldown=0;
  g.emit('infoshumFreed',{x:b.x+b.w/2,y:b.y+b.h/2});
 }
 function beginFinalAttack(g){
  const n=g.boss.network;n.target=targetSurface(g);
- n.mode=['slamWarning','waveWarning','rainWarning','beamWarning'][n.cycle%4];
+ n.extraTargets=neighborTargets(g,n.target);
+ n.mode=['slamWarning','waveWarning','rainWarning','beamWarning','platformWarning'][n.cycle%5];
  n.timer=n.mode==='waveWarning'?.9:1.05;
  g.emit('infoshumWarning',{x:n.target.x,y:n.target.y,attack:n.mode});
 }
 export function stepInfoshum(g,dt){
  const b=g.boss,n=b.network;if(!n||b.hp<=0)return;
- for(const m of n.monitors){m.destroyTime=Math.max(0,(m.destroyTime||0)-dt);if(m.state==='open'){
+ for(const m of n.monitors){m.destroyTime=Math.max(0,(m.destroyTime||0)-dt);m.shieldTime=Math.max(0,(m.shieldTime||0)-dt);m.guardFlash=Math.max(0,(m.guardFlash||0)-dt);if(m.state==='open'){
   m.openTime=Math.max(0,m.openTime-dt);
   m.charge=m.openTime/EXPOSE_SECONDS;
   if(!m.openTime)m.state=m.index===n.activeIndex?'occupied':'idle';
@@ -148,9 +152,9 @@ export function stepInfoshum(g,dt){
   n.timer-=dt;if(n.timer>0)return;
   if(n.mode==='charge'){
    if(n.attackKind==='wave')createWave(g,n);
-   else if(n.attackKind==='rain')createRain(g,n);else createPacket(g,n);
+   else if(n.attackKind==='rain')createRain(g,n);else if(n.attackKind==='platformPulse')platformPulse(g,n);else createPacket(g,n);
    n.mode='attack';n.timer=.37;b.state='network';
-  }else if(n.mode==='attack'){n.mode='rest';n.timer=.7;}
+  }else if(n.mode==='attack'){n.volley++;if(n.volley<2){chooseAttack(g);}else{n.mode='rest';n.timer=.7;}}
   else if(n.mode==='rest'){n.mode='transferWarning';n.timer=.8;n.toIndex=nextMonitor(n);
    g.emit('infoshumTransferWarning',{from:n.activeIndex,to:n.toIndex});
   }else if(n.mode==='transferWarning')beginDeparture(g);
@@ -158,31 +162,30 @@ export function stepInfoshum(g,dt){
   else chooseAttack(g);
   return;
  }
- // Freed form: four telegraphed attacks, each followed by a reachable exposed node.
+ // Freed form: five telegraphed attacks, each followed by a reachable exposed node.
  b.state=n.mode==='weak'?'recover':'windup';
  if(n.mode==='scan'){n.scanX=clamp(n.target.x-95+(1.25-n.timer)/1.25*190,n.target.left+12,n.target.right-12);if(g.overlap(g.player,{x:n.scanX-7,y:20,w:14,h:n.target.y-20}))g.hurt(false,n.scanX);}
  n.timer-=dt;if(n.timer>0)return;
  if(n.mode==='rest'){beginFinalAttack(g);}
+ else if(n.mode==='platformWarning'){platformPulse(g,n);n.mode='platformPulse';n.timer=.4;}
  else if(n.mode==='rainWarning'){createRain(g,n);n.mode='rain';n.timer=1;}
- else if(n.mode==='beamWarning'){n.mode='scan';n.timer=1.25;n.scanX=n.target.x-95;g.emit('bossCast',{boss:'infoshum',ability:'scan',x:n.scanX,y:n.target.y});}
- else if(n.mode==='rain'||n.mode==='scan'){if(n.mode==='scan')n.target.x=n.scanX;n.mode='weak';n.timer=2.25;}
+ else if(n.mode==='beamWarning'){if(n.extraTargets?.length)createRain(g,{...n,target:n.extraTargets[0],extraTargets:[]});n.mode='scan';n.timer=1.25;n.scanX=n.target.x-95;g.emit('bossCast',{boss:'infoshum',ability:'scan',x:n.scanX,y:n.target.y});}
+ else if(n.mode==='rain'||n.mode==='scan'||n.mode==='platformPulse'){if(n.mode==='scan')n.target.x=n.scanX;n.mode='weak';n.timer=2.25;}
  else if(n.mode==='waveWarning'){
-  createWave(g,n);n.mode='slamWarning';n.timer=1.05;n.target=targetSurface(g);
+  createWave(g,n);if(n.extraTargets?.length)createWave(g,{...n,target:n.extraTargets[0]});n.mode='slamWarning';n.timer=1.05;n.target=targetSurface(g);n.extraTargets=neighborTargets(g,n.target);
   g.emit('infoshumWarning',{x:n.target.x,y:n.target.y,attack:'tentacle'});
  }else if(n.mode==='slamWarning'){
-  strikeSurface(g,n);n.mode='slam';n.timer=.34;
+  strikeSurface(g,n);for(const t of n.extraTargets||[])strikeSurface(g,{...n,target:t});n.mode='slam';n.timer=.34;
  }else if(n.mode==='slam'){n.mode='weak';n.timer=2.25;
   g.emit('infoshumWeak',{x:n.target.x,y:n.target.y-40});
  }else if(n.mode==='weak'){n.cycle++;n.mode='rest';n.timer=.55;}
  else{n.mode='rest';n.timer=.7;}
 }
 function overloadMonitor(g,m){
- const b=g.boss,n=b.network;
- m.state='broken';m.destroyTime=.9;m.openTime=0;m.charge=0;n.lastMonitorIndex=m.index;
- n.defeatedMonitors++;b.hp=Math.max(0,b.hp-MONITOR_DAMAGE);
- b.hurtTime=.35;
- g.emit('bossHit',{boss:'infoshum',x:m.x+m.w/2,y:m.y+m.h/2});
- g.emit('infoshumMonitorDestroyed',{index:m.index,x:m.x+m.w/2,y:m.y+m.h/2});
+ const b=g.boss,n=b.network;m.armor=Math.max(0,(m.armor??2)-1);m.openTime=0;m.charge=0;b.hp=Math.max(0,b.hp-MONITOR_DAMAGE);b.hurtTime=.35;
+ if(m.armor>0){m.state='idle';m.shieldTime=6;m.guardFlash=.5;g.emit('infoshumArmorHit',{index:m.index,x:m.terminalX,y:m.terminalY});return;}
+ m.state='broken';m.destroyTime=.9;n.lastMonitorIndex=m.index;n.defeatedMonitors++;
+ g.emit('bossHit',{boss:'infoshum',x:m.x+m.w/2,y:m.y+m.h/2});g.emit('infoshumMonitorDestroyed',{index:m.index,x:m.x+m.w/2,y:m.y+m.h/2});
  if(n.defeatedMonitors===3)beginRupture(g);
 }
 export function strikeInfoshum(g,paw){
@@ -190,7 +193,7 @@ export function strikeInfoshum(g,paw){
  if(!b.active||!n||p.attack<=0||b.hp<=0)return false;
  if(n.stage==='network'){
   for(const m of n.monitors){
-   if(m.state!=='open'||m.lastSwing===p.swing)continue;
+   if(m.state!=='open'||m.shieldTime>0||m.lastSwing===p.swing)continue;
    const target={x:m.terminalX-23,y:m.terminalY-8,w:46,h:35};
    if(!g.overlap(paw,target))continue;
    m.lastSwing=p.swing;overloadMonitor(g,m);return true;

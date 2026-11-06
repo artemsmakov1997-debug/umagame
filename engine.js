@@ -1,3 +1,4 @@
+import {strikeAgitator} from './agitator-combat.js?v=0.21.5';
 import {beginBossDefeat,stepBossDefeat,skipBossDefeat} from './boss-defeat.js?v=0.21.5';
 import {stepConclusion,advanceConclusion} from './conclusion.js?v=0.21.5';
 import {signalProfile,stepSignalStory} from './signal.js?v=0.21.5';
@@ -187,7 +188,7 @@ export class Game {
     if(clue){this.clues.push({id:relay.id,room:relay.room,text:clue,effect});this.emit('clue',{room:relay.room,text:clue,effect,x:relay.x});}}}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
   const b=this.boss;
-  if(b.active&&b.room===this.room&&b.hp>0){stepBoss(this,dt);if(b.id==='infoshum'&&b.network){strikeInfoshum(this,paw);}else if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y});}bossContact(this);}
+  if(b.active&&b.room===this.room&&b.hp>0){stepBoss(this,dt);if(b.id==='infoshum'&&b.network){strikeInfoshum(this,paw);}else if(b.id==='agitator'&&b.broadcast){strikeAgitator(this,paw);if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;damageBoss(this,p.powerTime>0?2:1);}}else if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y});}bossContact(this);}
   if(this.mode==='playing')stepProjectiles(this,dt,paw);this.updateCamera(dt);
  }
 }
