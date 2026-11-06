@@ -56,9 +56,21 @@ test('location retry restores local boss and antennas while keeping earlier camp
 });
 
 test('the numerous primary enemies can pursue through a complete chapter rather than remaining on the first screen',()=>{
- for(const [type,room,index]of [['fakenews',1,21],['injection',5,23],['informant',3,21],['static',7,21]]){
+ for(const [type,room,index]of [['fakenews',1,19],['injection',5,23],['informant',3,21],['static',7,21]]){
   const g=ready(room),s=g.platforms.find(s=>s.room===room&&s.index===index),px=s.x+45,py=s.y-48,e=actor(type,room,100,0,{jumpCooldown:0,teleportCooldown:0});g.enemies=[e];let reached=false;
   for(let i=0;i<11000;i++){Object.assign(g.player,{x:px,y:py,grounded:true,supportId:s.id,inv:999});g.updateCamera();const before=e.x;g.step(1/60);if(['fakenews','injection'].includes(type))assert.ok(Math.abs(e.x-before)<65,'physical pursuit');if(Math.abs(e.x-px)<195&&Math.abs(e.y+e.h-s.y)<145){reached=true;break;}}
   assert.equal(reached,true,type+' crosses the chapter');assert.ok(e.x>rooms[room].x+1900,type+' reaches the final sector');
  }
+});
+test('the newsroom is one left-to-right route: three blocks, one node per block, ordinary jumps to the exit deck',()=>{
+ const g=ready(1);g.boss.active=false;const r=rooms[1],nodes=g.relays.filter(d=>d.room===1).sort((a,b)=>a.x-b.x);
+ assert.deepEqual(nodes.map(d=>Math.floor((d.x-r.x)/WIDTH)),[0,1,2]);
+ let x=r.x;for(const index of [1,2,6,7,8,9,10,11,12,16,17,18,19]){assert.ok(jumpTo(g,1,index),'newsroom:'+index);assert.ok(g.player.x>x-60,'route keeps moving right at '+index);x=g.player.x;}
+ assert.ok(g.player.x>r.x+2*WIDTH+300);assert.equal(g.health,4);
+});
+test('each newsroom block holds exactly one diary, placed evenly near its threshold on the main route',()=>{
+ const notes=createNotebooks().filter(n=>n.room===1&&!n.bossRecord),r=rooms[1];
+ assert.equal(notes.length,3);const offsets=notes.map(n=>n.x-r.x).sort((a,b)=>a-b);
+ assert.deepEqual(offsets.map(x=>Math.floor(x/WIDTH)),[0,1,2]);for(const x of offsets)assert.ok(x%WIDTH>=60&&x%WIDTH<=140,'diary near block threshold: '+x);
+ assert.deepEqual(notes.find(n=>n.id==='censor').scenes,['censor','spreader']);
 });

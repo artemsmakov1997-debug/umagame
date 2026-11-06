@@ -36,7 +36,8 @@ export function chooseFakeLanding(g,e){
  if(left>right)return null;const x=clamp(next===goal?p.x:destination.x+(destination.w-e.w)/2,left,right);
  const launchX=clamp(x>e.x?x-limit:x+limit,Math.max(source.x+10,e.origin),Math.min(source.x+source.w-e.w-10,e.end));
  if(Math.abs(x-e.x)>limit+3)return{platform:next,x,walkTarget:launchX,score:Math.abs(x-p.x)};
- const vx=(x-e.x)/time;return{platform:next,x,vx:destination.y>source.y+15?Math.sign(vx)*Math.max(Math.abs(vx),Math.min(250,Math.abs(x-e.x)/.9)):vx,score:Math.abs(x-p.x)};
+ // The 3 px reach tolerance above must never push the jump past its 250 px/s speed.
+ const vx=clamp((x-e.x)/time,-250,250);return{platform:next,x,vx:destination.y>source.y+15?Math.sign(vx)*Math.max(Math.abs(vx),Math.min(250,Math.abs(x-e.x)/.9)):vx,score:Math.abs(x-p.x)};
 }
 export function beginFakeJump(g,e){
  if(!['fakenews','injection'].includes(e.type)||e.state!=='patrol'||e.jumpPhase||e.jumpCooldown>0||e.hurtTime>0)return false;

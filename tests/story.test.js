@@ -50,7 +50,7 @@ test('a defeated miniboss yields one record and an optional notebook that surviv
 });
 
 test('printing belts and all other chapters are frozen until Uma enters them',()=>{
- const g=ready(),later=g.enemies.map(e=>[e.x,e.timer,e.active]);tick(g,120);assert.deepEqual(g.enemies.map(e=>[e.x,e.timer,e.active]),later);g.enemies=[];at(g,1,13,840);g.seenScenes.add('arrival1');const x=g.player.x;tick(g,30);assert.ok(g.player.x>x+9&&g.player.x<x+11);g.step(1/60,{jump:true});assert.ok(g.player.vy<0);
+ const g=ready(),later=g.enemies.map(e=>[e.x,e.timer,e.active]);tick(g,120);assert.deepEqual(g.enemies.map(e=>[e.x,e.timer,e.active]),later);g.enemies=[];at(g,1,13,900);g.seenScenes.add('arrival1');const x=g.player.x;tick(g,30);assert.ok(g.player.x>x+9&&g.player.x<x+11);g.step(1/60,{jump:true});assert.ok(g.player.vy<0);
 });
 test('all monster archetypes use separate motion and damage states',()=>{
  for(const id of ['fakenews','informant']){assert.ok(motion[id]);assert.notEqual(monsterFrame(id,0,{moving:true,walkTime:0}),monsterFrame(id,0,{moving:true,walkTime:.2}));assert.equal(monsterFrame(id,0,{state:'windup'}),3);assert.equal(monsterFrame(id,0,{state:'casting'}),4);assert.equal(monsterFrame(id,0,{hurtTime:.2}),5);}

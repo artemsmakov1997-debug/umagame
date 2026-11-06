@@ -29,7 +29,7 @@ test('down crouches with feet fixed and reduces both height and movement speed',
  const g=isolated(),feet=g.player.y+48,x=g.player.x;tick(g,30,{right:true,down:true});assert.equal(g.player.sneaking,true);assert.equal(g.player.h,26);assert.equal(g.player.y+g.player.h,feet);assert.ok(Math.abs(g.player.x-x-31)<.001);g.step(1/60,{});assert.equal(g.player.h,48);assert.equal(g.player.y+g.player.h,feet);
 });
 test('jump, paw and dash break stealth instead of silently attacking',()=>{
- for(const action of ['jump','attack','dash']){const g=isolated();g.step(1/60,{down:true});g.step(1/60,{down:true,[action]:true});assert.equal(g.player.sneaking,false,action);assert.equal(g.player.h,48,action);}
+ for(const action of ['jump','attack','dash']){const g=isolated(1,2,340);g.step(1/60,{down:true});g.step(1/60,{down:true,[action]:true});assert.equal(g.player.sneaking,false,action);assert.equal(g.player.h,48,action);}
 });
 test('Uma can creep through an unalarmed Panicker without contact damage or a portal',()=>{
  const g=isolated(5,0,45),e=enemy('panicker',5,125,0,{noticed:false,dir:1,speed:9});g.enemies=[e];tick(g,155,{down:true,right:true});assert.ok(g.player.x>e.x+e.w);assert.equal(g.health,4);assert.equal(e.noticed,false);assert.equal(e.state,'patrol');assert.equal(g.portals.length,0);assert.equal(g.enemies.length,1);
@@ -98,7 +98,7 @@ test('all gameplay timers, warnings, portal growth, buffs and transitions freeze
  const g=isolated(5);g.enemies=[enemy('panicker',5,125)];alertNearby(g,g.enemies[0]);g.player.powerTime=7;g.transition={from:4,to:5,time:.2,duration:.85};g.mode='paused';const snapshot=JSON.stringify(g);tick(g,150,{right:true,attack:true});assert.equal(JSON.stringify(g),snapshot);
 });
 test('one paw destroys a satellite dish and opens its gate even while a defender is alive',()=>{
- const g=isolated(1,7,4),r=g.relays[0],e=enemy('fakenews',1,62,7,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence.length,0);assert.equal(g.relays.filter(d=>d.room===1&&d.hp>0).length,2);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,0);
+ const g=isolated(1,6,572),r=g.relays[0],e=enemy('fakenews',1,640,6,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence.length,0);assert.equal(g.relays.filter(d=>d.room===1&&d.hp>0).length,2);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,0);
 });
 
 test('checkpoint retry preserves records, open gates and collections but resets local enemies and portals',()=>{
