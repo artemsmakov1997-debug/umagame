@@ -38,7 +38,7 @@ function crt(c,a,m,n,time){
  if(frame===3){point(c,m.x+m.w/2,m.y+m.h/2,48,time,magenta);}
  if(frame===4){point(c,m.x+m.w/2,m.y+m.h/2,72,time,magenta);}
  if((m.state!=='open'||m.shieldTime>0)&&m.state!=='broken'&&n.stage==='network')drawPixelBarrier(c,m.x+m.w/2,m.y+55,m.w*.56,105,{time,alpha:m.shieldTime>0?.8:.45,flash:m.guardFlash});
- if(m.state==='open'&&m.shieldTime<=0){c.save();c.strokeStyle='#ff74d5';c.lineWidth=3;c.globalAlpha=.5+.5*Math.abs(Math.sin(time*8));c.strokeRect(m.x-16,m.y-14,m.w+32,m.h+34);c.restore();}
+ // The hittable terminal below is marked by target-highlight.js; the screen itself is not a target.
 }
 function terminal(c,a,m,n,time){
  if(n.stage!=='network')return;
