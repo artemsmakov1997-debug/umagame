@@ -26,6 +26,7 @@ import {drawHud} from './hud.js?v=0.21.5';
 import {drawNotebook} from './notebook-art.js?v=0.21.5';
 import {drawMovingRails,drawLifeCaches,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.21.5';
 import {drawArenaBoss} from './boss-art.js?v=0.21.5';
+import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
 import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.21.5';
@@ -77,7 +78,7 @@ export class Renderer{
   }
   drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
-  drawArenaBoss(c,a,g,t);
+  drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t);
   drawLifeCaches(c,g,t);
   for(const f of g.fishes)if(f.room===g.room&&!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(soup.room===g.room&&!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
