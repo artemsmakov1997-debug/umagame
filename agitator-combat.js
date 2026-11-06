@@ -1,6 +1,9 @@
-export const BROADCAST_TIME=75;
+// Phase 1 (shield): aimed headlines only. Phase 2 (chase): the repulsion wave joins the escape.
+export const HEADLINE_REST=1.8;
+export const WAVE_PERIOD=2.8,WAVE_WARNING=.6;
+export const HOP_DURATION=.7,HOLD_TIME=2.1;
 export const AGITATOR_DOCKS=[1,8,10,3,6,8,1,7,9,2,5,7];
-export function createBroadcastFight(){return {stage:'shield',mode:'rest',timer:1.2,turn:0,fill:0,elapsed:0,route:0,wave:null,antennas:[2,3].map((platformIndex,index)=>({index,platformIndex,hits:0,locked:false,lockTime:0,flash:0,turnTime:0,lastSwing:-1}))};}
+export function createBroadcastFight(){return {stage:'shield',mode:'rest',timer:1.2,turn:0,route:0,wave:null,waveTimer:WAVE_PERIOD,waveWarned:false,antennas:[2,3].map((platformIndex,index)=>({index,platformIndex,hits:0,locked:false,lockTime:0,flash:0,turnTime:0,lastSwing:-1}))};}
 export function antennaStation(g,a){const s=g.platforms.find(s=>s.room===4&&s.index===a.platformIndex);return {platform:s,x:s.x+s.w/2+(a.index?-15:15),y:s.y};}
 function settle(g,index){const b=g.boss,s=g.platforms.find(s=>s.room===4&&s.index===index);b.x=s.x+(s.w-b.w)/2;b.y=s.y-b.h;b.platformIndex=index;b.dir=g.player.x<b.x?-1:1;}
 function headline(g){
@@ -8,11 +11,11 @@ function headline(g){
  g.bolts.push({room:4,kind:'headline',visual:'agitator',x:source.x-38,y:source.y-12,w:76,h:25,vx:dx/len*205,vy:dy/len*205,ttl:6});
  n.mode='headline';n.timer=.8;g.emit('bossCast',{boss:b.id,ability:'headline',x:source.x,y:source.y});
 }
-function sonic(g){const b=g.boss,n=b.broadcast;n.wave={x:b.x+b.w/2,y:b.y+b.h*.55,radius:10,age:0,hit:false};n.mode='sonic';n.timer=.8;g.emit('bossCast',{boss:b.id,ability:'sonic',x:b.x,y:b.y});}
+function sonic(g){const b=g.boss,n=b.broadcast;n.wave={x:b.x+b.w/2,y:b.y+b.h*.55,radius:10,age:0,hit:false};g.emit('bossCast',{boss:b.id,ability:'sonic',x:b.x,y:b.y});}
 function startHop(g){
  const b=g.boss,n=b.broadcast;n.route=(n.route+1)%AGITATOR_DOCKS.length;
  const s=g.platforms.find(s=>s.room===4&&s.index===AGITATOR_DOCKS[n.route]);
- n.from={x:b.x,y:b.y};n.to={x:s.x+(s.w-b.w)/2,y:s.y-b.h,platformIndex:s.index};n.mode='hop';n.timer=1;n.hopDuration=1;
+ n.from={x:b.x,y:b.y};n.to={x:s.x+(s.w-b.w)/2,y:s.y-b.h,platformIndex:s.index};n.mode='hop';n.timer=HOP_DURATION;n.hopDuration=HOP_DURATION;
  b.state='shift';g.emit('bossShift',{boss:b.id,x:n.to.x,y:n.to.y});
 }
 export function stepAgitator(g,dt){
@@ -24,22 +27,25 @@ export function stepAgitator(g,dt){
   if(w.age>2.5)n.wave=null;
  }
  if(n.stage==='break'){
-  n.timer-=dt;b.state='phaseChange';if(n.timer<=0){n.stage='chase';n.mode='hold';n.timer=2.5;b.phase=2;b.state='recover';n.elapsed=0;n.fill=0;}return;
+  n.timer-=dt;b.state='phaseChange';if(n.timer<=0){n.stage='chase';n.mode='hold';n.timer=HOLD_TIME;b.phase=2;b.state='recover';n.waveTimer=1.5;n.waveWarned=false;}return;
  }
  if(n.stage==='shield'){
   settle(g,1);b.state=n.mode==='warning'?'windup':n.mode==='rest'?'recover':'casting';
   n.timer-=dt;if(n.timer>0)return;
-  if(n.mode==='warning'){if(n.turn%2)headline(g);else sonic(g);n.turn++;}
-  else{n.mode='warning';n.timer=1;g.emit('bossWarning',{boss:b.id,ability:n.turn%2?'headline':'sonic',x:b.x,y:b.y});}return;
+  if(n.mode==='warning'){headline(g);n.turn++;}
+  else if(n.mode==='headline'){n.mode='rest';n.timer=HEADLINE_REST;}
+  else{n.mode='warning';n.timer=1;g.emit('bossWarning',{boss:b.id,ability:'headline',x:b.x,y:b.y});}return;
  }
- n.elapsed+=dt;n.fill=Math.min(1,n.elapsed/BROADCAST_TIME);
- if(n.fill>=1){g.emit('broadcastLost');g.loseLife('interference');if(g.testingInvulnerable){n.elapsed=BROADCAST_TIME*.82;n.fill=.82;}return;}
+ // Chase: the wave fires on its own rhythm from wherever the Agitator is, hop or hold.
+ n.waveTimer-=dt;
+ if(!n.waveWarned&&n.waveTimer<=WAVE_WARNING){n.waveWarned=true;g.emit('bossWarning',{boss:b.id,ability:'sonic',x:b.x,y:b.y});}
+ if(n.waveTimer<=0){sonic(g);n.waveTimer=WAVE_PERIOD;n.waveWarned=false;}
  if(n.mode==='hop'){
   n.timer=Math.max(0,n.timer-dt);const t=1-n.timer/n.hopDuration;
   b.x=n.from.x+(n.to.x-n.from.x)*t;b.y=n.from.y+(n.to.y-n.from.y)*t-Math.sin(t*Math.PI)*80;b.dir=n.to.x>n.from.x?1:-1;b.state='shift';
-  if(n.timer===0){Object.assign(b,n.to);n.mode='hold';n.timer=2.6;b.state='recover';}return;
+  if(n.timer===0){Object.assign(b,n.to);n.mode='hold';n.timer=HOLD_TIME;b.state='recover';}return;
  }
- b.state='recover';b.dir=g.player.x<b.x?-1:1;n.timer-=dt;
+ b.state=n.waveWarned?'windup':'recover';b.dir=g.player.x<b.x?-1:1;n.timer-=dt;
  if(n.timer<=0)startHop(g);
 }
 export function strikeAgitator(g,paw){

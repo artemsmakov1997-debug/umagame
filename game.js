@@ -86,7 +86,7 @@ async function boot(){
   if(event.type==='voiceEcho')notify(event.text,4800);
   if(event.type==='bossDefeatStart'){clearInput();clearEffects();}
    if(event.type==='antennaHit')notify('Попадание '+event.hits+'/3. Чередуй антенны!',2800);
-   if(event.type==='broadcastLost')notify(game.testingInvulnerable?'Тестовая защита: помехи достигли предела.':'Помехи заполнили эфир. Потеряна жизнь.',3000);
+   if(event.type==='interferenceLost')notify(game.testingInvulnerable?'Тестовая защита: помехи достигли предела.':'Помехи заполнили эфир. Потеряна жизнь.',3000);
    if(event.type==='broadcastShieldBreak')notify('Щит разрушен! Догони Агитатора до заполнения помех.',3600);
    if(event.type==='infoshumArmorHit')notify('Защита ослабла. Для второго удара дождись нового окна.',3400);
    if(event.type==='infoshumTransfer')notify('Инфошум ушёл из экрана! Бей по засветившемуся пульту.',3500);

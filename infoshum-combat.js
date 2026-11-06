@@ -5,6 +5,8 @@ const STAGE_ROOM=8;
 const MONITOR_DAMAGE=2;
 const CORE_DAMAGE=4;
 const EXPOSE_SECONDS=5.4;
+// Final phase pressure: interference fills the screen; at 100 % Uma loses a life (test protection buys time).
+export const NOISE_TIME=60;
 
 export function createInfoshumNetwork(room=STAGE_ROOM){
  const base=rooms[room].x;
@@ -117,7 +119,7 @@ function rebuildArena(g){
 }
 function beginFreed(g){
  const b=g.boss,n=b.network,r=rooms[g.room];
- rebuildArena(g);n.stage='free';n.mode='rest';n.timer=1;
+ rebuildArena(g);n.stage='free';n.mode='rest';n.timer=1;n.noise=0;n.noiseTime=0;
  n.target=null;n.extraTargets=[];n.cycle=0;n.hitDelivered=false;
  b.phase=2;b.state='recover';b.x=r.x+r.width/2-b.w/2;b.y=92;
  b.dir=-1;b.cooldown=0;
@@ -162,7 +164,9 @@ export function stepInfoshum(g,dt){
   else chooseAttack(g);
   return;
  }
- // Freed form: five telegraphed attacks, each followed by a reachable exposed node.
+ // Freed form: five telegraphed attacks, each followed by a reachable exposed node, while interference rises.
+ n.noiseTime=(n.noiseTime||0)+dt;n.noise=Math.min(1,n.noiseTime/NOISE_TIME);
+ if(n.noise>=1){g.emit('interferenceLost');g.loseLife('interference');if(g.testingInvulnerable){n.noiseTime=NOISE_TIME*.82;n.noise=.82;}return;}
  b.state=n.mode==='weak'?'recover':'windup';
  if(n.mode==='scan'){n.scanX=clamp(n.target.x-95+(1.25-n.timer)/1.25*190,n.target.left+12,n.target.right-12);if(g.overlap(g.player,{x:n.scanX-7,y:20,w:14,h:n.target.y-20}))g.hurt(false,n.scanX);}
  n.timer-=dt;if(n.timer>0)return;
