@@ -1,5 +1,8 @@
 import {rooms,platforms} from './level.js?v=0.21.5';
 export const sectionNames={1:['Редакционный зал','Печатный цех','Серверная'],3:['Переулок антенн','Рекламные крыши','Мачтовый квартал'],5:['За кулисами','Подвижная сцена','Монтажная'],7:['Бумажные острова','Разбитые отражения','Порог Инфошума']};
+// The newsroom press: its head spans this local x range; the lower-path hazard of that block follows it.
+export const PRESS={x:1007,w:153,section:1};
+export function hazardZone(room,section){return room===1&&section===PRESS.section?[PRESS.x-768,PRESS.x-768+PRESS.w]:[260,370];}
 export const propKinds={1:'server',3:'power',5:'console',7:'anchor'};
 export function createMapProps(){return [1,3,5,7].flatMap(room=>(room===5?[12,22]:room===1?[10,17]:[10,20]).map((index,i)=>{const p=platforms.find(p=>p.room===room&&p.index===index);return{id:`control-${room}-${i}`,room,platformIndex:index,kind:propKinds[room],x:p.x+p.w-66,y:p.y-62,w:48,h:62,hp:1,breakTime:0,lastSwing:-1,section:i+1};}));}
 export function createRoutePortals(){return [3,5,7].flatMap(room=>[0,1].map(i=>({room,id:`burrow-${room}-${i}`,fromIndex:room===3?(i?12:9):room===5?(i?24:15):(i?22:13),toIndex:room===3?(i?25:17):room===5?(i?27:19):(i?25:17),cooldown:0})));}
@@ -30,7 +33,7 @@ export function stepLocationHazards(g,dt){
  const p=g.player,index=Math.min(2,Math.max(0,Math.floor((p.x-rooms[g.room].x)/768))),control=g.mapProps.find(d=>d.room===g.room&&d.section===index);
  if(index===0||!control?.hp)return;
  const t=(g.time+index*.8)%5,local=p.x-rooms[g.room].x-index*768;
- if(t<1.2||t>2.2||local<260||local>370)return;
+ const [from,to]=hazardZone(g.room,index);if(t<1.2||t>2.2||local<from||local>to)return;
  if(g.room===3){if(!p.knock)g.push(-1,p.x+100);}
  else if(g.room===7){p.vy=Math.min(p.vy,-230);p.grounded=false;}
  else if(g.room===1?p.y+p.h>360:p.y>180)g.hurt(false,p.x+100);
