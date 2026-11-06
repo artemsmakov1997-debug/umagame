@@ -22,7 +22,7 @@ export function drawBossHud(c,a,g,width,{y=8}={}){
  rect(c,barX-4,y-3,barW+10,58,'#02091be8');c.drawImage(portrait(a,b.id),x,y-5,face,face);
  rect(c,barX-2,y+3,barW+4,16,style.edge);rect(c,barX,y+5,barW,12,style.dark);
  rect(c,barX+2,y+7,(barW-4)*Math.max(0,b.hp/b.maxHp),8,style.fill);rect(c,barX+2,y+7,(barW-4)*Math.max(0,b.hp/b.maxHp),2,'#ffe8c3');
- for(const fraction of b.network?[20/32,24/32,28/32]:[1/3,2/3])rect(c,barX+barW*fraction,y+5,2,12,'#020817');
+ for(const fraction of b.network?[20/32,24/32,28/32]:b.id==='spreader'?Array.from({length:b.maxHp-1},(_,i)=>(i+1)/b.maxHp):[1/3,2/3])rect(c,barX+barW*fraction,y+5,2,12,'#020817');
  c.save();c.font=`${width<360?17:20}px UmaText, monospace`;c.fillStyle='#ffe4b1';c.textAlign='center';c.textBaseline='top';c.fillText(style.name,barX+barW/2,y+24,barW);c.restore();
  if(style.kind==='paper')for(let i=0;i<3;i++)rect(c,x+7+i*7,y+43,4,3,style.edge);
  if(style.kind==='broadcast')for(let i=0;i<6;i++){const hit=b.broadcast?.antennas[Math.floor(i/3)]?.hits??0;rect(c,barX+i*10+(i>=3?5:0),y+47,7,5,i%3<hit?'#73f6ff':'#455776');}

@@ -26,6 +26,7 @@ import {drawHud} from './hud.js?v=0.21.5';
 import {drawNotebook} from './notebook-art.js?v=0.21.5';
 import {drawMovingRails,drawLifeCaches,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.21.5';
 import {drawArenaBoss} from './boss-art.js?v=0.21.5';
+import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
@@ -66,7 +67,7 @@ export class Renderer{
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawPlatformShadow(c,g,platform);
-   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
+   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(platform.shelter&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
    drawPlatformRim(c,g,platform,t);
   }
   for(const ladder of ladders){

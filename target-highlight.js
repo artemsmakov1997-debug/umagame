@@ -1,11 +1,13 @@
 import {rect} from './pixel.js?v=0.21.5';
 import {antennaStation} from './agitator-combat.js?v=0.21.5';
+import {spreaderExposed} from './spreader-combat.js?v=0.21.5';
 // Boss targets: a soft pulsing glow on exactly the area a paw swing must touch, plus a small
 // bobbing chevron above it. Only targets that can be hit right now are marked.
 export const TARGET_GOLD='#ffd36e',TARGET_PINK='#ff7fd8';
 
 export function bossTargets(g){
  const b=g.boss,out=[];if(!b?.active||b.hp<=0||g.mode!=='playing'&&g.mode!=='paused')return out;
+ if(g.room===2&&b.id==='spreader'&&spreaderExposed(b))out.push({id:'spreader',x:b.x-4,y:b.y+6,w:b.w+8,h:b.h-6,color:TARGET_GOLD});
  const n=b.broadcast;
  if(g.room===4&&n){
   if(n.stage==='shield')for(const a of n.antennas){
