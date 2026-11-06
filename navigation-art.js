@@ -1,7 +1,7 @@
 import {rooms,PORTAL_ROOM,PORTAL_X,LAST_ROOM} from './level.js?v=0.21.5';
 import {canLeaveRoom} from './room-transitions.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
-export function exitMarker(g){if(g.room===LAST_ROOM||!canLeaveRoom(g))return null;const r=rooms[g.room];return{x:g.room===PORTAL_ROOM?PORTAL_X-80:r.end-70,y:g.room===0?200:172};}
+export function exitMarker(g){if(g.room===LAST_ROOM||!canLeaveRoom(g))return null;const r=rooms[g.room];return{x:g.room===PORTAL_ROOM?PORTAL_X-80:r.end-70,y:g.room===0?196:172};}
 const arrow=['0000000011000000','0000000011100000','0000000011110000','0111111111111000','0111111111111100','0111111111111110','0111111111111100','0111111111111000','0000000011110000','0000000011100000','0000000011000000'];
 export function drawExitArrow(c,g,time,width){if(g.room===LAST_ROOM||g.mode!=='playing')return;let mark=exitMarker(g),locked=!mark;if(locked){if(rooms[g.room].end-g.player.x>260)return;mark={x:rooms[g.room].end-70,y:172};}const off=mark.x>g.camera+width-48,x=Math.round(off?g.camera+width-42:mark.x+(locked?0:Math.sin(time*2.6)*2)),y=off?62:mark.y,theme=rooms[g.room].theme;
  // A bevelled sign sits on a material-specific bracket, rather than a triangle and stick.

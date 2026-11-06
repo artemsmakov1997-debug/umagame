@@ -1,10 +1,10 @@
-import test from 'node:test';import {exposeSpreader} from '../spreader-combat.js';import assert from 'node:assert/strict';
+import test from 'node:test';import {completeTutorial} from './navigation.js';import {exposeSpreader} from '../spreader-combat.js';import assert from 'node:assert/strict';
 import {Game} from '../engine.js';import {rooms,enemy} from '../level.js';import {activateRoom,canLeaveRoom} from '../room-transitions.js';
 import {stepBoss,planAttack,damageBoss} from '../boss.js';import {phasePattern,phasePlans} from '../boss-phases.js';import {stepMapProps,stepSection,stepLocationHazards} from '../chapter-routes.js';import {chapterStories} from '../chapter-story.js';
 import {jumpTo,walkTo,antennaRoutes} from './navigation.js';
 const tick=(g,n,i={})=>{for(let k=0;k<n;k++)g.step(1/60,i);};
 function ready(room=1,cinematic=false){const g=new Game({story:false,cinematic});g.start();activateRoom(g,room);g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.player.inv=0;g.boss.noticeTime=0;return g;}
-test('leaving the quiet room never depends on a lesson, notebook, jump or ladder flag',()=>{const g=new Game({story:false});g.start();assert.equal(canLeaveRoom(g),true);Object.assign(g.player,{x:715,y:426,vx:0,grounded:true,supportId:'0:5'});tick(g,100,{right:true});assert.equal(g.room,1);assert.equal(g.tutorial.jumped,false);assert.equal(g.tutorial.climbed,0);assert.equal(g.tutorial.complete,false);});
+test('leaving the quiet room needs only the broken monitor, never a notebook',()=>{const g=new Game({story:false});g.start();assert.equal(canLeaveRoom(g),false);assert.equal(completeTutorial(g,{exit:true}),true);while(g.mode==='loading')tick(g,1);assert.equal(g.room,1);assert.ok(g.notebooks.every(n=>!n.taken));});
 test('Agitator has two explicit stages and HP alone cannot bypass the console shield',()=>{const g=ready(4),b=g.boss;b.hp=1;stepBoss(g,1/60);assert.equal(b.phase,1);assert.equal(damageBoss(g,99,true),false);assert.equal(b.broadcast.stage,'shield');assert.equal(b.broadcast.antennas.length,2);});
 
 function expectedAbilities(id){return {spreader:['scatter','summon','ink','copy','swoop'],agitator:['telecast','summon','pressure','alarm','broadcast'],manipulator:['ticker','summon','cut','splice','spotlight'],infoshum:['volley','wave','rain','summon','echoPulse','staticRush','lure','copy','cut','splice']}[id];}

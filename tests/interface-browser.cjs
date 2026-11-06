@@ -21,7 +21,7 @@ const{open,shot,fixture}=require('./browser-helpers.cjs');
   if(width>=1000){
    assert.equal(await p.evaluate(()=>testGame.camera),0);assert.equal(await p.evaluate(()=>testGame.viewWidth),768);
    const full=await p.evaluate(()=>{const g=testGame,c=testRenderer.c,vw=c.canvas.width,s=Math.min(vw/768,480/512);return{left:(vw-768*s)/2,right:(vw+768*s)/2,top:(480-512*s)/2,bottom:(480+512*s)/2,width:vw,sourceWidth:testRenderer.backdrops[0].width};});
-   assert.ok(full.left>=0&&full.right<=full.width+.01&&full.top>=0&&full.bottom<=480.01);assert.equal(full.sourceWidth,768,'quiet room contains one complete painted room, without mirrored copies');
+   assert.ok(full.left>=0&&full.right<=full.width+.01&&full.top>=0&&full.bottom<=480.01);assert.equal(full.sourceWidth,1536,'quiet room is two different painted screens, without mirrored copies');
   }
   await shot(p,'complete-room-separated-hud-'+width);
   await fixture(p,2);await p.evaluate(async()=>{const{activateRoom}=await import('./room-transitions.js?v=0.21.5');activateRoom(testGame,2);testGame.enemies=[];testGame.notebooks=[];testGame.boss.noticeTime=999;testGame.step=()=>{};});await p.waitForTimeout(90);

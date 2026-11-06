@@ -47,14 +47,16 @@ const glyphs={
  ' ':['000','000','000','000','000','000','000']
 };
 Object.assign(glyphs,{
- A:glyphs['А'],D:['11110','10001','10001','10001','10001','10001','11110'],
+ A:glyphs['А'],D:['11110','10001','10001','10001','10001','10001','11110'],I:['01110','00100','00100','00100','00100','00100','01110'],F:['11111','10000','10000','11110','10000','10000','10000'],
  W:['10001','10001','10001','10101','10101','11011','10001'],S:['01111','10000','10000','01110','00001','00001','11110'],
  '←':['00000','00100','01000','11111','01000','00100','00000'],
  '→':['00000','00100','00010','11111','00010','00100','00000'],
  '↑':['00100','01110','10101','00100','00100','00100','00000'],
  '↓':['00000','00100','00100','00100','10101','01110','00100']
 });
-export function text(ctx,str,x,y,color='#ffdf9c',scale=1,weight=0){ctx.fillStyle=color;let cursor=Math.round(x);for(const char of str.toUpperCase().replaceAll('Ё','Е')){const g=glyphs[char]||glyphs[' '];for(let row=0;row<7;row++)for(let col=0;col<g[row].length;col++)if(g[row][col]==='1')ctx.fillRect(cursor+col*scale,Math.round(y)+row*scale,scale+weight,scale+weight);cursor+=(g[0].length+1)*scale;}return cursor-x;}
+// Latin capitals that share a shape with Cyrillic reuse those glyphs (SHIFT, X, A D…).
+const LATIN={A:'А',B:'В',C:'С',E:'Е',H:'Н',K:'К',M:'М',O:'О',P:'Р',T:'Т',X:'Х',Y:'У'};
+export function text(ctx,str,x,y,color='#ffdf9c',scale=1,weight=0){ctx.fillStyle=color;let cursor=Math.round(x);for(const char of [...str.toUpperCase().replaceAll('Ё','Е')].map(c=>LATIN[c]||c)){const g=glyphs[char]||glyphs[' '];for(let row=0;row<7;row++)for(let col=0;col<g[row].length;col++)if(g[row][col]==='1')ctx.fillRect(cursor+col*scale,Math.round(y)+row*scale,scale+weight,scale+weight);cursor+=(g[0].length+1)*scale;}return cursor-x;}
 export function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h);}
 export function heart(c,x,y,on=true){const col=on?'#f27679':'#33495e';['0110110','1111111','1111111','0111110','0011100','0001000'].forEach((r,j)=>[...r].forEach((v,i)=>{if(v==='1')rect(c,x+i,y+j,1,1,col);}));}
 // Heavy 8×8 display lettering for the title from the approved mockup.

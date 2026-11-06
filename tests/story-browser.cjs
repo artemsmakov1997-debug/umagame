@@ -7,15 +7,25 @@ async function allDialogues(page,label){
   base??={h:m.panel.height,y:m.actions.y-m.panel.y};assert.equal(m.panel.height,base.h,`${label} ${id} window height`);assert.ok(Math.abs(m.actions.y-m.panel.y-base.y)<1,`${label} ${id} stable actions`);assert.ok(m.fit,`${label} ${id} page ${index}: ${text}`);assert.ok(!m.overflow,`${label} page fits`);assert.ok(Math.abs(m.portrait.height-(m.panel.height-4))<=3,`${label} full-height portrait`);assert.ok(m.text.bottom<=m.actions.top+1);for(const b of m.buttons){assert.ok(b.right<=m.panel.right+1,`${label} button fits`);assert.ok(b.height>=36);}
  }
 }
+// Quiet-room course with real keys / touches: run, crawl under the bench, dash the barrier, jump the gap, paw the monitor.
 async function desktopTraining(page){
- await page.keyboard.down('ArrowRight');await page.waitForFunction(()=>testGame.player.x>=162);await page.keyboard.press('ArrowUp');await page.waitForFunction(()=>testGame.player.x>=418);await page.keyboard.up('ArrowRight');await page.keyboard.down('ArrowUp');await page.waitForFunction(()=>testGame.player.climbing);await shot(page,'uma-ladder');await page.waitForFunction(()=>testGame.tutorial.complete);await page.keyboard.up('ArrowUp');
- assert.equal(await page.evaluate(()=>testGame.tutorial.step),3);assert.equal(await page.evaluate(()=>testGame.lives),3);assert.equal(await page.evaluate(()=>testGame.health),4);assert.equal(await page.evaluate(()=>testGame.enemies.some(e=>e.active)),false);
+ const at=x=>page.waitForFunction(x=>testGame.player.x>=x,x);
+ await page.keyboard.down('ArrowRight');await at(430);await page.keyboard.down('ArrowDown');await at(610);await page.keyboard.up('ArrowDown');await shot(page,'tutorial-bench');
+ await at(690);await page.keyboard.press('ShiftLeft');await page.waitForFunction(()=>testGame.tutorial.barrierBroken);await shot(page,'tutorial-barrier-broken');
+ await at(880);await page.keyboard.press('ArrowUp');await at(1135);await page.keyboard.up('ArrowRight');await page.waitForFunction(()=>testGame.player.grounded&&Math.abs(testGame.player.vx)<1);
+ await page.keyboard.press('KeyX');await page.waitForFunction(()=>testGame.tutorial.doorOpen);await shot(page,'tutorial-door-open');
+ assert.equal(await page.evaluate(()=>testGame.tutorial.step),5);assert.equal(await page.evaluate(()=>testGame.tutorial.complete),true);assert.equal(await page.evaluate(()=>testGame.lives),3);assert.equal(await page.evaluate(()=>testGame.health),4);assert.equal(await page.evaluate(()=>testGame.enemies.some(e=>e.active)),false);
 }
 async function mobileTraining(page,cdp){
- const pad=await page.locator('#stick-pad').boundingBox(),jump=await page.locator('[data-touch-action=jump]').boundingBox(),point=(id,x,y)=>({id,x,y,radiusX:3,radiusY:3});let stick=point(1,pad.x+pad.width*.3,pad.y+pad.height*.65),points=[stick];
- await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points});stick.x+=48;await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:points});await page.waitForFunction(()=>testGame.player.x>=162);
- points.push(point(2,jump.x+jump.width/2,jump.y+jump.height/2));await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points});await page.waitForFunction(()=>testGame.player.vy<0);const lifted=points.pop();await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[lifted]});await page.waitForFunction(()=>testGame.player.x>=418);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
- stick=point(3,pad.x+pad.width*.3,pad.y+pad.height*.65);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[stick]});stick.y-=48;await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[stick]});await page.waitForFunction(()=>testGame.player.climbing);await page.waitForFunction(()=>testGame.tutorial.complete);await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});assert.equal(await page.evaluate(()=>testGame.health),4);
+ const box=s=>page.locator(s).boundingBox(),pad=await box('#stick-pad'),button=async a=>{const b=await box(`[data-touch-action=${a}]`);return{x:b.x+b.width/2,y:b.y+b.height/2};},point=(id,x,y)=>({id,x,y,radiusX:3,radiusY:3}),touch=(type,touchPoints)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints});
+ const at=x=>page.waitForFunction(x=>testGame.player.x>=x,x),centre={x:pad.x+pad.width*.5,y:pad.y+pad.height*.5};let stick=point(1,centre.x,centre.y);
+ const tap=async(action,id)=>{const b=await button(action);await touch('touchStart',[stick,point(id,b.x,b.y)]);await page.waitForTimeout(50);await touch('touchEnd',[point(id,b.x,b.y)]);};
+ await touch('touchStart',[stick]);stick.x+=48;await touch('touchMove',[stick]);await at(430);
+ stick.x=centre.x+34;stick.y=centre.y+40;await touch('touchMove',[stick]);await at(610);stick.x=centre.x+48;stick.y=centre.y;await touch('touchMove',[stick]);
+ await at(690);await tap('dash',2);await page.waitForFunction(()=>testGame.tutorial.barrierBroken);
+ await at(880);await tap('jump',3);await at(1135);await touch('touchEnd',[stick]);await page.waitForFunction(()=>testGame.player.grounded&&Math.abs(testGame.player.vx)<1);
+ await page.evaluate(()=>testGame.player.dir=1);const paw=await button('attack');await touch('touchStart',[point(4,paw.x,paw.y)]);await page.waitForFunction(()=>testGame.tutorial.doorOpen);await touch('touchEnd',[point(4,paw.x,paw.y)]);
+ assert.equal(await page.evaluate(()=>testGame.tutorial.complete),true);assert.equal(await page.evaluate(()=>testGame.health),4);
 }
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||undefined,args:['--no-sandbox']});const errors=[],p=await browser.newPage({viewport:{width:1536,height:1100}});p.on('pageerror',e=>errors.push(e.message));await open(p);assert.equal(await p.locator('[data-menu=exit]').count(),0);assert.equal(await p.locator('#menu-screen').isVisible(),true);assert.equal(await p.evaluate(()=>testUI.view),'menu');await begin(p,{wake:false,intro:false});await p.keyboard.press('Escape');const wt=await p.evaluate(()=>testGame.wakeTime);await p.waitForTimeout(100);assert.equal(await p.evaluate(()=>testGame.wakeTime),wt);await p.keyboard.press('Escape');await p.click('#wake-skip');

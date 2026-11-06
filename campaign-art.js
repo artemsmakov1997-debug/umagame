@@ -9,7 +9,7 @@ export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
   if(room.index===2){canvas.height=480;const image=assets.spreaderArena,scale=Math.max(canvas.width/image.width,480/image.height);c.drawImage(image,(canvas.width-image.width*scale)/2,(480-image.height*scale)/2,image.width*scale,image.height*scale);return canvas;}
-  if(room.tutorial){c.drawImage(assets.cozy,0,0,768,512);return canvas;}
+  if(room.tutorial){c.drawImage(assets.cozy,0,0,768,512);if(assets.tutorialRoom){c.drawImage(assets.tutorialRoom,768,0,768,512);c.drawImage(assets.tutorialRoom,60,150,90,110,768+78,75,45,55);/* the joined window keeps one moon */}return canvas;}
   const index={newsroom:0,roofs:1,studio:2,noise:3}[room.theme],sw=assets.backdrops.width/2,sh=assets.backdrops.height/2;
   c.filter='saturate(.62) brightness(.65)';
   for(let offset=0;offset<room.width;offset+=768){
@@ -71,15 +71,6 @@ export function drawPerson(c,a,person,time,scale=1){
  sprite(c,a.journalists,box,person.x-w/2,person.y-h,w,h);
 }
 export function drawCampaignObjects(c,a,g,time){
- if(g.room===0){
-  rect(c,748,162,20,84,'#101d32');rect(c,752,168,12,74,'#10728a');rect(c,754,173,2,62,'#8bebdf');
-  text(c,'В РЕДАКЦИЮ',647,223,'#9cc7cd');
-  for(let i=0;i<3;i++)rect(c,752+i*4,157,2,3,g.tutorial.step>i?'#a8f2b2':'#29465a');
-  if(g.mode==='playing'&&g.hintsEnabled!==false){
-   const q=g.tutorial.step,notes=g.touchEnabled?['ДЖОЙСТИК →','↑ ПРЫЖОК','ДЖОЙСТИК ↑','→']:['← → / A D','↑ / W','↑ ↓ / W S','→'];
-   const x=q===0?120:q===1?207:q===2?420:705,y=q===0?225:q===1?324:q===2?214:214;rect(c,x-10,y-12,q<3?150:40,35,'#031022');rect(c,x-10,y-12,q<3?150:40,2,'#ffe29b');text(c,notes[q],x,y,'#fff3be',1.4);
-  }
- }
  for(const portal of g.portals){
   if(portal.room!==g.room)continue;const grow=portal.cancelled?1-(portal.closeTime||0)/.3:Math.min(1,portal.time/.6),r=25*grow;c.save();c.translate(Math.round(portal.x+24),Math.round(portal.y-2));
   rect(c,-r,-r*1.6,r*2,r*1.6,'#19104099');for(let i=0;i<18;i++){const angle=i*Math.PI/9+time*2;rect(c,Math.cos(angle)*r,Math.sin(angle)*r*.55-9,3,3,i%3?'#8e8aff':'#68ecf4');}c.restore();
@@ -96,7 +87,7 @@ export function drawOpening(c,a,g){
  const screen={x:214,y:154,w:135,h:104};c.save();c.beginPath();c.rect(screen.x,screen.y,screen.w,screen.h);c.clip();
  rect(c,screen.x,screen.y,screen.w,screen.h,'#041930');
  for(let i=0;i<10;i++)rect(c,screen.x+3,screen.y+4+i*12,screen.w-6,1,Math.floor((g.wakeTime+g.time)*16+i)%3?'#0b627d':'#57e6ed');
- if(g.wakeTime>=2.7){const progress=Math.min(1,(g.wakeTime-2.7)/.35);c.globalAlpha=progress;drawMonster(c,a,'infoshum',screen.x-4,screen.y+8+(1-progress)*90,screen.w+8,screen.h-8,g.wakeTime+g.time,false,{state:g.mode==='waking'?'casting':'idle',projection:true});}
+ if(g.wakeTime>=2.7&&(g.mode==='waking'||g.pausedFrom==='waking')){const progress=Math.min(1,(g.wakeTime-2.7)/.35);c.globalAlpha=progress;drawMonster(c,a,'infoshum',screen.x-4,screen.y+8+(1-progress)*90,screen.w+8,screen.h-8,g.wakeTime+g.time,false,{state:g.mode==='waking'?'casting':'idle',projection:true});}
  c.restore();
 }
 // These screens are scenery only; their rectangles never enter collision geometry.

@@ -24,8 +24,9 @@ export function bossTargets(g){
  return out;
 }
 
-export function drawTargetHighlights(c,g,t){
- for(const box of bossTargets(g)){
+export function drawTargetHighlights(c,g,t){for(const box of bossTargets(g))drawTargetGlow(c,box,t);}
+export function drawTargetGlow(c,box,t){
+ {
   const pulse=.5+.5*Math.sin(t*5),cx=box.x+box.w/2;
   c.save();
   // Layered glow: wide and faint, then tighter and brighter.

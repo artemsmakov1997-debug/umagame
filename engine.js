@@ -13,6 +13,7 @@ import {stepEnemies,stepPortals} from './enemies.js?v=0.21.5';
 import {cancelInformantTeleport} from './informant-teleport.js?v=0.21.5';
 import {applyRelayEffect} from './chapter-systems.js?v=0.21.5';
 import {applyLowCeilings} from './shelters.js?v=0.21.5';
+import {createTutorial,stepTutorial} from './tutorial.js?v=0.21.5';
 import {stepNewsroom,newsroomRestore,placeAtNewsroomCheckpoint,resetNewsroom} from './newsroom-systems.js?v=0.21.5';
 import {scenes,evidence,relayClues} from './story.js?v=0.21.5';
 import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.21.5';
@@ -32,7 +33,7 @@ export class Game {
  reset(){
   this.mode='ready';delete this.pausedFrom;this.time=0;this.fish=0;this.kills=0;this.health=MAX_HEALTH;this.lives=START_LIVES;this.respawnTime=0;this.camera=0;this.checkpoint=0;this.room=0;this.gateHint=-1;
   this.dialogue=null;this.ending=null;this.conclusion=null;this.defeat=null;this.signal={...signalProfile(0),echoTime:0};this.finalScore=null;this.encounters={};this.seenScenes=new Set();this.evidence=[];this.clues=[];this.parries=0;this.truthFound=false;this.wakeTime=0;this.viewWidth=this.viewWidth||WIDTH;this.transition=null;this.loading=null;this.chapter=0;this.bossesDefeated=new Set();this.roomHistory=new Set([0]);this.visitedPlatforms=new Set(['0:0']);this.safeTrail=[];this.echoImmunity=0;this.echoWarp=null;this.tether=null;
-  this.trainingHintShown=false;this.tutorial={step:0,distance:0,jumped:false,climbed:0,complete:false};
+  this.trainingHintShown=false;this.tutorial=createTutorial();
   this.abilities={attack:true,dash:true,sneak:true};this.notebooks=createNotebooks();
   this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;this.lifePickups=createLifePickups();
   this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,powerTime:0,glueGrace:0,pulled:false};
@@ -122,13 +123,6 @@ export class Game {
   if(!stomp&&!reflected&&e.type==='fakenews'&&!e.jumpPhase&&!e.terrainFall)e.x=Math.max(e.origin,Math.min(e.end,e.x+this.player.dir*18));
   this.emit('enemyHit',{x:e.x+24,y:e.y,enemyType:e.type});if(e.hp<=0){e.dead=true;e.deathTime=.28;this.kills++;this.emit('pop',{x:e.x+24,y:e.y,enemyType:e.type});cleanCopies(this);}return true;
  }
- updateTutorial(dx,dy,jumped){
-  if(this.room!==0||this.tutorial.complete)return;const q=this.tutorial,p=this.player;
-  q.distance+=Math.abs(dx);if(jumped)q.jumped=true;if(p.climbing)q.climbed+=Math.max(0,-dy);
-  if(q.step===0&&q.distance>=65){q.step=1;this.emit('lesson',{step:1});}
-  if(q.step===1&&q.jumped&&p.grounded&&p.x>=264){q.step=2;this.emit('lesson',{step:2});}
-  if(q.step===2&&q.climbed>=65&&p.grounded&&p.y+p.h<=246){q.step=3;q.complete=true;this.emit('lesson',{step:3});}
- }
  step(dt,input={}){
   if(this.mode==='bossDefeat'){stepBossDefeat(this,Math.min(dt,1/30));return;}
   if(this.mode==='conclusion'){stepConclusion(this,Math.min(dt,1/30));return;}
@@ -172,14 +166,14 @@ export class Game {
   if(p.y>HEIGHT+30){this.hurt(true);return;}
   if(p.climbing)p.climbTime+=Math.abs(p.y-oldY)/18;if(p.sneaking)p.sneakTime+=Math.abs(p.x-oldX)/14;
   stepPlayerRest(this,input,dt);
-  this.unlockForRoom(this.room);this.updateTutorial(p.x-oldX,p.y-oldY,jumped);
+  this.unlockForRoom(this.room);
   this.echoImmunity=Math.max(0,this.echoImmunity-dt);
   if(p.grounded&&p.supportId){this.visitedPlatforms.add(p.supportId);const last=this.safeTrail.at(-1);if(!last||Math.abs(last.x-p.x)>110||last.platformId!==p.supportId){this.safeTrail.push({platformId:p.supportId,x:p.x,y:p.y});this.safeTrail=this.safeTrail.slice(-80);}}
   if(this.checkNotebooks()){this.updateCamera(dt);return;}
   if(this.room===PORTAL_ROOM&&p.x+p.w>PORTAL_X-35&&p.vx>40&&!this.arenaEntered&&canLeaveRoom(this)){this.enterArena();this.updateCamera(dt);return;}
   if(this.room!==PORTAL_ROOM&&this.room<LAST_ROOM&&p.x+p.w>=bounds.end-20&&p.vx>40&&canLeaveRoom(this)){this.leaveRoom();this.updateCamera(dt);return;}
 
-  const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepNewsroom(this,dt);stepSection(this,dt);
+  const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepTutorial(this,dt,paw,oldX);stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepNewsroom(this,dt);stepSection(this,dt);
   stepEnemies(this,dt,paw,prevBottom);if(this.mode==='playing')stepPortals(this,dt);
   if(this.mode!=='playing'||this.swallow)return;
   for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
