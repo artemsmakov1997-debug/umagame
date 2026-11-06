@@ -99,7 +99,7 @@ async function boot(){
   if(event.type==='lifePickup')notify('+1 жизнь!');
   if(event.type==='controlBreak')notify('Опасный механизм отключён.');
   if(event.type==='clue')notify('СЛЕД: '+event.text,6500);
-  if(event.type==='enemyIntroduction')notify(({fakenews:'Фейкньюс: ударь лапой или прыгни сверху',copier:'Копир: бей по открытому лотку',censor:'Цензор: избегай чернил',informant:'Информатор: следи за меткой',inflator:'Раздуватель: заходи сзади',panicker:'Паникёр: прерви тревогу',injection:'Вброс: отражай бегущую строку',cutter:'Нарезчик: уходи с метки',splicer:'Склейка: разорви ленту рывком',static:'Помеха: уклонись от броска',echo:'Эхо: разорви притяжение',clickbait:'Кликбейт: опасайся рыбки на крючке'})[event.enemyType]||'Новый противник!',3800);
+  if(event.type==='enemyIntroduction')notify(({fakenews:'Фейкньюс: ударь лапой или прыгни сверху',censor:'Цензор: перепрыгни, его не победить',copier:'Копир: бей по открытому лотку',stamp:'Штамп: избегай чернил',informant:'Информатор: следи за меткой',inflator:'Раздуватель: заходи сзади',panicker:'Паникёр: прерви тревогу',injection:'Вброс: отражай бегущую строку',cutter:'Нарезчик: уходи с метки',splicer:'Склейка: разорви ленту рывком',static:'Помеха: уклонись от броска',echo:'Эхо: разорви притяжение',clickbait:'Кликбейт: опасайся рыбки на крючке'})[event.enemyType]||'Новый противник!',3800);
   if(event.type==='alarm')notify('Паникёр открывает портал!');
   if(event.type==='portal')notify('Портал открыт! Прерви звон Паникёра.');
   if(event.type==='swallow'){clearInput();notify('Кликбейт! Поглощение отнимает целую жизнь.');}

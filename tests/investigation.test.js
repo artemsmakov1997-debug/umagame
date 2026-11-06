@@ -20,7 +20,9 @@ test('monster origins remain a mystery until the full chain is shown in the epil
 });
 
 test('each playable chapter has its own interactive devices and distinct boss arena',()=>{
- const kinds={1:'printer',3:'broadcast',5:'edit',7:'signal'};
+ // The newsroom conveyor has no nodes; the other chapters keep their interactive devices.
+ const kinds={3:'broadcast',5:'edit',7:'signal'};
+ assert.equal(new Game({story:false}).relays.filter(d=>d.room===1).length,0);
  const g=new Game({story:false});g.start();
  for(const [room,type] of Object.entries(kinds)){
   const index=Number(room),devices=g.relays.filter(d=>d.room===index);
@@ -37,13 +39,13 @@ test('each playable chapter has its own interactive devices and distinct boss ar
 test('destroying a signal node permanently adds a clue, with no premature answer',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;
  g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];
- g.room=1;g.checkpoint=1;
- const d=g.relays.find(d=>d.room===1),s=g.platforms.find(s=>s.room===1&&s.index===d.platformIndex);
+ g.room=3;g.checkpoint=3;g.relays.filter(d=>d.room<3).forEach(d=>d.hp=0);
+ const d=g.relays.find(d=>d.room===3),s=g.platforms.find(s=>s.room===3&&s.index===d.platformIndex);
  Object.assign(g.player,{x:d.x-10,y:s.y-48,h:48,dir:1,grounded:true,supportId:s.id,inv:0,cooldown:0,dash:0});
  g.step(1/60,{attack:true});
  assert.equal(d.hp,0);
  assert.equal(g.clues.length,1);
- assert.equal(g.clues[0].text,relayClues[1][0]);
+ assert.equal(g.clues[0].text,relayClues[3][d.ordinal]);
  assert.ok(g.events.some(e=>e.type==='clue'));
  g.loseLife();for(let i=0;i<75;i++)g.step(1/60);
  assert.equal(g.clues.length,1);

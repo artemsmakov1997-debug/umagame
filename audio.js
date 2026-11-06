@@ -76,7 +76,7 @@ export class GameAudio{
   const tone=(frequency,to,duration=.15,gain=.07,wave='square',delay=0)=>this.voice({frequency,to,duration,gain:gain*level,wave,pan,start:now+.006+delay});
   const noise=(duration=.12,gain=.07,filter=2000,delay=0)=>this.voice({noise:true,duration,gain:gain*level,filter,pan,start:now+.006+delay});
   if(type==='enemyNoticed'){
-   const pitches={fakenews:260,clickbait:100,inflator:145,informant:920,panicker:740,censor:180,copier:460,cutter:1100,splicer:320,injection:580,echo:660,static:190};tone(pitches[enemyType]||280,(pitches[enemyType]||280)*1.25,.08,.035,'triangle');return;
+   const pitches={fakenews:260,clickbait:100,inflator:145,informant:920,panicker:740,stamp:180,copier:460,cutter:1100,splicer:320,injection:580,echo:660,static:190};tone(pitches[enemyType]||280,(pitches[enemyType]||280)*1.25,.08,.035,'triangle');return;
   }
   if(type==='catMeow'){tone(620,900,.13,.04,'triangle');tone(900,590,.18,.035,'sine',.1);}
   else if(type==='bossDefeatStart'){noise(.35,.06,event.boss==='agitator'?800:3500);tone(180,50,.5,.055,'triangle');}
@@ -122,7 +122,7 @@ export class GameAudio{
   else if(type==='dash'){noise(.14,.08,4500);tone(500,1000,.12,.035,'triangle');}
   else if(type==='swat')noise(.07,.07,3300);
   else if(type==='hurt'||type==='lifeLost'){tone(150,50,.25,.1,'sawtooth');noise(.14,.06,800);}
-  else if(type==='enemyHit'){noise(.08,.075,enemyType==='censor'?400:1900);tone(220,100,.1,.045,'triangle');}
+  else if(type==='enemyHit'){noise(.08,.075,enemyType==='stamp'?400:1900);tone(220,100,.1,.045,'triangle');}
   else if(type==='blocked'){tone(340,290,.13,.07,'triangle');tone(970,900,.1,.035,'sine');}
   else if(type==='pop'){noise(.12,.07,1800);tone(300,60,.13,.05);}
   else if(type==='bossHit'){tone(170,75,.2,.09,'sawtooth');noise(.13,.08,1300);}

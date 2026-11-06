@@ -16,7 +16,7 @@ function training(g){
  for(let i=0;i<300&&g.player.x<165;i++)g.step(1/60,{right:true});g.step(1/60,{right:true,jump:true});for(let i=0;i<150&&g.player.x<420;i++)g.step(1/60,{right:true});for(let i=0;i<130&&!g.tutorial.complete;i++)g.step(1/60,{up:true});
 }
 test('each chapter introduces its assigned species before its own miniboss arena',()=>{
- assert.equal(rooms.length,9);const roster=createEnemies();for(const [type,first]of [['fakenews',1],['copier',1],['censor',1],['informant',3],['inflator',3],['panicker',3],['cutter',5],['splicer',5],['injection',5],['echo',7],['clickbait',7],['static',7]])assert.equal(Math.min(...roster.filter(e=>e.type===type).map(e=>e.room)),first);assert.equal(WORLD,16128);
+ assert.equal(rooms.length,9);const roster=createEnemies();for(const [type,first]of [['fakenews',1],['stamp',1],['informant',3],['inflator',3],['panicker',3],['cutter',5],['splicer',5],['injection',5],['echo',7],['clickbait',7],['static',7]])assert.equal(Math.min(...roster.filter(e=>e.type===type).map(e=>e.room)),first);assert.equal(WORLD,16128);
 });
 test('wake-up uses separate sleep, yawn and surprise frames without moving Uma or starting combat',()=>{
  const g=new Game();g.start();const x=g.player.x,y=g.player.y;assert.equal(wakePose(.2).name,'sleep');assert.equal(wakePose(2.5).name,'yawn');assert.equal(wakePose(3.5).name,'surprise');assert.equal(emotionFrames.length,8);tick(g,340,{right:true,attack:true});assert.equal(g.mode,'dialogue');assert.equal(g.dialogue.id,'intro');assert.equal(g.player.x,x);assert.equal(g.player.y,y);assert.ok(g.enemies.every(e=>!e.active));assert.equal('clock'in g,false);
@@ -37,20 +37,23 @@ test('creeping selects different low walking poses; damage has its own reaction'
  const g=ready();g.abilities.sneak=true;tick(g,1,{down:true});assert.equal(traversalPose(g.player),0);tick(g,8,{down:true,right:true});assert.ok([1,2].includes(traversalPose(g.player)));const pose=traversalPose(g.player);tick(g,15,{down:true,right:true});assert.notEqual(traversalPose(g.player),pose);assert.equal(hurtPose(.5),6);assert.equal(hurtPose(.1),7);
 });
 test('no enemy activates during training; later enemies wait for their own trigger and warning',()=>{
- const g=ready();training(g);assert.ok(g.enemies.every(e=>!e.active));at(g,1,0,45);tick(g,1);assert.equal(g.dialogue,null);assert.ok(g.enemies.filter(e=>e.room===1).every(e=>!e.active));g.player.x=WIDTH+85;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.ok(g.notebooks.find(n=>n.id==='paw').taken);assert.equal(g.enemies[0].active,false);g.advanceDialogue(true);g.player.x=WIDTH+95;tick(g,1);assert.equal(g.enemies[0].active,true);assert.ok(g.enemies[0].spawnTime>0);assert.equal(g.enemies[1].active,false);tick(g,35);assert.ok(g.enemies[0].noticed);assert.equal(g.dialogue,null);
+ const g=ready();training(g);assert.ok(g.enemies.every(e=>!e.active));at(g,1,0,45);tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.ok(g.enemies.filter(e=>e.room===1).every(e=>!e.active));assert.ok(g.notebooks.find(n=>n.id==='paw').taken);assert.equal(g.enemies[0].active,false);g.advanceDialogue(true);g.player.x=WIDTH+95;tick(g,1);assert.equal(g.enemies[0].active,true);assert.ok(g.enemies[0].spawnTime>0);assert.equal(g.enemies[1].active,false);tick(g,35);assert.ok(g.enemies[0].noticed);assert.equal(g.dialogue,null);
 });
 test('dialogues freeze physics, enemies, camera transitions and all game time',()=>{
  const g=new Game();g.start();g.finishWakeup();g.transition={from:0,to:1,time:.2,duration:.85};const before=JSON.stringify(g);tick(g,150,{right:true,jump:true,attack:true});assert.equal(JSON.stringify(g),before);g.advanceDialogue();assert.equal(g.dialogue.page,1);g.advanceDialogue(true);assert.equal(g.mode,'playing');
 });
-test('entering a chapter is silent; only picking up its notebook opens Yuri commentary',()=>{
- const g=ready();at(g,1,0,45);tick(g,1);assert.equal(g.dialogue,null);g.player.x=WIDTH+85;const time=g.time;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.equal(g.time,time);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);assert.equal(g.mode,'playing');
+test('the newsroom opens with one Yuri briefing that never returns; other chapters stay silent until a notebook',()=>{
+ const g=ready();at(g,1,0,45);const time=g.time;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.equal(g.time,time);assert.ok(g.dialogue.pages.length>=4,'briefing covers the conveyor, Fakenews, Stamp, Censor and the press');g.advanceDialogue(true);
+ for(let x=100;x<2250;x+=150){g.player.x=WIDTH+x;tick(g,2);assert.equal(g.dialogue,null,'no newsroom note at '+x);}
+ assert.equal(g.notebooks.filter(n=>n.room===1&&!n.bossRecord).length,1);assert.equal(g.mode,'playing');
+ const h=ready();at(h,3,0,45);tick(h,1);assert.equal(h.dialogue,null);
 });
 test('a defeated miniboss yields one record and an optional notebook that survive life loss',()=>{
  const g=ready();g.enemies=[];at(g,2,4,760);g.checkpoint=2;g.completeChapter(2);assert.equal(g.dialogue,null);assert.equal(g.evidence[0].id,'autopublish');tick(g,40);assert.equal(g.dialogue.id,'notebook:record1');g.completeChapter(2);assert.equal(g.evidence.length,1);g.advanceDialogue(true);g.health=1;g.player.inv=0;g.hurt();tick(g,70);assert.equal(g.evidence.length,1);assert.ok(g.seenScenes.has('chapter1'));
 });
 
 test('printing belts and all other chapters are frozen until Uma enters them',()=>{
- const g=ready(),later=g.enemies.map(e=>[e.x,e.timer,e.active]);tick(g,120);assert.deepEqual(g.enemies.map(e=>[e.x,e.timer,e.active]),later);g.enemies=[];at(g,1,13,900);g.seenScenes.add('arrival1');const x=g.player.x;tick(g,30);assert.ok(g.player.x>x+9&&g.player.x<x+11);g.step(1/60,{jump:true});assert.ok(g.player.vy<0);
+ const g=ready(),later=g.enemies.map(e=>[e.x,e.timer,e.active]);tick(g,120);assert.deepEqual(g.enemies.map(e=>[e.x,e.timer,e.active]),later);g.enemies=[];at(g,1,0,900);g.seenScenes.add('arrival1');const x=g.player.x;tick(g,30);assert.ok(g.player.x<x-21&&g.player.x>x-24,'the conveyor carries Uma back at 45 px/s');g.step(1/60,{jump:true});assert.ok(g.player.vy<0);
 });
 test('all monster archetypes use separate motion and damage states',()=>{
  for(const id of ['fakenews','informant']){assert.ok(motion[id]);assert.notEqual(monsterFrame(id,0,{moving:true,walkTime:0}),monsterFrame(id,0,{moving:true,walkTime:.2}));assert.equal(monsterFrame(id,0,{state:'windup'}),3);assert.equal(monsterFrame(id,0,{state:'casting'}),4);assert.equal(monsterFrame(id,0,{hurtTime:.2}),5);}
