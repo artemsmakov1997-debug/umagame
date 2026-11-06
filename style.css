@@ -596,3 +596,7 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 }
 
 @media(max-width:700px) and (orientation:portrait) and (max-aspect-ratio:3/4){#menu-screen{background:linear-gradient(180deg,#020b1f22,transparent 70%)}}
+
+/* Hints live under the HUD, never over the floor, Uma or the touch controls. */
+#app .status{top:calc(var(--hud-height,10%) + 10px);bottom:auto;padding:10px 20px;width:max-content;max-width:min(700px,calc(100% - 120px));background:#031123e8}
+@media(max-width:600px){#app .status{top:calc(var(--hud-height,10%) + 58px);max-width:calc(100% - 24px);padding:8px 12px}}
