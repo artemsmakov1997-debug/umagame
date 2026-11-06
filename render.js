@@ -1,3 +1,5 @@
+import {drawRouteTransition} from './route-transition-art.js?v=0.21.5';
+import {drawStudioBackdrop,drawStudioPlatform} from './manipulator-art.js?v=0.21.5';
 import {drawInfoshumProjectile} from './infoshum-sprites.js?v=0.21.5';
 import {drawSpreaderEquipment} from './spreader-arena-art.js?v=0.21.5';
 import {drawInfoshumBackdrop,drawInfoshumPlatform} from './infoshum-art.js?v=0.21.5';
@@ -46,17 +48,18 @@ export class Renderer{
   c.save();c.translate(worldInset,worldTop);c.scale(worldScale,worldScale);c.translate(-cam,0);
   for(const [i,room] of rooms.entries()){
    if(i!==g.room)continue;if(room.x+room.width+150<cam||room.x-150>cam+vw)continue;
-   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);if(room.index===8)drawInfoshumBackdrop(c,a,g,t);
+   drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawAmbience(c,room,t);if(room.index===8)drawInfoshumBackdrop(c,a,g,t);if(room.index===6)drawStudioBackdrop(c,a,g,t);
   }
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
-  if(g.room!==2)drawPassages(c,a,g);
+  if(g.room!==2&&g.room!==6)drawPassages(c,a,g);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
   drawMovingRails(c,g.platforms.filter(s=>s.room===g.room&&!s.bossHidden),t);
+  if(g.room===6)for(const platform of g.platforms.filter(p=>p.room===6&&['gap','forming'].includes(p.studioPhase)))drawStudioPlatform(c,a,platform,t);
   for(const platform of solidSurfaces(g)){
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
-   if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
+   if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
   }
   for(const ladder of ladders){
    if(ladder.room!==g.room)continue;
@@ -135,7 +138,7 @@ export class Renderer{
   if(g.tether){const e=g.tether.ownerId==='boss:'+g.boss.id?g.boss:g.enemies.find(e=>e.id===g.tether.ownerId);if(e){c.strokeStyle='#c9a4ed';c.lineWidth=3;c.setLineDash([5,4]);c.beginPath();c.moveTo(e.x+24,e.y+2);c.lineTo(p.x+17,p.y+28);c.stroke();c.setLineDash([]);for(let i=0;i<5;i++)rect(c,e.x+5+i*8,e.y-58,5,3,i<Math.ceil(g.tether.remaining)?'#ffdb9b':'#263a55');}}
   drawYuriSignal(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawBossDefeat(c,a,g);
   drawExitArrow(c,g,t,worldWidth);c.restore();
-  drawArenaTransfer(c,g,vw);drawLocationLoading(c,g,vw);
+  drawArenaTransfer(c,g,vw);if(!drawRouteTransition(c,a,g,vw))drawLocationLoading(c,g,vw);
   if(g.defeat&&(g.mode==='bossDefeat'||g.mode==='paused'&&g.pausedFrom==='bossDefeat')){c.save();c.globalAlpha=Math.max(0,Math.min(1,(g.defeat.time-1.42)/.28));rect(c,0,0,vw,HEIGHT,'#030919');c.restore();}
   if(g.mode==='respawning'||g.pausedFrom==='respawning'){
    const progress=1-g.respawnTime/1.1;c.globalAlpha=Math.max(0,(progress-.25)/.75)*.86;rect(c,0,47,vw,HEIGHT-47,'#030a1e');c.globalAlpha=1;

@@ -1,3 +1,4 @@
+import {stepStudioPlatforms} from './manipulator-combat.js?v=0.21.5';
 import {platforms} from './level.js?v=0.21.5';
 export function createWorldPlatforms(){return platforms.map(s=>({...s,baseX:s.x,baseY:s.y,prevX:s.x,prevY:s.y,dx:0,dy:0}));}
 export function alignEnemyToPlatform(g,e){
@@ -5,6 +6,7 @@ export function alignEnemyToPlatform(g,e){
  const dx=s.x-base.x,dy=s.y-base.y;e.x+=dx;e.y+=dy;e.origin+=dx;e.end+=dx;return e;
 }
 export function stepWorldPlatforms(g,dt){
+ stepStudioPlatforms(g,dt);
  g.platformClocks[g.room]=(g.platformClocks[g.room]||0)+dt;
  for(const s of g.platforms){
   s.prevX=s.x;s.prevY=s.y;s.dx=0;s.dy=0;

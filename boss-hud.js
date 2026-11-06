@@ -1,5 +1,4 @@
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {drawMonster} from './art.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
 export const bossStyles={
  spreader:{name:'Распространитель',edge:'#dcb87b',fill:'#f0d7a7',dark:'#47384a',portrait:'#17273b',kind:'paper'},
@@ -8,11 +7,19 @@ export const bossStyles={
  infoshum:{name:'Инфошум',edge:'#70dfe8',fill:'#ef5197',dark:'#31274e',portrait:'#09192f',kind:'static'}
 };
 const portraits=new WeakMap();
-function portrait(assets,id){let map=portraits.get(assets);if(!map){map=new Map();portraits.set(assets,map);}if(!map.has(id)){const c=document.createElement('canvas');c.width=80;c.height=80;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;if(id==='infoshum')drawInfoshumSprite(ctx,assets,'body',0,2,2,76,76);else drawMonster(ctx,assets,id,2,2,76,76,0,false,{state:'patrol',projection:true});map.set(id,c);}return map.get(id);}
+function portrait(assets,id){
+ let map=portraits.get(assets);if(!map){map=new Map();portraits.set(assets,map);}
+ if(!map.has(id)){
+  const c=document.createElement('canvas');c.width=100;c.height=100;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;
+  if(id==='infoshum')drawInfoshumSprite(ctx,assets,'body',0,0,0,100,100);
+  else {const box=id==='spreader'?[105,126,137,145]:id==='agitator'?[27,410,210,180]:[39,25,182,151],image=id==='manipulator'?assets.manipulator:assets.minibosses,scale=Math.min(100/box[2],100/box[3]),w=box[2]*scale,h=box[3]*scale;ctx.drawImage(image,...box,(100-w)/2,(100-h)/2,w,h);}
+  map.set(id,c);
+ }return map.get(id);
+}
 export function drawBossHud(c,a,g,width,{y=8}={}){
  const b=g.boss;if(b.room!==g.room||(!b.active||b.hp<=0)&&g.mode!=='bossDefeat'&&g.pausedFrom!=='bossDefeat')return;
- const style=bossStyles[b.id],w=Math.min(width<700?width-20:width-350,440),x=Math.round((width-w)/2),face=width<700?40:49,barX=x+face+9,barW=w-face-13;
- rect(c,x-2,y-3,w+4,58,'#02091be8');rect(c,x,y,face,face,style.edge);rect(c,x+2,y+2,face-4,face-4,style.portrait);c.drawImage(portrait(a,b.id),x+1,y+1,face-2,face-2);
+ const style=bossStyles[b.id],w=Math.min(width<700?width-20:width-350,460),x=Math.round((width-w)/2),face=width<700?50:62,barX=x+face+7,barW=w-face-11;
+ rect(c,barX-4,y-3,barW+10,58,'#02091be8');c.drawImage(portrait(a,b.id),x,y-5,face,face);
  rect(c,barX-2,y+3,barW+4,16,style.edge);rect(c,barX,y+5,barW,12,style.dark);
  rect(c,barX+2,y+7,(barW-4)*Math.max(0,b.hp/b.maxHp),8,style.fill);rect(c,barX+2,y+7,(barW-4)*Math.max(0,b.hp/b.maxHp),2,'#ffe8c3');
  for(const fraction of b.network?[20/32,24/32,28/32]:[1/3,2/3])rect(c,barX+barW*fraction,y+5,2,12,'#020817');
