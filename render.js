@@ -1,5 +1,6 @@
 import {drawAgitatorEquipment,drawAgitatorBackdrop,drawAgitatorPlatform,drawAgitatorProjectile} from './agitator-art.js?v=0.21.5';
 import {drawInterferenceOverlay} from './interference-art.js?v=0.21.5';
+import {drawBackdropVeil,drawPlatformShadow,drawPlatformRim} from './readability.js?v=0.21.5';
 import {drawRouteTransition} from './route-transition-art.js?v=0.21.5';
 import {drawStudioBackdrop,drawStudioPlatform} from './manipulator-art.js?v=0.21.5';
 import {drawInfoshumProjectile} from './infoshum-sprites.js?v=0.21.5';
@@ -53,6 +54,7 @@ export class Renderer{
    if(i!==g.room)continue;if(room.x+room.width+150<cam||room.x-150>cam+vw)continue;
    drawBackdrop(c,this.backdrops[i],room,cam,roomDarkness(g.wakeTime));drawNewsroomScenery(c,a,g,t);drawAmbience(c,room,t);if(room.index===8)drawInfoshumBackdrop(c,a,g,t);if(room.index===6)drawStudioBackdrop(c,a,g,t);if(room.index===4)drawAgitatorBackdrop(c,a,g,t);
   }
+  drawBackdropVeil(c,g,cam,vw);
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
   if(![2,4,6].includes(g.room))drawPassages(c,a,g);
@@ -62,7 +64,9 @@ export class Renderer{
   for(const platform of solidSurfaces(g)){
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
+   drawPlatformShadow(c,g,platform);
    if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
+   drawPlatformRim(c,g,platform,t);
   }
   for(const ladder of ladders){
    if(ladder.room!==g.room)continue;
