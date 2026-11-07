@@ -13,7 +13,7 @@ function trap(g){const e=enemy('echo',g.room,185,0,{active:true,noticed:true});g
 test('every ordinary encounter has a persistent, grounded source; Clickbait keeps its bait',()=>{
  const g=ready(),roster=createEnemies();
  for(const e of roster){if(e.type==='clickbait'){assert.equal(e.source,undefined);continue;}assert.ok(e.source,e.type);assert.equal(e.active,false);const pos=sourcePosition(g,e),s=g.platforms.find(p=>p.room===e.room&&p.index===e.source.platformIndex);assert.ok(pos.x>=s.x&&pos.x<=s.x+s.w);assert.equal(pos.y,s.y-(e.type==='echo'?81:0));}
- assert.equal(roster.find(e=>e.type==='fakenews').source.kind,'bin');assert.equal(roster.find(e=>e.type==='informant').source.kind,'receiver');assert.equal(roster.find(e=>e.type==='deepfake').source.kind,'reel');assert.equal(roster.find(e=>e.type==='static').source.kind,'screen');
+ assert.equal(roster.find(e=>e.type==='fakenews').source.kind,'bin');assert.equal(roster.find(e=>e.type==='informant').source.kind,'receiver');assert.equal(roster.find(e=>e.type==='botfarm').source.kind,'printer');assert.equal(roster.find(e=>e.type==='static').source.kind,'screen');
 });
 test('a source rides its platform and stays behind after its monster moves away',()=>{
  const g=ready(5),e=enemy('splicer',5,880,4),s=g.platforms.find(s=>s.id==='5:4'),before=sourcePosition(g,e);s.x+=48;s.y-=12;e.x+=130;e.platformIndex=2;assert.deepEqual(sourcePosition(g,e),{x:before.x+48,y:before.y-12});

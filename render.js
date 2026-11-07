@@ -97,7 +97,8 @@ export class Renderer{
    if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
    if(e.type==='servant')drawServant(c,a,e,t);
    if(['stamp','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
-   if(e.type==='deepfake')drawMonster(c,a,e.type,e.x-18,e.y-20,76,76,t,e.dir<0,e);
+   if(e.type==='botfarm')drawMonster(c,a,e.type,e.x+e.w/2-46,e.y+e.h-82,92,82,t,false,e);
+   if(e.type==='bot')drawMonster(c,a,e.type,e.x+e.w/2-20,e.y+e.h-38,40,38,t,false,e);
    if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
    if(e.type==='echo'){const squeeze=e.state==='windup'?.65+.35*Math.max(0,Math.min(1,e.timer/.65)):e.state==='pulling'?.8+Math.sin(t*12)*.06:1;c.save();c.translate(e.x+20,e.y+19);c.scale(squeeze,1);drawMonster(c,a,e.type,-37,-43,74,66,t,false,e);c.restore();}
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}

@@ -1,8 +1,8 @@
 import {rooms} from './level.js?v=0.21.5';
-import {STUDIO_PIECES,HOLO,SPOTLIGHTS,SPOT_MIN_OVERLAP,TAKES,FAKES,STUDIO_CHECKPOINTS} from './studio-map.js?v=0.21.5';
+import {STUDIO_PIECES,HOLO,SPOTLIGHTS,SPOT_MIN_OVERLAP,TAKES,STUDIO_CHECKPOINTS} from './studio-map.js?v=0.21.5';
 import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
 // «Студия» mechanics: vanishing holograms, risers that exist only in a spotlight, red/blue «дубли» on the clapper beat,
-// and Дипфейк's fake platforms. Each frame sets `intangible` on the studio platforms; solidSurfaces() skips those.
+// Each frame sets `intangible` on the studio platforms; solidSurfaces() skips those.
 export const ROOM=5;
 const x0=()=>rooms[ROOM].x;
 export function createStudio(){return {holo:{},checkpoint:0,lastTake:null,lastSwapWarn:-1};}
@@ -15,8 +15,6 @@ export function liveTake(t){const k=((t%(2*TAKES.beat))+2*TAKES.beat)%(2*TAKES.b
 // A blinking hologram's own cycle.
 function blinkPhase(b,t){const k=(((t+b.phase)%b.period)+b.period)%b.period;return k<HOLO.warn?'warn':k<HOLO.warn+1.2?'gone':'solid';}
 
-export function fakeActive(g,fake){return g.enemies.some(e=>e.type==='deepfake'&&e.room===ROOM&&e.fakeOwner===fake.owner&&!e.dead&&e.active);}
-export function fakesFor(g){return FAKES.map(f=>({...f,active:fakeActive(g,f)}));}
 
 // Called every frame (also outside "playing", so collisions always match the picture).
 export function updateStudioPlatforms(g){
@@ -50,17 +48,3 @@ export function stepStudio(g,dt){
 
 export function studioFall(g){if(g.room!==ROOM)return false;return pitFall(g,ROOM,s=>STUDIO_PIECES[s.index]?.type==='fixed');}
 export function placeAtStudioCheckpoint(g){if(g.room!==ROOM||!g.studio)return;placeAtCheckpoint(g,ROOM,STUDIO_CHECKPOINTS,g.studio.checkpoint);}
-
-// Дипфейк: hovers over its fakes, drifts towards a noticed Uma, focuses and projects; contact hurts.
-export function stepDeepfake(g,e,dt){
- const p=g.player;e.homeX??=e.x;e.homeY??=e.y;e.timer-=dt;e.bob=(e.bob||0)+dt;
- const dx=p.x+p.w/2-e.x-e.w/2;
- if(e.state==='patrol'){if(e.noticed&&Math.abs(dx)<300)e.x+=Math.sign(dx)*Math.min(Math.abs(dx),e.speed*dt);if(e.noticed&&e.timer<=0&&Math.abs(dx)<300){e.state='windup';e.timer=.5;g.emit('deepfakeFocus',{x:e.x,y:e.y,enemyType:'deepfake'});}}
- else if(e.state==='windup'&&e.timer<=0){e.state='casting';e.timer=1;g.emit('deepfakeProject',{x:e.x,y:e.y,enemyType:'deepfake'});}
- else if(e.state==='casting'&&e.timer<=0){e.state='patrol';e.timer=2.4;}
- e.x=Math.max(e.homeX-130,Math.min(e.homeX+130,e.x));e.y=e.homeY+Math.sin(e.bob*2.2)*7;e.dir=dx<0?-1:1;
-}
-export function deepfakeContact(g,e){
- const p=g.player;if(p.dash>0||p.inv>0)return;const before=g.health;g.hurt(false,e.x);
- if(g.mode==='playing'&&g.health<before){p.vx=(p.x>e.x?1:-1)*220;p.vy=-120;p.knock=.2;p.grounded=false;}
-}

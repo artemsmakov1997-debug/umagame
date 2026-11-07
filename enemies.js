@@ -8,6 +8,7 @@ import {beginFakeJump,stepFakeJump} from './enemy-traversal.js?v=0.21.5';
 import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport.js?v=0.21.5';
 import {stepEnemyFall} from './terrain.js?v=0.21.5';
 import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.21.5';
+import {stepBotfarm,stepBot} from './botfarm.js?v=0.21.5';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
@@ -63,6 +64,8 @@ export function stepEnemies(g,dt,paw,prevBottom){
     else if(e.state==='windup'&&e.timer<=0){const dir=e.aim.x<e.x?-1:1;g.bolts.push({room:e.room,kind:'ticker',x:e.x+24,y:e.aim.y,w:40,h:10,vx:dir*240,vy:0,ttl:2.5,sourceId:e.id});e.state='recover';e.timer=.95;e.attackFlash=.22;g.emit('tickerShot',{x:e.x,y:e.y});}
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.7;}
    }else if(e.type==='splicer')stepSplicer(g,e,dt,dx,dy);
+   else if(e.type==='botfarm')stepBotfarm(g,e,dt,dx,dy);
+   else if(e.type==='bot')stepBot(g,e,dt,dx);
    else if(e.type==='informant'){
     if(e.state==='patrol'){
      if(Math.abs(dx)<135)e.x+=(dx<0?1:-1)*e.speed*(e.inkSlow||1)*dt;
@@ -105,6 +108,9 @@ export function stepEnemies(g,dt,paw,prevBottom){
    const mouth={x:e.dir>0?e.x+2:e.x-40,y:e.y-30,w:88,h:72};
    if(e.state==='snap'&&g.overlap(p,mouth)&&p.dash>0){e.state='recover';e.timer=1.4;}
    else if(e.state==='snap'&&p.inv===0&&g.overlap(p,mouth)){g.swallow={enemyId:e.id,x:p.x,y:p.y,targetX:e.x+12,targetY:e.y-14,timer:.48,total:.48};p.attack=0;p.vx=0;p.vy=0;e.state='recover';e.timer=2;e.attackFlash=.48;e.captureTime=0;g.emit('swallow',{x:e.x,y:e.y});return;}
+  }else if(e.type==='botfarm'||e.frozen){
+   // The rack only takes a stomp; hanging bots no longer hurt.
+   if(e.type==='botfarm'&&g.overlap(p,e)&&p.vy>0&&prevBottom<e.y+12){g.hitEnemy(e,true);p.vy=-330;}
   }else if(g.overlap(p,e)&&!(e.type==='panicker'&&p.sneaking&&e.state!=='alarm')&&!(['fakenews','injection'].includes(e.type)&&e.state==='recover')){
    if(p.vy>0&&prevBottom<e.y+12){g.hitEnemy(e,true);p.vy=-330;}else g.hurt(false,e.x);
   }
