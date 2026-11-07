@@ -2,6 +2,7 @@ import {drawAgitatorPose} from './agitator-art.js?v=0.21.5';
 import {drawCensorPortrait} from './censor-art.js?v=0.21.5';
 import {drawSensationPortrait} from './roofs-art.js?v=0.21.5';
 import {drawBotfarmPortrait,drawBotPortrait} from './botfarm-art.js?v=0.21.5';
+import {drawEchoDoublePortrait} from './echo-double-art.js?v=0.21.5';
 import {drawManipulatorPose} from './manipulator-art.js?v=0.21.5';
 import {creatures,newCreatures,sprite} from './assets.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
@@ -16,6 +17,7 @@ export function drawCrt(c,x,y,w,h,time=0){
 export function drawMonster(c,a,id,x,y,w,h,time=0,flip=false,actor={}){
  if(id==='censor')return drawCensorPortrait(c,a,x,y,w,h,time,actor);
  if(id==='sensation')return drawSensationPortrait(c,a,x,y,w,h,time,actor);
+ if(id==='echo'&&!actor.orb)return drawEchoDoublePortrait(c,a,x,y,w,h,time,flip,actor);
  if(id==='botfarm')return drawBotfarmPortrait(c,a,x,y,w,h,time,actor);
  if(id==='bot')return drawBotPortrait(c,a,x,y,w,h,time,actor);
  if(id==='agitator'&&a.agitator){const row=actor.hurtTime>0?5:actor.state==='windup'?3:actor.state==='casting'?1:actor.moving?4:0,frame=actor.moving?Math.floor((actor.walkTime??time)*8)%4:Math.floor(time*6)%4;drawAgitatorPose(c,a,row,frame,x,y,w,h,flip);return;}
