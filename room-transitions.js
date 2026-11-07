@@ -2,6 +2,7 @@ import {signalProfile} from './signal.js?v=0.21.5';
 import {rooms,spawns,platforms,MAX_HEALTH,LAST_ROOM} from './level.js?v=0.21.5';
 import {createBoss} from './boss.js?v=0.21.5';
 import {wakePlayer} from './player-rest.js?v=0.21.5';
+import {createRoofs} from './roofs-systems.js?v=0.21.5';
 export const LOCATION_LOAD_TIME=1.1;
 export function remainingAntennas(g,room=g.room){return g.relays.filter(d=>d.room===room&&!d.scripted&&d.hp>0);}
 export function canLeaveRoom(g,room=g.room){
@@ -20,6 +21,7 @@ export function activateRoom(g,index,{heal=true}={}){
  if(index===4)for(const d of g.relays)if(d.room===4){d.hp=g.bossesDefeated.has('agitator')?0:3;d.lastSwing=-1;}
  if(index===2||index===6)for(const d of g.relays)if(d.room===index)d.hp=0;
  g.boss=createBoss(index);if(r.arena){if(g.bossesDefeated.has(r.boss)){g.boss.hp=0;g.boss.active=false;if(g.boss.broadcast){g.boss.broadcast.stage='chase';g.boss.broadcast.antennas.forEach(a=>a.hits=3);}}else{g.boss.active=true;g.boss.state='recover';g.boss.timer=2;g.boss.noticeTime=.35;g.emit('bossStart',{boss:r.boss});}}
+ if(index===3)g.roofs=createRoofs();
  if(index===LAST_ROOM)g.arenaEntered=true;
  g.unlockForRoom(index);g.updateCamera();g.emit('locationEnter',{room:index,chapter:r.chapter});
 }

@@ -38,7 +38,7 @@ test('ink slows Fakenews patrols and lunges but does not slow Stamp',()=>{
  assert.ok(distance('fakenews',true)<distance('fakenews',false)*.5);assert.ok(distance('fakenews',true,'lunge')<distance('fakenews',false,'lunge')*.5);assert.ok(Math.abs(distance('stamp',true)-distance('stamp',false))<.01);
 });
 test('Uma has real ink inertia after releasing movement and distinct slipping animation poses',()=>{
- const g=setup(3,3,105);stampInk(g,actor('stamp',3,125,3));tick(g,20,{right:true});assert.ok(inkAt(g,g.player));assert.equal(g.player.slipping,true);const x=g.player.x,v=g.player.vx,first=restPose(g.player);tick(g,5);assert.ok(g.player.x>x+3);assert.ok(g.player.vx>0&&g.player.vx<v);assert.notEqual(restPose(g.player),first);tick(g,1,{dash:true});assert.equal(g.player.slipping,false);assert.equal(g.player.vx,430);
+ const g=setup(5,3,105);stampInk(g,actor('stamp',5,125,3));tick(g,20,{right:true});assert.ok(inkAt(g,g.player));assert.equal(g.player.slipping,true);const x=g.player.x,v=g.player.vx,first=restPose(g.player);tick(g,5);assert.ok(g.player.x>x+3);assert.ok(g.player.vx>0&&g.player.vx<v);assert.notEqual(restPose(g.player),first);tick(g,1,{dash:true});assert.equal(g.player.slipping,false);assert.equal(g.player.vx,430);
 });
 test('ink mutes Panicker and closes its existing portal before reinforcements appear',()=>{
  const g=setup(5,0,20),bell=actor('panicker',5,125,0,{state:'alarm',timer:99,speed:0});g.enemies=[bell];alertNearby(g,bell);stampInk(g,actor('stamp',5,125,0));tick(g,70);assert.equal(bell.muffled,true);assert.equal(bell.state,'patrol');assert.equal(g.portals.length,0);assert.equal(g.enemies.length,1);assert.ok(g.events.some(e=>e.type==='alarmMuffled'));

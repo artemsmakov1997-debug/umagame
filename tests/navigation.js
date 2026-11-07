@@ -51,3 +51,20 @@ export function completeTutorial(g,{exit=false}={}){
  if(exit)run(()=>g.room!==0||g.mode==='loading',{right:true},400);
  return g.tutorial.monitorBroken;
 }
+// «Крыши» pilot with ordinary inputs: jumps, both ladders, the awning, a calm moment for the windy gap,
+// waiting out each flock of Сенсации, and a paw swing at every transmitter on the way.
+export async function roofLib(){return import('../roofs-systems.js');}
+export function climbRoofs(g,lib,{relays=true}={}){
+ const {flockState,windPhase,BIRD}=lib,{SENSATION_LANES}=lib.lanes,p=g.player,x0=campaignRooms[3].x,on=i=>p.grounded&&p.supportId==='3:'+i;
+ const run=(cond,input,max=900)=>{for(let i=0;i<max&&!cond();i++)tick(g,typeof input==='function'?input(i):input);return cond();};
+ const clear=(li,need,input={})=>{const lane=SENSATION_LANES[li],fly=(lane.x2-lane.x1+40+BIRD.gap*BIRD.count)/BIRD.speed;return run(()=>{const k=(((g.time+lane.phase)%lane.period)+lane.period)%lane.period;return k>BIRD.warn+fly&&lane.period-k>need;},input,600);};
+ const hit=i=>{if(!relays)return;const d=g.relays.find(d=>d.room===3&&d.platformIndex===i&&d.hp);if(!d)return;walkTo(g,d.x-37);p.dir=1;p.cooldown=0;tick(g,{attack:true});tick(g,{});};
+ if(!jumpTo(g,3,1))return false;
+ walkTo(g,x0+524);if(!run(()=>on(2),{up:true},300))return false;hit(2);
+ walkTo(g,x0+680);clear(0,1.8);if(!jumpTo(g,3,9)||!jumpTo(g,3,3))return false;
+ clear(1,1.4);if(!jumpTo(g,3,4))return false;
+ if(!run(()=>on(5),{right:true},300))return false;hit(5);
+ walkTo(g,x0+1500);run(()=>windPhase(g.time)==='calm'&&windPhase(g.time+1.2)==='calm',{},400);run(()=>p.x>x0+1524,{right:true});tick(g,{right:true,jump:true});if(!run(()=>p.grounded,{right:true},120)||!on(6))return false;
+ walkTo(g,x0+1760);clear(2,1.2);if(!jumpTo(g,3,7))return false;run(()=>false,{down:true},2);clear(2,2.1,{down:true});
+ hit(7);walkTo(g,x0+1980);return run(()=>on(8),{up:true},300);
+}
