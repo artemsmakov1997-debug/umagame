@@ -28,6 +28,7 @@ import {drawMovingRails,drawLifeCaches,drawArenaTransfer,drawLocationLoading} fr
 import {drawArenaBoss} from './boss-art.js?v=0.21.5';
 import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
+import {drawRoofSurface,drawRoofProps,drawRoofWind,drawSensations} from './roofs-art.js?v=0.21.5';
 import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
@@ -60,7 +61,7 @@ export class Renderer{
   drawBackdropVeil(c,g,cam,vw);
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
-  if(![2,4,6].includes(g.room))drawPassages(c,a,g);
+  if(![2,3,4,6].includes(g.room))drawPassages(c,a,g);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
   drawMovingRails(c,g.platforms.filter(s=>s.room===g.room&&!s.bossHidden),t);
   if(g.room===6)for(const platform of g.platforms.filter(p=>p.room===6&&['gap','forming'].includes(p.studioPhase)))drawStudioPlatform(c,a,platform,t);
@@ -68,19 +69,19 @@ export class Renderer{
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawPlatformShadow(c,g,platform);
-   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
+   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(g.room===3&&drawRoofSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
    drawPlatformRim(c,g,platform,t);
   }
   for(const ladder of ladders){
-   if(ladder.room!==g.room)continue;
+   if(ladder.room!==g.room||g.room===3)continue;
    if(ladder.x<cam-40||ladder.x>cam+vw)continue;
    rect(c,ladder.x-1,ladder.y+9,ladder.w+2,ladder.h-9,'#050e1e');
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
-  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
+  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawRoofProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
-  drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t);
+  drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t);drawSensations(c,a,g,t);drawRoofWind(c,g,t);
   drawLifeCaches(c,g,t);
   for(const f of g.fishes)if(f.room===g.room&&!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(soup.room===g.room&&!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
