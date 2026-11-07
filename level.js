@@ -1,5 +1,6 @@
 import {STUDIO_PIECES,studioCuttable} from './studio-map.js?v=0.21.5';
 import {DIM_PIECES} from './dimension-map.js?v=0.21.5';
+import {AGITATOR_LAYOUT,AGITATOR_LADDERS,AGITATOR_FISH} from './agitator-map.js?v=0.21.5';
 import {ROOF_BUILDINGS,ROOF_ROPES,ROOF_AWNINGS,ROOF_PROPS,ROOF_LADDERS,roofPiece} from './roofs-map.js?v=0.21.5';
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const chapters=[
@@ -64,8 +65,8 @@ for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>{
 layouts[2]=[[0,416,864],[150,364,200],[514,364,200],[24,285,104],[736,285,104]];
 // Three permanent camera docks and a reversible holographic chase route.
 layouts[6]=[[0,422,210],[550,220,210],[1160,198,230],[70,220,180],[520,422,375],[1320,422,216],[195,352,125],[350,284,125],[240,224,145],[780,280,140],[955,226,140],[1010,348,140],[1190,360,125],[430,357,125],[700,350,125],[850,410,125],[1410,300,126],[20,320,125]];
-// Rooftop broadcast arena: two console roofs, central shield dock and linked chase decks.
-layouts[4]=[[0,422,1536],[622,332,290],[0,290,266],[1242,376,294],[1080,354,140],[280,210,155],[1110,224,155],[440,303,155],[941,303,155],[285,300,140],[1111,300,140],[542,234,150],[845,234,150],[336,382,150],[30,192,140],[1050,382,150],[590,406,150],[795,406,150]];
+// «Мачта Агитатора» (agitator-map.js): roof, mast deck, two antenna towers, chimneys and hidden letter slots.
+layouts[4]=AGITATOR_LAYOUT;
 // The last boss uses a readable continuous floor and three reachable CRT stations.
 layouts[8]=[
  [0,474,1536],[80,386,322],[609,338,324],[1107,386,323],
@@ -84,6 +85,7 @@ const motions={
 export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:false,roof:r.index===3?roofPiece(index):null,studio:r.index===5?STUDIO_PIECES[index]:null,dim:r.index===7?DIM_PIECES[index]:null,cuttable:r.index===5?studioCuttable(index):(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===0?-45:0,shelter:r.index===2&&[1,2].includes(index)?y+16:r.index===0&&index===4?y+11:null,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [];
+ if(r.index===4)return AGITATOR_LADDERS.map(l=>({...l,x:r.x+l.x,room:4}));
  if(r.arena)return [];
  if(r.index===1)return [];
  if(r.index===5||r.index===7)return [];
@@ -127,15 +129,15 @@ export function createEnemies(){const all=[
 }
 export function createFish(){return rooms.flatMap(r=>{
  if(r.index===2)return [];
- const points=r.tutorial?[[330,415],[538,428],[880,415],[980,380],[1110,415],[1330,415]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
+ const points=r.index===4?AGITATOR_FISH:r.tutorial?[[330,415],[538,428],[880,415],[980,380],[1110,415],[1330,415]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
 export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.index===2?4:r.arena?5:r.index===1?4:r.index===3?11:r.index===5?4:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
-const antennaPlaces=[[2,4],[3,2],[3,5],[3,7],[4,2],[4,3],[5,3],[5,8],[5,11],[6,13],[8,10],[8,13]];
+const antennaPlaces=[[2,4],[3,2],[3,5],[3,7],[5,3],[5,8],[5,11],[6,13],[8,10],[8,13]];
 export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
  const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
  return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:room===4?3:[2,6].includes(room)?0:1,maxHp:room===4?3:1,rewardWhenOverloaded:room===4,lastSwing:-1,breakTime:0,kind,ordinal,scripted:[2,4,6].includes(room)};});}
-export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,12],[3,13],[4,14],[5,15],[5,17],[6,3],[7,10],[7,13],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,12],[3,13],[4,4],[5,15],[5,17],[6,3],[7,10],[7,13],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:70,scenes:['arrival1','fakenews','stamp','censor','press']},

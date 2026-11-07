@@ -70,11 +70,15 @@ export class GameAudio{
  }
  play(event,game){
   if(!this.enabled||this.hidden||!this.context||!this.offline&&this.context.state!=='running')return;
-  const enemyType=event.enemyType,type={tutorialMonitor:'dishBreak',tutorialBarrier:'dash',sensationWarning:'alarm',roofBounce:'jump',gustWarning:'dash',roofFall:'hurt',holoWarning:'cutWarning',holoVanish:'platformCut',takeWarning:'cutWarning',takeSwap:'platformCut',botPrint:'copyScan',botSpawn:'copySpawn',botFreeze:'staticWarning',envelopeIn:'teleportIn',envelopeOut:'teleportOut',deadLink:'blocked',riftFlip:'echoTeleport',sourceFound:'lifePickup',clickbaitSpit:'hurt'}[event.type]||event.type,now=this.context.currentTime,last=this.effectTimes.get(type)??-10;
+  const enemyType=event.enemyType,type={tutorialMonitor:'dishBreak',tutorialBarrier:'dash',sensationWarning:'alarm',roofBounce:'jump',gustWarning:'dash',roofFall:'hurt',holoWarning:'cutWarning',holoVanish:'platformCut',takeWarning:'cutWarning',takeSwap:'platformCut',botPrint:'copyScan',botSpawn:'copySpawn',botFreeze:'staticWarning',envelopeIn:'teleportIn',envelopeOut:'teleportOut',deadLink:'blocked',riftFlip:'echoTeleport',sourceFound:'lifePickup',clickbaitSpit:'hurt',lettersCrumble:'platformCrumble',placardRise:'copySpawn'}[event.type]||event.type,now=this.context.currentTime,last=this.effectTimes.get(type)??-10;
   if(now-last<.045)return;this.effectTimes.set(type,now);
   const dx=Number.isFinite(event.x)&&game?event.x-game.player.x:0,pan=Math.max(-.7,Math.min(.7,dx/450)),level=Math.abs(dx)>650?.18:Math.abs(dx)>350?.55:1;
   const tone=(frequency,to,duration=.15,gain=.07,wave='square',delay=0)=>this.voice({frequency,to,duration,gain:gain*level,wave,pan,start:now+.006+delay});
   const noise=(duration=.12,gain=.07,filter=2000,delay=0)=>this.voice({noise:true,duration,gain:gain*level,filter,pan,start:now+.006+delay});
+  if(type==='letterLand'){noise(.09,.07,500);tone(120,70,.12,.05,'square');return;}
+  if(type==='agitatorOverheat'){noise(.5,.04,5200);tone(900,300,.45,.025,'sawtooth');return;}
+  if(type==='mastBend'){tone(140,55,.6,.06,'sawtooth');noise(.4,.05,1200,.05);return;}
+  if(type==='bossLand'){noise(.22,.09,400);tone(90,40,.25,.06,'triangle');return;}
   if(type==='enemyNoticed'){
    const pitches={fakenews:260,clickbait:100,inflator:145,informant:920,panicker:740,stamp:180,copier:460,cutter:1100,splicer:320,injection:580,echo:660,static:190};tone(pitches[enemyType]||280,(pitches[enemyType]||280)*1.25,.08,.035,'triangle');return;
   }

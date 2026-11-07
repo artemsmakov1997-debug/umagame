@@ -1,5 +1,5 @@
 import {rect} from './pixel.js?v=0.21.5';
-import {antennaStation} from './agitator-combat.js?v=0.21.5';
+import {agitatorTargets} from './agitator-combat.js?v=0.21.5';
 import {spreaderExposed} from './spreader-combat.js?v=0.21.5';
 // Boss targets: a soft pulsing glow on exactly the area a paw swing must touch, plus a small
 // bobbing chevron above it. Only targets that can be hit right now are marked.
@@ -9,13 +9,8 @@ export function bossTargets(g){
  const b=g.boss,out=[];if(!b?.active||b.hp<=0||g.mode!=='playing'&&g.mode!=='paused')return out;
  if(g.room===2&&b.id==='spreader'&&spreaderExposed(b))out.push({id:'spreader',x:b.x-4,y:b.y+6,w:b.w+8,h:b.h-6,color:TARGET_GOLD});
  const n=b.broadcast;
- if(g.room===4&&n){
-  if(n.stage==='shield')for(const a of n.antennas){
-   const blocked=a.lockTime>0||a.locked&&n.antennas.some(o=>o!==a&&o.hits<3);if(a.hits>=3||blocked)continue;
-   const at=antennaStation(g,a);out.push({id:'antenna-'+a.index,x:at.x-29,y:at.y-43,w:58,h:44,color:TARGET_GOLD});
-  }
-  if(n.stage==='chase'&&n.mode==='hold')out.push({id:'agitator',x:b.x,y:b.y,w:b.w,h:b.h,color:TARGET_GOLD});
- }
+ // Agitator: the robot is marked only while he is open (overheated megaphone, back turned on «УРА!», on his tower).
+ if(g.room===4&&n)for(const box of agitatorTargets(g))out.push({...box,color:TARGET_GOLD});
  const m=b.network;
  if(g.room===8&&m){
   if(m.stage==='network')for(const mon of m.monitors)if(mon.state==='open'&&mon.shieldTime<=0)out.push({id:'terminal-'+mon.index,x:mon.terminalX-23,y:mon.terminalY-8,w:46,h:35,color:TARGET_PINK});

@@ -38,7 +38,7 @@ async function boot(){
  const conclusionUI=new ConclusionUI(game,clearInput);
  $('cinematic-skip').addEventListener('click',()=>{clearInput();game.skipBossDefeat();});
  const settingsUI=new SettingsUI(game,audio,clearInput);buildControls();
- const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,openSettings:back=>settingsUI.open(back),onResume:mode=>{dialogueUI.update(true);endingUI.update(true);conclusionUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
+ const pauseMenu=new PauseMenu(game,ui,{clearInput,restart:begin,exit:quit,openSettings:back=>settingsUI.open(back),selectLevel:room=>{game.selectLocation(room);clearEffects();clearInput();accumulator=0;$('overlay').hidden=true;ui.show('game');dialogueUI.update(true);},onResume:mode=>{dialogueUI.update(true);endingUI.update(true);conclusionUI.update(true);if(mode==='won'||mode==='lost')showResult(mode);else if(mode!=='dialogue')$('game').focus({preventScroll:true});}});
  touch=new TouchControls(document.querySelector('.game-shell'),()=>ui.view==='game'&&game.mode==='playing'&&!pauseMenu.active);
  function updateSound(){settingsUI?.sync();}
  let lastAbilities='';
