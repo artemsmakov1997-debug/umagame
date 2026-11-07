@@ -23,8 +23,8 @@ test('Clickbait is immune to paws, stomps, soup damage and reflected projectiles
  for(const sourceX of [e.x-60,e.x+100])for(const stomp of [false,true]){assert.equal(g.hitEnemy(e,stomp,99,{reflected:true,sourceX}),false);assert.equal(e.hp,e.maxHp);assert.equal(e.dead,false);}
  g.bolts=[{x:e.x,y:e.y,w:16,h:12,vx:0,vy:0,ttl:1,friendly:true,kind:'packet'}];stepProjectiles(g,.01,{x:0,y:0,w:0,h:0});assert.equal(e.hp,e.maxHp);assert.equal(g.kills,0);
 });
-test('Inflator armour rejects frontal paws and reflected packets but opens from behind in both directions',()=>{
- for(const dir of [-1,1]){const g=setup(),e=actor('inflator',1,125,0,{dir});g.enemies=[e];const center=e.x+e.w/2;assert.equal(g.hitEnemy(e,false,2,{sourceX:center+dir*80}),false);assert.equal(g.hitEnemy(e,true,2,{reflected:true,sourceX:center+dir*80}),false);assert.equal(e.hp,3);assert.equal(g.hitEnemy(e,false,1,{sourceX:center-dir*80}),true);assert.equal(e.hp,2);}
+test('Нагнетатель takes paw hits from the front and from behind in both directions',()=>{
+ for(const dir of [-1,1]){const g=setup(),e=actor('inflator',1,125,0,{dir});g.enemies=[e];const center=e.x+e.w/2;assert.equal(g.hitEnemy(e,false,1,{sourceX:center+dir*80}),true);assert.equal(e.hp,2);e.inv=0;assert.equal(g.hitEnemy(e,false,1,{sourceX:center-dir*80}),true);assert.equal(e.hp,1);}
 });
 test('the strong forward blast carries Uma over a ledge while dash remains protected',()=>{
  const g=setup(3,9,165),e=actor('inflator',3,210,9,{state:'blast',timer:.23,dir:-1});g.enemies=[e];const x=g.player.x;tick(g,1);assert.equal(g.player.vx,-640);tick(g,16);assert.ok(g.player.x<x-120);assert.equal(g.health,4);
