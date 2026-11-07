@@ -1,7 +1,7 @@
 import {platforms} from './level.js?v=0.21.5';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function solidSurfaces(g){
- const all=(g.platforms||platforms).filter(s=>!s.bossHidden&&!(s.collapseTime>0)&&!['gap','forming'].includes(s.studioPhase));if(!g.cuts?.some(c=>c.phase==='gap'))return all;
+ const all=(g.platforms||platforms).filter(s=>!s.bossHidden&&!s.intangible&&!(s.collapseTime>0)&&!['gap','forming'].includes(s.studioPhase));if(!g.cuts?.some(c=>c.phase==='gap'))return all;
  return all.flatMap(s=>{
   const cut=g.cuts.find(c=>c.platformId===s.id&&c.phase==='gap');if(!cut)return [s];
   const left=clamp(cut.localX,0,s.w),right=clamp(cut.localX+cut.w,0,s.w),parts=[];

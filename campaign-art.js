@@ -9,6 +9,7 @@ export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
   if(room.index===2){canvas.height=480;const image=assets.spreaderArena,scale=Math.max(canvas.width/image.width,480/image.height);c.drawImage(image,(canvas.width-image.width*scale)/2,(480-image.height*scale)/2,image.width*scale,image.height*scale);return canvas;}
+  if(room.index===5&&assets.studioBlock1){[assets.studioBlock1,assets.studioBlock2,assets.studioBlock3].forEach((image,i)=>c.drawImage(image,i*768,0,768,512));for(const seam of[768,1536]){const fade=c.createLinearGradient(seam-60,0,seam+60,0);fade.addColorStop(0,'#03021000');fade.addColorStop(.5,'#030210dd');fade.addColorStop(1,'#03021000');c.fillStyle=fade;c.fillRect(seam-60,0,120,512);}return canvas;}
   if(room.index===3&&assets.roofsBlock1){[assets.roofsBlock1,assets.roofsBlock2,assets.roofsBlock3].forEach((image,i)=>c.drawImage(image,i*768,0,768,512));c.drawImage(assets.roofsBlock2,1080,40,70,70,768+582,18,35,35);/* one moon where blocks 2 and 3 meet */for(const seam of[768,1536]){const fade=c.createLinearGradient(seam-50,0,seam+50,0);fade.addColorStop(0,'#04092000');fade.addColorStop(.5,'#040920cc');fade.addColorStop(1,'#04092000');c.fillStyle=fade;c.fillRect(seam-50,0,100,512);}return canvas;}
   if(room.tutorial){c.drawImage(assets.cozy,0,0,768,512);if(assets.tutorialRoom){c.drawImage(assets.tutorialRoom,768,0,768,512);c.drawImage(assets.tutorialRoom,60,150,90,110,768+78,75,45,55);/* the joined window keeps one moon */}return canvas;}
   const index={newsroom:0,roofs:1,studio:2,noise:3}[room.theme],sw=assets.backdrops.width/2,sh=assets.backdrops.height/2;
@@ -47,7 +48,7 @@ export function backgroundLayers(layers){
  });
 }
 export function backgroundOffset(room,camera){return room.index===0||room.theme==='cozy'?0:Math.max(-64,Math.min(64,(camera-(room.x+WIDTH*.25))*.16));}
-export function drawBackdrop(c,layer,room,camera,darkness=0){c.save();if(room.theme==='cozy'&&darkness>0)c.filter=`brightness(${1-darkness*.8})`;if(room.index===2||room.index===3){c.drawImage(layer,room.x,0);c.restore();return;}c.drawImage(layer,Math.round(room.x-(room.theme==='cozy'?0:80)+backgroundOffset(room,camera)),0);if(room.theme==='cozy')for(const x of[room.x-4,room.x+room.width]){rect(c,x,0,4,512,'#241b25');rect(c,x+1,0,1,512,'#836140');}c.restore();}
+export function drawBackdrop(c,layer,room,camera,darkness=0){c.save();if(room.theme==='cozy'&&darkness>0)c.filter=`brightness(${1-darkness*.8})`;if([2,3,5].includes(room.index)){c.drawImage(layer,room.x,0);c.restore();return;}c.drawImage(layer,Math.round(room.x-(room.theme==='cozy'?0:80)+backgroundOffset(room,camera)),0);if(room.theme==='cozy')for(const x of[room.x-4,room.x+room.width]){rect(c,x,0,4,512,'#241b25');rect(c,x+1,0,1,512,'#836140');}c.restore();}
 export function drawSurface(c,a,p,time){
  if(p.room===0&&p.index===7)return;
  const bed=p.room===0&&p.index===0,x=bed?160:p.x,y=p.y,w=bed?p.w-160:p.w,theme=rooms[p.room].theme;
@@ -92,7 +93,7 @@ export function drawOpening(c,a,g){
  c.restore();
 }
 // These screens are scenery only; their rectangles never enter collision geometry.
-export const hauntedScreens=[{room:3,lx:596,y:306,w:84,h:84},{room:5,lx:630,y:115,w:108,h:108},{room:5,lx:1080,y:350,w:82,h:82},{room:5,lx:1170,y:350,w:82,h:82,forged:true}];
+export const hauntedScreens=[{room:3,lx:596,y:306,w:84,h:84},{room:5,lx:600,y:96,w:96,h:96},{room:5,lx:1150,y:74,w:70,h:70},{room:5,lx:1236,y:74,w:70,h:70,forged:true}];
 export function drawInfection(c,g,a){
  for(const m of hauntedScreens)if(m.room===g.room)drawHauntedMonitor(c,a,rooms[m.room].x+m.lx,m.y,m.w,m.h,g.time);
 }
