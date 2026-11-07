@@ -22,10 +22,11 @@ export const ROOF_PROPS=[
 ];
 export const ROOF_LADDERS=[{x:524,top:262,bottom:392},{x:1980,top:150,bottom:262}];
 // Flocks of Сенсации cross a lane at a fixed height; birds fly over [x1,x2] from the `from` side.
+// Every flock is fired from a firework launcher at its entry: on a pole standing on a roof or bolted to a wall.
 export const SENSATION_LANES=[
- {id:'rope',x1:730,x2:940,y:228,from:1,period:5,phase:0},       // head height on the washing line: crouch or wait
- {id:'jump',x1:1060,x2:1260,y:224,from:1,period:3.8,phase:1.4},   // jump height between B0 and B1: don't jump into it
- {id:'ladder',x1:1820,x2:2040,y:220,from:1,period:4.6,phase:2.2}  // over C1 and the last ladder
+ {id:'rope',x1:730,x2:944,y:228,from:1,period:5,phase:0,launcher:{mount:'pole',base:298}},        // head height on the washing line: crouch or wait
+ {id:'jump',x1:1056,x2:1260,y:224,from:-1,period:3.8,phase:1.4,launcher:{mount:'pole',base:298}}, // jump height between B0 and B1: don't jump into it
+ {id:'ladder',x1:1820,x2:2030,y:220,from:1,period:4.6,phase:2.2,launcher:{mount:'wall'}}          // fired from the mast roof's wall over C1 and the last ladder
 ];
 // Wind gusts sweep the antenna forest (block 3) right → left; they move Uma only while she is in the air.
 export const WIND={x1:1536,x2:2304,period:5,warn:.8,gust:1.6,speed:-95};

@@ -117,13 +117,13 @@ export function createEnemies(){const all=[
  enemy('fakenews',1,330,0,{trigger:90}),enemy('fakenews',1,760,0),
  enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,300,1),
  enemy('stamp',1,1580,0),enemy('fakenews',1,1900,6),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
- enemy('informant',3,180,0,{trigger:100}),enemy('inflator',3,680,2,{trigger:520}),enemy('inflator',3,1010,3),enemy('informant',3,1170,4),enemy('inflator',3,1730,6),enemy('informant',3,2120,8),
+ enemy('informant',3,180,0,{trigger:100}),enemy('inflator',3,470,1),enemy('informant',3,680,2),enemy('inflator',3,1010,3),enemy('inflator',3,1730,6),enemy('informant',3,2120,8),
  enemy('injection',5,160,0,{trigger:100}),enemy('injection',5,360,1),enemy('splicer',5,1430,14,{trigger:1400}),enemy('cutter',5,1110,13,{trigger:800}),enemy('injection',5,850,12),
  enemy('injection',5,1140,13),enemy('splicer',5,1190,16),enemy('cutter',5,1410,14),enemy('injection',5,1670,21),enemy('injection',5,1930,22),enemy('splicer',5,1990,25),enemy('cutter',5,2070,28),
  enemy('static',7,200,0,{trigger:130}),enemy('echo',7,1000,17,{trigger:800}),enemy('clickbait',7,1510,12,{trigger:1400}),enemy('static',7,870,10),enemy('static',7,1150,11),
  enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
  ];
- const kept={1:[330,760,1120,1420,300,1580,1900,2250],3:[180,680,1010,1170,1730,2120],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
+ const kept={1:[330,760,1120,1420,300,1580,1900,2250],3:[180,470,680,1010,1730,2120],5:[160,1430,1110,850,1670,1990,2070],7:[200,1000,1510,870,1650,2060,2200]};
  const roster=all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}

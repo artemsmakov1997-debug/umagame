@@ -18,16 +18,19 @@ const X0=()=>rooms[ROOM].x;
 const blit=(c,image,box,x,y,w,h)=>c.drawImage(image,box[0],box[1],box[2],box[3],Math.round(x),Math.round(y),Math.round(w),Math.round(h));
 const hash=n=>{n=Math.sin(n*127.1)*43758.5453;return n-Math.floor(n);};
 
-function drawWall(c,b,index){
+// assets/roofs-facades.png: 3×2 seamless 512×512 tiles — brick (lit window, dark window, plain with a drainpipe), plaster (same).
+const FACADE_TILE=96;
+function facadeTile(index,row,col){const n=hash(index*31+row*7+col*13);return n<.34?0:n<.78?1:2;}
+function drawWall(c,a,b,index){
  const left=X0()+(b.wall??b.x),right=X0()+b.x+b.w,top=b.y+(b.style==='tin'?26:30),w=right-left,brick=b.style==='brick';
- rect(c,left,top,w,HEIGHT-top,brick?'#2a1714':'#221f33');
- for(let y=top+4;y<HEIGHT;y+=9)for(let x=left+((y/9|0)%2)*11;x<right-6;x+=22)rect(c,x,y,20,1,brick?'#3a201b':'#2b2840');
- rect(c,left,top,3,HEIGHT-top,'#120a10');rect(c,right-3,top,3,HEIGHT-top,'#120a10');
- // Windows: a few lit, most dark.
- for(let row=0;top+16+row*52<HEIGHT-24;row++)for(let col=0;left+14+col*44<right-26;col++){
-  const x=left+14+col*44,y=top+16+row*52,lit=hash(index*31+row*7+col)>.55;
-  rect(c,x-2,y-2,18,26,'#140b0c');rect(c,x,y,14,22,lit?'#f2b45a':'#141c33');if(lit){rect(c,x,y,14,3,'#ffd78e');rect(c,x+6,y,2,22,'#9a6630');}
- }
+ c.save();c.beginPath();c.rect(left,top,w,HEIGHT-top);c.clip();
+ if(a.roofsFacades){const row0=brick?0:1;for(let row=0;top+row*FACADE_TILE<HEIGHT;row++)for(let col=0;left+col*FACADE_TILE<right;col++){const t=facadeTile(index,row,col);c.drawImage(a.roofsFacades,t*512+3,row0*512+3,506,506,Math.round(left+col*FACADE_TILE),Math.round(top+row*FACADE_TILE),FACADE_TILE,FACADE_TILE);}}
+ else rect(c,left,top,w,HEIGHT-top,brick?'#2a1714':'#221f33');
+ // Night shading: darker towards the street and at the corners, so the facades sit behind the play.
+ const fall=c.createLinearGradient(0,top,0,HEIGHT);fall.addColorStop(0,'#05061000');fall.addColorStop(1,'#050610c0');c.fillStyle=fall;c.fillRect(left,top,w,HEIGHT-top);
+ c.fillStyle='#0508148c';c.fillRect(left,top,w,HEIGHT-top);
+ rect(c,left,top,4,HEIGHT-top,'#0b0710');rect(c,right-4,top,4,HEIGHT-top,'#0b0710');rect(c,left,top,w,5,'#0b0710');
+ c.restore();
 }
 function drawRoofTop(c,a,s,b){
  const art=a.roofsPieces,brick=b.style==='brick',[L,M,R]=brick?['brickL','brickM','brickR']:['tinL','tinM','tinR'],k=brick?34/165:30/156;
@@ -39,7 +42,7 @@ function drawRoofTop(c,a,s,b){
 }
 export function drawRoofSurface(c,a,g,s){
  if(s.room!==ROOM||!s.roof||!a.roofsPieces)return false;const r=s.roof;
- if(r.type==='building'){drawWall(c,r,s.index);drawRoofTop(c,a,s,r);return true;}
+ if(r.type==='building'){drawWall(c,a,r,s.index);drawRoofTop(c,a,s,r);return true;}
  if(r.type==='prop'){const box=PIECES[r.kind==='chimney'&&r.w>34?'chimneyWide':r.kind],k=s.w/box[2],h=box[3]*k;blit(c,a.roofsPieces,box,s.x,r.base-h+1,s.w,h);return true;}
  if(r.type==='rope'){const sag=g.player.grounded&&g.player.supportId===s.id,box=PROPS[sag?'ropeSag':'rope'],k=s.w/box[2];blit(c,a.roofsProps,box,s.x,s.y-8,s.w,box[3]*k);return true;}
  if(r.type==='awning'){const squash=(g.roofs?.bounceTime||0)>0,box=PROPS[squash?'awningSquash':'awning'],k=s.w/box[2];blit(c,a.roofsProps,box,s.x,s.y-3,s.w,box[3]*k);return true;}
@@ -68,13 +71,29 @@ export function drawSensations(c,a,g,t){
  if(g.room!==ROOM||!a.sensation)return;const x0=X0();
  for(const [li,lane] of SENSATION_LANES.entries()){
   const s=flockState(lane,t),f=g.roofs?.flocks?.[li],same=f&&f.cycle===s.cycle;
-  if(s.warn){const x=x0+s.entry+(lane.from>0?-14:4),blink=Math.floor(t*8)%2;c.save();c.globalAlpha=blink?.95:.45;rect(c,x-3,lane.y-14,12,26,'#2a0d10');rect(c,x,lane.y-11,6,14,'#ff5a4a');rect(c,x,lane.y+6,6,4,'#ff5a4a');c.restore();}
+  drawLauncher(c,lane,s,t);
   for(const bird of s.birds){if(!bird.visible)continue;const state=same?f.birds[bird.i]:null;if(state?.dead&&state.deathTime<=0)continue;
    const box=birdBox(lane,bird),frame=state?.dead?7:state?.hit?5:Math.floor(t*12+bird.i)%4,row=frame>>2,col=frame%4,w=CELL_W*BIRD_SCALE,h=CELL_H*BIRD_SCALE;
-   c.save();if(state?.dead)c.globalAlpha=Math.max(0,state.deathTime/.35);const cx=box.x+box.w/2,cy=box.y+box.h/2;c.translate(Math.round(cx),Math.round(cy));if(s.dir<0)c.scale(-1,1);
+   const d=Math.abs(bird.x-s.entry),span=lane.x2-lane.x1;c.save();c.globalAlpha=state?.dead?Math.max(0,state.deathTime/.35):Math.min(1,(span-d)/36+.15);const cx=box.x+box.w/2,cy=box.y+box.h/2;c.translate(Math.round(cx),Math.round(cy));if(s.dir<0)c.scale(-1,1);
    c.drawImage(a.sensation,col*CELL_W,row*CELL_H,CELL_W,CELL_H,-200*BIRD_SCALE,-(PIVOT_Y[row]-row*CELL_H)*BIRD_SCALE,w,h);c.restore();
   }
  }
+}
+// The firework launcher a flock is fired from: on a pole standing on a roof, or bolted to a wall.
+// Before a salvo its fuse sparks and a red sign blinks over it; every rocket leaves a muzzle flash and smoke.
+function drawLauncher(c,lane,s,t){
+ const x0=X0(),dir=s.dir,mx=x0+s.entry,y=lane.y,box={x:Math.round(mx-(dir>0?22:4)),y:y-11,w:26,h:22},L=lane.launcher||{};
+ if(L.mount==='pole'){rect(c,mx-(dir>0?12:-6)-2,y+10,5,L.base-y-10,'#1a1622');rect(c,mx-(dir>0?12:-6)-2,y+10,2,L.base-y-10,'#4a4258');rect(c,mx-(dir>0?12:-6)-8,L.base-4,17,4,'#1a1622');}
+ else{rect(c,box.x+(dir>0?0:20)-3,y-4,9,8,'#2a2430');rect(c,box.x+(dir>0?0:20)-3,y-4,9,2,'#5a5068');}
+ c.save();c.translate(mx,y);c.scale(1.4,1.4);c.translate(-mx,-y);
+ c.save();c.globalAlpha=s.warn?.5+.3*Math.sin(t*20):.22;rect(c,box.x-3,box.y-3,box.w+6,box.h+6,'#ffb36a');c.restore();
+ rect(c,box.x-1,box.y-1,box.w+2,box.h+2,'#0d0a12');rect(c,box.x,box.y,box.w,box.h,'#5a2d24');rect(c,box.x,box.y,box.w,3,'#8a4a36');rect(c,box.x+3,box.y+8,box.w-6,2,'#3a1c18');
+ // Three tubes with red-and-white bands point along the flight.
+ for(let i=0;i<3;i++){const ty=box.y+2+i*7,tx=dir>0?box.x+box.w-4:box.x-6;rect(c,tx,ty,10,5,'#e8dcc4');rect(c,tx+3,ty,2,5,'#d63a32');rect(c,dir>0?tx+9:tx,ty+1,2,3,'#120a0a');}
+ if(s.warn){const blink=Math.floor(t*8)%2;for(let i=0;i<4;i++){const k=(t*9+i*1.7)%1;rect(c,box.x+box.w/2-1+Math.cos(i*2.1+t*14)*k*9,box.y-2-k*10,2,2,i%2?'#ffd36e':'#ff7a3a');}
+  c.save();c.globalAlpha=blink?.95:.5;rect(c,box.x+box.w/2-4,box.y-30,9,20,'#2a0d10');rect(c,box.x+box.w/2-2,box.y-28,5,11,'#ff5a4a');rect(c,box.x+box.w/2-2,box.y-15,5,3,'#ff5a4a');c.restore();}
+ c.restore();
+ for(const bird of s.birds){const d=Math.abs(bird.x-s.entry);if(d<0||d>34||!bird.visible)continue;const k=d/34,fx=mx+dir*(6+d*.4);c.save();c.globalAlpha=1-k;rect(c,fx-4,y-5,9,9,'#ffe08a');rect(c,fx-2,y-3,5,5,'#ffffff');c.globalAlpha=(1-k)*.7;rect(c,mx-dir*(4+d*.5)-5,y-6-d*.3,11,9,'#6a6478');c.restore();}
 }
 // Library and notebook portrait: the flight cycle.
 export function drawSensationPortrait(c,a,x,y,w,h,time=0,actor={}){
