@@ -6,7 +6,7 @@ export const LOCATION_LOAD_TIME=1.1;
 export function remainingAntennas(g,room=g.room){return g.relays.filter(d=>d.room===room&&!d.scripted&&d.hp>0);}
 export function canLeaveRoom(g,room=g.room){
  const r=rooms[room];if(!r)return false;
- if(r.tutorial)return true;
+ if(r.tutorial)return !!g.tutorial?.doorOpen;
  if(remainingAntennas(g,room).length)return false;
  return !r.arena||g.bossesDefeated.has(r.boss);
 }

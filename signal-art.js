@@ -8,7 +8,8 @@ export function drawYuriSignal(c,a,g,t){
  const dialogue=g.mode==='dialogue'||g.mode==='paused'&&g.pausedFrom==='dialogue';
  const profile=g.dialogue?.signal||g.signal,echo=g.signal.echoTime>0;
  if(g.dialogue?.catReply)text(c,'Мяу!',g.player.x+15,g.player.y-28,'#ffe8b5',1.5);
- if(g.room===0){if(dialogue)face(c,a,{x:214,y:154,w:135,h:104},t,profile.quality,echo,yuriEmotion(g));return;}
+ // Quiet room: once Uma is awake, Yuri curates the course from the old monitor.
+ if(g.room===0){if(dialogue||g.mode!=='waking'&&g.pausedFrom!=='waking')face(c,a,{x:214,y:154,w:135,h:104},t,profile.quality,echo,yuriEmotion(g));return;}
  let screens=hauntedScreens.filter(s=>s.room===g.room&&rooms[g.room].x+s.lx>=g.camera-90&&rooms[g.room].x+s.lx<g.camera+(g.viewWidth||768));
  if(dialogue||echo)for(const s of screens)face(c,a,{x:rooms[g.room].x+s.lx+s.w*.15,y:s.y+s.h*.14,w:s.w*.7,h:s.h*.65},t,profile.quality,echo,g.room===5&&s.forged?6:yuriEmotion(g));
  // The receiver is a persistent painted prop beside the notebook, not a floating UI placeholder.

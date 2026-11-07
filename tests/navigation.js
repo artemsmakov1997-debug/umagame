@@ -39,3 +39,15 @@ export function jumpTo(g,room,index,max=1800){
  return false;
 }
 export const antennaRoutes={3:[1,8,1,2,10,17,18,11,12,19,25,26],5:[1,10,11,8,12,19,20,13,14,21,27,28],7:[1,8,1,2,10,17,18,11,12,19,25,26]};
+// Quiet-room course with ordinary inputs: run, crawl under the bench, dash the barrier, jump the gap, paw the monitor.
+export function completeTutorial(g,{exit=false}={}){
+ const p=g.player,x0=campaignRooms[0].x,run=(cond,input,max=900)=>{for(let i=0;i<max&&!cond();i++)tick(g,typeof input==='function'?input(i):input);return cond();};
+ run(()=>p.x>=x0+430,{right:true});
+ run(()=>p.x>=x0+610,{right:true,down:true});
+ run(()=>g.tutorial.barrierBroken||p.x>=x0+700&&p.vx===0,{right:true},300);
+ for(let k=0;k<4&&!g.tutorial.barrierBroken;k++){tick(g,{right:true,dash:true});run(()=>p.dashCooldown===0,{},120);}
+ run(()=>p.x>=x0+880,{right:true});tick(g,{right:true,jump:true});run(()=>p.grounded,{right:true},120);
+ run(()=>p.x>=x0+1135,{right:true});tick(g,{attack:true});tick(g,{});
+ if(exit)run(()=>g.room!==0||g.mode==='loading',{right:true},400);
+ return g.tutorial.monitorBroken;
+}

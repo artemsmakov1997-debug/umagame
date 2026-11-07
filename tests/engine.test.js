@@ -21,8 +21,21 @@ test('catalogue has four equal groups of three regular enemies and one boss',()=
 test('training is physically separate, has no enemies, relays, soup or time pressure',()=>{
  const g=new Game({story:false});g.start();assert.equal(g.room,0);assert.equal(rooms[0].tutorial,true);assert.ok(g.enemies.every(e=>e.room>0&&!e.active));assert.ok(g.relays.every(r=>r.room>0));assert.ok(g.soups.every(s=>s.x>=WIDTH));tick(g,120);assert.equal('clock'in g,false);assert.equal(g.health,4);assert.equal(g.bolts.length,0);
 });
-test('quiet-room exit is free even without completing training',()=>{
- const g=new Game({story:false});g.start();g.player.x=WIDTH-45;g.player.y=426;tick(g,100,{right:true});assert.equal(g.room,1);assert.equal(g.tutorial.complete,false);assert.equal(g.health,4);
+test('the quiet-room door stays shut until a paw breaks the infected monitor',()=>{
+ const g=new Game({story:false});g.start();const x0=rooms[0].x,floor=g.platforms.find(s=>s.id==='0:2');Object.assign(g.player,{x:x0+1300,y:floor.y-48,vx:0,grounded:true,supportId:floor.id});
+ tick(g,120,{right:true});assert.equal(g.room,0);assert.ok(g.player.x+g.player.w<=x0+1408+24);assert.equal(g.tutorial.doorOpen,false);
+ Object.assign(g.player,{x:x0+1135,dir:1,cooldown:0});tick(g,1,{attack:true});tick(g,2);assert.equal(g.tutorial.monitorBroken,true);assert.equal(g.tutorial.doorOpen,true);
+ tick(g,200,{right:true});while(g.mode==='loading')tick(g,1);assert.equal(g.room,1);assert.equal(g.health,4);
+});
+test('the «помехи» barrier stops a walking Uma and shatters only to a dash',()=>{
+ const g=new Game({story:false});g.start();const x0=rooms[0].x,floor=g.platforms.find(s=>s.id==='0:1');Object.assign(g.player,{x:x0+650,y:floor.y-48,vx:0,grounded:true,supportId:floor.id});
+ tick(g,90,{right:true});assert.equal(g.tutorial.barrierBroken,false);assert.ok(g.player.x+g.player.w<=x0+735+1);assert.ok(g.events.some(e=>e.type==='tutorialBump'));
+ tick(g,1,{right:true,dash:true});tick(g,20,{right:true});assert.equal(g.tutorial.barrierBroken,true);assert.ok(g.player.x>x0+735);
+});
+test('the bench is a low ceiling: standing Uma stops, crawling Uma passes, a fish waits beneath',()=>{
+ const g=new Game({story:false});g.start();const x0=rooms[0].x,floor=g.platforms.find(s=>s.id==='0:1'),bench=g.platforms.find(s=>s.id==='0:4');assert.equal(bench.shelter,bench.y+11);
+ Object.assign(g.player,{x:bench.x-50,y:floor.y-48,vx:0,grounded:true,supportId:floor.id});tick(g,60,{right:true});assert.ok(g.player.x+g.player.w<=bench.x+5);
+ const fish=g.fishes.find(f=>f.room===0&&f.x>bench.x&&f.x<bench.x+bench.w);assert.ok(fish);for(let i=0;i<400&&g.player.x<bench.x+bench.w;i++)tick(g,1,{right:true,down:true});assert.ok(g.player.x>=bench.x+bench.w);assert.equal(fish.taken,true);assert.equal(g.player.h,26);
 });
 test('a buffered jump lands on the same highlighted collision surface',()=>{
  const g=isolated();const before=g.player.y;g.step(1/60,{jump:true});assert.ok(g.player.y<before&&g.player.vy<0);tick(g,70);assert.equal(g.player.y,platforms.find(s=>s.room===1&&s.index===0).y-48);assert.equal(g.player.grounded,true);
@@ -70,7 +83,7 @@ test('Inflator gives a shorter readable telegraph and a stronger push without di
  const g=isolated(1,0,20),e=enemy('inflator',1,125);g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');tick(g,28);assert.equal(e.state,'windup');const x=g.player.x;tick(g,7);assert.equal(e.state,'blast');assert.ok(g.player.x<x);assert.ok(Math.abs(g.player.vx)>=600);assert.equal(g.health,4);
 });
 test('Uma behind the Inflator is safe; jumping or dashing avoids the wave',()=>{
- for(const avoid of ['behind','jump','dash']){const g=isolated(1,0,20),e=enemy('inflator',1,125,0,{state:'blast',timer:.3,dir:-1});g.enemies=[e];if(avoid==='behind')g.player.x=WIDTH+185;else if(avoid==='jump'){g.player.y-=90;g.player.grounded=false;}else g.player.dash=.2;const x=g.player.x;tick(g,1);assert.equal(g.player.knock,0,avoid);if(avoid!=='dash')assert.equal(g.player.x,x,avoid);}
+ for(const avoid of ['behind','jump','dash']){const g=isolated(1,0,20),e=enemy('inflator',1,125,0,{state:'blast',timer:.3,dir:-1});g.enemies=[e];if(avoid==='behind')g.player.x=campaignRooms[1].x+185;else if(avoid==='jump'){g.player.y-=90;g.player.grounded=false;}else g.player.dash=.2;const x=g.player.x;tick(g,1);assert.equal(g.player.knock,0,avoid);if(avoid!=='dash')assert.equal(g.player.x,x,avoid);}
 });
 test('an Inflator wave temporarily strengthens nearby Fakenews and expires normally',()=>{
  const g=isolated(3,0,20),e=enemy('inflator',3,125,0,{state:'windup',timer:.01}),fake=enemy('fakenews',3,365,1,{timer:99}),far=enemy('fakenews',4,400,1);g.enemies=[e,fake,far];tick(g,1);assert.ok(fake.pressureTime>3.9);assert.equal(far.pressureTime,0);g.enemies=[fake];fake.speed=0;fake.timer=999;stand(g,3,0,20);tick(g,250);assert.equal(fake.pressureTime,0);

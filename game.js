@@ -96,6 +96,9 @@ async function boot(){
    if(event.type==='infoshumFreed')notify('Уклоняйся от атак и бей по раскрытому ядру!',4500);
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');
 
+  if(event.type==='lesson')notify('Юрий: '+event.text,6000);
+  if(event.type==='tutorialBump')notify('Юрий: Шагом барьер не пройти — нужен рывок!',3600);
+  if(event.type==='tutorialBarrier'||event.type==='tutorialMonitor')renderer.burst(event.x,event.y,event.type==='tutorialMonitor'?'#d78bff':'#8e8aff');
   if(event.type==='lifePickup')notify('+1 жизнь!');
   if(event.type==='controlBreak')notify('Опасный механизм отключён.');
   if(event.type==='clue')notify('СЛЕД: '+event.text,6500);

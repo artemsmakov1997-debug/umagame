@@ -27,6 +27,7 @@ import {drawNotebook} from './notebook-art.js?v=0.21.5';
 import {drawMovingRails,drawLifeCaches,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.21.5';
 import {drawArenaBoss} from './boss-art.js?v=0.21.5';
 import {drawShelter} from './spreader-art.js?v=0.21.5';
+import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
 import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
@@ -39,16 +40,16 @@ export class Renderer{
   const c=this.c,a=this.assets,bounds=c.canvas.getBoundingClientRect(),vw=Math.max(160,Math.round(HEIGHT*bounds.width/Math.max(1,bounds.height)));
   if(c.canvas.width!==vw)c.canvas.width=vw;if(c.canvas.height!==HEIGHT)c.canvas.height=HEIGHT;
   const hudBounds=this.hud?.getBoundingClientRect();if(hudBounds?.width&&hudBounds.height){const hw=Math.round(hudBounds.width),hh=Math.round(hudBounds.height);if(this.hud.width!==hw)this.hud.width=hw;if(this.hud.height!==hh)this.hud.height=hh;const hc=this.hud.getContext('2d');hc.imageSmoothingEnabled=false;drawHud(hc,a,g,hw,hh);}
-  const cozyFit=g.room===0&&!g.touchEnabled,worldScale=cozyFit?Math.min(vw/WIDTH,HEIGHT/512):1,worldWidth=cozyFit?WIDTH:vw,worldInset=cozyFit?(vw-WIDTH*worldScale)/2:g.room===2?Math.max(0,(vw-rooms[2].width)/2):0,worldTop=cozyFit?(HEIGHT-512*worldScale)/2:0;
+  const cozyFit=g.room===0&&!g.touchEnabled,quietOpening=g.room===0&&(g.mode==='waking'||g.pausedFrom==='waking'||g.dialogue?.id==='intro'),worldScale=cozyFit?Math.min(vw/WIDTH,HEIGHT/512):1,worldWidth=cozyFit?(quietOpening?WIDTH:Math.min(rooms[0].width,vw/worldScale)):vw,worldInset=cozyFit?(vw-worldWidth*worldScale)/2:g.room===2?Math.max(0,(vw-rooms[2].width)/2):0,worldTop=cozyFit?(HEIGHT-512*worldScale)/2:0;
   if(g.mode!=='paused'&&g.viewWidth!==worldWidth){g.viewWidth=worldWidth;g.updateCamera();}
   const t=g.time,p=g.player,b=g.boss,cam=Math.round(g.camera),opening=g.room===0&&(g.mode==='waking'||g.pausedFrom==='waking'||g.dialogue?.id==='intro');
   if(['ending','conclusion','won'].includes(g.mode)||['ending','conclusion','won'].includes(g.pausedFrom)){c.imageSmoothingEnabled=false;drawFinaleBackdrop(c,a,g,vw);return;}
   c.imageSmoothingEnabled=false;c.clearRect(0,0,vw,HEIGHT);if(g.room===2){const image=a.spreaderArena,scale=Math.max(vw/image.width,HEIGHT/image.height);c.drawImage(image,(vw-image.width*scale)/2,(HEIGHT-image.height*scale)/2,image.width*scale,image.height*scale);}
-  if(cozyFit&&a.wings){
+  if(cozyFit&&a.wings&&worldInset>0){
    const s=HEIGHT/a.wings.height,sw=a.wings.width/4,wing=sw*s;c.save();if(roomDarkness(g.wakeTime)>0)c.filter=`brightness(${1-roomDarkness(g.wakeTime)*.8})`;
    c.drawImage(a.wings,(vw-a.wings.width*s)/2,0,a.wings.width*s,HEIGHT);
    for(let x=worldInset;x>0;x-=wing)c.drawImage(a.wings,0,0,sw,a.wings.height,x-wing,0,wing,HEIGHT);
-   const rightSource=186,rightWing=rightSource*s;for(let x=worldInset+WIDTH*worldScale;x<vw;x+=rightWing)c.drawImage(a.wings,a.wings.width-rightSource,0,rightSource,a.wings.height,x,0,rightWing,HEIGHT);
+   const rightSource=186,rightWing=rightSource*s;for(let x=worldInset+worldWidth*worldScale;x<vw;x+=rightWing)c.drawImage(a.wings,a.wings.width-rightSource,0,rightSource,a.wings.height,x,0,rightWing,HEIGHT);
    c.restore();
   }
   c.save();c.translate(worldInset,worldTop);c.scale(worldScale,worldScale);c.translate(-cam,0);
@@ -67,7 +68,7 @@ export class Renderer{
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawPlatformShadow(c,g,platform);
-   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(platform.shelter&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
+   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
    drawPlatformRim(c,g,platform,t);
   }
   for(const ladder of ladders){
@@ -77,7 +78,7 @@ export class Renderer{
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
-  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
+  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t);
   drawLifeCaches(c,g,t);
