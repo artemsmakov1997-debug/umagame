@@ -29,6 +29,7 @@ import {drawArenaBoss} from './boss-art.js?v=0.21.5';
 import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
 import {drawRoofSurface,drawRoofProps,drawRoofWind,drawSensations} from './roofs-art.js?v=0.21.5';
+import {drawStudioSurface,drawStudioBack,drawStudioProps} from './studio-art.js?v=0.21.5';
 import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
@@ -61,15 +62,16 @@ export class Renderer{
   drawBackdropVeil(c,g,cam,vw);
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
-  if(![2,3,4,6].includes(g.room))drawPassages(c,a,g);
+  if(![2,3,4,5,6].includes(g.room))drawPassages(c,a,g);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
   drawMovingRails(c,g.platforms.filter(s=>s.room===g.room&&!s.bossHidden),t);
   if(g.room===6)for(const platform of g.platforms.filter(p=>p.room===6&&['gap','forming'].includes(p.studioPhase)))drawStudioPlatform(c,a,platform,t);
+  if(g.room===5){drawStudioBack(c,a,g,t);for(const platform of g.platforms.filter(p=>p.room===5&&p.intangible))drawStudioSurface(c,a,g,platform);}
   for(const platform of solidSurfaces(g)){
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawPlatformShadow(c,g,platform);
-   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(g.room===3&&drawRoofSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
+   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(g.room===3&&drawRoofSurface(c,a,g,platform)){}else if(g.room===5&&drawStudioSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
    drawPlatformRim(c,g,platform,t);
   }
   for(const ladder of ladders){
@@ -79,7 +81,7 @@ export class Renderer{
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
-  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawRoofProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
+  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawRoofProps(c,a,g,t);drawStudioProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t);drawSensations(c,a,g,t);drawRoofWind(c,g,t);
   drawLifeCaches(c,g,t);
@@ -95,6 +97,7 @@ export class Renderer{
    if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
    if(e.type==='servant')drawServant(c,a,e,t);
    if(['stamp','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
+   if(e.type==='deepfake')drawMonster(c,a,e.type,e.x-18,e.y-20,76,76,t,e.dir<0,e);
    if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
    if(e.type==='echo'){const squeeze=e.state==='windup'?.65+.35*Math.max(0,Math.min(1,e.timer/.65)):e.state==='pulling'?.8+Math.sin(t*12)*.06:1;c.save();c.translate(e.x+20,e.y+19);c.scale(squeeze,1);drawMonster(c,a,e.type,-37,-43,74,66,t,false,e);c.restore();}
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}

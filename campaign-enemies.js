@@ -1,3 +1,4 @@
+import {stepDeepfake,deepfakeContact} from './studio-systems.js?v=0.21.5';
 import {actorById} from './boss-actors.js?v=0.21.5';
 import {rooms,spawns} from './level.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
@@ -6,6 +7,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function stepAirEnemy(g,e,dt){
  const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+p.h/2-e.y-e.h/2,distance=Math.hypot(dx,dy)||1;
  if(e.type==='echo'){stepEcho(g,e,dt);return;}
+ if(e.type==='deepfake'){stepDeepfake(g,e,dt);return;}
  e.timer-=dt;
  {
   if(e.state==='patrol'){
@@ -30,6 +32,7 @@ function warpLanding(g){
 }
 export function handleFlyingContact(g,e){
  const p=g.player;if(!g.overlap(p,e))return;
+ if(e.type==='deepfake'){deepfakeContact(g,e);return;}
  if(e.type==='echo'){
   if(e.warpCooldown>0||g.echoImmunity>0||p.dash>0||p.inv>0||g.echoWarp)return;
   releaseEchoPull(g);g.echoWarp={from:{x:p.x,y:p.y},to:warpLanding(g),time:0,duration:.5,transferred:false,ownerId:e.id};g.mode='echoWarp';e.warpCooldown=7.5;e.attackFlash=.5;e.state='recover';e.timer=1.6;p.vx=0;p.vy=0;p.attack=0;p.sleeping=false;g.emit('echoTeleport',{x:e.x,y:e.y});

@@ -4,7 +4,8 @@ import * as roofMap from './roofs-map.js?v=0.21.5';
 export const lanes=roofMap;
 // «Крыши» mechanics: solid building walls, a fall costs one heart and returns Uma to the last safe roof,
 // the awning is a trampoline, wind gusts in the antenna forest and flocks of Сенсации.
-export const ROOM=3,AWNING_BOUNCE=-700,FALL_RETURN_INV=1.6,BIRD={w:34,h:18,gap:44,count:3,speed:270,warn:.9};
+import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
+export const ROOM=3,AWNING_BOUNCE=-700,BIRD={w:34,h:18,gap:44,count:3,speed:270,warn:.9};
 const x0=()=>rooms[ROOM].x;
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 export function createRoofs(){return {flocks:SENSATION_LANES.map(l=>({id:l.id,cycle:-1,birds:[],warned:false})),checkpoint:0,lastSupport:null,bounceTime:0,introduced:false,gust:false,gustWarned:false};}
@@ -34,20 +35,9 @@ export function applyRoofWalls(g,oldX){
 }
 
 // A fall into the street: one heart, back to the last safe roof (never a rope or the awning).
-export function roofFall(g){
- if(g.room!==ROOM)return false;const p=g.player;
- const safe=[...g.safeTrail].reverse().find(m=>{const s=g.platforms.find(s=>s.id===m.platformId);return s&&s.room===ROOM&&s.roof&&['building','prop'].includes(s.roof.type);});
- const s=safe?g.platforms.find(s=>s.id===safe.platformId):g.platforms.find(s=>s.id===ROOM+':0');
- if(!g.testingInvulnerable){g.health--;if(g.health<=0){g.health=0;g.loseLife('fall');return true;}}
- const x=safe?Math.max(s.x+2,Math.min(s.x+s.w-p.w-2,safe.x)):s.x+20;
- Object.assign(p,{x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,supportId:s.id,climbing:false,knock:0,dash:0,attack:0,sneaking:false,inv:FALL_RETURN_INV,hurtTime:.5});
- g.emit('roofFall',{x:p.x,y:p.y});g.updateCamera();return true;
-}
+export function roofFall(g){if(g.room!==ROOM)return false;return pitFall(g,ROOM,s=>!!s.roof&&['building','prop'].includes(s.roof.type));}
 // After losing a life on the roofs, Uma restarts at the last checkpoint she reached.
-export function placeAtRoofCheckpoint(g){
- if(g.room!==ROOM||!g.roofs)return;const c=ROOF_CHECKPOINTS[g.roofs.checkpoint]||ROOF_CHECKPOINTS[0],s=g.platforms.find(s=>s.id===ROOM+':'+c.index);
- Object.assign(g.player,{x:x0()+c.x,y:s.y-48,supportId:s.id,grounded:true});g.safeTrail=[{platformId:s.id,x:g.player.x,y:g.player.y}];
-}
+export function placeAtRoofCheckpoint(g){if(g.room!==ROOM||!g.roofs)return;placeAtCheckpoint(g,ROOM,ROOF_CHECKPOINTS,g.roofs.checkpoint);}
 
 export function stepRoofs(g,dt,paw,input={}){
  if(g.room!==ROOM||g.mode!=='playing')return;const q=g.roofs??=createRoofs(),p=g.player;

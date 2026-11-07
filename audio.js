@@ -70,7 +70,7 @@ export class GameAudio{
  }
  play(event,game){
   if(!this.enabled||this.hidden||!this.context||!this.offline&&this.context.state!=='running')return;
-  const enemyType=event.enemyType,type={tutorialMonitor:'dishBreak',tutorialBarrier:'dash',sensationWarning:'alarm',roofBounce:'jump',gustWarning:'dash',roofFall:'hurt'}[event.type]||event.type,now=this.context.currentTime,last=this.effectTimes.get(type)??-10;
+  const enemyType=event.enemyType,type={tutorialMonitor:'dishBreak',tutorialBarrier:'dash',sensationWarning:'alarm',roofBounce:'jump',gustWarning:'dash',roofFall:'hurt',holoWarning:'cutWarning',holoVanish:'platformCut',takeWarning:'cutWarning',takeSwap:'platformCut',deepfakeProject:'staticWarning'}[event.type]||event.type,now=this.context.currentTime,last=this.effectTimes.get(type)??-10;
   if(now-last<.045)return;this.effectTimes.set(type,now);
   const dx=Number.isFinite(event.x)&&game?event.x-game.player.x:0,pan=Math.max(-.7,Math.min(.7,dx/450)),level=Math.abs(dx)>650?.18:Math.abs(dx)>350?.55:1;
   const tone=(frequency,to,duration=.15,gain=.07,wave='square',delay=0)=>this.voice({frequency,to,duration,gain:gain*level,wave,pan,start:now+.006+delay});

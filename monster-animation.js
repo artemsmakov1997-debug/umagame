@@ -52,9 +52,11 @@ const newFrames={
  informant:[[[12,567,263,342],[140,904]],[[280,568,238,355],[399,918]],[[524,573,244,350],[654,918]],[[769,558,231,351],[878,904]],[[1000,573,282,345],[1118,913]],[[1293,563,243,351],[1416,909]]]
 };
 for(const [id,frames]of Object.entries(newFrames))motion[id]={asset:'newMotion',width:280,height:id==='fakenews'?310:380,frames:frames.map(([box,pivot])=>({box,pivot}))};
-for(const [id,top,h,feet,height]of [['stamp',90,255,339,256],['copier',350,310,644,310],['cutter',675,285,925,260]]){
+for(const [id,top,h,feet,height]of [['stamp',90,255,339,256],['copier',350,310,644,310]]){
  motion[id]={asset:'tactics',width:256,height,frames:Array.from({length:6},(_,i)=>({box:[i*256,top,256,h],pivot:[i*256+128,feet]}))};
 }
+// Нарезчик (assets/cutter.png): 3×2 cells of 512×512 — stand, two steps, notice, cut, hurt; feet on one line per row.
+motion.cutter={asset:'cutter',width:420,height:260,frames:Array.from({length:6},(_,i)=>{const col=i%3,row=i/3|0,feet=row?928:435;return {box:[col*512,row*512+150,512,feet-row*512-150+12],pivot:[col*512+240,feet]};})};
 export const baitEmergenceFrames=[
  {box:[34,240,474,248],pivot:[265,485]},
  {box:[534,140,468,350],pivot:[759,488]},

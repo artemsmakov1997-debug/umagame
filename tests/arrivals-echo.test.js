@@ -13,10 +13,10 @@ function trap(g){const e=enemy('echo',g.room,185,0,{active:true,noticed:true});g
 test('every ordinary encounter has a persistent, grounded source; Clickbait keeps its bait',()=>{
  const g=ready(),roster=createEnemies();
  for(const e of roster){if(e.type==='clickbait'){assert.equal(e.source,undefined);continue;}assert.ok(e.source,e.type);assert.equal(e.active,false);const pos=sourcePosition(g,e),s=g.platforms.find(p=>p.room===e.room&&p.index===e.source.platformIndex);assert.ok(pos.x>=s.x&&pos.x<=s.x+s.w);assert.equal(pos.y,s.y-(e.type==='echo'?81:0));}
- assert.equal(roster.find(e=>e.type==='fakenews').source.kind,'bin');assert.equal(roster.find(e=>e.type==='informant').source.kind,'receiver');assert.equal(roster.find(e=>e.type==='injection').source.kind,'printer');assert.equal(roster.find(e=>e.type==='static').source.kind,'screen');
+ assert.equal(roster.find(e=>e.type==='fakenews').source.kind,'bin');assert.equal(roster.find(e=>e.type==='informant').source.kind,'receiver');assert.equal(roster.find(e=>e.type==='deepfake').source.kind,'reel');assert.equal(roster.find(e=>e.type==='static').source.kind,'screen');
 });
 test('a source rides its platform and stays behind after its monster moves away',()=>{
- const g=ready(5),e=enemy('injection',5,360,1),s=g.platforms.find(s=>s.id==='5:1'),before=sourcePosition(g,e);s.x+=48;s.y-=12;e.x+=130;e.platformIndex=2;assert.deepEqual(sourcePosition(g,e),{x:before.x+48,y:before.y-12});
+ const g=ready(5),e=enemy('splicer',5,880,4),s=g.platforms.find(s=>s.id==='5:4'),before=sourcePosition(g,e);s.x+=48;s.y-=12;e.x+=130;e.platformIndex=2;assert.deepEqual(sourcePosition(g,e),{x:before.x+48,y:before.y-12});
 });
 test('emerging enemies stay still and cannot hurt or be attacked during their arrival',()=>{
  const g=ready(1),e=createEnemies()[0];g.enemies=[e];g.player.x=rooms[1].x+95;tick(g,1);assert.equal(e.active,true);assert.ok(e.spawnTime>0);const x=e.x,y=e.y;Object.assign(g.player,{x:e.x,y:e.y-19,inv:0});tick(g,20,{attack:true});assert.equal(g.health,4);assert.equal(e.hp,e.maxHp);assert.equal(e.x,x);assert.equal(e.y,y);assert.ok(e.spawnTime>0);
