@@ -27,6 +27,7 @@ import {beginFinale,advanceFinale} from './finale.js?v=0.21.5';
 import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.21.5';
 import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.21.5';
 import {stepEchoPull,releaseEchoPull} from './echo-pull.js?v=0.21.5';
+import {recordEchoTrail,scatterEcho} from './echo-double.js?v=0.21.5';
 export {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,ARENA_WIDTH,platforms,ladders,ladder,rooms,chapters,roomAt,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.21.5';
 export function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 export function playerHeight(p,height){const feet=p.y+p.h;p.h=height;p.y=feet-height;}
@@ -120,6 +121,7 @@ export class Game {
   if(e.type==='informant'&&e.shieldBroken===0&&['windup','casting'].includes(e.state)&&!reflected){this.emit('blocked',{x:e.x,y:e.y});return false;}
   if(reflected)e.shieldBroken=3;
   e.hp-=amount??(!stomp&&this.player.powerTime>0?2:1);e.inv=.24;e.hurtTime=.28;e.state='recover';e.timer=.7;
+  if(e.type==='echo'&&e.kind!=='echoOrb'&&e.hp>0)scatterEcho(this,e);
   cancelInformantTeleport(e);releaseTether(this,e.id);if(this.echoPull?.ownerId===e.id)releaseEchoPull(this,true);
   for(const portal of this.portals)if(portal.ownerId===e.id)portal.cancelled=true;
   if(!stomp&&!reflected&&e.type==='fakenews'&&!e.jumpPhase&&!e.terrainFall)e.x=Math.max(e.origin,Math.min(e.end,e.x+this.player.dir*18));
@@ -179,6 +181,7 @@ export class Game {
 
   // Highest point of the current flight: a long fall shows the frightened falling pose.
   p.peakY=p.grounded||p.climbing?p.y:Math.min(p.peakY??p.y,p.y);
+  recordEchoTrail(this);
   const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepTutorial(this,dt,paw,oldX);stepRoofs(this,dt,paw,input);stepStudio(this,dt);stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepNewsroom(this,dt);stepSection(this,dt);
   stepEnemies(this,dt,paw,prevBottom);if(this.mode==='playing')stepPortals(this,dt);
   if(this.mode!=='playing'||this.swallow)return;

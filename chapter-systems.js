@@ -22,7 +22,7 @@ export function applyRelayEffect(g,relay){
  }
  if(relay.kind==='signal'){
   g.echoImmunity=Math.max(g.echoImmunity,3);
-  for(const e of local)if(e.type==='echo')e.noticeTime=Math.max(e.noticeTime,3);
+  for(const e of local)if(e.type==='echo'){e.state='scatter';e.scatterTime=Math.max(e.scatterTime||0,3);}
   return 'Эхо ослабло: короткое окно для безопасного рывка.';
  }
  return null;
