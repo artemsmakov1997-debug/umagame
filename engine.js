@@ -25,7 +25,7 @@ import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.21.5';
 import {cleanCopies} from './tactical-enemies.js?v=0.21.5';
 import {wakePlayer,playerHorizontal,stepPlayerRest} from './player-rest.js?v=0.21.5';
 import {beginFinale,advanceFinale} from './finale.js?v=0.21.5';
-import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas} from './room-transitions.js?v=0.21.5';
+import {activateRoom,beginLocationTransition,stepLocationTransition,canLeaveRoom,remainingAntennas,LOCATION_LOAD_TIME} from './room-transitions.js?v=0.21.5';
 import {stepEchoWarp,stepTether,releaseTether} from './campaign-enemies.js?v=0.21.5';
 import {stepEchoPull,releaseEchoPull} from './echo-pull.js?v=0.21.5';
 import {recordEchoTrail,scatterEcho} from './echo-double.js?v=0.21.5';
@@ -98,6 +98,18 @@ export class Game {
  }
 
  retry(){this.start();}
+ // Level select from the in-game menu: earlier bosses count as defeated, the chosen location starts fresh.
+ selectLocation(index){
+  const r=rooms[index];if(!r)return false;
+  for(const key of ['dialogue','defeat','conclusion','ending','interlude','loading','arenaEntry','echoWarp','echoPull','tether','swallow'])this[key]=null;delete this.pausedFrom;
+  if(index===0){this.reset();this.wakeTime=WAKE_DURATION;this.mode='playing';this.emit('locationSelect',{room:0});return true;}
+  this.tutorial.complete=true;this.tutorial.doorOpen=true;this.tutorial.monitorBroken=true;
+  this.bossesDefeated=new Set(rooms.filter(x=>x.arena&&x.index<index).map(x=>x.boss));
+  for(const d of this.relays)if(d.room<index)d.hp=0;
+  this.checkpoint=index;this.mode='playing';this.retryLocation();
+  this.loading={from:index,to:index,time:LOCATION_LOAD_TIME/2,transferred:true,duration:LOCATION_LOAD_TIME};this.mode='loading';
+  this.emit('locationSelect',{room:index});return true;
+ }
  loseLife(reason='damage'){
   if(this.mode!=='playing')return;if(this.testingInvulnerable){this.swallow=null;this.respawn();this.emit('testRescue',{reason});return;}releaseEchoPull(this);wakePlayer(this.player);this.health=0;this.lives=Math.max(0,this.lives-1);this.swallow=null;this.player.hurtTime=.5;this.player.attack=0;this.player.sneaking=false;
   if(this.lives===0){this.mode='lost';this.emit('lost',{reason});}else{this.mode='respawning';this.respawnTime=1.1;this.emit('lifeLost',{lives:this.lives,reason});}
@@ -202,7 +214,7 @@ export class Game {
     if(clue){this.clues.push({id:relay.id,room:relay.room,text:clue,effect});this.emit('clue',{room:relay.room,text:clue,effect,x:relay.x});}}}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
   const b=this.boss;
-  if(b.active&&b.room===this.room&&b.hp>0){stepBoss(this,dt);if(b.id==='infoshum'&&b.network){strikeInfoshum(this,paw);}else if(b.id==='agitator'&&b.broadcast){strikeAgitator(this,paw);if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;damageBoss(this,p.powerTime>0?2:1);}}else if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y});}bossContact(this);}
+  if(b.active&&b.room===this.room&&b.hp>0){stepBoss(this,dt,paw);if(b.id==='infoshum'&&b.network){strikeInfoshum(this,paw);}else if(b.id==='agitator'&&b.broadcast){strikeAgitator(this,paw);}else if(p.attack>0&&b.lastSwing!==p.swing&&overlap(paw,{x:b.x,y:b.y+b.h*.35,w:b.w,h:b.h*.65})){b.lastSwing=p.swing;if(!damageBoss(this,p.powerTime>0?2:1))this.emit('blocked',{x:b.x,y:b.y});}bossContact(this);}
   if(this.mode==='playing')stepProjectiles(this,dt,paw);this.updateCamera(dt);
  }
 }

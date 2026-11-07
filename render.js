@@ -1,4 +1,4 @@
-import {drawAgitatorEquipment,drawAgitatorBackdrop,drawAgitatorPlatform,drawAgitatorProjectile} from './agitator-art.js?v=0.21.5';
+import {drawAgitatorEquipment,drawAgitatorBackdrop,drawAgitatorPlatform} from './agitator-art.js?v=0.21.5';
 import {drawInterferenceOverlay} from './interference-art.js?v=0.21.5';
 import {drawBackdropVeil,drawPlatformShadow,drawPlatformRim} from './readability.js?v=0.21.5';
 import {drawRouteTransition} from './route-transition-art.js?v=0.21.5';
@@ -77,7 +77,7 @@ export class Renderer{
    drawPlatformRim(c,g,platform,t);
   }
   for(const ladder of ladders){
-   if(ladder.room!==g.room||g.room===3)continue;
+   if(ladder.room!==g.room||g.room===3||g.room===4)continue;
    if(ladder.x<cam-40||ladder.x>cam+vw)continue;
    rect(c,ladder.x-1,ladder.y+9,ladder.w+2,ladder.h-9,'#050e1e');
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
@@ -122,7 +122,7 @@ export class Renderer{
   }
   for(const bolt of g.bolts){
    if(bolt.kind==='echoOrb'){drawEchoVortex(c,bolt,t);drawMonster(c,a,'echo',bolt.x-8,bolt.y-10,48,48,t,false,{...bolt,flying:true,orb:true});continue;}
-   if(!drawAgitatorProjectile(c,a,bolt,t)&&!drawInfoshumProjectile(c,a,bolt,t))drawProjectile(c,a,g,bolt,t);
+   if(!drawInfoshumProjectile(c,a,bolt,t))drawProjectile(c,a,g,bolt,t);
   }
   drawCombatEffects(c,a,this.combatEffects,dt);this.combatEffects=this.combatEffects.filter(e=>e.time<.32);
   if((!p.grounded&&Math.abs(p.vx)>0||p.dash>0)&&g.mode==='playing'){

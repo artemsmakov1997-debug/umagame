@@ -600,3 +600,19 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 /* Hints live under the HUD, never over the floor, Uma or the touch controls. */
 #app .status{top:calc(var(--hud-height,10%) + 10px);bottom:auto;padding:10px 20px;width:max-content;max-width:min(700px,calc(100% - 120px));background:#031123e8}
 @media(max-width:600px){#app .status{top:calc(var(--hud-height,10%) + 58px);max-width:calc(100% - 24px);padding:8px 12px}}
+/* In-game level select: one row per chapter, the location and its boss side by side. */
+.levels-panel{width:min(640px,94%);max-height:94dvh;overflow:auto;padding:18px 22px;scrollbar-width:thin;scrollbar-color:#538da4 #071428}
+.levels-panel h2{font:38px/1.1 UmaDisplay,monospace;text-align:center;color:#ffe6a4;margin:0 0 14px}
+.levels-list{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1fr) minmax(0,1fr);gap:8px 10px;align-items:center;margin-bottom:14px}
+.levels-list .level-chapter{font:21px/1.1 UmaText,monospace;color:#8fe2eb;text-align:right}
+.levels-list .menu-item{min-height:46px;padding:6px 8px;font:22px/1.05 UmaText,monospace}
+.levels-list .menu-item.boss{color:#ffc39a}
+.levels-list .menu-item.current{border-color:#ffd36e}
+.levels-list .menu-item.wide{grid-column:span 2}
+.levels-panel #levels-back{display:block;margin:0 auto;font:25px/1 UmaText,monospace}
+@media(max-width:700px){.levels-panel{padding:14px}.levels-panel h2{font-size:30px;margin-bottom:10px}.levels-list{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.levels-list .level-chapter{grid-column:span 2;text-align:left;font-size:19px;margin-top:4px}.levels-list .menu-item{min-height:42px;font-size:20px}}
+@media(max-height:550px) and (orientation:landscape){.levels-panel{padding:10px 16px}.levels-panel h2{font-size:26px;margin-bottom:6px}.levels-list{gap:5px 8px;margin-bottom:8px}.levels-list .menu-item{min-height:36px;font-size:19px}.levels-list .level-chapter{font-size:18px}}
+.levels-list .menu-item.selected::before{display:none}
+.levels-list .menu-item{white-space:normal;hyphens:manual}
+@media(max-width:700px){.levels-list .menu-item{font-size:18px;line-height:1}}
+@media(max-width:360px){.levels-list .menu-item{font-size:16px;padding:4px 3px}.levels-list{gap:5px}}

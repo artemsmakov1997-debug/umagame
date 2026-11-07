@@ -22,7 +22,7 @@ export function drawMonster(c,a,id,x,y,w,h,time=0,flip=false,actor={}){
  if(id==='static'&&a.staticMotion)return drawStaticPortrait(c,a,x,y,w,h,time,flip,actor);
  if(id==='botfarm')return drawBotfarmPortrait(c,a,x,y,w,h,time,actor);
  if(id==='bot')return drawBotPortrait(c,a,x,y,w,h,time,actor);
- if(id==='agitator'&&a.agitator){const row=actor.hurtTime>0?5:actor.state==='windup'?3:actor.state==='casting'?1:actor.moving?4:0,frame=actor.moving?Math.floor((actor.walkTime??time)*8)%4:Math.floor(time*6)%4;drawAgitatorPose(c,a,row,frame,x,y,w,h,flip);return;}
+ if(id==='agitator'&&a.agitatorBoss){const cycle=Math.floor(time*1.2)%4,frame=actor.hurtTime>0?12:actor.state==='windup'?1:actor.state==='casting'?[11,10,2,1][cycle]:actor.moving?[0,3][Math.floor((actor.walkTime??time)*8)%2]:Math.floor(time*.8)%5===4?8:0;drawAgitatorPose(c,a,frame,x,y,w,h,flip);return;}
  if(id==='manipulator'&&a.manipulator){const row=actor.hurtTime>0?5:actor.state==='windup'?2:actor.state==='shift'?4:actor.state==='casting'?3:0;drawManipulatorPose(c,a,row,actor.moving?Math.floor((actor.walkTime??time)*8)%4:Math.floor(time*6)%4,x,y,w,h,flip);return;}
  const atlas=motion[id];if(!atlas)return;
  const index=monsterFrame(id,time,actor),appearance=id==='clickbait'?clickbaitAppearanceFrame(actor):null,gait=locomotionFrame(id,time,actor),reaction=appearance===null?(gait||monsterReaction(id,time,actor)):null,frame=appearance===null?(reaction||atlas.frames[index]):baitEmergenceFrames[appearance],{box,pivot}=frame;
@@ -39,6 +39,11 @@ export function drawLure(c,a,x,y,time){
  rect(c,x+7,yy-28,2,3,'#5899bd');
 }
 export function drawSoup(c,a,x,y,h=30){const b=newCreatures.soup,w=h*b[2]/b[3];sprite(c,a.monsters,b,x-w/2,y-h/2,w,h);}
+// Canvas-pixel y of the bottom of the last visible main-menu entry (0 when the menu is not laid out).
+export function menuTextBottom(canvas,height){
+ if(typeof document==='undefined')return 0;const items=[...document.querySelectorAll('#menu-screen [data-menu]')].filter(e=>e.getClientRects().length);if(!items.length)return 0;
+ const box=canvas.getBoundingClientRect();if(!box.height)return 0;return Math.max(...items.map(e=>e.getBoundingClientRect().bottom-box.top))*height/box.height;
+}
 export function drawMenuScene(c,a,time,cat=true){
  const height=c.canvas.height,width=c.canvas.width;
  if(cat&&a.menuPortrait&&c.canvas.getBoundingClientRect().width<=700&&width/height<.75){
@@ -46,7 +51,9 @@ export function drawMenuScene(c,a,time,cat=true){
   c.imageSmoothingEnabled=false;c.clearRect(0,0,width,height);c.drawImage(bg,x,0,w,height);
   // Extend only the painted edge strips on wider phones; keep the full hero visible.
   if(x>0){c.save();c.translate(x,0);c.scale(-1,1);c.drawImage(bg,0,0,x/scale,bg.height,0,0,x,height);c.restore();c.save();c.translate(width,0);c.scale(-1,1);c.drawImage(bg,bg.width-x/scale,0,x/scale,bg.height,0,0,x,height);c.restore();}
-  const pose=idlePlacement(time,height,{x:x+bg.width*.62*scale,y:height*.795,height:height*.12});sprite(c,a.idle,pose.box,pose.x,pose.y,pose.w,pose.h);return;
+  // A larger Uma on phones, but her ears always stay below the last menu entry.
+  const ground=height*.795,textBottom=menuTextBottom(c.canvas,height),catHeight=Math.max(height*.08,Math.min(height*.17,ground-textBottom-height*.025));
+  const pose=idlePlacement(time,height,{x:x+bg.width*.62*scale,y:ground,height:catHeight});sprite(c,a.idle,pose.box,pose.x,pose.y,pose.w,pose.h);return;
  }
  const tall=height>700,scale=Math.max(width/a.menu.width,height/a.menu.height),x=tall?width*.82-1260*scale:(width-a.menu.width*scale)/2,y=height-a.menu.height*scale+(tall?0:Math.max(0,Math.min(30,(440-height)*.5)));
  c.imageSmoothingEnabled=false;c.clearRect(0,0,width,height);c.drawImage(a.menu,x,y,a.menu.width*scale,a.menu.height*scale);

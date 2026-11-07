@@ -100,3 +100,8 @@ export function drawSensationPortrait(c,a,x,y,w,h,time=0,actor={}){
  if(!a.sensation)return;const frame=actor.hurtTime>0?6:actor.state==='windup'?4:['casting','blast','alarm','snap'].includes(actor.state)?5:Math.floor((actor.walkTime??time)*10)%4,row=frame>>2,col=frame%4,scale=Math.min(w/330,h/250);
  c.drawImage(a.sensation,col*CELL_W+20,row?620:150,340,260,x+w/2-170*scale,y+h/2-130*scale,340*scale,260*scale);
 }
+// One Сенсация in flight, centred at (cx,cy): used by the Agitator's broadcast gusts.
+export function drawSensationBird(c,a,cx,cy,dir,time,{burst=false,alpha=1}={}){
+ if(!a.sensation)return;const frame=burst?7:Math.floor(time*12)%4,row=frame>>2,col=frame%4,w=CELL_W*BIRD_SCALE,h=CELL_H*BIRD_SCALE;
+ c.save();c.globalAlpha=alpha;c.translate(Math.round(cx),Math.round(cy));if(dir<0)c.scale(-1,1);c.drawImage(a.sensation,col*CELL_W,row*CELL_H,CELL_W,CELL_H,-200*BIRD_SCALE,-(PIVOT_Y[row]-row*CELL_H)*BIRD_SCALE,w,h);c.restore();
+}

@@ -1,48 +1,158 @@
 import {rooms} from './level.js?v=0.21.5';
-import {drawPixelBarrier} from './shield-art.js?v=0.21.5';
-import {antennaStation} from './agitator-combat.js?v=0.21.5';
-import {rect} from './pixel.js?v=0.21.5';
-
-export function drawAgitatorPose(c,a,row,frame,x,y,w,h,flip=false){
- const image=a.agitator;if(!image?.naturalWidth)return;
- const feet=[[230,230,230,230],[229,229,227,226],[229,230,229,229],[229,226,224,225],[225,215,224,225],[223,223,223,223]][row][frame],scale=Math.min(w/256,h/234);c.save();c.translate(x+w/2,y+h);if(flip)c.scale(-1,1);
- c.drawImage(image,frame*256,row*256,256,256,-128*scale,-feet*scale,256*scale,256*scale);c.restore();
+import {rect,text} from './pixel.js?v=0.21.5';
+import {FLOOR_Y,MAST_X,MAST_DECK,LETTER,TOWERS,CHIMNEYS,HATCHES,AGI,PILLARS,slotRect,SLOT_ORDER} from './agitator-map.js?v=0.21.5';
+import {SLOGAN_TIMES,windDir} from './agitator-combat.js?v=0.21.5';
+import {drawSensationBird} from './roofs-art.js?v=0.21.5';
+// assets/agitator-boss.png: 16 cells of 212×248, feet on y=240, facing right.
+// 0 idle, 1 shout, 2 overheated, 3 stomp, 4 stunned, 5 megaphone bursts, 6 jump, 7 land,
+// 8 announce, 9 low swing, 10 rally aura, 11 blow, 12 knocked back, 13 cracked, 14 slumped, 15 scrap.
+const BOSS_CELL=[212,248],BOSS_FEET=240,BOSS_BODY=180;
+// assets/agitator-letters.png: 12 cells of 128×112 (В С Е Г О Р Я Т ! / stuck / shatter / flying).
+const LETTER_CELL=[128,112];
+// assets/agitator-placards.png: 8 cells of 132×140, feet on y=136.
+// 0 out of the hatch, 1 «!» standing, 2–3 «!» walking, 4 megaphone, 5 fist, 6 knocked over, 7 broken.
+const PLACARD_CELL=[132,140];
+// assets/agitator-fx.png: 12 cells of 128×116.
+const FX={glow:0,smoke:1,explosion:2,wave:3,wind:4,stars:5,dust:6,crack:7,burst:8,mushroom:9,rings:10,sparks:11},FX_CELL=[128,116];
+// assets/agitator-props.png
+const PROPS={mast:[0,19,116,354],bent:[120,56,121,317],tower:[245,0,166,373],chimneyLow:[415,276,74,97],chimneyTall:[493,237,81,136],hatch:[578,312,95,61],hatchOpen:[677,282,98,91]};
+const MAST_DECK_ROW=72,TOWER_DECK_ROW=100;
+const X0=()=>rooms[4].x;
+const blit=(c,img,box,x,y,w,h)=>c.drawImage(img,box[0],box[1],box[2],box[3],Math.round(x),Math.round(y),Math.round(w),Math.round(h));
+// Draws boss frame `frame` with its feet centred at (cx,feet), body `height` world pixels tall.
+export function drawAgitatorFrame(c,a,frame,cx,feet,height,flip=false){
+ const img=a.agitatorBoss;if(!img?.naturalWidth&&!img?.width)return;const s=height/BOSS_BODY,[cw,ch]=BOSS_CELL;
+ c.save();c.translate(Math.round(cx),Math.round(feet));if(flip)c.scale(-1,1);c.drawImage(img,frame*cw,0,cw,ch,-cw/2*s,-BOSS_FEET*s,cw*s,ch*s);c.restore();
 }
+// Library, HUD and defeat callers: fit a frame into a box.
+export function drawAgitatorPose(c,a,frame,x,y,w,h,flip=false){drawAgitatorFrame(c,a,frame,x+w/2,y+h-2,Math.min(h*.92,w*1.05),flip);}
+function fxFrame(c,a,kind,cx,cy,w,alpha=1,flip=false){
+ const img=a.agitatorFx;if(!img)return;const [cw,ch]=FX_CELL,h=w*ch/cw;c.save();c.globalAlpha*=alpha;c.translate(Math.round(cx),Math.round(cy));if(flip)c.scale(-1,1);c.drawImage(img,FX[kind]*cw,0,cw,ch,-w/2,-h/2,w,h);c.restore();
+}
+function letterFrame(c,a,frame,cx,cy,size,rot=0,alpha=1){
+ const img=a.agitatorLetters;if(!img)return;const [cw,ch]=LETTER_CELL,s=size/92;c.save();c.globalAlpha*=alpha;c.translate(Math.round(cx),Math.round(cy));if(rot)c.rotate(rot);c.drawImage(img,frame*cw,0,cw,ch,-cw/2*s,-ch/2*s,cw*s,ch*s);c.restore();
+}
+// ——— Scenery ———
 export function drawAgitatorBackdrop(c,a,g,t){
- if(g.room!==4)return;const r=rooms[4];rect(c,r.x,0,r.width,480,'#03112d');c.drawImage(a.agitatorRoof,r.x,13,r.width,480);
+ if(g.room!==4)return;const r=rooms[4],img=a.agitatorArena;rect(c,r.x,0,r.width,480,'#0e1640');
+ // The two painted streets scroll slower than the roof.
+ if(img){const view=g.viewWidth||768,span=Math.max(1,r.width-view),cam=Math.max(r.x,Math.min(r.x+span,g.camera)),k=(cam-r.x)/span,sc=Math.max(1,view/img.width),x=cam-k*Math.max(0,img.width*sc-view);c.drawImage(img,Math.round(x),0,img.width*sc,img.height*sc);}
+ // Broadcast-blue haze during the live phase.
+ const n=g.boss?.broadcast;if(n?.stage==='air'&&n.wind.phase!=='calm'){c.save();c.globalAlpha=n.wind.phase==='gust'?.16:.07;rect(c,r.x,0,r.width,480,'#4fd9ff');c.restore();}
+ drawTowers(c,a,g,t);drawMast(c,a,g,t);
 }
+function drawTowers(c,a,g,t){
+ const img=a.agitatorProps;if(!img)return;const box=PROPS.tower,s=(FLOOR_Y+2-150)/(box[3]-TOWER_DECK_ROW),w=box[2]*s,h=box[3]*s;
+ for(const tw of TOWERS){const x=X0()+tw.x;c.save();if(tw.side===0){c.translate(x+w,0);c.scale(-1,1);blit(c,img,box,0,150-TOWER_DECK_ROW*s,w,h);}else blit(c,img,box,x,150-TOWER_DECK_ROW*s,w,h);c.restore();
+  // Red warning lamps blink while he broadcasts from this tower.
+  const n=g.boss?.broadcast,live=n?.stage==='air'&&n.tower===tw.side&&g.boss.hp>0;if(live){c.save();c.globalAlpha=.35+.35*Math.sin(t*9);rect(c,x+w*(tw.side?.4:.6)-6,150-TOWER_DECK_ROW*s+2,12,12,'#ff5a4a');c.restore();}}
+}
+function drawMast(c,a,g,t){
+ const img=a.agitatorProps;if(!img)return;const n=g.boss?.broadcast,bent=!n||n.mast!=='standing'||g.boss.hp<=0&&g.bossesDefeated?.has('agitator');
+ if(!bent){const box=PROPS.mast,s=(FLOOR_Y+2-MAST_DECK.y)/(box[3]-MAST_DECK_ROW),w=box[2]*s;blit(c,img,box,X0()+MAST_X-w/2,MAST_DECK.y-MAST_DECK_ROW*s,w,box[3]*s);}
+ else{const box=PROPS.bent,s=.82,w=box[2]*s,h=box[3]*s;blit(c,img,box,X0()+MAST_X-w/2-8,FLOOR_Y+2-h,w,h);}
+}
+// Platforms: the roof itself, steel catwalks on the mast and towers, chimneys. Letter slots are drawn as letters.
 export function drawAgitatorPlatform(c,a,p,t){
- // The same painted steel used elsewhere, with real brackets/cables anchored in the roof facade.
- c.drawImage(a.studioProps,0,210,443,100,p.x,p.y-2,p.w,22);
- if(p.y<400){for(const x of[p.x+8,p.x+p.w-10]){rect(c,x-3,p.y+18,8,422-p.y-18,'#10243d');rect(c,x,p.y+18,3,422-p.y-18,'#466482');for(let y=p.y+25;y<422;y+=24)rect(c,x-4,y,10,3,'#71849c');}}
+ const i=p.index;
+ if(i===AGI.floor){
+  const art=a.roofsPieces;rect(c,p.x,p.y+8,p.w,480-p.y,'#1a1430');const fall=c.createLinearGradient(0,p.y,0,480);fall.addColorStop(0,'#3a2a3c');fall.addColorStop(1,'#0a0814');c.fillStyle=fall;c.fillRect(p.x,p.y+10,p.w,480-p.y);
+  if(art){const box=[458,108,623,165],k=34/165,mw=box[2]*k;for(let x=p.x-6;x<p.x+p.w;x+=mw-2)blit(c,art,box,x,p.y-4,mw,box[3]*k);}
+  else{rect(c,p.x,p.y,p.w,6,'#8a5a48');}
+  return;
+ }
+ if(i===AGI.mast||AGI.towers.includes(i)){
+  if(a.studioProps)c.drawImage(a.studioProps,0,210,443,100,p.x,p.y-2,p.w,22);else rect(c,p.x,p.y,p.w,8,'#7b8aa8');
+  return;
+ }
+ const ci=AGI.chimneys.indexOf(i);
+ if(ci>=0){const ch=CHIMNEYS[ci],box=ch.tall?PROPS.chimneyTall:PROPS.chimneyLow,k=p.w/box[2]*1.08,w=box[2]*k,h=box[3]*k,potRise=ch.tall?28*k:22*k;if(a.agitatorProps)blit(c,a.agitatorProps,box,p.x+p.w/2-w/2,p.y-potRise,w,h);return;}
 }
-function energy(c,x,y,tx,ty,alpha=1){
- c.save();c.globalAlpha=alpha;c.strokeStyle='#16acc65c';c.lineWidth=10;c.beginPath();c.moveTo(x,y);c.lineTo(tx,ty);c.stroke();c.strokeStyle='#24d3f0';c.lineWidth=4;c.stroke();c.strokeStyle='#ceffff';c.lineWidth=1;c.stroke();c.restore();
+// Hatches lie on the roof in front of the floor tiles.
+export function drawAgitatorEquipment(c,a,g,t){
+ if(g.room!==4||!a.agitatorProps)return;const n=g.boss?.broadcast;
+ for(const [i,x] of HATCHES.entries()){const open=n&&n.hatches[i]>0,box=open?PROPS.hatchOpen:PROPS.hatch,w=open?62:58,h=box[3]*w/box[2];blit(c,a.agitatorProps,box,X0()+x-w/2,FLOOR_Y+6-h,w,h);}
 }
-function antenna(c,a,g,station,t){
- const at=antennaStation(g,station),index=station.index,step=station.hits,cw=a.agitatorAntennas.width/4,ch=a.agitatorAntennas.height/2;
- const w=250,h=250,x=at.platform.x+at.platform.w/2-w/2,y=at.y-200;
- if(station.turnTime>0&&step>0){c.save();c.globalAlpha=station.turnTime/.65;c.drawImage(a.agitatorAntennas,(step-1)*cw,index*ch,cw,ch,x,y,w,h);c.globalAlpha=1-station.turnTime/.65;c.drawImage(a.agitatorAntennas,step*cw,index*ch,cw,ch,x,y,w,h);c.restore();}
- else c.drawImage(a.agitatorAntennas,step*cw,index*ch,cw,ch,x,y,w,h);
- if(step&&g.boss.broadcast.stage!=='chase'){const b=g.boss,side=index?-1:1,px=x+(index?55:395)/cw*w,py=y+165/ch*h;energy(c,px,py,b.x+b.w/2,b.y+b.h/2-8,(.35+step*.18)*(g.boss.broadcast.stage==='break'?g.boss.broadcast.timer/1.6:1));}
- const blocked=station.hits<3&&(station.lockTime>0||station.locked&&g.boss.broadcast.antennas.some(other=>other!==station&&other.hits<3));
- if(blocked)drawPixelBarrier(c,x+w/2,y+h*.42,118,112,{time:t,alpha:.75,flash:station.flash});
- for(let i=0;i<3;i++){rect(c,at.x-25+i*18,at.y+8,13,7,i<station.hits?'#75f6ff':'#273d64');rect(c,at.x-25+i*18,at.y+8,13,1,'#ddfaff');}
+// ——— The robot and his phase objects ———
+function bossFrame(g,t){
+ const b=g.boss,n=b.broadcast,m=n.mode;
+ if(m==='jump'){const j=n.jump;return j&&j.time/j.duration>.82?7:6;}
+ if(n.stage==='slogan')return m==='overheat'?2:m==='burst'?5:m==='stun'?4:['windup','volley'].includes(m)||n.blast>0?1:0;
+ if(n.stage==='leap')return 5;
+ if(n.stage==='climb')return 13;
+ if(n.stage==='rally')return m==='ura'?10:m==='uraWarn'?8:m==='swing'?9:m==='stomp'?3:m==='land'?7:m==='stun'?12:Math.floor(n.walkTime*3.2)%2?3:0;
+ if(n.stage==='air')return m==='stun'?12:m==='swing'?9:m==='swingWarn'?1:n.wind.phase==='gust'?11:n.wind.phase==='warn'?8:0;
+ return 0;
 }
-export function drawAgitatorEquipment(c,a,g,t){if(g.room===4&&g.boss.broadcast)for(const station of g.boss.broadcast.antennas)antenna(c,a,g,station,t);}
 export function drawAgitator(c,a,g,t){
  const b=g.boss,n=b.broadcast;if(!n)return;
- const row=b.hurtTime>0?5:n.stage==='break'?3:n.stage==='chase'?(n.mode==='hop'?4:3):n.mode==='sonic'?1:n.mode==='headline'?2:n.mode==='warning'?(n.turn%2?2:1):0,frame=Math.floor(t*6)%4;
- if(n.mode==='hop'){for(const lag of[.12,.24]){const q=Math.max(0,1-n.timer/n.hopDuration-lag);c.save();c.globalAlpha=.22;drawAgitatorPose(c,a,4,frame,n.from.x+(n.to.x-n.from.x)*q-12,n.from.y+(n.to.y-n.from.y)*q-Math.sin(q*Math.PI)*80-35,b.w+24,b.h+35,b.dir<0);c.restore();}}
- drawAgitatorPose(c,a,row,frame,b.x-12,b.y-35,b.w+24,b.h+35,b.dir<0);
- if(n.stage==='shield'||n.stage==='break'){
-  const alpha=n.stage==='break'?Math.max(0,n.timer/1.6):.8;
-  drawPixelBarrier(c,b.x+b.w/2,b.y+b.h/2-8,78,77,{time:t,alpha,flash:n.stage==='break'?.3:b.guardFlash});
-  if(n.stage==='break')for(let i=0;i<14;i++){const angle=i*2.4,r=80+(1-n.timer/1.6)*70;rect(c,b.x+b.w/2+Math.cos(angle)*r,b.y+b.h/2+Math.sin(angle)*r,4,7,'#a2faff');}
- }
- if(n.wave){const wave=n.wave,boxes=[[173,98,128,214],[136,66,181,282],[93,33,262,353],[54,3,352,409]],f=Math.min(3,Math.floor(wave.age*4)),box=boxes[f];for(const side of[-1,1]){c.save();c.globalAlpha=Math.min(.85,(2.5-wave.age)*2);c.translate(wave.x,wave.y);if(side<0)c.scale(-1,1);c.drawImage(a.agitatorEffects,f*443.5+box[0],443.5+box[1],box[2],box[3],0,-wave.radius,wave.radius,wave.radius*2);c.restore();}}
+ drawLetters(c,a,g,t,false);drawPlacards(c,a,g,t);
+ const frame=bossFrame(g,t),cx=b.x+b.w/2,feet=b.y+b.h+2,bob=frame===0?Math.round(Math.sin(t*3)*1.5):0;
+ if(n.mode==='jump'&&n.jump){for(const lag of[.1,.2]){const q=Math.max(0,n.jump.time/n.jump.duration-lag);const x=n.jump.from.x+(n.jump.to.x-n.jump.from.x)*q,y=n.jump.from.y+(n.jump.to.y-n.jump.from.y)*q-Math.sin(q*Math.PI)*n.jump.arc;c.save();c.globalAlpha=.2;drawAgitatorFrame(c,a,6,x+b.w/2,y+b.h+2,b.h,b.dir<0);c.restore();}}
+ // Overheated megaphone glows and smokes before the body.
+ const mouth={x:cx+b.dir*64,y:b.y+78};
+ if(n.stage==='slogan'&&n.mode==='overheat'){fxFrame(c,a,'glow',mouth.x,mouth.y,70,.55+.25*Math.sin(t*14));fxFrame(c,a,'smoke',mouth.x+b.dir*6,mouth.y-46,64,.75,b.dir<0);}
+ c.save();if(b.hurtTime>0&&Math.floor(t*24)%2)c.filter='brightness(1.9)';if(b.guardFlash>0)c.filter='brightness(1.35) saturate(.6)';
+ drawAgitatorFrame(c,a,frame,cx,feet+bob,b.h,b.dir<0);c.restore();
+ if(n.stage==='slogan'&&n.mode==='windup')drawSlotMarks(c,g,t);
+ if(n.blast>0||n.mode==='swingWarn'||n.mode==='uraWarn'||n.mode==='stomp'){const blink=Math.floor(t*10)%2;text(c,'!',cx-5,b.y-30+(blink?-2:0),n.mode==='uraWarn'?'#7ff4ff':'#ffd083',3);}
+ // «УРА!»: a cyan speech flash over the crowd; his open back is outlined.
+ if(n.stage==='rally'&&n.mode==='ura'){c.save();c.globalAlpha=.85;text(c,'УРА!',cx+b.dir*70-36,b.y-26-Math.abs(Math.sin(t*8))*4,'#8ff6ff',3);c.restore();}
+ drawLetters(c,a,g,t,true);drawBirds(c,a,g,t);drawWind(c,a,g,t);drawFx(c,a,n,t);
 }
-export function drawAgitatorProjectile(c,a,bolt,t){
- if(bolt.kind!=='headline')return false;const f=Math.floor(t*9)%4;
- const boxes=[[29,187,389,105],[32,168,374,128],[21,155,393,141],[23,174,393,146]],box=boxes[f],scale=Math.min(bolt.w/box[2],bolt.h/box[3]),w=box[2]*scale,h=box[3]*scale;c.drawImage(a.agitatorEffects,f*443.5+box[0],box[1],box[2],box[3],bolt.x+(bolt.w-w)/2,bolt.y+(bolt.h-h)/2,w,h);return true;
+function drawSlotMarks(c,g,t){
+ const n=g.boss.broadcast,blink=Math.floor(t*8)%2;c.save();c.globalAlpha=blink?.65:.3;c.strokeStyle='#ffb36a';c.lineWidth=2;
+ for(let i=0;i<SLOT_ORDER.length;i++){const s=slotRect(n.side,i);c.strokeRect(X0()+s.x+2,s.y+2,s.w-4,s.h-4);}c.restore();
+}
+function drawLetters(c,a,g,t,flying){
+ const n=g.boss.broadcast;
+ for(const l of n.letters){
+  if(flying!==(l.state==='fly'||l.state==='back'))continue;
+  if(l.state==='block'){const settle=Math.max(0,1-l.time/.18);letterFrame(c,a,l.frame,l.x,l.y+settle*-6,LETTER+8);continue;}
+  if(l.state==='crumble'){const k=l.time/SLOGAN_TIMES.crumble;if(k<.45){const shake=Math.sin(l.time*90)*2;letterFrame(c,a,l.frame,l.x+shake,l.y,LETTER+8);}else{const q=(k-.45)/.55;for(const [dx,dy] of[[-1,-1],[1,-1],[-1,1],[1,1]]){c.save();c.beginPath();c.rect(l.x+(dx<0?-30:0)+dx*q*18,l.y+(dy<0?-30:0)+dy*q*10+q*q*30,30,30);c.clip();letterFrame(c,a,l.frame,l.x+dx*q*18,l.y+dy*q*10+q*q*30,LETTER+8,dx*q*.5,1-q);c.restore();}if(q<.5)fxFrame(c,a,'dust',l.x,l.y+14,60,1-q*2);}continue;}
+  if(l.state==='fly'){for(const lag of[.05,.1]){c.save();c.globalAlpha=.25;letterFrame(c,a,l.frame,l.x-(l.to.x-l.from.x)*lag/.62*.6,l.y,LETTER,0);c.restore();}letterFrame(c,a,l.frame,l.x,l.y,LETTER+4,Math.sin(l.time*9)*.25);continue;}
+  if(l.state==='back'){const b=g.boss,dir=Math.sign(b.x+b.w/2-l.x)||1;c.save();c.globalAlpha=.75;for(let i=0;i<5;i++)rect(c,l.x-dir*(26+i*9),l.y-12+i*6,18-i*2,3,'#7ff4ff');c.restore();c.save();c.shadowColor='#5ff0ff';c.shadowBlur=14;letterFrame(c,a,l.frame,l.x,l.y,LETTER+6,l.time*12);c.restore();}
+ }
+}
+function drawPlacards(c,a,g,t){
+ const n=g.boss.broadcast,img=a.agitatorPlacards;if(!img)return;const [cw,ch]=PLACARD_CELL,s=.5;
+ for(const p of n.placards){
+  let frame,alpha=1,lift=p.lift||0,clip=null;
+  if(p.state==='rise'){frame=0;clip=Math.min(1,p.time/.5);}
+  else if(p.state==='knocked')frame=6;
+  else if(p.state==='broken'){frame=7;alpha=Math.max(0,1-p.time/.7);}
+  else frame=p.kind===0?[1,2,1,3][(n.beat+(p.id%2))%4]:p.kind===1?4:5;
+  const cx=p.x+p.w/2,feet=p.y+p.h+2-lift;c.save();c.globalAlpha=alpha;c.translate(Math.round(cx),Math.round(feet));if(p.dir<0&&frame!==0)c.scale(-1,1);
+  if(p.state==='march'&&p.kind!==0)c.rotate(Math.sin((n.beatClock+p.id)*Math.PI*2/(60/132))*.06);
+  if(clip!==null){c.beginPath();c.rect(-cw*s/2,-ch*s,cw*s,ch*s);c.clip();c.translate(0,(1-clip)*24);}
+  c.drawImage(img,frame*cw,0,cw,ch,-cw/2*s,-136*s,cw*s,ch*s);c.restore();
+ }
+}
+function drawBirds(c,a,g,t){const n=g.boss.broadcast;for(const s of n.birds)drawSensationBird(c,a,s.x+s.w/2,s.y+s.h/2,s.dir,t+s.x*.01,{burst:s.state==='burst',alpha:s.state==='burst'?Math.max(0,1-s.time/.35):1});}
+function drawWind(c,a,g,t){
+ const n=g.boss.broadcast;if(n.stage!=='air'||n.mode==='jump'||n.wind.phase==='calm')return;
+ const dir=windDir(n),gust=n.wind.phase==='gust',r=rooms[4],view=g.viewWidth||768,from=g.camera-40,span=view+80;
+ c.save();for(let i=0;i<(gust?26:8);i++){const speed=gust?640:200,x=dir>0?from+((i*137+t*speed)%span):from+span-((i*137+t*speed)%span),y=40+(i*53)%370,len=gust?34+i%3*14:14;c.globalAlpha=gust?.5:.25;rect(c,x,y,len,2,i%3?'#d6f4ff':'#ffffff');}
+ if(gust)for(let i=0;i<4;i++){const x=dir>0?from+((i*260+t*520)%span):from+span-((i*260+t*520)%span);fxFrame(c,a,'wind',x,120+i*80,110,.55,dir<0);}
+ c.restore();
+ const b=g.boss;if(gust)fxFrame(c,a,'wave',b.x+b.w/2+dir*92,b.y+78,90,.8,dir<0);
+}
+function drawFx(c,a,n,t){
+ for(const f of n.fx){const k=f.age/f.life,alpha=Math.max(0,1-k);
+  if(f.kind==='dust')fxFrame(c,a,'dust',f.x,f.y-(f.small?10:26),f.small?64:130,alpha);
+  else if(f.kind==='rings')fxFrame(c,a,'rings',f.x,f.y-14,120+k*70,alpha);
+  else if(f.kind==='stars')fxFrame(c,a,'stars',f.x,f.y+Math.sin(t*6)*2,90,Math.min(1,alpha*2));
+  else if(f.kind==='wave')fxFrame(c,a,'wave',f.x+(f.dir||1)*k*60,f.y,90+k*50,alpha,(f.dir||1)<0);
+  else if(f.kind==='explosion')fxFrame(c,a,'explosion',f.x,f.y,80+k*30,alpha);
+  else if(f.kind==='sparks')fxFrame(c,a,'sparks',f.x,f.y,80,alpha);
+  else if(f.kind==='burst')fxFrame(c,a,f.cyan?'burst':'explosion',f.x,f.y,70+k*40,alpha);
+ }
+}
+// Scrap flying off at the end of the fight (boss-defeat-art.js).
+export function drawAgitatorDefeat(c,a,d){
+ const t=d.time,cx=d.x+d.w/2,feet=d.y+d.h+2,flip=d.dir<0;
+ if(t<.55){const shake=Math.sin(t*70)*3;drawAgitatorFrame(c,a,13,cx+shake,feet,d.h,flip);if(t>.2)fxFrame(c,a,'sparks',cx+20,d.y+40,70,.9);return;}
+ if(t<.9){drawAgitatorFrame(c,a,14,cx,feet,d.h,flip);fxFrame(c,a,'smoke',cx,d.y+10,70,.8);return;}
+ const k=Math.min(1,(t-.9)/.8);c.save();c.globalAlpha=Math.max(0,1-k*.9);c.translate(cx,feet-d.h/2);c.scale(1+k*.25,1+k*.25);c.translate(-cx,-(feet-d.h/2));drawAgitatorFrame(c,a,15,cx,feet+k*10,d.h*1.05,flip);c.restore();
+ fxFrame(c,a,'mushroom',cx,feet-60-k*30,120+k*40,Math.max(0,1-k));
 }

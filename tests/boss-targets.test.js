@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import {Game} from '../engine.js';
 import {activateRoom} from '../room-transitions.js';
 import {bossTargets} from '../target-highlight.js';
-import {antennaStation} from '../agitator-combat.js';
+import {exposeAgitator,agitatorHitbox} from '../agitator-combat.js';
 function arena(room){const g=new Game({story:false,cinematic:true});g.start();activateRoom(g,room);g.mode='playing';g.enemies=[];g.boss.active=true;g.boss.noticeTime=0;return g;}
-test('Agitator: only consoles that can be hit now are marked, exactly over their hit zone; the boss is marked while he holds in the chase',()=>{
- const g=arena(4),n=g.boss.broadcast;let marks=bossTargets(g);assert.equal(marks.length,2);
- const at=antennaStation(g,n.antennas[0]);assert.deepEqual(marks.find(m=>m.id==='antenna-0'),{id:'antenna-0',x:at.x-29,y:at.y-43,w:58,h:44,color:marks[0].color});
- n.antennas[0].hits=1;n.antennas[0].locked=true;marks=bossTargets(g);assert.deepEqual(marks.map(m=>m.id),['antenna-1'],'the locked console is not marked: alternate');
- n.antennas.forEach(a=>{a.hits=3;a.locked=false;});assert.equal(bossTargets(g).length,0);
- n.stage='chase';n.mode='hold';assert.deepEqual(bossTargets(g).map(m=>m.id),['agitator']);n.mode='hop';assert.equal(bossTargets(g).length,0);
+test('Agitator: the robot is marked only in his openings — overheated body, turned back, screen on the tower',()=>{
+ const g=arena(4),b=g.boss,n=b.broadcast;assert.equal(bossTargets(g).length,0,'a cool megaphone is not a target');
+ n.mode='overheat';assert.deepEqual(bossTargets(g).map(m=>[m.id,m.x,m.y,m.w,m.h]),[['agitator',...Object.values(agitatorHitbox(b))]]);
+ n.mode='volley';assert.equal(bossTargets(g).length,0);
+ n.stage='rally';n.mode='walk';assert.equal(bossTargets(g).length,0);n.mode='ura';b.dir=1;const back=bossTargets(g)[0];assert.equal(back.id,'agitator-back');assert.ok(back.x+back.w<=b.x+b.w/2+1,'only the back half');
+ n.stage='air';n.mode='idle';assert.equal(bossTargets(g)[0].id,'agitator-screen');n.mode='jump';assert.equal(bossTargets(g).length,0);
 });
 test('Infoshum: open unshielded terminals and the lowered core are marked; nothing else',()=>{
  const g=arena(8),n=g.boss.network;assert.equal(bossTargets(g).length,0);
