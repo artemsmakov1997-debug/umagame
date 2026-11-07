@@ -1,8 +1,8 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
-const {open,begin,fixture,shot}=require('./browser-helpers.cjs');
+const {open,begin,fixture,legacyFixture,shot}=require('./browser-helpers.cjs');
 async function setupTeleport(page){
- await fixture(page,7,2,604);
+ await legacyFixture(page,2,604);
  await page.evaluate(async()=>{
   const {enemy}=await import('./level.js?v=0.21.5'),g=testGame;g.enemies=[enemy('informant',7,365,1,{active:true,noticed:true,teleportCooldown:0})];
   const step=g.step.bind(g);g.haltAt='charge';g.haltDelay=.18;

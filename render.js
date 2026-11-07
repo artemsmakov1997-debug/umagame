@@ -30,6 +30,7 @@ import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
 import {drawRoofSurface,drawRoofProps,drawRoofWind,drawSensations} from './roofs-art.js?v=0.21.5';
 import {drawStudioSurface,drawStudioBack,drawStudioProps} from './studio-art.js?v=0.21.5';
+import {drawDimensionSurface,drawDimensionProps} from './dimension-art.js?v=0.21.5';
 import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
@@ -62,16 +63,17 @@ export class Renderer{
   drawBackdropVeil(c,g,cam,vw);
   if(cam<WIDTH+150)drawOpening(c,a,g);
   c.save();if(opening)c.globalAlpha=roomDarkness(g.wakeTime);
-  if(![2,3,4,5,6].includes(g.room))drawPassages(c,a,g);
+  if(![2,3,4,5,6,7].includes(g.room))drawPassages(c,a,g);
   // Restore only playable tabletop strips, then give every collision surface a bright edge.
   drawMovingRails(c,g.platforms.filter(s=>s.room===g.room&&!s.bossHidden),t);
   if(g.room===6)for(const platform of g.platforms.filter(p=>p.room===6&&['gap','forming'].includes(p.studioPhase)))drawStudioPlatform(c,a,platform,t);
   if(g.room===5){drawStudioBack(c,a,g,t);for(const platform of g.platforms.filter(p=>p.room===5&&p.intangible))drawStudioSurface(c,a,g,platform);}
+  if(g.room===7)for(const platform of g.platforms.filter(p=>p.room===7&&p.intangible))drawDimensionSurface(c,a,g,platform);
   for(const platform of solidSurfaces(g)){
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawPlatformShadow(c,g,platform);
-   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(g.room===3&&drawRoofSurface(c,a,g,platform)){}else if(g.room===5&&drawStudioSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
+   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(g.room===3&&drawRoofSurface(c,a,g,platform)){}else if(g.room===5&&drawStudioSurface(c,a,g,platform)){}else if(g.room===7&&drawDimensionSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t);else drawSurface(c,a,platform,t);
    drawPlatformRim(c,g,platform,t);
   }
   for(const ladder of ladders){
@@ -81,7 +83,7 @@ export class Renderer{
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
-  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawRoofProps(c,a,g,t);drawStudioProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
+  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawRoofProps(c,a,g,t);drawStudioProps(c,a,g,t);drawDimensionProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawTacticalTerrain(c,g,t);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t);drawSensations(c,a,g,t);drawRoofWind(c,g,t);
   drawLifeCaches(c,g,t);
@@ -100,7 +102,7 @@ export class Renderer{
    if(e.type==='botfarm')drawMonster(c,a,e.type,e.x+e.w/2-46,e.y+e.h-82,92,82,t,false,e);
    if(e.type==='bot')drawMonster(c,a,e.type,e.x+e.w/2-20,e.y+e.h-38,40,38,t,false,e);
    if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
-   if(e.type==='echo')drawMonster(c,a,e.type,e.x+e.w/2-34,e.y+e.h-54,68,54,t,e.dir<0,{...e,chase:e.state==='chase',forming:e.state==='forming'});
+   if(e.type==='echo'){if(e.flipped){c.save();c.translate(0,2*(e.y+e.h/2));c.scale(1,-1);}drawMonster(c,a,e.type,e.x+e.w/2-34,e.y+e.h-54,68,54,t,e.dir<0,{...e,chase:e.state==='chase',forming:e.state==='forming'});if(e.flipped)c.restore();}
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}
    if(e.type==='informant'){
     if(!drawTeleportingInformant(c,a,e,t))drawMonster(c,a,e.type,e.x-18,e.y-56,84,85,t,e.dir<0,e);
@@ -127,6 +129,8 @@ export class Renderer{
    this.trailTimer+=dt;if(this.trailTimer>.025){this.trailTimer=0;this.trail.push({x:p.x+9,y:p.y+34,life:.3,dash:p.dash>0});}
   }
   for(const trail of this.trail){trail.life-=dt;c.globalAlpha=Math.max(0,trail.life/.3);rect(c,trail.x,trail.y,trail.dash?12:3,3,trail.dash?'#72dffe':'#ccd3ff');}c.globalAlpha=1;this.trail=this.trail.filter(v=>v.life>0);
+  // Upside-down Uma in «Разлом»: mirror the whole sprite around her middle.
+  const flipUma=p.flipped&&!g.swallow;if(flipUma){c.save();c.translate(0,2*(p.y+p.h/2));c.scale(1,-1);}
   if(g.storyEnabled&&!g.seenScenes.has('intro')||g.dialogue?.id==='intro'){
    drawWakeup(c,a,p,g.wakeTime);
   }else if(p.hurtTime>0){
@@ -154,12 +158,13 @@ export class Renderer{
    if(p.powerTime>0)for(let i=0;i<5;i++)rect(c,p.x-13+i*14,p.y-10+Math.sin(t*5+i)*5,2,2,'#ffe6a0');
    c.globalAlpha=1;
   }
+  if(flipUma)c.restore();
   if(p.attack>.04){c.save();c.translate(Math.round(p.x+17+p.dir*36),Math.round(p.y+24));if(p.dir<0)c.scale(-1,1);for(let i=0;i<3;i++){rect(c,10+i*2,-13+i*8,3,10,'#ffe6a7');rect(c,6+i*2,-15+i*8,4,2,'#ffe6a7');}c.restore();}
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   if(g.tether){const e=g.tether.ownerId==='boss:'+g.boss.id?g.boss:g.enemies.find(e=>e.id===g.tether.ownerId);if(e){c.strokeStyle='#c9a4ed';c.lineWidth=3;c.setLineDash([5,4]);c.beginPath();c.moveTo(e.x+24,e.y+2);c.lineTo(p.x+17,p.y+28);c.stroke();c.setLineDash([]);for(let i=0;i<5;i++)rect(c,e.x+5+i*8,e.y-58,5,3,i<Math.ceil(g.tether.remaining)?'#ffdb9b':'#263a55');}}
   drawYuriSignal(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawBossDefeat(c,a,g);
   drawExitArrow(c,g,t,worldWidth);c.restore();
-  drawInterferenceOverlay(c,g,vw);drawArenaTransfer(c,g,vw);if(!drawRouteTransition(c,a,g,vw))drawLocationLoading(c,g,vw);
+  drawInterferenceOverlay(c,g,vw,a);drawArenaTransfer(c,g,vw);if(!drawRouteTransition(c,a,g,vw))drawLocationLoading(c,g,vw);
   if(g.defeat&&(g.mode==='bossDefeat'||g.mode==='paused'&&g.pausedFrom==='bossDefeat')){c.save();c.globalAlpha=Math.max(0,Math.min(1,(g.defeat.time-1.42)/.28));rect(c,0,0,vw,HEIGHT,'#030919');c.restore();}
   if(g.mode==='respawning'||g.pausedFrom==='respawning'){
    const progress=1-g.respawnTime/1.1;c.globalAlpha=Math.max(0,(progress-.25)/.75)*.86;rect(c,0,47,vw,HEIGHT-47,'#030a1e');c.globalAlpha=1;

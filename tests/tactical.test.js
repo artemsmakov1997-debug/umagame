@@ -9,12 +9,13 @@ import {alertNearby} from '../enemies.js';
 import {stepProjectiles} from '../boss.js';
 import {restPose} from '../cat-animation.js';
 import {chooseInformantLanding,teleportLandingClear} from '../informant-teleport.js';
+import {installLegacyRoom7,seatLegacy} from './legacy-room.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
-const actor=(type,room,x,index,extra={})=>enemy(type,room,x,index,{active:true,noticed:true,...extra});
+const actor=(type,room,x,index,extra={})=>seatLegacy(enemy(type,room,x,index,{active:true,noticed:true,...extra}));
 function setup(room=1,index=0,x=45){
  const g=new Game({story:false});g.start();g.abilities={attack:true,dash:true,sneak:true};g.tutorial.complete=true;g.room=g.checkpoint=room;g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];g.relays.forEach(d=>d.hp=0);
  // Room 7 is the mechanics playground: its second ledge travels and can be cut, like the old studio ledge.
- if(room===7){const p=g.platforms.find(s=>s.id==='7:1');Object.assign(p,{motion:{axis:'x',amplitude:68,period:6.2},cuttable:true,baseX:p.x,baseY:p.y});}
+ if(room===7){installLegacyRoom7(g);const p=g.platforms.find(s=>s.id==='7:1');Object.assign(p,{motion:{axis:'x',amplitude:68,period:6.2},cuttable:true,baseX:p.x,baseY:p.y});}
  const s=g.platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,h:48,grounded:true,supportId:s.id,inv:0});return g;
 }
 test('new small enemies are introduced gradually, have their own notebooks and do not invade training',()=>{

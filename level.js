@@ -1,4 +1,5 @@
 import {STUDIO_PIECES,studioCuttable} from './studio-map.js?v=0.21.5';
+import {DIM_PIECES} from './dimension-map.js?v=0.21.5';
 import {ROOF_BUILDINGS,ROOF_ROPES,ROOF_AWNINGS,ROOF_PROPS,ROOF_LADDERS,roofPiece} from './roofs-map.js?v=0.21.5';
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const chapters=[
@@ -42,11 +43,7 @@ layouts[1]=[
 layouts[3]=[...ROOF_BUILDINGS.map(b=>[b.x,b.y,b.w]),...ROOF_ROPES.map(r=>[r.x,r.y,r.w]),...ROOF_AWNINGS.map(a=>[a.x,a.y,a.w]),...ROOF_PROPS.map(p=>[p.x,p.y,p.w])];
 // «Студия» (studio-map.js): fixed islands, holograms, spotlight risers and red/blue takes.
 layouts[5]=STUDIO_PIECES.map(p=>[p.x,p.y,p.w]);
-layouts[7]=[
- [0,360,228],[290,292,216],[558,252,242],[0,450,246],[302,418,308],[0,474,232],[304,474,486],[0,222,112],[452,184,170],[150,276,132],
- [814,308,224],[1090,256,220],[1372,298,218],[800,414,260],[1100,414,282],[792,474,494],[1338,474,254],[930,196,170],[1210,154,178],
- [1622,306,218],[1898,264,210],[2160,244,144],[1572,414,270],[1900,414,274],[1560,474,744],[1752,198,170],[2024,150,176]
-];
+layouts[7]=DIM_PIECES.map(p=>[p.x,p.y,p.w]);
 const arenaBase=[
  [0,420,236],[296,346,232],[616,296,246],[914,374,236],[1256,314,280],[0,474,390],[470,474,320],[870,474,310],[1244,474,292],
  [120,230,170],[356,166,180],[634,124,224],[964,208,196],[1220,146,230],[20,328,140],[504,244,140],[838,290,100],[1138,260,124]
@@ -78,20 +75,18 @@ layouts[8]=[
  [396,354,103],[1032,354,98]
 ];
 // Additional side routes: a paper lift, fire escape, stage wagon and drifting islands.
-for(const [room,extra] of [[7,[[790,225,140],[1515,235,130]]]])layouts[room].push(...extra);
 // Exposed roof spans replace the broad safety floor; upper routes remain connected.
 const motions={
-'7:27':{axis:'y',amplitude:28,period:6},'7:28':{axis:'x',amplitude:42,period:7},
   '6:1':{axis:'x',amplitude:46,period:5.6},'6:3':{axis:'y',amplitude:46,period:6},'6:10':{axis:'y',amplitude:30,period:5.8},
- '4:10':{axis:'y',amplitude:30,period:6.4},'7:13':{axis:'x',amplitude:38,period:7.2},
+ '4:10':{axis:'y',amplitude:30,period:6.4},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:false,roof:r.index===3?roofPiece(index):null,studio:r.index===5?STUDIO_PIECES[index]:null,cuttable:r.index===5?studioCuttable(index):(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===0?-45:0,shelter:r.index===2&&[1,2].includes(index)?y+16:r.index===0&&index===4?y+11:null,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:false,roof:r.index===3?roofPiece(index):null,studio:r.index===5?STUDIO_PIECES[index]:null,dim:r.index===7?DIM_PIECES[index]:null,cuttable:r.index===5?studioCuttable(index):(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===0?-45:0,shelter:r.index===2&&[1,2].includes(index)?y+16:r.index===0&&index===4?y+11:null,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null})));
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [];
  if(r.arena)return [];
  if(r.index===1)return [];
- if(r.index===5)return [];
+ if(r.index===5||r.index===7)return [];
  if(r.index===3)return ROOF_LADDERS.map(l=>({x:r.x+l.x,y:l.top,w:31,h:l.bottom-l.top,room:3}));
  return [r.x+730,r.x+1498,r.end-50].map((x,i)=>{const s=platforms.find(p=>p.room===r.index&&p.index===[2,12,21][i]);return{x,y:s.y,w:31,h:474-s.y,room:r.index};});
 });
@@ -120,10 +115,11 @@ export function createEnemies(){const all=[
  enemy('informant',3,180,0,{trigger:100}),enemy('inflator',3,470,1),enemy('informant',3,680,2),enemy('inflator',3,1010,3),enemy('inflator',3,1730,6),enemy('informant',3,2120,8),
  // Студия: the Нарезчик and Склейка work from perches off the route; a Ботоферма guards each transmitter.
  enemy('cutter',5,712,15,{hunter:true}),enemy('botfarm',5,718,3),enemy('splicer',5,1046,16),enemy('botfarm',5,1522,8),enemy('cutter',5,1672,17,{hunter:true}),enemy('botfarm',5,1984,11),enemy('splicer',5,2084,18),
- enemy('static',7,200,0,{trigger:130}),enemy('echo',7,1000,17,{trigger:800}),enemy('clickbait',7,1510,12,{trigger:1400}),enemy('static',7,870,10),enemy('static',7,1150,11),
- enemy('echo',7,1250,18),enemy('clickbait',7,1980,20),enemy('static',7,1650,19),enemy('static',7,1940,20),enemy('echo',7,2060,26),enemy('clickbait',7,2200,21)
+ // Измерение: Помеха over the feed and the rifts, an Эхо per later block, Кликбейт on Yuri's message and at the threshold.
+ enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,768,10,{trigger:600}),enemy('echo',7,1120,11,{trigger:960}),enemy('static',7,1300,12),
+ enemy('echo',7,1600,13,{trigger:1500}),enemy('static',7,1950,15,{y:220}),enemy('clickbait',7,2200,16)
  ];
- const kept={1:[330,760,1120,1420,300,1580,1900,2250],3:[180,470,680,1010,1730,2120],5:[712,718,1046,1522,1672,1984,2084],7:[200,1000,1510,870,1650,2060,2200]};
+ const kept={1:[330,760,1120,1420,300,1580,1900,2250],3:[180,470,680,1010,1730,2120],5:[712,718,1046,1522,1672,1984,2084],7:[330,768,1120,1300,1600,1950,2200]};
  const roster=all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
@@ -135,11 +131,11 @@ export function createFish(){return rooms.flatMap(r=>{
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
 export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.index===2?4:r.arena?5:r.index===1?4:r.index===3?11:r.index===5?4:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
-const antennaPlaces=[[2,4],[3,2],[3,5],[3,7],[4,2],[4,3],[5,3],[5,8],[5,11],[6,13],[7,8],[7,18],[7,26],[8,10],[8,13]];
+const antennaPlaces=[[2,4],[3,2],[3,5],[3,7],[4,2],[4,3],[5,3],[5,8],[5,11],[6,13],[8,10],[8,13]];
 export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
  const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
  return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:room===4?3:[2,6].includes(room)?0:1,maxHp:room===4?3:1,rewardWhenOverloaded:room===4,lastSwing:-1,breakTime:0,kind,ordinal,scripted:[2,4,6].includes(room)};});}
-export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,12],[3,13],[4,14],[5,15],[5,17],[6,3],[7,7],[7,22],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,12],[3,13],[4,14],[5,15],[5,17],[6,3],[7,10],[7,13],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:70,scenes:['arrival1','fakenews','stamp','censor','press']},
@@ -149,7 +145,7 @@ export function createNotebooks(){
  {id:'agitator',room:3,index:8,x:2040,scenes:['agitator']},
  {id:'studio',room:5,index:0,x:95,scenes:['arrival3','cutter','botfarm']},{id:'splicer',room:5,index:4,x:830,scenes:['splicer']},
  {id:'manipulator',room:5,index:11,x:1925,scenes:['manipulator']},
- {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:10,x:845,scenes:['echo']},{id:'clickbait',room:7,index:12,x:1410,scenes:['clickbait']},{id:'infoshum',room:7,index:21,x:2195,scenes:['infoshum']},
+ {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:11,x:1110,scenes:['echo']},{id:'clickbait',room:7,index:10,x:735,scenes:['clickbait']},{id:'infoshum',room:7,index:16,x:2165,scenes:['infoshum']},
  ...[2,4,6].map((room,i)=>({id:'record'+(i+1),room,index:room===6?2:room===4?3:4,x:room===2?760:room===6?1300:1400,scenes:['chapter'+(i+1)],bossRecord:true}))
  ];
  return entries.map(n=>({...n,x:rooms[n.room].x+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.bossRecord?Infinity:0}));

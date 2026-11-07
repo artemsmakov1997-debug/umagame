@@ -8,11 +8,14 @@ import {locomotionFrame} from '../monster-animation.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function ready(story=true){const g=new Game({story});g.start();if(story){g.finishWakeup();g.advanceDialogue(true);}g.enemies=[];g.fishes=[];g.soups=[];g.tutorial.complete=true;return g;}
 function stand(g,room,index=0,x=45){const s=platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,inv:0,attack:0,cooldown:0,dash:0,sneaking:false});g.room=room;g.checkpoint=room;g.unlockForRoom(room);g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);}
-test('Clickbait takes one stock at every heart count and stays revealed after checkpoint recovery',()=>{
- for(const health of [1,2,3,4]){const g=ready(false);stand(g,7,12,1510);g.health=health;g.enemies=[enemy('clickbait',7,1510,12,{active:true,noticed:true})];tick(g,45);assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(g.events.filter(e=>e.type==='lifeLost').length,1);tick(g,75);assert.equal(g.mode,'playing');assert.equal(g.health,4);const bait=g.enemies.find(e=>e.type==='clickbait'&&e.platformIndex===12);assert.equal(bait.revealed,true);assert.equal(bait.state,'patrol');}
+test('Clickbait takes two hearts, or a stock when two or fewer remain, and stays revealed when Uma is spat out',()=>{
+ for(const health of [1,2,3,4]){const g=ready(false);stand(g,7,12,1510);g.health=health;g.enemies=[enemy('clickbait',7,1510,12,{active:true,noticed:true})];tick(g,45);
+  if(health<=2){assert.equal(g.mode,'respawning');assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(g.events.filter(e=>e.type==='lifeLost').length,1);tick(g,75);assert.equal(g.mode,'playing');assert.equal(g.health,4);}
+  else{assert.equal(g.mode,'playing');assert.equal(g.lives,3);assert.equal(g.health,health-2);assert.equal(g.events.filter(e=>e.type==='lifeLost').length,0);}
+  if(health>2){const bait=g.enemies.find(e=>e.type==='clickbait'&&e.platformIndex===12);assert.equal(bait.revealed,true);}}
 });
-test('the last full-life Clickbait capture ends the game even with all four hearts',()=>{
- const g=ready(false);stand(g,5,1,350);g.lives=1;g.enemies=[enemy('clickbait',5,350,1,{active:true,noticed:true})];tick(g,45);assert.equal(g.mode,'lost');assert.equal(g.lives,0);assert.equal(g.health,0);tick(g,100);assert.equal(g.events.filter(e=>e.type==='lost').length,1);
+test('the last stock ends with a Clickbait capture once Uma is down to two hearts',()=>{
+ const g=ready(false);stand(g,5,1,350);g.lives=1;g.health=2;g.enemies=[enemy('clickbait',5,350,1,{active:true,noticed:true})];tick(g,45);assert.equal(g.mode,'lost');assert.equal(g.lives,0);assert.equal(g.health,0);tick(g,100);assert.equal(g.events.filter(e=>e.type==='lost').length,1);
 });
 test('paw, dash and stealth work in the initial quiet room with keyboard and joystick input',()=>{
  const g=ready(false);assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});g.step(1/60,{attack:true,dash:true});assert.equal(g.player.swing,1);assert.ok(g.player.dash>0);tick(g,40);g.step(1/60,{down:true,axisX:.5});assert.equal(g.player.sneaking,true);assert.equal(g.player.h,26);

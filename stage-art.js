@@ -48,6 +48,7 @@ export function drawLifeCaches(c,g,time){
 }
 export function drawTowerPortal(c,g,time,a){
  if(g.room!==PORTAL_ROOM&&g.pausedFrom!=='enteringArena')return;
+ if(a?.dimensionPieces)return; // «Порог Инфошума» (dimension-art.js) replaces the old barrier column
  if(a?.barriers){const sw=a.barriers.width/4,sh=a.barriers.height/2,open=!g.relays.some(d=>d.room===PORTAL_ROOM&&d.hp>0);c.drawImage(a.barriers,3*sw,(open?1:0)*sh,sw,sh,PORTAL_X-108,98,216,288);return;}
  const x=PORTAL_X-72,y=100,w=144,h=216;
  rect(c,x-9,y-8,w+18,h+22,'#020817');rect(c,x-6,y-5,w+12,h+15,'#345473');rect(c,x,y,w,h,'#020b22');

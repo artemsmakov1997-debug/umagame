@@ -1,8 +1,9 @@
+import {feedState} from '../dimension-systems.js';
 import {rooms as campaignRooms} from '../level.js';
 // Test pilot: supplies only ordinary movement/jump inputs to the live game model.
 export function supportOf(g){const p=g.player;return g.platforms.find(s=>s.room===g.room&&Math.abs(s.y-p.y-p.h)<1&&p.x+p.w>s.x&&p.x<s.x+s.w);}
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-function future(g,s,seconds){const t=(g.platformClocks[s.room]||0)+seconds,offset=s.motion?Math.sin(t*Math.PI*2/s.motion.period)*s.motion.amplitude:0;return {...s,x:s.motion?.axis==='x'?s.baseX+offset:s.x,y:s.motion?.axis==='y'?s.baseY+offset:s.y};}
+function future(g,s,seconds){if(s.dim?.type==='copy')return {...s,y:feedState(s.dim,g.time+seconds).y};const t=(g.platformClocks[s.room]||0)+seconds,offset=s.motion?Math.sin(t*Math.PI*2/s.motion.period)*s.motion.amplitude:0;return {...s,x:s.motion?.axis==='x'?s.baseX+offset:s.x,y:s.motion?.axis==='y'?s.baseY+offset:s.y};}
 function tick(g,input){if(g.mode==='dialogue')g.advanceDialogue(true);else g.step(1/60,input);}
 export function walkTo(g,x,max=500){for(let i=0;i<max;i++){if(g.mode==='dialogue'){g.advanceDialogue(true);continue;}if(g.mode!=='playing')return false;const d=x-g.player.x;if(Math.abs(d)<=3)return true;tick(g,{right:d>0,left:d<0});}return false;}
 export function jumpTo(g,room,index,max=1800){
@@ -86,4 +87,32 @@ export function crossStudio(g,lib,{relays=true}={}){
  if(!hop(9,takeSoon(9))||!hop(10,takeSoon(10))||!hop(11))return false;hit(11);
  if(!hop(12,takeSoon(12))||!hop(13,takeSoon(13))||!hop(14))return false;
  return on(14);
+}
+
+// «Измерение» pilot with ordinary inputs: ride the feed, walk into the envelopes, cross both rifts.
+export function crossDimension(g,{dashBoost=false}={}){
+ const p=g.player,x0=campaignRooms[7].x,piece=i=>g.platforms.find(s=>s.id==='7:'+i);
+ const run=(cond,input,max=900)=>{for(let i=0;i<max&&!cond();i++)tick(g,typeof input==='function'?input(i):input);return cond();};
+ const on=i=>p.grounded&&p.supportId==='7:'+i;
+ const lane=l=>[1,2,3].map(k=>piece(l*3+k));
+ // Pick the copy in a lane that will sit at a comfortable height for a hop from the current surface.
+ const pick=(l,lo,hi)=>()=>{const cand=lane(l).map(s=>({s,y:feedState(s.dim,g.time+.6).y,k:feedState(s.dim,g.time+1.4).k})).filter(c=>c.y>=lo()&&c.y<=hi()&&c.k<.8&&c.k>.05).sort((a,b)=>b.y-a.y)[0];return cand?.s;};
+ const hopToLane=(l,lo,hi)=>{let target=null;if(!run(()=>(target=pick(l,lo,hi)()),{},900))return false;return jumpTo(g,7,target.index,400);};
+ const feet=()=>p.y+p.h;
+ walkTo(g,x0+170);
+ if(!hopToLane(0,()=>330,()=>430))return 'lane0';
+ if(!hopToLane(1,()=>feet()-80,()=>feet()+50))return 'lane1';
+ if(!hopToLane(2,()=>feet()-80,()=>feet()+50))return 'lane2';
+ if(!run(()=>feet()<=405&&feet()>=210,{},400))return 'wait10';
+ if(!jumpTo(g,7,10,400))return 'p10';
+ // First envelope: just walk in.
+ if(!run(()=>on(11),{right:true},400))return 'island11 '+Math.round(p.x-x0)+' '+Math.round(feet());
+ // Turn back: the near envelope is a dead link, the live one is behind.
+ if(!run(()=>on(12)||on(13),(i)=>dashBoost&&p.x<x0+1150?{left:true,dash:p.x<x0+1150&&p.x>x0+1130}:{left:true},400))return 'island12 '+Math.round(p.x-x0)+' '+Math.round(feet());
+ if(on(12)&&!jumpTo(g,7,13,400))return 'island13';
+ if(!run(()=>p.flipped&&on(14),{right:true},300))return 'flip14 '+Math.round(p.x-x0)+' '+Math.round(p.y)+' '+p.flipped;
+ if(!run(()=>p.x>x0+1925-p.w-4,{right:true},300))return 'edge14';
+ if(!run(()=>on(15),i=>({right:true,jump:i<2}),200))return 'hang15 '+Math.round(p.x-x0)+' '+Math.round(p.y);
+ if(!run(()=>!p.flipped&&on(16),i=>({right:p.x<x0+2160}),300))return 'land16 '+Math.round(p.x-x0)+' '+Math.round(p.y)+' '+p.flipped;
+ return true;
 }

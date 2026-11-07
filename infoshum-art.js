@@ -1,6 +1,7 @@
 import {drawInfoshumTentacle} from './infoshum-tentacle-art.js?v=0.21.5';
 import {drawPixelBarrier} from './shield-art.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
+import {drawScreenContent,drawCableBlob,drawBreakout,drawSmokingCase} from './infoshum-anim-art.js?v=0.21.5';
 // Rendered production assets for the two-stage Infoshum encounter.
 // Frame atlases are original pixel PNG assets, preloaded in assets.js and drawn with pixel smoothing off.
 import {rooms} from './level.js?v=0.21.5';
@@ -34,6 +35,10 @@ function crt(c,a,m,n,time){
  const frame=monitorFrame(m,n,time);
  atlas(c,a.infoshumCRT,frame,crtFrame,crtHeight,m.x,m.y-35,m.w,m.w*271/319,a,'crt');
  if(m.destroyTime>0){for(let i=0;i<8;i++){const travel=(.9-m.destroyTime)*55,ang=i*2.4;c.save();c.globalAlpha=Math.min(1,m.destroyTime*2);c.drawImage(a.infoshumCRT,36+(i%3)*85,77+Math.floor(i/3)*80,38,34,m.x+m.w/2+Math.cos(ang)*travel,m.y+m.h/2+Math.sin(ang)*travel,8,7);c.restore();}}
+ // Screen content for the moves between screens drawn over the glass.
+ if(n.stage==='network'&&m.state!=='broken'){const active=m.index===n.activeIndex,p=n.mode==='transit'?Math.min(1,n.transitTime/n.transitDuration):0;
+  const kind=n.mode==='transit'?(m.index===n.fromIndex?'empty':m.index===n.toIndex&&p>.6?'eyes':null):(m.arrival||0)>0&&active?'assemble':active&&n.mode==='transferWarning'?'socket':active&&n.mode==='charge'?'pressed':active&&n.mode==='attack'?'strike':null;
+  if(kind)drawScreenContent(c,a,m,kind,kind==='eyes'?.6+.4*Math.abs(Math.sin(time*20)):1);}
  if(frame<4){c.save();c.globalAlpha=.16;rect(c,m.x+20,m.y+20+(time*24+m.index*25)%(m.h-35),m.w-40,2,'#94f5ff');c.restore();}
  if(frame===3){point(c,m.x+m.w/2,m.y+m.h/2,48,time,magenta);}
  if(frame===4){point(c,m.x+m.w/2,m.y+m.h/2,72,time,magenta);}
@@ -57,12 +62,17 @@ function transfer(c,a,n,time){
   const r=Math.max(0,p-i/36),px=sx+(ex-sx)*r,py=sy+(ey-sy)*r-Math.sin(r*Math.PI)*54;
   rect(c,px-12*Math.sin(i*2),py+9*Math.cos(i*4),4+i%4*2,3+i%3,i%3?'#3ecaff':'#fa70e9');
  }
- c.save();c.globalAlpha=.85;atlas(c,a.infoshumBody,7,bodyFrame,bodyHeight,x-66,y-58,132,117,a,'body');c.restore();
+ // A blob of noise travelling inside the cable, turned along the arc.
+ const q=Math.min(1,p+.02),nx=sx+(ex-sx)*q,ny=sy+(ey-sy)*q-Math.sin(q*Math.PI)*54,angle=Math.atan2(ny-y,nx-x||1e-6);
+ if(!drawCableBlob(c,a,x,y,angle,time)){c.save();c.globalAlpha=.85;atlas(c,a.infoshumBody,7,bodyFrame,bodyHeight,x-66,y-58,132,117,a,'body');c.restore();}
 }
+// The screen Infoshum tears open: the one still standing when the others are broken.
+const ruptureMonitor=n=>n.monitors.find(m=>m.state!=='broken')||n.monitors[n.lastMonitorIndex]||n.monitors.at(-1);
 function screenExit(c,a,g,time){
- const b=g.boss,n=b.network,near=n.monitors[n.lastMonitorIndex]||n.monitors.at(-1);
+ const b=g.boss,n=b.network,near=ruptureMonitor(n);
  if(!near)return;
  const x=near.x+near.w/2,y=near.y+near.h/2;
+ if(drawBreakout(c,a,near,n.transitionProgress,time))return;
  c.save();c.globalAlpha=.2+n.transitionProgress*.8;
  const scale=.5+n.transitionProgress*.75;
  atlas(c,a.infoshumBody,7,bodyFrame,bodyHeight,x-170*scale,y-148*scale,340*scale,296*scale,a,'body');
@@ -114,12 +124,12 @@ export function drawInfoshumForeground(c,a,g,time){
   return;
  }
  if(n.stage==='rupture'){
-  for(const m of n.monitors)crt(c,a,m,n,time);
+  const torn=ruptureMonitor(n);for(const m of n.monitors)if(m!==torn||!a.infoshumBreakout)crt(c,a,m,n,time);
   screenExit(c,a,g,time);return;
  }
  // The last screen tears open. Free form is a dedicated eight-pose sprite atlas, not a
  // reused projection of the old CRT sprite.
- for(const m of n.monitors)drawInfoshumSprite(c,a,'crt',5,m.x+m.w/2-55,380,110,94);
+ for(const m of n.monitors)if(!(m===ruptureMonitor(n)&&drawSmokingCase(c,a,m)))drawInfoshumSprite(c,a,'crt',5,m.x+m.w/2-55,380,110,94);
  const frame=b.hurtTime>0?5:n.mode==='weak'?4:n.mode==='slam'?2:['slamWarning','rainWarning','beamWarning'].includes(n.mode)?1:['waveWarning','scan','rain'].includes(n.mode)?3:0;
  const wobble=Math.sin(time*2.7)*8,spread=n.mode==='slam'?1.1:1;
  const w=350*spread,h=302*spread;

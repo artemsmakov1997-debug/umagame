@@ -1,5 +1,10 @@
 // The final boss owns its network. It does not reuse antenna damage or other bosses' attack schedules.
 import {rooms} from './level.js?v=0.21.5';
+import {originalsFound} from './dimension-systems.js?v=0.21.5';
+// Each «первоисточник» found in the Dimension weakens the final phase: interference rises slower, core hits land harder.
+export const SOURCE_NOISE_BONUS=12,SOURCE_CORE_BONUS=1;
+export const noiseDuration=g=>NOISE_TIME+SOURCE_NOISE_BONUS*originalsFound(g);
+export const coreDamage=g=>CORE_DAMAGE+SOURCE_CORE_BONUS*originalsFound(g);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const STAGE_ROOM=8;
 const MONITOR_DAMAGE=2;
@@ -83,7 +88,7 @@ function beginDeparture(g){
 function moveToNewScreen(g){
  const b=g.boss,n=b.network;n.activeIndex=n.toIndex;
  n.turn++;
- const dest=n.monitors[n.activeIndex];dest.state='occupied';
+ const dest=n.monitors[n.activeIndex];dest.state='occupied';dest.arrival=.6;
  syncBoss(b);n.mode='recover';n.timer=.65;n.volley=0;
  g.emit('infoshumArrive',{index:n.activeIndex,x:dest.x+dest.w/2,y:dest.y+dest.h/2});
 }
@@ -145,7 +150,7 @@ export function stepInfoshum(g,dt){
   return;
  }
  if(n.stage==='network'){
-  syncBoss(b);
+  syncBoss(b);for(const m of n.monitors)m.arrival=Math.max(0,(m.arrival||0)-dt);
   if(n.mode==='transit'){
    n.timer-=dt;n.transitTime=Math.min(n.transitDuration,n.transitTime+dt);
    if(n.timer<=0)moveToNewScreen(g);
@@ -165,8 +170,8 @@ export function stepInfoshum(g,dt){
   return;
  }
  // Freed form: five telegraphed attacks, each followed by a reachable exposed node, while interference rises.
- n.noiseTime=(n.noiseTime||0)+dt;n.noise=Math.min(1,n.noiseTime/NOISE_TIME);
- if(n.noise>=1){g.emit('interferenceLost');g.loseLife('interference');if(g.testingInvulnerable){n.noiseTime=NOISE_TIME*.82;n.noise=.82;}return;}
+ n.noiseTime=(n.noiseTime||0)+dt;n.noise=Math.min(1,n.noiseTime/noiseDuration(g));
+ if(n.noise>=1){g.emit('interferenceLost');g.loseLife('interference');if(g.testingInvulnerable){n.noiseTime=noiseDuration(g)*.82;n.noise=.82;}return;}
  b.state=n.mode==='weak'?'recover':'windup';
  if(n.mode==='scan'){n.scanX=clamp(n.target.x-95+(1.25-n.timer)/1.25*190,n.target.left+12,n.target.right-12);if(g.overlap(g.player,{x:n.scanX-7,y:20,w:14,h:n.target.y-20}))g.hurt(false,n.scanX);}
  n.timer-=dt;if(n.timer>0)return;
@@ -207,7 +212,7 @@ export function strikeInfoshum(g,paw){
  if(n.stage!=='free'||n.mode!=='weak'||n.lastSwing===p.swing||!n.target)return false;
  const target={x:n.target.x-30,y:n.target.y-56,w:60,h:54};
  if(!g.overlap(paw,target))return false;
- n.lastSwing=p.swing;b.hp=Math.max(0,b.hp-CORE_DAMAGE);b.hurtTime=.35;b.cooldown=.24;
+ n.lastSwing=p.swing;b.hp=Math.max(0,b.hp-coreDamage(g));b.hurtTime=.35;b.cooldown=.24;
  g.emit('bossHit',{boss:'infoshum',x:n.target.x,y:n.target.y-32});
  g.emit('infoshumCoreHit',{x:n.target.x,y:n.target.y-32});
  if(b.hp===0)g.bossDefeated();

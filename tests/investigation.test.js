@@ -20,9 +20,11 @@ test('monster origins remain a mystery until the full chain is shown in the epil
 });
 
 test('each playable chapter has its own interactive devices and distinct boss arena',()=>{
- // The newsroom conveyor has no nodes; the other chapters keep their interactive devices.
- const kinds={3:'broadcast',5:'edit',7:'signal'};
+ // The newsroom conveyor and the Dimension have no nodes (the Dimension hides «первоисточники» instead);
+ // roofs and studio keep their interactive devices.
+ const kinds={3:'broadcast',5:'edit'};
  assert.equal(new Game({story:false}).relays.filter(d=>d.room===1).length,0);
+ {const d=new Game({story:false});d.start();assert.equal(d.relays.filter(r=>r.room===7).length,0);assert.equal(d.originals.length,3);}
  const g=new Game({story:false});g.start();
  for(const [room,type] of Object.entries(kinds)){
   const index=Number(room),devices=g.relays.filter(d=>d.room===index);
