@@ -12,11 +12,11 @@ export function drawBackdropVeil(c,g,cam,vw){
  c.save();c.globalAlpha=alpha;c.fillStyle='#020716';c.fillRect(cam-40,0,vw+80,480);c.restore();
 }
 export function drawPlatformShadow(c,g,p){
- if(!RIM[g.room]||p.roof||p.studio)return;
+ if(!RIM[g.room]||p.roof||p.studio||p.dim)return;
  c.save();c.globalAlpha=.5;rect(c,p.x+4,p.y+12,p.w-4,10,'#00030b');c.globalAlpha=.25;rect(c,p.x+8,p.y+22,p.w-12,6,'#00030b');c.restore();
 }
 export function drawPlatformRim(c,g,p,t){
- if(p.roof&&p.roof.type!=='building'||p.studio&&p.studio.type!=='fixed')return;
+ if(p.roof&&p.roof.type!=='building'||p.studio&&p.studio.type!=='fixed'||p.dim)return;
  const color=p.motion?MOVING_RIM:RIM[g.room];if(!color)return;
  const x=Math.round(p.x),y=Math.round(p.y),w=Math.round(p.w);
  rect(c,x-2,y-4,w+4,2,'#01040b');           // dark line separates the rim from bright skies

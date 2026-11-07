@@ -1,6 +1,6 @@
 export function tryDrop(g,input,dt){
  const p=g.player,requested=!!(input.down&&(input.jump||input.attack||input.drop)),pressed=requested&&!p.dropHeld;p.dropHeld=requested;if(!requested)p.dropConsumed=false;p.dropTime=Math.max(0,(p.dropTime||0)-dt);
- if(!pressed||!p.grounded||p.climbing||p.dash>0)return false;
+ if(!pressed||!p.grounded||p.climbing||p.dash>0||p.flipped)return false;
  // ↓ + attack next to a monster or a transmitter is a low swat, not a drop.
  if(input.attack&&!input.jump&&!input.drop&&targetInReach(g))return false;
  const source=g.platforms.find(s=>s.id===p.supportId),lower=source&&g.platforms.some(s=>s.room===g.room&&s.y>source.y+8&&p.x+p.w>s.x+2&&p.x<s.x+s.w-2);

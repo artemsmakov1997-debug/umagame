@@ -8,6 +8,7 @@ export function playerHorizontal(g,axis,dt){
  if(!p.knock){
   if(p.dash>0){p.vx=p.dir*430;p.inkTime=0;}
   else if(p.inkTime>0&&!p.climbing){const target=axis*(p.sneaking?46:112)+(onInk?(ink.drift||0)*(p.sneaking?12:70):0);p.vx=approach(p.vx,target,(p.sneaking?330:axis?230:90)*dt);}
+  else if(p.launch>0&&!p.grounded)p.vx=p.launchVx+axis*40; // an envelope throw keeps its speed
   else p.vx=axis*(p.sneaking?62:155);
  }
  p.slipping=!!(p.grounded&&p.dash===0&&!p.knock&&p.inkTime>0&&Math.abs(p.vx)>9&&!p.attack);

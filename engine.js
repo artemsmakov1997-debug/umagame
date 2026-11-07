@@ -16,6 +16,7 @@ import {applyLowCeilings} from './shelters.js?v=0.21.5';
 import {createTutorial,stepTutorial} from './tutorial.js?v=0.21.5';
 import {applyRoofWalls,roofFall,stepRoofs,placeAtRoofCheckpoint} from './roofs-systems.js?v=0.21.5';
 import {stepStudio,studioFall,placeAtStudioCheckpoint} from './studio-systems.js?v=0.21.5';
+import {stepDimension,dimensionFall,placeAtDimensionCheckpoint,landFlipped,createOriginals} from './dimension-systems.js?v=0.21.5';
 import {stepNewsroom,newsroomRestore,placeAtNewsroomCheckpoint,resetNewsroom} from './newsroom-systems.js?v=0.21.5';
 import {scenes,evidence,relayClues} from './story.js?v=0.21.5';
 import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.21.5';
@@ -40,7 +41,7 @@ export class Game {
   this.abilities={attack:true,dash:true,sneak:true};this.notebooks=createNotebooks();
   this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;this.lifePickups=createLifePickups();
   this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,frightTime:0,joyTime:0,lowSwat:false,powerTime:0,glueGrace:0,pulled:false};
-  this.swallow=null;this.interlude=null;this.mapProps=createMapProps();this.routePortals=createRoutePortals();this.visitedSections=new Set();this.sectionTransition=null;this.routeUpHeld=false;this.echoPull=null;this.portals=[];this.portalSerial=0;this.soups=createSoup();this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();
+  this.swallow=null;this.interlude=null;this.mapProps=createMapProps();this.originals=createOriginals();this.routePortals=createRoutePortals();this.visitedSections=new Set();this.sectionTransition=null;this.routeUpHeld=false;this.echoPull=null;this.portals=[];this.portalSerial=0;this.soups=createSoup();this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();
   this.relays=createRelays();this.censors=[];this.bolts=[];this.events=[];this.inks=[];this.cuts=[];this.tacticalSerial=0;
  }
  emit(type,data={}){this.events.push({type,...data});}
@@ -84,16 +85,16 @@ export class Game {
 
  finish(){return beginFinale(this);}
  advanceEnding(direction=1){return advanceFinale(this,direction);}
- respawn(){releaseEchoPull(this);this.swallow=null;wakePlayer(this.player);Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0,slipping:false,onInk:false,inkTime:0,slideTime:0});placeAtNewsroomCheckpoint(this);placeAtRoofCheckpoint(this);placeAtStudioCheckpoint(this);delete this.player.warpScale;this.bolts=[];this.updateCamera();}
+ respawn(){releaseEchoPull(this);this.swallow=null;wakePlayer(this.player);Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0,slipping:false,onInk:false,inkTime:0,slideTime:0});placeAtNewsroomCheckpoint(this);placeAtRoofCheckpoint(this);placeAtStudioCheckpoint(this);placeAtDimensionCheckpoint(this);delete this.player.warpScale;this.bolts=[];this.updateCamera();}
  restoreCheckpoint(){
   const revealed=this.enemies.filter(e=>e.room===this.checkpoint&&e.type==='clickbait'&&e.revealed&&!e.dead);
   const local=createEnemies().filter(e=>e.room===this.checkpoint).map(e=>alignEnemyToPlatform(this,e)).map(e=>{const old=revealed.find(old=>e.type==='clickbait'&&old.platformIndex===e.platformIndex);return old?{...e,revealed:true,active:true,noticed:true,state:'patrol',timer:1,x:Math.max(e.origin,Math.min(e.end,old.x)),walkTime:old.walkTime}:e;});
-  this.health=MAX_HEALTH;this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(local);this.dialogue=null;this.arenaEntry=null;this.loading=null;const roofs=this.roofs,studio=this.studio;activateRoom(this,this.checkpoint,{heal:false});newsroomRestore(this);if(this.checkpoint===3&&roofs){this.roofs.checkpoint=roofs.checkpoint;placeAtRoofCheckpoint(this);}if(this.checkpoint===5&&studio){this.studio.checkpoint=studio.checkpoint;placeAtStudioCheckpoint(this);}this.mode='playing';this.emit('lifeRestored',{lives:this.lives});
+  this.health=MAX_HEALTH;this.enemies=this.enemies.filter(e=>e.room!==this.checkpoint).concat(local);this.dialogue=null;this.arenaEntry=null;this.loading=null;const roofs=this.roofs,studio=this.studio,dimension=this.dimension;activateRoom(this,this.checkpoint,{heal:false});newsroomRestore(this);if(this.checkpoint===3&&roofs){this.roofs.checkpoint=roofs.checkpoint;placeAtRoofCheckpoint(this);}if(this.checkpoint===5&&studio){this.studio.checkpoint=studio.checkpoint;placeAtStudioCheckpoint(this);}if(this.checkpoint===7&&dimension){this.dimension.checkpoint=dimension.checkpoint;placeAtDimensionCheckpoint(this);}this.mode='playing';this.emit('lifeRestored',{lives:this.lives});
  }
  retryLocation(){
   const index=this.checkpoint;if(index===1)resetNewsroom(this);for(const d of this.mapProps)if(d.room===index){d.hp=1;d.breakTime=0;d.lastSwing=-1;}for(const r of this.routePortals)if(r.room===index)r.cooldown=0;this.visitedSections=new Set([...this.visitedSections].filter(key=>!key.startsWith(index+':')));this.lives=START_LIVES;for(const d of this.relays)if(d.room===index){d.hp=1;d.breakTime=0;d.lastSwing=-1;}
   if(rooms[index].boss)this.bossesDefeated.delete(rooms[index].boss);
-  if(index===3)this.roofs=null;if(index===5)this.studio=null;this.restoreCheckpoint();this.emit('locationRetry',{room:index});
+  if(index===3)this.roofs=null;if(index===5)this.studio=null;if(index===7){this.dimension=null;this.originals=createOriginals();}this.restoreCheckpoint();this.emit('locationRetry',{room:index});
  }
 
  retry(){this.start();}
@@ -139,10 +140,13 @@ export class Game {
   if(this.transition){this.transition.time+=dt;if(this.transition.time>=this.transition.duration)this.transition=null;}
   this.routeUpPressed=!!input.up&&!this.routeUpHeld;this.routeUpHeld=!!input.up;if(tryRouteShortcut(this))input={...input,up:false,jump:false};
   const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);
-  if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}this.loseLife('clickbait');this.updateCamera();}return;}
+  if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}
+   // Кликбейт costs two hearts; only when that would empty them does it take a life.
+   if(this.health>2&&!this.testingInvulnerable){this.health-=2;this.swallow=null;Object.assign(this.player,{inv:1.8,hurtTime:.5,vx:0,vy:-240,grounded:false,knock:.25});this.emit('clickbaitSpit',{x:this.player.x,y:this.player.y});}
+   else this.loseLife('clickbait');this.updateCamera();}return;}
   stepWorldPlatforms(this,dt);
   stepTacticalTerrain(this,dt);
-  for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace','frightTime','joyTime'])p[key]=Math.max(0,(p[key]||0)-dt);
+  for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace','frightTime','joyTime','launch'])p[key]=Math.max(0,(p[key]||0)-dt);
   const keyboardAxis=(input.right?1:0)-(input.left?1:0),axis=keyboardAxis||Math.max(-1,Math.min(1,input.axisX||0));if(Math.abs(axis)>.05&&p.dash===0)p.dir=axis>0?1:-1;
   const ladder=ladders.find(l=>p.x+p.w>l.x&&p.x<l.x+l.w&&p.y+p.h>=l.y&&p.y<l.y+l.h);
   let useLadder=ladder&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);
@@ -150,15 +154,17 @@ export class Game {
   // ↓ + attack is a low paw swat from the sneak when there is nothing to drop through to (or a target is in reach).
   const lowSwat=!!(input.attack&&input.down&&!dropping&&!p.dropConsumed&&this.abilities.attack&&this.abilities.sneak&&p.grounded&&!useLadder);
   const canAttack=input.attack&&(!input.down||lowSwat)&&this.abilities.attack,canDash=input.dash&&this.abilities.dash;
-  p.sneaking=!!((this.abilities.sneak&&input.down||p.forcedCrouch)&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&(lowSwat||p.lowSwat&&p.attack>0||p.attack===0&&!canAttack)&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
+  p.sneaking=!!((this.abilities.sneak&&input.down||p.forcedCrouch)&&!p.flipped&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&(lowSwat||p.lowSwat&&p.attack>0||p.attack===0&&!canAttack)&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
   p.coyote=p.grounded?.1:Math.max(0,p.coyote-dt);p.jumpBuffer=input.jump&&!input.down?.13:Math.max(0,p.jumpBuffer-dt);
   if(canDash&&p.dashCooldown===0){p.dash=.2;p.dashCooldown=1.5;p.climbing=false;p.knock=0;p.hurtTime=0;p.vy=0;this.emit('dash');}
   playerHorizontal(this,axis,dt);stepTether(this,dt);stepEchoPull(this,dt);
   if(useLadder){p.climbing=true;p.vy=(input.down?1:-1)*110;p.jumpBuffer=0;p.vx=0;}else if(!ladder||axis||p.dash>0)p.climbing=false;
-  let jumped=false;if(p.jumpBuffer>0&&(p.coyote>0||p.climbing)){p.vy=-500;p.grounded=false;p.coyote=0;p.jumpBuffer=0;p.climbing=false;jumped=true;this.emit('jump');}
+  let jumped=false;if(p.jumpBuffer>0&&(p.coyote>0||p.climbing)){p.vy=p.flipped?500:-500;p.grounded=false;p.coyote=0;p.jumpBuffer=0;p.climbing=false;jumped=true;this.emit('jump');}
   if(canAttack&&p.cooldown===0){p.attack=.19;p.cooldown=.36;p.swing++;p.lowSwat=lowSwat;p.frightTime=0;p.joyTime=0;this.emit('swat',{low:lowSwat});}
   const prevBottom=p.y+p.h,carriedSupport=p.grounded?p.supportId:null,belt=p.grounded&&p.dash===0&&!p.climbing?this.platforms.find(s=>s.belt&&Math.abs(s.y-prevBottom)<1&&p.x+p.w>s.x&&p.x<s.x+s.w)?.belt||0:0;
-  if(!p.climbing)p.vy=Math.min(p.vy+(p.dash>0?150:1080)*dt,550);else if(!input.up&&!input.down)p.vy=0;
+  // In «Разлом» gravity can point up: the flipped Uma falls towards the ceiling.
+  if(!p.climbing)p.vy=p.flipped?Math.max(p.vy-(p.dash>0?150:1080)*dt,-550):Math.min(p.vy+(p.dash>0?150:1080)*dt,550);else if(!input.up&&!input.down)p.vy=0;
+  const prevTop=p.y;
   const bounds=rooms[this.room];p.x=Math.max(bounds.x+4,Math.min(bounds.end-p.w-4,p.x+(p.vx+belt)*dt));p.y+=p.vy*dt;p.grounded=false;p.supportId=null;
 
   if(!canLeaveRoom(this)&&p.x+p.w>bounds.end-18){p.x=bounds.end-18-p.w;if(this.gateHint!==this.room){this.gateHint=this.room;this.emit('gate',{remaining:remainingAntennas(this).length,boss:bounds.arena&&this.boss.hp>0});}}
@@ -167,8 +173,10 @@ export class Game {
    if(input.up&&p.y+p.h<=ladder.y+3){p.y=ladder.y-p.h;p.vy=0;p.grounded=true;p.climbing=false;}
    else if(input.down&&p.y+p.h>=ladder.y+ladder.h){p.y=ladder.y+ladder.h-p.h;p.vy=0;p.grounded=true;p.climbing=false;}
   }
-  if(p.vy>=0&&!p.climbing){const surface=solidSurfaces(this).filter(s=>!(p.dropTime>0&&s.id===p.dropId)&&p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=(s.id===carriedSupport?s.y:s.prevY)+1&&p.y+p.h>=s.y).sort((a,b)=>a.y-b.y)[0];if(surface){p.y=surface.y-p.h;p.vy=0;p.grounded=true;p.supportId=surface.id;}}
+  landFlipped(this,prevTop);
+  if(p.vy>=0&&!p.climbing&&!p.flipped){const surface=solidSurfaces(this).filter(s=>!(p.dropTime>0&&s.id===p.dropId)&&p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=(s.id===carriedSupport?s.y:s.prevY)+1&&p.y+p.h>=s.y).sort((a,b)=>a.y-b.y)[0];if(surface){p.y=surface.y-p.h;p.vy=0;p.grounded=true;p.supportId=surface.id;}}
   applyLowCeilings(this,oldX);applyRoofWalls(this,oldX);
+  if(dimensionFall(this))return;
   if(p.y>HEIGHT+30){if(roofFall(this)||studioFall(this))return;this.hurt(true);return;}
   if(p.climbing)p.climbTime+=Math.abs(p.y-oldY)/18;if(p.sneaking)p.sneakTime+=Math.abs(p.x-oldX)/14;
   stepPlayerRest(this,input,dt);
@@ -176,13 +184,13 @@ export class Game {
   this.echoImmunity=Math.max(0,this.echoImmunity-dt);
   if(p.grounded&&p.supportId){this.visitedPlatforms.add(p.supportId);const last=this.safeTrail.at(-1);if(!last||Math.abs(last.x-p.x)>110||last.platformId!==p.supportId){this.safeTrail.push({platformId:p.supportId,x:p.x,y:p.y});this.safeTrail=this.safeTrail.slice(-80);}}
   if(this.checkNotebooks()){this.updateCamera(dt);return;}
-  if(this.room===PORTAL_ROOM&&p.x+p.w>PORTAL_X-35&&p.vx>40&&!this.arenaEntered&&canLeaveRoom(this)){this.enterArena();this.updateCamera(dt);return;}
+  if(this.room===PORTAL_ROOM&&p.x+p.w>PORTAL_X-35&&p.vx>40&&p.grounded&&!this.arenaEntered&&canLeaveRoom(this)){this.enterArena();this.updateCamera(dt);return;}
   if(this.room!==PORTAL_ROOM&&this.room<LAST_ROOM&&p.x+p.w>=bounds.end-20&&p.vx>40&&canLeaveRoom(this)){this.leaveRoom();this.updateCamera(dt);return;}
 
   // Highest point of the current flight: a long fall shows the frightened falling pose.
   p.peakY=p.grounded||p.climbing?p.y:Math.min(p.peakY??p.y,p.y);
   recordEchoTrail(this);
-  const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepTutorial(this,dt,paw,oldX);stepRoofs(this,dt,paw,input);stepStudio(this,dt);stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepNewsroom(this,dt);stepSection(this,dt);
+  const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepTutorial(this,dt,paw,oldX);stepRoofs(this,dt,paw,input);stepStudio(this,dt);stepDimension(this,dt,oldX);stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepNewsroom(this,dt);stepSection(this,dt);
   stepEnemies(this,dt,paw,prevBottom);if(this.mode==='playing')stepPortals(this,dt);
   if(this.mode!=='playing'||this.swallow)return;
   for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
