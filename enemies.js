@@ -49,7 +49,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
   for(const key of ['inv','alert','attackFlash','hurtTime','noticeTime','pressureTime','shieldBroken','jumpCooldown','teleportCooldown','alarmCooldown','warpCooldown','guardFlash'])e[key]=Math.max(0,(e[key]||0)-dt);e.moving=false;
   updateEnemyInk(g,e);
   const previousX=e.x,dx=p.x-e.x,dy=p.y+p.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&(p.sneaking||e.muffled);
-  if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y,enemyType:e.type});}
+  if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y,enemyType:e.type});if(Math.abs(dx)<240&&e.type!=='bot')g.player.frightTime=.75;}
   const traversing=stepEnemyFall(g,e,dt)||['fakenews','injection'].includes(e.type)&&(stepFakeJump(g,e,dt)||e.noticeTime===0&&beginFakeJump(g,e))||e.type==='informant'&&(stepInformantTeleport(g,e,dt)||beginInformantTeleport(g,e));
   if(!traversing&&e.noticeTime===0&&e.hurtTime===0){
    if(!e.flying)e.timer-=dt;if(e.type==='clickbait'&&e.state==='emerge')e.revealTime+=dt;

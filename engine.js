@@ -38,7 +38,7 @@ export class Game {
   this.trainingHintShown=false;this.tutorial=createTutorial();
   this.abilities={attack:true,dash:true,sneak:true};this.notebooks=createNotebooks();
   this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;this.lifePickups=createLifePickups();
-  this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,powerTime:0,glueGrace:0,pulled:false};
+  this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,frightTime:0,joyTime:0,lowSwat:false,powerTime:0,glueGrace:0,pulled:false};
   this.swallow=null;this.interlude=null;this.mapProps=createMapProps();this.routePortals=createRoutePortals();this.visitedSections=new Set();this.sectionTransition=null;this.routeUpHeld=false;this.echoPull=null;this.portals=[];this.portalSerial=0;this.soups=createSoup();this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();
   this.relays=createRelays();this.censors=[];this.bolts=[];this.events=[];this.inks=[];this.cuts=[];this.tacticalSerial=0;
  }
@@ -140,19 +140,21 @@ export class Game {
   if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}this.loseLife('clickbait');this.updateCamera();}return;}
   stepWorldPlatforms(this,dt);
   stepTacticalTerrain(this,dt);
-  for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace'])p[key]=Math.max(0,p[key]-dt);
+  for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace','frightTime','joyTime'])p[key]=Math.max(0,(p[key]||0)-dt);
   const keyboardAxis=(input.right?1:0)-(input.left?1:0),axis=keyboardAxis||Math.max(-1,Math.min(1,input.axisX||0));if(Math.abs(axis)>.05&&p.dash===0)p.dir=axis>0?1:-1;
   const ladder=ladders.find(l=>p.x+p.w>l.x&&p.x<l.x+l.w&&p.y+p.h>=l.y&&p.y<l.y+l.h);
   let useLadder=ladder&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);
   const dropping=tryDrop(this,input,dt);if(dropping)useLadder=false;
-  const canAttack=input.attack&&!input.down&&this.abilities.attack,canDash=input.dash&&this.abilities.dash;
-  p.sneaking=!!((this.abilities.sneak&&input.down||p.forcedCrouch)&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&p.attack===0&&!canAttack&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
+  // ↓ + attack is a low paw swat from the sneak when there is nothing to drop through to (or a target is in reach).
+  const lowSwat=!!(input.attack&&input.down&&!dropping&&!p.dropConsumed&&this.abilities.attack&&this.abilities.sneak&&p.grounded&&!useLadder);
+  const canAttack=input.attack&&(!input.down||lowSwat)&&this.abilities.attack,canDash=input.dash&&this.abilities.dash;
+  p.sneaking=!!((this.abilities.sneak&&input.down||p.forcedCrouch)&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&(lowSwat||p.lowSwat&&p.attack>0||p.attack===0&&!canAttack)&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
   p.coyote=p.grounded?.1:Math.max(0,p.coyote-dt);p.jumpBuffer=input.jump&&!input.down?.13:Math.max(0,p.jumpBuffer-dt);
   if(canDash&&p.dashCooldown===0){p.dash=.2;p.dashCooldown=1.5;p.climbing=false;p.knock=0;p.hurtTime=0;p.vy=0;this.emit('dash');}
   playerHorizontal(this,axis,dt);stepTether(this,dt);stepEchoPull(this,dt);
   if(useLadder){p.climbing=true;p.vy=(input.down?1:-1)*110;p.jumpBuffer=0;p.vx=0;}else if(!ladder||axis||p.dash>0)p.climbing=false;
   let jumped=false;if(p.jumpBuffer>0&&(p.coyote>0||p.climbing)){p.vy=-500;p.grounded=false;p.coyote=0;p.jumpBuffer=0;p.climbing=false;jumped=true;this.emit('jump');}
-  if(canAttack&&p.cooldown===0){p.attack=.19;p.cooldown=.36;p.swing++;this.emit('swat');}
+  if(canAttack&&p.cooldown===0){p.attack=.19;p.cooldown=.36;p.swing++;p.lowSwat=lowSwat;p.frightTime=0;p.joyTime=0;this.emit('swat',{low:lowSwat});}
   const prevBottom=p.y+p.h,carriedSupport=p.grounded?p.supportId:null,belt=p.grounded&&p.dash===0&&!p.climbing?this.platforms.find(s=>s.belt&&Math.abs(s.y-prevBottom)<1&&p.x+p.w>s.x&&p.x<s.x+s.w)?.belt||0:0;
   if(!p.climbing)p.vy=Math.min(p.vy+(p.dash>0?150:1080)*dt,550);else if(!input.up&&!input.down)p.vy=0;
   const bounds=rooms[this.room];p.x=Math.max(bounds.x+4,Math.min(bounds.end-p.w-4,p.x+(p.vx+belt)*dt));p.y+=p.vy*dt;p.grounded=false;p.supportId=null;
@@ -175,6 +177,8 @@ export class Game {
   if(this.room===PORTAL_ROOM&&p.x+p.w>PORTAL_X-35&&p.vx>40&&!this.arenaEntered&&canLeaveRoom(this)){this.enterArena();this.updateCamera(dt);return;}
   if(this.room!==PORTAL_ROOM&&this.room<LAST_ROOM&&p.x+p.w>=bounds.end-20&&p.vx>40&&canLeaveRoom(this)){this.leaveRoom();this.updateCamera(dt);return;}
 
+  // Highest point of the current flight: a long fall shows the frightened falling pose.
+  p.peakY=p.grounded||p.climbing?p.y:Math.min(p.peakY??p.y,p.y);
   const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepTutorial(this,dt,paw,oldX);stepRoofs(this,dt,paw,input);stepStudio(this,dt);stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepNewsroom(this,dt);stepSection(this,dt);
   stepEnemies(this,dt,paw,prevBottom);if(this.mode==='playing')stepPortals(this,dt);
   if(this.mode!=='playing'||this.swallow)return;
@@ -182,7 +186,7 @@ export class Game {
   for(const life of this.lifePickups)if(!life.taken&&this.lives<MAX_LIVES&&Math.abs(p.x+17-life.x)<25&&Math.abs(p.y+p.h/2-life.y)<32){life.taken=true;this.lives++;this.emit('lifePickup',{x:life.x,y:life.y});}
   for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;this.health=Math.min(MAX_HEALTH,this.health+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
-  for(const relay of this.relays){relay.breakTime=Math.max(0,relay.breakTime-dt);if(!relay.scripted&&relay.room!==8&&relay.hp>0&&p.attack>0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;relay.hp=0;relay.breakTime=.65;this.emit('dishBreak',{x:relay.x+relay.w/2,y:relay.y+25});this.emit('relay',{room:relay.room,id:relay.id});
+  for(const relay of this.relays){relay.breakTime=Math.max(0,relay.breakTime-dt);if(!relay.scripted&&relay.room!==8&&relay.hp>0&&p.attack>0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;relay.hp=0;relay.breakTime=.65;p.joyTime=1.1;this.emit('dishBreak',{x:relay.x+relay.w/2,y:relay.y+25});this.emit('relay',{room:relay.room,id:relay.id});
     const effect=applyRelayEffect(this,relay),clue=relayClues[relay.room]?.[relay.ordinal];
     if(clue){this.clues.push({id:relay.id,room:relay.room,text:clue,effect});this.emit('clue',{room:relay.room,text:clue,effect,x:relay.x});}}}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}

@@ -33,7 +33,7 @@ import {drawStudioSurface,drawStudioBack,drawStudioProps} from './studio-art.js?
 import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
-import {drawEmotion,hurtPose,drawTraversal,drawRest} from './cat-animation.js?v=0.21.5';
+import {drawEmotion,hurtPose,drawTraversal,drawRest,moodPose,drawMood,MOOD} from './cat-animation.js?v=0.21.5';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.hud=canvas.ownerDocument?.getElementById('hud');this.c.imageSmoothingEnabled=false;this.assets=assets;this.combatEffects=[];this.signalTime=0;this.previousVisualTime=0;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -130,7 +130,13 @@ export class Renderer{
   if(g.storyEnabled&&!g.seenScenes.has('intro')||g.dialogue?.id==='intro'){
    drawWakeup(c,a,p,g.wakeTime);
   }else if(p.hurtTime>0){
-   drawEmotion(c,a,hurtPose(p.hurtTime),p.x+p.w/2,p.y+p.h,76,p.dir>0);
+   // The fresh hit uses the new recoil; the recovery keeps the old crouch.
+   if(!(p.hurtTime>.26&&drawMood(c,a,MOOD.hurt,p.x+p.w/2,p.y+p.h,p.dir<0)))drawEmotion(c,a,hurtPose(p.hurtTime),p.x+p.w/2,p.y+p.h,76,p.dir>0);
+  }else if(moodPose(p,g)!==null&&a.moods){
+   const mood=moodPose(p,g),owner=mood===MOOD.dragged?g.enemies.find(e=>e.id===g.tether.ownerId):null,face=owner?(owner.x>p.x?1:-1):p.dir;
+   if(p.inv>0&&Math.floor(t*12)%2!==0)c.globalAlpha=.6;
+   c.save();if(mood===MOOD.dash){c.shadowColor='#7deaf5';c.shadowBlur=8;}drawMood(c,a,mood,p.x+p.w/2,p.y+p.h,face<0);c.restore();c.globalAlpha=1;
+   if(mood===MOOD.hiss&&Math.floor(t*6)%2)rect(c,p.x+(face>0?p.w+2:-8),p.y+8,6,2,'#ffd2d8');
   }else if((p.sleeping||p.slipping||p.pulled)&&drawRest(c,a,p)){
    if(p.sleeping&&p.sleepTime>1){const z=Math.floor(t*1.4)%3;rect(c,p.x+32+z*4,p.y+5-z*7,4,2,'#a4cede');rect(c,p.x+34+z*4,p.y+7-z*7,2,3,'#a4cede');rect(c,p.x+32+z*4,p.y+10-z*7,4,2,'#a4cede');}
    if(p.slipping)for(let i=0;i<3;i++)rect(c,p.x-p.dir*(i*8+5),p.y+p.h-2,5,2,'#b27edc');

@@ -59,3 +59,32 @@ export function drawRest(c,assets,p){
  c.save();c.translate(Math.round(p.x+p.w/2),Math.round(p.y+p.h));if(p.dir<0)c.scale(-1,1);
  sprite(c,assets.rest,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
 }
+// assets/uma-moods.png, 4×2: low swat (wind-up, strike), hit, hiss, frightened fall, dragged by glue, dash, joy.
+export const moodFrames=[
+ {box:[22,136,342,263],pivot:[195,399]},
+ {box:[406,155,357,249],pivot:[579,403]},
+ {box:[794,140,334,263],pivot:[958,402]},
+ {box:[1192,90,330,313],pivot:[1330,402]},
+ {box:[42,580,296,336],pivot:[190,880]},
+ {box:[356,648,379,260],pivot:[560,907]},
+ {box:[761,682,410,157],pivot:[990,836]},
+ {box:[1212,611,253,288],pivot:[1340,898]}
+];
+export const MOOD={lowWindup:0,lowStrike:1,hurt:2,hiss:3,fall:4,dragged:5,dash:6,joy:7};
+const still=p=>p.grounded&&Math.abs(p.vx)<1&&p.attack===0;
+// Which mood (if any) replaces the ordinary sprite this frame.
+export function moodPose(p,g={}){
+ if(g.swallow)return null;
+ if(p.attack>0&&p.lowSwat)return p.attack>.12?MOOD.lowWindup:MOOD.lowStrike;
+ if(p.dash>0)return MOOD.dash;
+ if(g.tether&&p.pulled&&!p.echoPulled)return MOOD.dragged;
+ if(!p.grounded&&!p.climbing&&p.vy>0&&p.y-(p.peakY??p.y)>150)return MOOD.fall;
+ if(p.joyTime>0&&still(p)&&!p.sneaking)return MOOD.joy;
+ if(p.frightTime>0&&still(p)&&!p.sneaking)return MOOD.hiss;
+ return null;
+}
+export function drawMood(c,assets,frame,center,feet,flip=false,s=.18){
+ const {box,pivot}=moodFrames[frame];if(!assets.moods)return false;
+ c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);
+ sprite(c,assets.moods,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
+}
