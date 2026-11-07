@@ -3,6 +3,7 @@ import {enemy,rooms} from './level.js?v=0.21.5';
 import {inkAt,solidSurfaces} from './terrain.js?v=0.21.5';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const TACTICAL_TYPES=['stamp','copier','cutter'];
+export const CUT_HUNTER={reach:640,notice:640,width:96,margin:18,warning:1.15,recover:.5,rest:1.3};
 export function scanArea(g,e){
  const s=g.platforms.find(s=>s.room===e.room&&s.index===(e.scanIndex??e.platformIndex));if(!s)return null;
  const w=Math.min(e.scanW||136,s.w-24),localX=clamp(e.scanStart??32,12,s.w-w-12);return {x:s.x+localX,y:s.y-52,w,h:54,surface:s};
@@ -36,10 +37,12 @@ function copyEnemy(g,e){
  copy.y=s.y-copy.h;copy.origin=start;copy.end=end;g.enemies.push(copy);g.emit('copySpawn',{x:copy.x,y:copy.y,enemyType:e.type});return true;
 }
 export function planCut(g,e){
- const p=g.player,surfaces=g.platforms.filter(s=>s.room===e.room&&s.cuttable&&!g.cuts.some(c=>c.platformId===s.id));
- const s=surfaces.sort((a,b)=>Math.abs(a.x+a.w/2-p.x)+Math.abs(a.y-p.y-p.h)-Math.abs(b.x+b.w/2-p.x)-Math.abs(b.y-p.y-p.h))[0];if(!s||Math.abs(s.x+s.w/2-e.x)>520)return false;
- const w=Math.min(88,s.w-88),center=p.supportId===s.id?p.x+p.w/2:s.x+s.w/2,localX=clamp(center-s.x-w/2,44,s.w-w-44);
- const cut={id:'cut-'+(++g.tacticalSerial),ownerId:e.id,room:e.room,platformId:s.id,localX,w,phase:'warning',time:1.8,x:s.x+localX+w/2,y:s.y};g.cuts.push(cut);e.cutId=cut.id;g.emit('cutWarning',{x:cut.x,y:cut.y,enemyType:e.type});return true;
+ // A studio «hunter» Нарезчик reaches further, cuts wider, warns for less time and aims right under Uma's paws.
+ const p=g.player,hunter=!!e.hunter,surfaces=g.platforms.filter(s=>s.room===e.room&&s.cuttable&&!s.intangible&&!g.cuts.some(c=>c.platformId===s.id));
+ const s=surfaces.sort((a,b)=>Math.abs(a.x+a.w/2-p.x)+Math.abs(a.y-p.y-p.h)-Math.abs(b.x+b.w/2-p.x)-Math.abs(b.y-p.y-p.h))[0];if(!s||Math.abs(s.x+s.w/2-e.x)>(hunter?CUT_HUNTER.reach:520))return false;
+ const margin=hunter?CUT_HUNTER.margin:44,w=hunter?Math.min(CUT_HUNTER.width,s.w-2*margin):Math.min(88,s.w-88);if(w<24)return false;
+ const center=p.supportId===s.id||hunter&&p.x+p.w>s.x&&p.x<s.x+s.w?p.x+p.w/2:s.x+s.w/2,localX=clamp(center-s.x-w/2,margin,s.w-w-margin);
+ const cut={id:'cut-'+(++g.tacticalSerial),ownerId:e.id,room:e.room,platformId:s.id,localX,w,phase:'warning',time:hunter?CUT_HUNTER.warning:1.8,x:s.x+localX+w/2,y:s.y};g.cuts.push(cut);e.cutId=cut.id;g.emit('cutWarning',{x:cut.x,y:cut.y,enemyType:e.type});return true;
 }
 export function stepTacticalEnemy(g,e,dt,dx,dy){
  if(e.type==='stamp'){
@@ -59,10 +62,10 @@ export function stepTacticalEnemy(g,e,dt,dx,dy){
  }else if(e.type==='cutter'){
   if(e.state==='patrol'){
    e.x+=e.dir*e.speed*dt;
-   if(e.timer<=0&&Math.abs(dx)<500&&planCut(g,e)){e.state='windup';e.timer=1.8;}
+   const h=e.hunter;if(e.timer<=0&&Math.abs(dx)<(h?CUT_HUNTER.notice:500)&&planCut(g,e)){e.state='windup';e.timer=h?CUT_HUNTER.warning:1.8;}
   }else if(e.state==='windup'&&e.timer<=0){e.state='cutting';e.timer=.3;}
-  else if(e.state==='cutting'&&e.timer<=0){e.state='recover';e.timer=1.2;}
-  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=3.4;}
+  else if(e.state==='cutting'&&e.timer<=0){e.state='recover';e.timer=e.hunter?CUT_HUNTER.recover:1.2;}
+  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=e.hunter?CUT_HUNTER.rest:3.4;}
  }
 }
 export function updateEnemyInk(g,e){

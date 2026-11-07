@@ -11,6 +11,6 @@ async function checkLibrary(page){
   }
   const rows=await page.locator('.monster-option:visible').evaluateAll(es=>es.map(e=>Math.round(e.getBoundingClientRect().height)));assert.equal(new Set(rows).size,1);
  }
- await page.keyboard.press('ArrowDown');assert.equal(await page.locator('#monster-title').textContent(),'Эхо');await page.keyboard.press('ArrowLeft');assert.equal(await page.locator('#monster-title').textContent(),'Дипфейк');
+ await page.keyboard.press('ArrowDown');assert.equal(await page.locator('#monster-title').textContent(),'Эхо');await page.keyboard.press('ArrowLeft');assert.equal(await page.locator('#monster-title').textContent(),'Ботоферма');
 }
 module.exports={checkLibrary};
