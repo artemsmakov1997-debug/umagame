@@ -95,9 +95,11 @@ export function drawAgitator(c,a,g,t){
  c.save();if(b.hurtTime>0&&Math.floor(t*24)%2)c.filter='brightness(1.9)';if(b.guardFlash>0)c.filter='brightness(1.35) saturate(.6)';
  drawAgitatorFrame(c,a,frame,cx,feet+bob,b.h,b.dir<0);c.restore();
  if(n.stage==='slogan'&&n.mode==='windup')drawSlotMarks(c,g,t);
- if(n.blast>0||n.mode==='swingWarn'||n.mode==='uraWarn'||n.mode==='stomp'){const blink=Math.floor(t*10)%2;text(c,'!',cx-5,b.y-30+(blink?-2:0),n.mode==='uraWarn'?'#7ff4ff':'#ffd083',3);}
- // «УРА!»: a cyan speech flash over the crowd; his open back is outlined.
- if(n.stage==='rally'&&n.mode==='ura'){c.save();c.globalAlpha=.85;text(c,'УРА!',cx+b.dir*70-36,b.y-26-Math.abs(Math.sin(t*8))*4,'#8ff6ff',3);c.restore();}
+ if(n.blast>0||n.mode==='swingWarn'||n.mode==='stomp'||n.mode==='shoutWarn'){const blink=Math.floor(t*10)%2;text(c,'!',cx-5,b.y-30+(blink?-2:0),'#ffd083',3);}
+ // The rally call is a big exclamation mark over his head; his open back is outlined.
+ if(n.stage==='rally'&&(n.mode==='ura'||n.mode==='uraWarn')){const k=n.mode==='uraWarn'?.6:1,bob=Math.abs(Math.sin(t*8))*4;c.save();c.globalAlpha=.95;text(c,'!',cx-9-1,b.y-46-bob+2,'#3a0f12',5*k);text(c,'!',cx-9,b.y-46-bob,'#ffd34a',5*k);c.restore();}
+ if(n.stage==='rally'&&n.mode==='shoutWarn')fxFrame(c,a,'glow',cx+b.dir*40,b.y+40,60,.5+.4*Math.sin(t*20));
+ for(const w of n.shouts||[]){const ang=Math.atan2(w.vy,w.vx),k=w.state==='burst'?w.time/.4:0;c.save();c.translate(w.x,w.y);c.rotate(Math.abs(ang)>Math.PI/2?ang+Math.PI:ang);fxFrame(c,a,w.state==='burst'?'burst':'wave',0,0,(w.state==='burst'?60+k*40:56+Math.sin(w.time*18)*6),w.state==='burst'?1-k:.95,Math.abs(ang)>Math.PI/2);c.restore();}
  drawLetters(c,a,g,t,true);drawBirds(c,a,g,t);drawWind(c,a,g,t);drawFx(c,a,n,t);
 }
 function drawSlotMarks(c,g,t){

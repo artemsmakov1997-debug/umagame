@@ -4,6 +4,7 @@ import {drawSensationPortrait} from './roofs-art.js?v=0.21.5';
 import {drawBotfarmPortrait,drawBotPortrait} from './botfarm-art.js?v=0.21.5';
 import {drawEchoDoublePortrait} from './echo-double-art.js?v=0.21.5';
 import {drawStaticPortrait} from './static-art.js?v=0.21.5';
+import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
 import {drawManipulatorPose} from './manipulator-art.js?v=0.21.5';
 import {creatures,newCreatures,sprite} from './assets.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
@@ -22,6 +23,9 @@ export function drawMonster(c,a,id,x,y,w,h,time=0,flip=false,actor={}){
  if(id==='static'&&a.staticMotion)return drawStaticPortrait(c,a,x,y,w,h,time,flip,actor);
  if(id==='botfarm')return drawBotfarmPortrait(c,a,x,y,w,h,time,actor);
  if(id==='bot')return drawBotPortrait(c,a,x,y,w,h,time,actor);
+ // Spreader and Infoshum are drawn exactly as in their fights.
+ if(id==='spreader'&&a.spreaderAir){const frame=actor.hurtTime>0?7:actor.state==='casting'?3:actor.state==='windup'?5:Math.floor((actor.moving?actor.walkTime??time:time)*7)%2,s=Math.min(w/192,h/184);c.save();c.translate(Math.round(x+w/2),Math.round(y+h/2));if(flip)c.scale(-1,1);c.drawImage(a.spreaderAir,frame*192,0,192,184,-96*s,-92*s,192*s,184*s);c.restore();return;}
+ if(id==='infoshum'&&a.infoshumBody&&!actor.projection){const frame=actor.hurtTime>0?5:actor.state==='casting'?3:actor.state==='windup'?1:[0,2][Math.floor((actor.moving?actor.walkTime??time:time)*7)%2];drawInfoshumSprite(c,a,'body',frame,x,y,w,h);return;}
  if(id==='agitator'&&a.agitatorBoss){const cycle=Math.floor(time*1.2)%4,frame=actor.hurtTime>0?12:actor.state==='windup'?1:actor.state==='casting'?[11,10,2,1][cycle]:actor.moving?[0,3][Math.floor((actor.walkTime??time)*8)%2]:Math.floor(time*.8)%5===4?8:0;drawAgitatorPose(c,a,frame,x,y,w,h,flip);return;}
  if(id==='manipulator'&&a.manipulator){const row=actor.hurtTime>0?5:actor.state==='windup'?2:actor.state==='shift'?4:actor.state==='casting'?3:0;drawManipulatorPose(c,a,row,actor.moving?Math.floor((actor.walkTime??time)*8)%4:Math.floor(time*6)%4,x,y,w,h,flip);return;}
  const atlas=motion[id];if(!atlas)return;

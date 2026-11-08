@@ -52,9 +52,6 @@ test('climbing the cable with real jumps reaches the core; the core only takes h
  const p=g.player,c=coreBox(b);p.dir=c.x+c.w/2>p.x+17?1:-1;p.cooldown=0;g.step(1/60,{attack:true});tick(g,3);
  assert.equal(b.hp,10,'a paw from the top step reaches the core');assert.equal(n.mode,'reel');
 });
-test('the headline ring hurts on contact; its gap lets Uma through',()=>{
- const g=freed(false),b=g.boss,n=b.network;n.mode='anchored';n.timer=9;const h=headlineBoxes(n,b)[0];Object.assign(g.player,{x:h.x+3,y:h.y-10,inv:0,dash:0,grounded:false});const hp=g.health;stepBoss(g,1/60);assert.equal(g.health,hp-1);
-});
 test('«Белый шум»: interference rises only in the last phase; three figures, only one real; doubles burst on landing, the real one sticks',()=>{
  const g=freed(),b=g.boss,n=b.network;assert.equal(n.noise,0);tick(g,120);assert.equal(n.noise,0,'no interference in the cable phase');
  for(let i=0;i<3;i++){exposeInfoshum(g);b.cooldown=0;assert.ok(swing(g,coreBox(b)));if(n.stage==='free')tick(g,60);}

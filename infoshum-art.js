@@ -95,12 +95,18 @@ function drawFree(c,a,g,time){
  const exposed=['anchored','retractWarn','reel'].includes(n.mode);
  if(exposed&&a.infoshumCore){const frame=b.hurtTime>0?2:n.mode==='reel'?3:n.mode==='retractWarn'&&Math.floor(time*8)%2?1:0;cell(c,a.infoshumCore,CORE_W,CORE_H,frame,cp.x,cp.y-26+wob,300);}
  else if(a.infoshumPoses&&['aim','slam','retract'].includes(n.mode)){const frame=n.mode==='aim'?0:n.mode==='slam'?1:2;cell(c,a.infoshumPoses,POSE_W,POSE_H,frame,cp.x,cp.y-30+wob,320,{flip:n.target&&n.target.x<cp.x});}
- else{const frame=b.hurtTime>0?5:n.mode==='volley'?3:0;drawInfoshumSprite(c,a,'body',frame,b.x+b.w/2-175,b.y-74+wob,350,302);}
- drawRing(c,a,n,b,time);
+ else{const frame=b.hurtTime>0?5:n.mode==='volley'?3:n.mode==='arrive'?1:0;
+  // Leaving the monitor: a glitch trail of fading copies follows him to the middle.
+  if(n.mode==='arrive'&&n.arriveFrom){for(let i=4;i>=1;i--){const k=i/5,x=b.x+(n.arriveFrom.x-b.x)*k*.5,y=b.y+(n.arriveFrom.y-b.y)*k*.5;c.save();c.globalAlpha=.16*(5-i)/4;c.filter=i%2?'hue-rotate(60deg)':'none';drawInfoshumSprite(c,a,'body',1,x+b.w/2-175+(i%2?-6:6),y-74,350,302);c.restore();}
+   for(let i=0;i<14;i++){const px=b.x+b.w/2+Math.sin(i*7.1+time*20)*120,py=b.y+Math.cos(i*3.3+time*17)*80;rect(c,px,py,6+i%3*4,2,i%2?magenta:cyan);}}
+  drawInfoshumSprite(c,a,'body',frame,b.x+b.w/2-175,b.y-74+(n.mode==='arrive'?0:wob),350,302);}
 }
 // ——— Phase 3: the doubles ———
 function drawNoise(c,a,g,time){
  const n=g.boss.network,img=a.infoshumPoses;
+ // The split: the core bursts in a ring of white noise and the doubles fly out of it.
+ if(n.mode==='split'&&n.splitFrom){const f=n.figures[0],k=Math.min(1,(f?.time||0)/.9),cx=n.splitFrom.x,cy=n.splitFrom.y;c.save();c.globalAlpha=Math.max(0,1-k);c.fillStyle='#f4fbff';c.beginPath();c.arc(cx,cy,30+k*60,0,Math.PI*2);c.fill();c.restore();
+  for(let i=0;i<48;i++){const ang=i*2.399,rr=40+k*260+(i%5)*10,px=cx+Math.cos(ang)*rr,py=cy+Math.sin(ang)*rr*.7;c.save();c.globalAlpha=Math.max(0,1-k)*.9;rect(c,px,py,3+(i%4)*2,3,i%3===0?magenta:i%3===1?cyan:'#e8eef6');c.restore();}}
  for(const f of n.figures){
   if(f.state==='warn'){c.save();c.strokeStyle=f.real?'#ff7ad8':'#b48cff';c.globalAlpha=.6;c.setLineDash([8,6]);c.lineWidth=2;c.beginPath();c.moveTo(f.x,f.y);c.lineTo(f.tx,f.ty-20);c.stroke();c.restore();colorWarning(c,{x:f.tx,y:f.ty},time,'wave');}
   const flicker=f.real?1:.62+.25*Math.sin(time*23+f.id);

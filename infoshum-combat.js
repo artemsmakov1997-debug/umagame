@@ -18,7 +18,7 @@ export const coreDamage=()=>HIT_DAMAGE;
 export const revealHint=g=>Math.min(2.4,SOURCE_HINT*originalsFound(g));
 export const SHELL={static:.8,gap:.25,move:[.95,.8,.66],moves:[2,3,4],decoys:[0,1,2],window:[6.8,6.3,5.8],volley:1.3,hit:1.1};
 export const CABLE={drift:1.2,aim:1,slam:.3,anchored:3.4,retractWarn:.6,retract:.35,reel:.9,ring:1.6,ringR:96};
-export const SPLIT={split:.7,gap:1.1,warn:.8,speed:620,stuck:2.3,reel:.8};
+export const SPLIT={split:1.1,gap:1.1,warn:.8,speed:620,stuck:2.3,reel:.8};
 export const STEP_SLOTS=[6,7,8,13,14,15,16,17];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const STAGE_ROOM=8;
@@ -106,6 +106,7 @@ function strikeScreens(g,paw){
 }
 // ——— Rupture: the third crack tears the screen open ———
 const ruptureMonitorIndex=n=>n.lastMonitorIndex;
+export const ARRIVE=1.6;
 function beginRupture(g){
  const b=g.boss,n=b.network;
  n.stage='rupture';n.mode='rupture';n.timer=2.25;n.transitionProgress=0;
@@ -129,8 +130,10 @@ function rebuildArena(g){
 }
 function beginFreed(g){
  const b=g.boss,n=b.network,r=rooms[g.room];
- rebuildArena(g);n.stage='free';n.mode='drift';n.timer=1.4;n.target=null;n.cable=null;n.cycle=0;
- b.phase=2;b.state='recover';b.x=r.x+r.width/2-b.w/2;b.y=92;b.dir=-1;b.cooldown=0;n.homeX=b.x;n.driftTime=0;
+ rebuildArena(g);n.stage='free';n.mode='arrive';n.timer=ARRIVE;n.target=null;n.cable=null;n.cycle=0;
+ b.phase=2;b.state='recover';b.dir=-1;b.cooldown=0;n.homeX=r.x+r.width/2-b.w/2;n.driftTime=0;
+ // He glides out of the broken monitor to the middle of the stage instead of jumping there.
+ const m=n.monitors[ruptureMonitorIndex(n)]||n.monitors[1];n.arriveFrom={x:m.x+m.w/2-b.w/2,y:m.y+m.h/2-b.h/2};b.x=n.arriveFrom.x;b.y=n.arriveFrom.y;
  g.emit('infoshumFreed',{x:b.x+b.w/2,y:b.y+b.h/2});
 }
 // ——— Phase 2 «Кабели» ———
@@ -150,7 +153,8 @@ function stepCables(g,dt,paw){
  // He drifts while no cable is anchored.
  if(['drift','aim','volley'].includes(n.mode)){n.driftTime+=dt;b.x=n.homeX+Math.sin(n.driftTime*.6)*260;}
  b.state=['anchored','retractWarn'].includes(n.mode)?'recover':'windup';
- for(const h of headlineBoxes(n,b))if(p.dash===0&&overlap(p,h)){const before=g.health;g.hurt(false,h.x+20);if(g.health<before&&g.mode==='playing')g.push(p.x+17<h.x+20?-1:1,h.x+20);}
+ if(n.mode==='arrive'){n.timer-=dt;const k=Math.min(1,1-n.timer/ARRIVE),e=k*k*(3-2*k),f=n.arriveFrom;b.x=f.x+(n.homeX-f.x)*e;b.y=f.y+(92-f.y)*e-Math.sin(k*Math.PI)*70;b.state='phaseChange';if(n.timer<=0){b.x=n.homeX;b.y=92;n.mode='drift';n.timer=1;n.driftTime=0;}return;}
+
  n.timer-=dt;if(n.timer>0)return;
  if(n.mode==='drift'){n.mode='aim';n.timer=CABLE.aim;n.target=targetSurface(g);g.emit('infoshumWarning',{x:n.target.x,y:n.target.y,attack:'cable'});}
  else if(n.mode==='aim'){n.mode='slam';n.timer=CABLE.slam;const t=n.target;if(overlap(p,{x:t.x-38,y:t.y-66,w:76,h:66}))g.hurt(false,t.x);layCable(g);g.emit('infoshumSlam',{x:t.x,y:t.y});}
@@ -169,12 +173,12 @@ function strikeCore(g,paw){
 }
 // ——— Phase 3 «Белый шум» ———
 function beginSplit(g){
- const b=g.boss,n=b.network;pullCable(g);n.stage='noise';n.noise=n.noise||0;n.noiseTime=n.noiseTime||0;b.phase=3;b.phaseName='Белый шум';b.state='phaseChange';g.bolts=[];
+ const b=g.boss,n=b.network;n.splitFrom=corePoint(b);n.splitTime=0;pullCable(g);n.stage='noise';n.noise=n.noise||0;n.noiseTime=n.noiseTime||0;b.phase=3;b.phaseName='Белый шум';b.state='phaseChange';g.bolts=[];
  g.player.inv=Math.max(g.player.inv,1.5);g.emit('bossPhase',{boss:'infoshum',phase:3,name:'Белый шум'});newFigures(g);g.emit('infoshumSplit',{x:b.x+b.w/2,y:b.y+b.h/2});
 }
 function newFigures(g){
  const b=g.boss,n=b.network,r=rooms[g.room],slots=[.22,.5,.78].sort(()=>Math.random()-.5),real=Math.floor(Math.random()*3);
- n.figures=slots.map((k,i)=>({id:i,real:i===real,x:r.x+r.width*k,y:120,homeX:r.x+r.width*k,state:'split',time:0,lastSwing:-1}));
+ const from=n.splitFrom||{x:b.x+b.w/2,y:b.y+b.h/2};n.figures=slots.map((k,i)=>({id:i,real:i===real,x:from.x,y:from.y,sx:from.x,sy:from.y,homeX:r.x+r.width*k,state:'split',time:0,lastSwing:-1}));
  n.order=[0,1,2].sort(()=>Math.random()-.5);n.mode='split';n.timer=SPLIT.split;syncFigure(b);
 }
 function syncFigure(b){const f=b.network.figures.find(f=>f.real);if(f){b.x=f.x-b.w/2;b.y=f.y-b.h/2;}}
@@ -184,7 +188,7 @@ function stepNoise(g,dt){
  n.noiseTime+=dt;n.noise=Math.min(1,n.noiseTime/noiseDuration(g));
  if(n.noise>=1){g.emit('interferenceLost');g.loseLife('interference');if(g.testingInvulnerable){n.noiseTime=noiseDuration(g)*.82;n.noise=.82;}return;}
  for(const f of n.figures){f.time+=dt;
-  if(f.state==='split'||f.state==='hover'){f.x=f.homeX+Math.sin((g.time||0)*1.3+f.homeX)*24;f.y=120+Math.sin((g.time||0)*2+f.homeX*.01)*10;if(f.state==='split'&&f.time>=SPLIT.split){f.state='hover';f.time=0;}}
+  if(f.state==='split'||f.state==='hover'){const hx=f.homeX+Math.sin((g.time||0)*1.3+f.homeX)*24,hy=120+Math.sin((g.time||0)*2+f.homeX*.01)*10;if(f.state==='split'&&f.sx!==undefined){const k=Math.min(1,f.time/SPLIT.split),e=k*k*(3-2*k);f.x=f.sx+(hx-f.sx)*e;f.y=f.sy+(hy-f.sy)*e-Math.sin(k*Math.PI)*40;}else{f.x=hx;f.y=hy;}if(f.state==='split'&&f.time>=SPLIT.split){f.state='hover';f.time=0;}}
   else if(f.state==='warn'&&f.time>=SPLIT.warn){f.state='dive';f.time=0;g.emit('infoshumDive',{x:f.x,y:f.y,real:f.real});}
   else if(f.state==='dive'){const dx=f.tx-f.x,dy=f.ty-f.y,len=Math.hypot(dx,dy),step=SPLIT.speed*dt;
    if(len<=step){f.x=f.tx;f.y=f.ty;const hit=Math.abs(p.x+p.w/2-f.x)<44&&Math.abs(p.y+p.h-f.ty)<50&&p.dash===0;if(hit)g.hurt(false,f.x);

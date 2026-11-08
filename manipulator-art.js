@@ -47,6 +47,8 @@ export function drawStudioBackdrop(c,a,g,t){
  // Phase 3: the screen the projector throws its image on hangs over the stage.
  if(n.phase===3&&a.manipulatorProjector){const k=n.mode==='dark'?.35:.85,w=170,h=w*PROJ.h/PROJ.w;c.save();c.globalAlpha=k;c.drawImage(a.manipulatorProjector,PROJ.w,PROJ.h,PROJ.w,PROJ.h,r.x+r.width/2-w/2,30,w,h);c.restore();}
  drawTrack(c,g);
+ // The crane stands behind the stage, in the backdrop's shade: it carries the camera but never touches Uma.
+ if(n.crane){c.save();c.filter='brightness(.58) saturate(.75)';c.globalAlpha=.92;drawCrane(c,a,n.crane,n.phase===1);c.restore();}
  // Phase 3 illusions: fake strips and decoys look exactly like the real ones, but cast no shadow.
  if(n.phase===3&&n.mode!=='dark'){
   for(const i of n.decoys){const [x,y,w]=DECOYS[i];drawNeon(c,a,r.x+x,y,w,t,i);}
@@ -104,7 +106,7 @@ export function drawCrane(c,a,crane,withClaw=true){
 function cameraFrame(b,n,t){
  if(b.hurtTime>0)return n.phase===1?3:7;
  switch(n.mode){
-  case 'aim':return 4;case 'pan':return 5;case 'overheat':return 6;case 'intro':case 'raise':case 'roll':case 'park':return Math.floor(t*5)%2;
+  case 'aim':return 10;case 'pan':return n.beam?.live?5:10;case 'overheat':return 6;case 'intro':case 'raise':case 'roll':case 'park':return Math.floor(t*5)%2;
   case 'frame':return 10;case 'snap':return 4;case 'eject':return 8;case 'develop':return 9;case 'detach':return 11;
   case 'transform':return n.timer>.5?11:2;case 'warp':return 2;
   default:return Math.floor(t*5)%2;
@@ -116,10 +118,8 @@ function projectorFrame(b,n,t){
 }
 export function drawManipulator(c,a,g,t){
  const b=g.boss,n=b.studio;if(!n)return;const cx=b.x+b.w/2,bottom=b.y+b.h,flip=b.dir<0,width=b.w+30;
- if(n.crane)drawCrane(c,a,n.crane,n.phase===1);
  // Phase 3: real strips cast a shadow on what lies below.
  if(n.phase===3)drawShadows(c,a,g);
- if(n.phase===1&&n.beam)drawPanBeam(c,a,n,t);
  for(const s of n.scorches)centered(c,a.manipulatorFx,MFX.flash,s.x,s.y-4,18*(1-s.t/.6)+6,1-s.t/.6);
  if(n.phase===2)drawStopFrame(c,a,g,n,t);
  const warping=n.mode==='warp',out=warping&&!n.arrived,arrive=warping?clamp01(1-n.timer/(WARP/2)):1;
@@ -132,6 +132,7 @@ export function drawManipulator(c,a,g,t){
  }else{
   const shake=n.mode==='overheat'||n.mode==='detach'||n.mode==='transform'&&n.timer>.5?Math.sin(t*40)*1.5:0;
   drawCamera(c,a,cameraFrame(b,n,t),cx+shake,bottom,width,flip,alpha);
+  if(n.phase===1&&n.beam)drawPanBeam(c,a,n,t);
   if(n.mode==='transform'&&n.timer<.5)centered(c,a.manipulatorFx,MFX.flash,cx,bottom-50,150*(1-n.timer/.5)+40,clamp01(n.timer/.5+.2));
  }
  if(n.mode==='overheat'){const k=.5+.5*Math.sin(t*8);c.save();c.globalAlpha=.25+.2*k;c.fillStyle='#ffcf7a';c.beginPath();c.ellipse(cx,bottom-2,62,7,0,0,Math.PI*2);c.fill();c.restore();}
@@ -139,7 +140,7 @@ export function drawManipulator(c,a,g,t){
 }
 function drawPanBeam(c,a,n,t){
  const s=n.beam,len=Math.hypot(s.x2-s.x1,s.y2-s.y1),angle=Math.atan2(s.y2-s.y1,s.x2-s.x1);
- if(n.mode==='aim'){c.save();c.globalAlpha=.5+.35*Math.abs(Math.sin(t*12));c.translate(s.x1,s.y1);c.rotate(angle);for(let x=0;x<len;x+=14)rect(c,x,-1,8,2,'#ff6fae');c.restore();return;}
+ if(n.mode==='aim'||!s.live){c.save();c.globalAlpha=n.mode==='aim'?.5+.35*Math.abs(Math.sin(t*12)):.28;c.translate(s.x1,s.y1);c.rotate(angle);for(let x=0;x<len;x+=14)rect(c,x,-1,8,2,'#ff6fae');c.restore();return;}
  const image=a.manipulatorFx,box=MFX.beam,thick=16,tw=box[2]*thick/(box[3]*.45);
  c.save();c.translate(s.x1,s.y1);c.rotate(angle);c.beginPath();c.rect(0,-thick,len,thick*2);c.clip();
  for(let x=-((t*240)%tw);x<len;x+=tw-2)c.drawImage(image,box[0],box[1]+box[3]*.28,box[2],box[3]*.45,x,-thick/2,tw,thick);

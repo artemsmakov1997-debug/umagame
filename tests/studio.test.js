@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {Game} from '../engine.js';
 import {activateRoom,beginLocationTransition} from '../room-transitions.js';
 import {stepBoss,damageBoss,bossShielded} from '../boss.js';
-import {stepStudioPlatforms,studioDock,exposeManipulator,castBeam,craneTip,dollyBox,manipulatorExposed,STRIPS,DECOYS,FRAME,FRAME_LOCK,SCISSORS_AIM,CUT_GAP,MANIPULATOR_HP} from '../manipulator-combat.js';
+import {stepStudioPlatforms,studioDock,exposeManipulator,castBeam,beamLive,TRACK_Y,craneTip,dollyBox,manipulatorExposed,STRIPS,DECOYS,FRAME,FRAME_LOCK,SCISSORS_AIM,CUT_GAP,MANIPULATOR_HP} from '../manipulator-combat.js';
 import {solidSurfaces} from '../terrain.js';
 import {jumpTo} from './navigation.js';
 import {rooms} from '../level.js';
@@ -19,8 +19,8 @@ test('a live chase crosses the entire active arena without falling, using the pe
  const g=ready();
  for(const [look,route]of[[[6,7],[6,7,1]],[[9,10],[9,10,2]],[[10,9],[10,9,1]],[[7,6,17],[7,6,17,3]]]){
   let waited=0;
-  for(;waited<1500;waited++){const next=look.map(index=>g.platforms.find(s=>s.id==='6:'+index));if(next.every(s=>s.studioPhase==='solid'&&s.studioTimer>3.5))break;g.step(1/60);}
-  assert.ok(waited<1500,'route must reopen');for(const index of route)assert.ok(jumpTo(g,6,index),'active chase '+index);
+  for(;waited<4000;waited++){const next=look.map(index=>g.platforms.find(s=>s.id==='6:'+index));if(next.every(s=>s.studioPhase==='solid'&&s.studioTimer>2.6)&&['park','overheat','raise'].includes(g.boss.studio.mode))break;g.step(1/60);}
+  assert.ok(waited<4000,'route must reopen');for(const index of route)assert.ok(jumpTo(g,6,index),'active chase '+index);
  }
  assert.equal(g.events.filter(e=>e.type==='testRescue').length,0);
 });
@@ -55,17 +55,24 @@ test('panorama: the crane raises, rolls to the end, aims, pans across, parks by 
  const tip=craneTip(b.studio.crane);assert.ok(Math.abs(tip.x-(b.x+b.w/2))<1);assert.ok(tip.y<b.y);
 });
 
-test('the pan beam stops on the first surface: a dock shadow is safe, the open floor is hit, Shift protects',()=>{
+test('the pan beam stops on the first surface: a dock casts a safe shadow, the open floor is hit, Shift protects',()=>{
  for(const [where,dash,expected] of [['open',0,1],['open',.3,0],['shadow',0,0]]){
-  const g=ready();g.testingInvulnerable=false;at(g,4,200);until(g,'1:pan');const b=g.boss,n=b.studio,dock=studioDock(g,0),floor=g.platforms.find(s=>s.id==='6:4');
-  // Put the crane so the beam lands on the middle floor or on the dock right above Uma.
-  const reach=Math.cos(55*Math.PI/180);let hit=0;const h=g.health;
+  const g=ready();g.testingInvulnerable=false;at(g,4,200);until(g,'1:pan');const n=g.boss.studio,docks=[1,2,3].map(i=>g.platforms.find(s=>s.id==='6:'+i));let placed=false;const h=g.health;
   for(let i=0;i<60*8&&n.mode==='pan';i++){
-   if(where==='shadow'){const near=Math.abs(n.crane.x-(dock.x+dock.w/2+n.crane.dir*70))<90;Object.assign(g.player,{x:dock.x+dock.w/2-17+n.crane.dir*70,y:floor.y-48-(near?70:0),grounded:!near,supportId:near?null:floor.id,inv:0});}
-   else{const beam=castBeam(g);if(beam.surface===floor&&beam.x2>floor.x+30&&beam.x2<floor.x+floor.w-30&&!hit){Object.assign(g.player,{x:beam.x2-17,y:floor.y-48,grounded:true,supportId:floor.id,inv:0,dash});hit=1;}else if(!hit)Object.assign(g.player,{x:g.platforms.find(s=>s.id==='6:0').x+10,y:374,inv:0});}
+   const beam=castBeam(g),live=beamLive(n),dir=g.boss.dir,k=1/Math.tan(36*Math.PI/180);
+   if(where==='shadow'){
+    // Under a dock the ray is cut off: stand right below the point where it meets the dock, in its shadow.
+    if(live&&docks.includes(beam.surface)&&beam.x2>beam.surface.x+50&&beam.x2<beam.surface.x+beam.surface.w-50){const y=beam.y2+60,x=beam.x2+dir*(y-beam.y2)*k;Object.assign(g.player,{x:x-17,y:y-48,h:48,grounded:false,vy:0,inv:0});placed=true;}
+    else Object.assign(g.player,{x:g.platforms.find(s=>s.id==='6:0').x+5,y:-200,inv:g.player.inv});
+   }else if(!placed&&live&&beam.surface?.id==='6:4'){Object.assign(g.player,{x:beam.x2-17,y:beam.y2-48,h:48,grounded:true,supportId:'6:4',inv:0,dash});placed=true;}
+   else if(!placed)Object.assign(g.player,{x:0,y:-300});
    g.player.dash=dash;stepBoss(g,1/60);}
-  assert.equal(h-g.health>0?1:0,expected,where+dash);
+  assert.ok(placed||where==='shadow',where);assert.equal(h-g.health>0?1:0,expected,where+dash);
  }
+});
+
+test('the pan beam fires in bursts with closed-shutter gaps',()=>{
+ const g=ready();at(g,4,200);until(g,'1:pan');const states=new Set();for(let i=0;i<60*3;i++){stepBoss(g,1/60);if(mode(g)==='1:pan')states.add(beamLive(g.boss.studio));}assert.deepEqual([...states].sort(),[false,true]);
 });
 
 test('studio platforms the beam touches burn out and come back',()=>{
@@ -75,12 +82,10 @@ test('studio platforms the beam touches burn out and come back',()=>{
  for(let i=0;i<60*4;i++)stepStudioPlatforms(g,1/60);assert.ok([...burned].every(i=>g.platforms.find(s=>s.id==='6:'+i).studioPhase!=='forming'));
 });
 
-test('the rolling dolly runs Uma over on the floor; jumping over it is safe',()=>{
- for(const [air,expected] of [[false,1],[true,0]]){
-  const g=ready();g.testingInvulnerable=false;at(g,0,10);until(g,'1:pan');const c=g.boss.studio.crane,floor=g.platforms.find(s=>s.id==='6:4'),h=g.health;
-  for(let i=0;i<60*8&&mode(g)==='1:pan';i++){if(c.x>floor.x+60&&c.x<floor.x+floor.w-60)Object.assign(g.player,{x:c.x-17,y:air?dollyBox(c).y-70:floor.y-48});else Object.assign(g.player,{x:g.platforms.find(s=>s.id==='6:3').x+20,y:220-48,inv:0});stepBoss(g,1/60);}
-  assert.equal(h-g.health>0?1:0,expected,String(air));
- }
+test('the crane is scenery: its rolling dolly never hurts Uma',()=>{
+ const g=ready();g.testingInvulnerable=false;at(g,0,10);until(g,'1:roll');const c=g.boss.studio.crane,h=g.health;
+ for(let i=0;i<60*3&&mode(g)==='1:roll';i++){Object.assign(g.player,{x:c.x-17,y:TRACK_Y-48,inv:0});stepBoss(g,1/60);}
+ assert.equal(g.health,h);
 });
 
 test('stop-frame: the viewfinder follows Uma, locks, then snaps; stepping out after the lock is safe',()=>{

@@ -27,7 +27,7 @@ test('Spreader must be defeated to leave; a retry restores the arena without a s
 });
 test('Agitator opens with slogans from the mast; his body stays closed until the megaphone overheats',()=>{const g=ready(4),b=g.boss;assert.equal(damageBoss(g,2,true),false);const casts=new Set();for(let i=0;i<400;i++){stepBoss(g,1/60);for(const e of g.events)if(e.type==='bossCast')casts.add(e.ability);g.events=[];}assert.deepEqual(casts,new Set(['slogan']));assert.equal(b.phase,1);assert.equal(b.broadcast.mode,'overheat');b.cooldown=0;assert.equal(damageBoss(g,2),true);assert.equal(b.hp,b.maxHp-2);});
 test('Spreader carpet-bombs real falling bundles from the air',()=>{
- const g=ready(2),b=g.boss;for(let i=0;i<150;i++){g.time+=1/60;stepBoss(g,1/60);}assert.equal(b.fight.mode,'bombing');assert.ok(Math.abs(b.y-86)<8);assert.ok(b.fight.bundles.length+b.fight.bursts.length>=3);assert.ok(b.fight.bundles.some(u=>u.vy>0));
+ const g=ready(2),b=g.boss;for(let i=0;i<60*8&&!(b.fight?.mode==='bombing'&&b.fight.elapsed>1.6);i++){g.time+=1/60;stepBoss(g,1/60);}assert.equal(b.fight.mode,'bombing');assert.ok(Math.abs(b.y-86)<8);assert.ok(b.fight.bundles.length+b.fight.bursts.length>=3);assert.ok(b.fight.bundles.some(u=>u.vy>0));
 });
 test('Manipulator rewrites real holographic platforms instead of opening tape cuts',()=>{const g=ready(6),s=g.platforms.find(s=>s.id==='6:7');Object.assign(g.player,{x:s.x+8,y:s.y-48,grounded:true,supportId:s.id});tick(g,1);assert.equal(s.studioPhase,'warning');tick(g,43);assert.equal(s.studioPhase,'gap');assert.equal(g.cuts.length,0);});
 test('Panicker starts alarms ten seconds apart and releases one Fakenews from each completed portal',()=>{
