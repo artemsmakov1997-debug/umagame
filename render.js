@@ -29,6 +29,7 @@ import {drawArenaBoss} from './boss-art.js?v=0.21.5';
 import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
 import {drawStudioContainer} from './studio-container-art.js?v=0.21.5';
+import {drawLoadingScreen} from './loading-art.js?v=0.21.5';
 import {drawPaparazzi,drawBlind,drawSpotlighter,drawBoom} from './new-monsters-art.js?v=0.21.5';
 import {beamFloor,boomBox} from './studio-monsters.js?v=0.21.5';
 import {drawBossProjectile,drawAttackFxList} from './boss-attack-fx.js?v=0.21.5';
@@ -172,8 +173,8 @@ export class Renderer{
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   if(g.tether){const e=g.tether.ownerId==='boss:'+g.boss.id?g.boss:g.enemies.find(e=>e.id===g.tether.ownerId);if(e){c.strokeStyle='#c9a4ed';c.lineWidth=3;c.setLineDash([5,4]);c.beginPath();c.moveTo(e.x+24,e.y+2);c.lineTo(p.x+17,p.y+28);c.stroke();c.setLineDash([]);for(let i=0;i<5;i++)rect(c,e.x+5+i*8,e.y-58,5,3,i<Math.ceil(g.tether.remaining)?'#ffdb9b':'#263a55');}}
   drawYuriSignal(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawBossDefeat(c,a,g);
-  drawBlind(c,g,worldWidth);drawExitArrow(c,g,t,worldWidth);c.restore();
-  drawInterferenceOverlay(c,g,vw,a);drawArenaTransfer(c,g,vw);if(!drawRouteTransition(c,a,g,vw))drawLocationLoading(c,g,vw);
+  drawBlind(c,g,worldWidth);drawExitArrow(c,g,t,worldWidth,a);c.restore();
+  drawInterferenceOverlay(c,g,vw,a);drawArenaTransfer(c,g,vw);if(!drawLoadingScreen(c,a,g,vw)&&!drawRouteTransition(c,a,g,vw))drawLocationLoading(c,g,vw);
   if(g.defeat&&(g.mode==='bossDefeat'||g.mode==='paused'&&g.pausedFrom==='bossDefeat')){c.save();c.globalAlpha=Math.max(0,Math.min(1,(g.defeat.time-1.42)/.28));rect(c,0,0,vw,HEIGHT,'#030919');c.restore();}
   if(g.mode==='respawning'||g.pausedFrom==='respawning'){
    const progress=1-g.respawnTime/1.1;c.globalAlpha=Math.max(0,(progress-.25)/.75)*.86;rect(c,0,47,vw,HEIGHT-47,'#030a1e');c.globalAlpha=1;

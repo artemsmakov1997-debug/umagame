@@ -132,7 +132,8 @@ export function drawManipulator(c,a,g,t){
   drawProjector(c,a,projectorFrame(b,n,t),cx,bottom,104,flip,alpha);
  }else{
   const shake=n.mode==='overheat'||n.mode==='detach'||n.mode==='transform'&&n.timer>.5?Math.sin(t*40)*1.5:0;
-  drawCamera(c,a,cameraFrame(b,n,t),cx+shake,bottom,width,flip,alpha);
+  const shot=n.phase===1&&!b.hurtTime?shotFrame(n):null;
+  if(shot!==null&&a.manipulatorShot)drawShotCamera(c,a,shot,cx+shake,bottom,width,flip,alpha);else drawCamera(c,a,cameraFrame(b,n,t),cx+shake,bottom,width,flip,alpha);
   if(n.phase===1&&n.beam)drawPanBeam(c,a,n,t);
   if(n.mode==='transform'&&n.timer<.5)centered(c,a.manipulatorFx,MFX.flash,cx,bottom-50,150*(1-n.timer/.5)+40,clamp01(n.timer/.5+.2));
  }
@@ -145,18 +146,35 @@ const SPARK=[75,4,27,7];
 function smoothBeam(c,a,x1,y1,x2,y2,thick,t,alpha=1,speed=320){
  const image=a.manipulatorFx;if(!image||alpha<=0)return;const box=MFX.beam,len=Math.hypot(x2-x1,y2-y1),angle=Math.atan2(y2-y1,x2-x1);
  c.save();c.globalAlpha*=alpha;c.translate(x1,y1);c.rotate(angle);
- c.drawImage(image,box[0]+Math.round(box[2]/2),box[1]+box[3]*.28,1,box[3]*.45,0,-thick/2,len,thick);
+ // The painted beam tile (assets/manipulator-beam.png, 103×49): its middle column, stretched — no joins.
+ if(a.manipulatorBeam)c.drawImage(a.manipulatorBeam,51,8,1,33,0,-thick*.75,len,thick*1.5);
+ else c.drawImage(image,box[0]+Math.round(box[2]/2),box[1]+box[3]*.28,1,box[3]*.45,0,-thick/2,len,thick);
  c.globalCompositeOperation='lighter';
  for(let i=0;i<Math.max(3,len/40);i++){const x=((t*speed+i*73)%(len+40))-20,side=i%2?-1:1,w=18+(i%3)*6;c.globalAlpha=alpha*.7;c.drawImage(image,box[0]+SPARK[0],box[1]+SPARK[1],SPARK[2],SPARK[3],x,side*thick*.62-2,w,4);}
  c.restore();
+}
+// The shot sequence of phase 1 (assets/manipulator-shot.png, 6 cells of 160×165, wheel at x 80, wheel bottom y 149):
+// 0 aim, 1 charge, 2 eyes flare, 3 FIRE (recoil), 4 holding the beam, 5 cooling down.
+export const SHOT={cell:[160,165],cx:80,bottom:149,body:114};
+function shotFrame(n){
+ if(n.mode==='aim'){const k=1-n.timer/1;return k<.4?0:k<.8?1:2;}
+ if(n.mode==='pan')return n.beam?.live?(n.elapsed<.18?3:4):2;
+ if(n.mode==='overheat')return 5;
+ return null;
+}
+function drawShotCamera(c,a,frame,cx,bottom,width,flip,alpha=1){
+ const s=width/SHOT.body,[cw,ch]=SHOT.cell;c.save();c.globalAlpha*=alpha;c.translate(Math.round(cx),Math.round(bottom));if(flip)c.scale(-1,1);
+ c.drawImage(a.manipulatorShot,frame*cw,0,cw,ch,-SHOT.cx*s,-SHOT.bottom*s,cw*s,ch*s);c.restore();
 }
 function drawPanBeam(c,a,n,t){
  const s=n.beam;
  // Aiming: a thin flickering trace of the beam to come.
  if(n.mode==='aim'||!s.live){smoothBeam(c,a,s.x1,s.y1,s.x2,s.y2,5,t,n.mode==='aim'?.35+.3*Math.abs(Math.sin(t*12)):.2,120);return;}
  smoothBeam(c,a,s.x1,s.y1,s.x2,s.y2,16,t,1);
- centered(c,a.manipulatorFx,MFX.flash,s.x2,s.y2-6,34+6*Math.sin(t*30),.9);
- centered(c,a.manipulatorFx,MFX.flash,s.x1,s.y1,22+4*Math.sin(t*24),.8);
+ if(a.manipulatorImpact){const f=Math.floor(t*10)%3,k=.5;c.drawImage(a.manipulatorImpact,f*105,0,105,87,Math.round(s.x2-52*k),Math.round(s.y2-80*k),Math.round(105*k),Math.round(87*k));}
+ else centered(c,a.manipulatorFx,MFX.flash,s.x2,s.y2-6,34+6*Math.sin(t*30),.9);
+ if(a.manipulatorMuzzle){const f=n.elapsed<.15?0:1+Math.floor(t*14)%3,k=.42,ang=Math.atan2(s.y2-s.y1,s.x2-s.x1);c.save();c.translate(s.x1,s.y1);c.rotate(ang+Math.PI);c.drawImage(a.manipulatorMuzzle,f*85,0,85,82,-85*k*.2,-41*k,85*k,82*k);c.restore();}
+ else centered(c,a.manipulatorFx,MFX.flash,s.x1,s.y1,22+4*Math.sin(t*24),.8);
 }
 function drawLaser(c,a,n,t){
  const beam=n.beam;if(!beam)return;const y=beam.y+6;
