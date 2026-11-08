@@ -1,5 +1,6 @@
 import {rect} from './pixel.js?v=0.21.5';
 import {agitatorTargets} from './agitator-combat.js?v=0.21.5';
+import {infoshumTargets} from './infoshum-combat.js?v=0.21.5';
 import {spreaderExposed} from './spreader-combat.js?v=0.21.5';
 // Boss targets: a soft pulsing glow on exactly the area a paw swing must touch, plus a small
 // bobbing chevron above it. Only targets that can be hit right now are marked.
@@ -11,11 +12,8 @@ export function bossTargets(g){
  const n=b.broadcast;
  // Agitator: the robot is marked only while he is open (overheated megaphone, back turned on «УРА!», on his tower).
  if(g.room===4&&n)for(const box of agitatorTargets(g))out.push({...box,color:TARGET_GOLD});
- const m=b.network;
- if(g.room===8&&m){
-  if(m.stage==='network')for(const mon of m.monitors)if(mon.state==='open'&&mon.shieldTime<=0)out.push({id:'terminal-'+mon.index,x:mon.terminalX-23,y:mon.terminalY-8,w:46,h:35,color:TARGET_PINK});
-  if(m.stage==='free'&&m.mode==='weak'&&m.target)out.push({id:'core',x:m.target.x-30,y:m.target.y-56,w:60,h:54,color:TARGET_PINK});
- }
+ // Infoshum: the core while his cable is anchored, the real figure stuck in the floor. The real screen is never marked.
+ if(g.room===8&&b.network)for(const box of infoshumTargets(g))out.push({...box,color:TARGET_PINK});
  return out;
 }
 

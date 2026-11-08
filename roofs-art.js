@@ -71,7 +71,7 @@ export function drawSensations(c,a,g,t){
  if(g.room!==ROOM||!a.sensation)return;const x0=X0();
  for(const [li,lane] of SENSATION_LANES.entries()){
   const s=flockState(lane,t),f=g.roofs?.flocks?.[li],same=f&&f.cycle===s.cycle;
-  drawLauncher(c,lane,s,t);
+  drawLauncher(c,lane,s,t,a);
   for(const bird of s.birds){if(!bird.visible)continue;const state=same?f.birds[bird.i]:null;if(state?.dead&&state.deathTime<=0)continue;
    const box=birdBox(lane,bird),frame=state?.dead?7:state?.hit?5:Math.floor(t*12+bird.i)%4,row=frame>>2,col=frame%4,w=CELL_W*BIRD_SCALE,h=CELL_H*BIRD_SCALE;
    const d=Math.abs(bird.x-s.entry),span=lane.x2-lane.x1;c.save();c.globalAlpha=state?.dead?Math.max(0,state.deathTime/.35):Math.min(1,(span-d)/36+.15);const cx=box.x+box.w/2,cy=box.y+box.h/2;c.translate(Math.round(cx),Math.round(cy));if(s.dir<0)c.scale(-1,1);
@@ -80,20 +80,24 @@ export function drawSensations(c,a,g,t){
  }
 }
 // The firework launcher a flock is fired from: on a pole standing on a roof, or bolted to a wall.
-// Before a salvo its fuse sparks and a red sign blinks over it; every rocket leaves a muzzle flash and smoke.
-function drawLauncher(c,lane,s,t){
- const x0=X0(),dir=s.dir,mx=x0+s.entry,y=lane.y,box={x:Math.round(mx-(dir>0?22:4)),y:y-11,w:26,h:22},L=lane.launcher||{};
- if(L.mount==='pole'){rect(c,mx-(dir>0?12:-6)-2,y+10,5,L.base-y-10,'#1a1622');rect(c,mx-(dir>0?12:-6)-2,y+10,2,L.base-y-10,'#4a4258');rect(c,mx-(dir>0?12:-6)-8,L.base-4,17,4,'#1a1622');}
- else{rect(c,box.x+(dir>0?0:20)-3,y-4,9,8,'#2a2430');rect(c,box.x+(dir>0?0:20)-3,y-4,9,2,'#5a5068');}
- c.save();c.translate(mx,y);c.scale(1.4,1.4);c.translate(-mx,-y);
- c.save();c.globalAlpha=s.warn?.5+.3*Math.sin(t*20):.22;rect(c,box.x-3,box.y-3,box.w+6,box.h+6,'#ffb36a');c.restore();
- rect(c,box.x-1,box.y-1,box.w+2,box.h+2,'#0d0a12');rect(c,box.x,box.y,box.w,box.h,'#5a2d24');rect(c,box.x,box.y,box.w,3,'#8a4a36');rect(c,box.x+3,box.y+8,box.w-6,2,'#3a1c18');
- // Three tubes with red-and-white bands point along the flight.
- for(let i=0;i<3;i++){const ty=box.y+2+i*7,tx=dir>0?box.x+box.w-4:box.x-6;rect(c,tx,ty,10,5,'#e8dcc4');rect(c,tx+3,ty,2,5,'#d63a32');rect(c,dir>0?tx+9:tx,ty+1,2,3,'#120a0a');}
- if(s.warn){const blink=Math.floor(t*8)%2;for(let i=0;i<4;i++){const k=(t*9+i*1.7)%1;rect(c,box.x+box.w/2-1+Math.cos(i*2.1+t*14)*k*9,box.y-2-k*10,2,2,i%2?'#ffd36e':'#ff7a3a');}
-  c.save();c.globalAlpha=blink?.95:.5;rect(c,box.x+box.w/2-4,box.y-30,9,20,'#2a0d10');rect(c,box.x+box.w/2-2,box.y-28,5,11,'#ff5a4a');rect(c,box.x+box.w/2-2,box.y-15,5,3,'#ff5a4a');c.restore();}
- c.restore();
- for(const bird of s.birds){const d=Math.abs(bird.x-s.entry);if(d<0||d>34||!bird.visible)continue;const k=d/34,fx=mx+dir*(6+d*.4);c.save();c.globalAlpha=1-k;rect(c,fx-4,y-5,9,9,'#ffe08a');rect(c,fx-2,y-3,5,5,'#ffffff');c.globalAlpha=(1-k)*.7;rect(c,mx-dir*(4+d*.5)-5,y-6-d*.3,11,9,'#6a6478');c.restore();}
+// Before a salvo its fuse sparks and the red lamp burns; every rocket leaves a muzzle flash and smoke.
+// assets/sensation-launcher.png: 8 cells of 152×172 (feet on y=168), tubes pointing right and up:
+// 0 on a pole, 1 on a wall bracket, 2 warning, 3 salvo, 4 smoke after the shot, 5 reloading, 6 muzzle flash, 7 smoke puff.
+const LAUNCHER={w:152,h:172,feet:168,muzzle:{pole:[128,44],wall:[132,44]}};
+function launcherFrame(c,img,frame,x,feet,k,flip){c.save();c.translate(Math.round(x),Math.round(feet));if(flip)c.scale(-1,1);c.drawImage(img,frame*LAUNCHER.w,0,LAUNCHER.w,LAUNCHER.h,-LAUNCHER.w/2*k,-LAUNCHER.feet*k,LAUNCHER.w*k,LAUNCHER.h*k);c.restore();}
+function drawLauncher(c,lane,s,t,a){
+ const x0=X0(),dir=s.dir,mx=x0+s.entry,y=lane.y,L=lane.launcher||{},img=a?.sensationLauncher;
+ const fired=s.birds.some(b=>b.visible&&Math.abs(b.x-s.entry)<70),pole=L.mount==='pole';
+ if(!img){rect(c,mx-12,y-10,24,20,'#5a2d24');return;}
+ const m=LAUNCHER.muzzle[pole?'pole':'wall'],k=pole?Math.max(.5,Math.min(.8,(L.base-y+6)/(LAUNCHER.feet-m[1]))):.58,feet=pole?L.base+2:y+(LAUNCHER.feet-m[1])*k,cx=mx-dir*(m[0]-LAUNCHER.w/2)*k;
+ const frame=pole?(s.warn?2:fired?4:Math.floor(t*.7+s.entry)%5===4?5:0):1;
+ launcherFrame(c,img,frame,cx,feet,k,dir<0);
+ // The lamp and the fuse on the wall mount (the pole frames have them painted).
+ if(s.warn){const blink=Math.floor(t*8)%2;if(!pole){c.save();c.globalAlpha=blink?.9:.45;rect(c,cx-4,feet-60*k,8,8,'#ff5a4a');c.restore();}
+  for(let i=0;i<4;i++){const q=(t*9+i*1.7)%1;rect(c,cx-dir*30*k+Math.cos(i*2.1+t*14)*q*9,feet-40*k-q*10,2,2,i%2?'#ffd36e':'#ff7a3a');}
+  c.save();c.globalAlpha=blink?.95:.5;rect(c,mx-4,y-42,9,20,'#2a0d10');rect(c,mx-2,y-40,5,11,'#ff5a4a');rect(c,mx-2,y-27,5,3,'#ff5a4a');c.restore();}
+ if(fired){const d=Math.min(...s.birds.filter(b=>b.visible).map(b=>Math.abs(b.x-s.entry))),q=Math.min(1,d/70);
+  c.save();c.globalAlpha=1-q;launcherFrame(c,img,6,mx+dir*6,y+22,.5,dir<0);c.globalAlpha=(1-q)*.8;launcherFrame(c,img,7,mx-dir*(14+d*.4),y+30-d*.2,.55,dir<0);c.restore();}
 }
 // Library and notebook portrait: the flight cycle.
 export function drawSensationPortrait(c,a,x,y,w,h,time=0,actor={}){

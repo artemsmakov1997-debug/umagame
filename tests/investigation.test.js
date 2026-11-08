@@ -5,7 +5,7 @@ import {layouts,rooms} from '../level.js';
 import {scenes,relayClues} from '../story.js';
 import {endingSlides} from '../finale.js';
 import {createBoss,stepBoss,stepProjectiles} from '../boss.js';
-import {strikeInfoshum} from '../infoshum-combat.js';
+import {strikeInfoshum,exposeInfoshum,glassRect} from '../infoshum-combat.js';
 
 test('monster origins remain a mystery until the full chain is shown in the epilogue',()=>{
  for(const id of ['intro','chapter1','chapter2','chapter3']){
@@ -53,20 +53,14 @@ test('destroying a signal node permanently adds a clue, with no premature answer
  assert.equal(g.clues.length,1);
 });
 
-test('Infoshum enters the final phase after three monitors each lose two protection layers',()=>{
- const g=new Game({story:false});g.start();g.tutorial.complete=true;
+test('Infoshum enters the cable phase after three real screens are cracked',()=>{
+ const g=new Game({story:false});g.start();g.tutorial.complete=true;g.mode='playing';
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
  const n=g.boss.network;
- for(const index of [0,1,2])for(let hit=0;hit<2;hit++){
-  const m=n.monitors[index];m.state='open';m.openTime=5;m.shieldTime=0;
-  Object.assign(g.player,{x:m.terminalX-34,y:m.terminalY-46,h:48,dir:1,attack:.18,swing:g.player.swing+1});
-  assert.equal(strikeInfoshum(g,{x:g.player.x+16,y:g.player.y-2,w:54,h:54}),true);
- }
- assert.equal(n.defeatedMonitors,3);assert.equal(n.stage,'rupture');
- assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
+ for(let k=0;k<3;k++){exposeInfoshum(g);const m=n.monitors.find(m=>m.face===0);g.player.attack=.18;g.player.swing++;assert.equal(strikeInfoshum(g,glassRect(m)),true);for(let i=0;i<70&&n.stage==='network';i++)stepBoss(g,1/60);}
+ assert.equal(n.stage,'rupture');assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
  for(let i=0;i<150;i++)stepBoss(g,1/60);
- assert.equal(n.stage,'free');assert.equal(g.boss.phase,2);
- assert.equal(n.monitors.filter(m=>m.state==='broken').length,3);
+ assert.equal(n.stage,'free');assert.equal(g.boss.phase,2);assert.equal(n.monitors.reduce((s,m)=>s+m.cracks,0),3);
 });
 
 test('projectile deflections reward an active counterattack',()=>{

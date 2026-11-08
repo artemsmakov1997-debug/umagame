@@ -5,7 +5,7 @@ import {activateRoom} from '../room-transitions.js';
 import {rooms,platforms,ladders,createEnemies,createRelays} from '../level.js';
 import {DIM_PIECES,FEED,ENVELOPES,RIFTS,ORIGINALS,DIM_CHECKPOINTS} from '../dimension-map.js';
 import {feedState,originalsFound} from '../dimension-systems.js';
-import {noiseDuration,coreDamage,NOISE_TIME} from '../infoshum-combat.js';
+import {noiseDuration,revealHint,NOISE_TIME} from '../infoshum-combat.js';
 import {enemy} from '../level.js';
 import {crossDimension} from './navigation.js';
 // «Измерение» — «Первоисточник»: rising copies, envelope portals, gravity rifts and three optional originals.
@@ -60,7 +60,7 @@ test('falling up out of the world costs one heart and returns Uma upright to the
 test('originals: picked once, kept after losing a life, reset on a location retry, and they weaken Infoshum',()=>{
  const g=ready();for(const o of g.originals)Object.assign(g.player,{x:o.x,y:o.y}),tick(g,1);
  assert.equal(originalsFound(g),3);assert.equal(events(g,'sourceFound').length,3);
- assert.equal(noiseDuration(g),NOISE_TIME+36);assert.equal(coreDamage(g),4+3);
+ assert.equal(noiseDuration(g),NOISE_TIME+36);assert.ok(revealHint(g)>2);
  g.health=1;g.player.inv=0;g.hurt();for(let i=0;i<120&&g.mode!=='playing';i++)tick(g,1);assert.equal(originalsFound(g),3);
  g.retryLocation();assert.equal(originalsFound(g),0);assert.equal(noiseDuration(g),NOISE_TIME);
 });

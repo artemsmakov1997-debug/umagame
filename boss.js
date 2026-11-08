@@ -9,7 +9,7 @@ import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v
 import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.21.5';
 import {stepEcho} from './echo-pull.js?v=0.21.5';
 export {bossTroops} from './boss-abilities.js?v=0.21.5';
-export const BOSS_HEALTH=32;
+export const BOSS_HEALTH=18;
 export const abilities=['volley','wave','rain','summon','echoPulse','staticRush','lure'];
 export const bossPatterns={spreader:['summon','rain','scatter'],agitator:['slogan','ura','gust'],manipulator:['rewrite','beam'],infoshum:abilities};
 export const phaseTwoPatterns=Object.fromEntries(Object.entries(phasePlans).map(([id,p])=>[id,p[1][1]]));
@@ -55,7 +55,7 @@ function stepCast(g,b,dt){
 }
 export function stepBoss(g,dt,paw=null){
  const b=g.boss;if(!b.active||b.hp<=0||b.room!==g.room)return;const support=g.platforms.find(s=>s.room===b.room&&s.index===b.platformIndex);if(support&&b.state!=='shift'&&!['swoop','staticRush'].includes(b.ability)){b.x+=support.dx||0;b.y+=support.dy||0;}b.docks=bossDocksForRoom(b.room,g.platforms);
- b.guardFlash=Math.max(0,(b.guardFlash||0)-dt);b.shieldDissolve=Math.max(0,(b.shieldDissolve||0)-dt);const protectedNow=bossShielded(g);if(b.shieldWasActive&&!protectedNow){b.shieldDissolve=.45;g.emit('shieldBreak',{x:b.x+b.w/2,y:b.y});}b.shieldWasActive=protectedNow;b.cooldown=Math.max(0,b.cooldown-dt);b.hurtTime=Math.max(0,b.hurtTime-dt);b.noticeTime=Math.max(0,b.noticeTime-dt);b.shieldBroken=Math.max(0,b.shieldBroken-dt);if(b.noticeTime>0)return;if(b.id==='infoshum'){stepInfoshum(g,dt);return;}if(b.id==='spreader'){stepSpreader(g,dt);return;}if(b.id==='manipulator'&&b.studio){stepManipulator(g,dt);return;}if(b.id==='agitator'&&b.broadcast){stepAgitator(g,dt,paw);return;}if(stepBossPhase(g,dt))return;b.timer-=dt;
+ b.guardFlash=Math.max(0,(b.guardFlash||0)-dt);b.shieldDissolve=Math.max(0,(b.shieldDissolve||0)-dt);const protectedNow=bossShielded(g);if(b.shieldWasActive&&!protectedNow){b.shieldDissolve=.45;g.emit('shieldBreak',{x:b.x+b.w/2,y:b.y});}b.shieldWasActive=protectedNow;b.cooldown=Math.max(0,b.cooldown-dt);b.hurtTime=Math.max(0,b.hurtTime-dt);b.noticeTime=Math.max(0,b.noticeTime-dt);b.shieldBroken=Math.max(0,b.shieldBroken-dt);if(b.noticeTime>0)return;if(b.id==='infoshum'){stepInfoshum(g,dt,paw);return;}if(b.id==='spreader'){stepSpreader(g,dt);return;}if(b.id==='manipulator'&&b.studio){stepManipulator(g,dt);return;}if(b.id==='agitator'&&b.broadcast){stepAgitator(g,dt,paw);return;}if(stepBossPhase(g,dt))return;b.timer-=dt;
  if(b.state==='shift'){const next=b.docks[b.nextDock];if(['spreader','manipulator'].includes(b.id)){const t=clamp(1-b.timer/1.15,0,1);b.x=b.shiftFrom.x+(next.x-b.shiftFrom.x)*t;b.y=b.shiftFrom.y+(next.y-b.shiftFrom.y)*t-Math.sin(t*Math.PI)*(b.id==='spreader'?90:120);}else if(!b.shifted&&b.timer<=.56){Object.assign(b,next);b.dock=b.nextDock;b.shifted=true;g.emit('bossMove',{x:b.x,y:b.y,boss:b.id});}if(b.timer<=0){Object.assign(b,next);b.dock=b.nextDock;b.state='recover';b.timer=1.8;b.justMoved=true;}return;}
  if(b.state==='casting')stepCast(g,b,dt);if(b.timer>0)return;
  if(b.state==='windup')castAttack(g);else if(b.state==='casting'){if(b.ability==='splice')releaseTether(g,'boss:'+b.id);b.state='recover';b.timer=b.id==='spreader'?1.65:b.phase===1?1.7:b.phase===3?1.3:1.4;}
