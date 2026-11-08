@@ -54,7 +54,7 @@ test('location retry restores the local boss while keeping earlier campaign prog
 });
 
 test('the numerous primary enemies can pursue through a complete chapter rather than remaining on the first screen',()=>{
- for(const [type,room,index]of [['fakenews',1,5],['informant',3,7],['static',7,16]]){
+ for(const [type,room,index]of [['fakenews',1,5],['informant',3,7],['static',7,24]]){
   const g=ready(room),s=g.platforms.find(s=>s.room===room&&s.index===index),px=s.x+45,py=s.y-48,e=actor(type,room,100,0,{jumpCooldown:0,teleportCooldown:0});g.enemies=[e];let reached=false;
   for(let i=0;i<11000;i++){Object.assign(g.player,{x:px,y:py,grounded:true,supportId:s.id,inv:999});g.updateCamera();const before=e.x;g.step(1/60);if(['fakenews','injection'].includes(type))assert.ok(Math.abs(e.x-before)<65,'physical pursuit');if(Math.abs(e.x-px)<195&&Math.abs(e.y+e.h-s.y)<145){reached=true;break;}}
   assert.equal(reached,true,type+' crosses the chapter');assert.ok(e.x>rooms[room].x+1600,type+' reaches the final sector');

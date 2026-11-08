@@ -128,11 +128,11 @@ export function createEnemies(){const all=[
  // Студия: every monster is sealed in a container off the route — Нарезчик in a hanging capsule, Склейка in a floor grate,
  // Ботоферма in a cage on the wall that prints bots onto the truss below. None of them can be hit through the glass.
  enemy('cutter',5,845,15,{hunter:true}),enemy('botfarm',5,590,19),enemy('splicer',5,1055,16),enemy('botfarm',5,1440,20),enemy('cutter',5,1640,17,{hunter:true}),enemy('botfarm',5,1905,21),enemy('splicer',5,2010,18),
- // Измерение: Помеха over the feed and the rifts, an Эхо per later block, Кликбейт on Yuri's message and at the threshold.
- enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,768,10,{trigger:600}),enemy('echo',7,1120,11,{trigger:960}),enemy('static',7,1300,12),
- enemy('echo',7,1600,13,{trigger:1500}),enemy('static',7,1950,15,{y:220}),enemy('clickbait',7,2200,16)
+ // Измерение: Помеха over the feeds, Кликбейт sitting on two rising copies and at the threshold, an Эхо by each rift.
+ enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,430,4,{trigger:250,ride:true}),enemy('clickbait',7,580,8,{trigger:300,ride:true}),enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
+ enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('clickbait',7,2200,24)
  ];
- const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,800,1180,1360,2030,2240],5:[845,590,1055,1440,1640,1905,2010],7:[330,768,1120,1300,1600,1950,2200]};
+ const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,800,1180,1360,2030,2240],5:[845,590,1055,1440,1640,1905,2010],7:[330,430,580,760,1250,1700,1960,2200]};
  const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
@@ -160,7 +160,7 @@ export function createNotebooks(){
  {id:'agitator',room:3,index:7,x:2230,scenes:['agitator']},
  {id:'studio',room:5,index:0,x:95,scenes:['arrival3','cutter','botfarm']},{id:'splicer',room:5,index:4,x:830,scenes:['splicer']},
  {id:'manipulator',room:5,index:11,x:1925,scenes:['manipulator']},
- {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:11,x:1110,scenes:['echo']},{id:'clickbait',room:7,index:10,x:735,scenes:['clickbait']},{id:'infoshum',room:7,index:16,x:2165,scenes:['infoshum']},
+ {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:22,x:1660,scenes:['echo']},{id:'clickbait',room:7,index:10,x:735,scenes:['clickbait']},{id:'infoshum',room:7,index:24,x:2165,scenes:['infoshum']},
  ...[2,4,6].map((room,i)=>({id:'record'+(i+1),room,index:room===6?2:room===4?3:4,x:room===2?760:room===6?1300:1400,scenes:['chapter'+(i+1)],bossRecord:true}))
  ];
  return entries.map(n=>({...n,x:rooms[n.room].x+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.bossRecord?Infinity:0}));
