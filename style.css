@@ -652,7 +652,7 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 #app #library-screen .monster-option.boss span{color:#5b2b06}
 #app #library-screen .monster-option span.long{font-size:calc(.98*var(--u));letter-spacing:-.03em}
 /* Right page: the chosen monster. */
-#app #library-screen #monster-card{position:absolute;left:52.4%;top:6.6%;width:39.6%;height:78%;padding:0;margin:0;overflow:hidden;display:grid;grid-template-columns:56% 44%;grid-template-rows:43% 11% 15% 31%;grid-template-areas:"stage stage" "title title" "desc desc" "abil note";min-height:0;border:0;background:none}
+#app #library-screen #monster-card{position:absolute;left:52.4%;top:6.6%;width:39.6%;height:78%;padding:0;margin:0;overflow:hidden;display:grid;grid-template-columns:56% 44%;grid-template-rows:38% 10.5% 12.5% 39%;grid-template-areas:"stage stage" "title title" "desc desc" "abil note";min-height:0;border:0;background:none}
 #app #library-screen .portrait-stage{grid-area:stage;position:relative;height:auto;min-height:0;margin:0 calc(1.5*var(--u));flex:none;background:url('./assets/library-stages.png') calc(var(--stage,0)/3*100%) 0/400% 100% no-repeat}
 #app #library-screen #monster-card[data-chapter="1"] .portrait-stage{--stage:1}#app #library-screen #monster-card[data-chapter="2"] .portrait-stage{--stage:2}#app #library-screen #monster-card[data-chapter="3"] .portrait-stage{--stage:3}
 #app #library-screen .portrait-stage::before{content:none}
@@ -661,7 +661,7 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 #app #library-screen #monster-title.long-title{font-size:calc(1.4*var(--u))}
 #app #library-screen #monster-description{grid-area:desc;margin:0;padding:calc(.5*var(--u)) calc(1*var(--u)) 0;min-height:0;overflow:hidden;font:max(10px,calc(1.3*var(--u)))/1.2 UmaText,monospace;color:#3a2a22;text-align:center}
 #app #library-screen #monster-abilities{grid-area:abil;margin:0;border:0;display:grid;grid-template-rows:1fr 1fr;gap:calc(.5*var(--u));min-height:0;overflow:hidden;padding:0 0 0 calc(.6*var(--u))}
-#app #library-screen #monster-abilities>div{display:grid;grid-template-columns:calc(3.6*var(--u)) minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:calc(.7*var(--u));align-items:start;min-height:0;padding:calc(.3*var(--u)) calc(.4*var(--u));border:0;border-bottom:1px dashed #b89a7a}
+#app #library-screen #monster-abilities>div{display:grid;grid-template-columns:calc(3.6*var(--u)) minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:calc(.7*var(--u));align-items:start;min-height:0;padding:calc(.15*var(--u)) calc(.3*var(--u));border:0;border-bottom:1px dashed #b89a7a}
 #app #library-screen #monster-abilities dt{grid-column:1/3;grid-row:1;display:contents;font:max(10px,calc(1.15*var(--u)))/1.1 UmaText,monospace;color:#8b1d1d}
 #app #library-screen #monster-abilities dt .seal-icon{grid-column:1;grid-row:1/3;align-self:center;width:calc(3.4*var(--u));height:auto;aspect-ratio:75/80;background:url('./assets/library-seals.png') calc(var(--seal)/9*100%) 0/1000% 100% no-repeat}
 #app #library-screen #monster-abilities dt .seal-icon::before,#app #library-screen #monster-abilities dt .seal-icon::after{content:none}
