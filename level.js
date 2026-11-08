@@ -128,11 +128,11 @@ export function createEnemies(){const all=[
  // Студия: every monster is sealed in a container off the route — Нарезчик in a hanging capsule, Склейка in a floor grate,
  // Ботоферма in a cage on the wall that prints bots onto the truss below. None of them can be hit through the glass.
  enemy('cutter',5,845,15,{hunter:true}),enemy('botfarm',5,590,19),enemy('splicer',5,1055,16),enemy('botfarm',5,1440,20),enemy('cutter',5,1640,17,{hunter:true}),enemy('botfarm',5,1905,21),enemy('splicer',5,2010,18),
- // Измерение: Помеха over the feeds, Кликбейт sitting on two rising copies and at the threshold, an Эхо by each rift.
+ // Измерение: Помеха over the feeds, Кликбейт sitting on two rising copies and at the landing after the flip back, an Эхо by each rift.
  enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,430,4,{trigger:250,ride:true}),enemy('clickbait',7,580,8,{trigger:300,ride:true}),enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
- enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('clickbait',7,2200,24)
+ enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('clickbait',7,1760,22)
  ];
- const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,800,1180,1360,2030,2240],5:[845,590,1055,1440,1640,1905,2010],7:[330,430,580,760,1250,1700,1960,2200]};
+ const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,800,1180,1360,2030,2240],5:[845,590,1055,1440,1640,1905,2010],7:[330,430,580,760,1250,1700,1960,1760]};
  const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
