@@ -71,7 +71,7 @@ export function climbRoofs(g,lib){
  if(!jumpTo(g,3,6)||!jumpTo(g,3,7))return false;
  return on(7);
 }
-// «Студия» pilot with ordinary inputs: quick hops over holograms, riser jumps timed to the spotlights,
+// «Студия» pilot with ordinary inputs: riser jumps timed to the spotlights,
 // takes timed to the clapper, a paw swing at every transmitter.
 export async function studioLib(){return import('../studio-systems.js');}
 export function crossStudio(g,lib,{relays=true}={}){
@@ -83,7 +83,7 @@ export function crossStudio(g,lib,{relays=true}={}){
  const solidFor=(i,test)=>()=>[.1,.3,.5,.7,.9,1.1].every(d=>test(g.time+d));
  const litSoon=i=>solidFor(i,t=>stageLit(piece(i),t));
  const takeSoon=i=>solidFor(i,t=>liveTake(t).color===piece(i).color);
- if(!hop(1)||!hop(2)||!hop(3))return false;hit(3);
+ if(!hop(1,litSoon(1))||!hop(2,litSoon(2))||!hop(3))return false;hit(3);
  if(!hop(4))return false;
  if(!hop(5,litSoon(5))||!hop(6,litSoon(6))||!hop(7,litSoon(7))||!hop(8))return false;hit(8);
  if(!hop(9,takeSoon(9))||!hop(10,takeSoon(10))||!hop(11))return false;hit(11);

@@ -11,10 +11,10 @@ const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function ready(room=7){const g=new Game({story:false});g.start();g.tutorial.complete=true;activateRoom(g,room);g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];g.boss.active=false;g.player.inv=0;g.echoImmunity=0;return g;}
 // The old suction trap lives on as Infoshum's echo field; ordinary Эхо is now a double (tests/echo-double.test.js).
 function trap(g){const s=g.platforms.find(s=>s.id===g.room+':0'),e={kind:'echoOrb',type:'echo',id:'orb-test',room:g.room,x:rooms[g.room].x+185,y:s.y-60,w:40,h:38,ttl:99,vx:0,vy:0,state:'patrol',timer:0};g.bolts=[e];return e;}
-test('every ordinary encounter has a persistent, grounded source; Clickbait keeps its bait',()=>{
+test('every ordinary encounter has a persistent, grounded source; Clickbait keeps its bait, studio monsters sit in containers',()=>{
  const g=ready(),roster=createEnemies();
- for(const e of roster){if(e.type==='clickbait'){assert.equal(e.source,undefined);continue;}assert.ok(e.source,e.type);assert.equal(e.active,false);const pos=sourcePosition(g,e),s=g.platforms.find(p=>p.room===e.room&&p.index===e.source.platformIndex);assert.ok(pos.x>=s.x&&pos.x<=s.x+s.w);assert.equal(pos.y,s.y-(e.type==='echo'?81:0));}
- assert.ok(roster.filter(e=>e.room===1).every(e=>e.source.kind==='belt'&&e.platformIndex===0),'newsroom monsters tear out of the belt');assert.equal(roster.find(e=>e.type==='informant').source.kind,'receiver');assert.equal(roster.find(e=>e.type==='botfarm').source.kind,'printer');assert.equal(roster.find(e=>e.type==='static').source.kind,'screen');
+ for(const e of roster){if(e.type==='clickbait'||e.container){assert.equal(e.source,undefined);continue;}assert.ok(e.source,e.type);assert.equal(e.active,false);const pos=sourcePosition(g,e),s=g.platforms.find(p=>p.room===e.room&&p.index===e.source.platformIndex);assert.ok(pos.x>=s.x&&pos.x<=s.x+s.w);assert.equal(pos.y,s.y-(e.type==='echo'?81:0));}
+ assert.ok(roster.filter(e=>e.room===1).every(e=>e.source.kind==='belt'&&e.platformIndex===0),'newsroom monsters tear out of the belt');assert.equal(roster.find(e=>e.type==='informant').source.kind,'receiver');assert.ok(roster.filter(e=>e.room===5).every(e=>e.container),'every studio monster is sealed in a container');assert.equal(roster.find(e=>e.type==='static').source.kind,'screen');
 });
 test('a source rides its platform and stays behind after its monster moves away',()=>{
  const g=ready(5),e=enemy('splicer',5,880,4),s=g.platforms.find(s=>s.id==='5:4'),before=sourcePosition(g,e);s.x+=48;s.y-=12;e.x+=130;e.platformIndex=2;assert.deepEqual(sourcePosition(g,e),{x:before.x+48,y:before.y-12});
