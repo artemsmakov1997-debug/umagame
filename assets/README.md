@@ -246,3 +246,7 @@ The untouched generated originals are retained in `/workspace/generated_images`.
 ### Шкалы здоровья боссов
 
 `hud-spreader.png`, `hud-agitator.png`, `hud-manipulator.png`, `hud-infoshum.png` — 768×512, RGBA, нарисованы автором. В каждом листе: корпус шкалы с окном под портрет и табличкой для имени, заливка и пустая дорожка (левый край, повторяемая середина, правый край), разделитель фаз, эффект урона и три значка фаз в трёх состояниях (впереди, текущая, пройдена). Координаты — `hud-sprites.js`, отрисовка — `boss-hud.js`: корпус режется на три части и растягивается по середине, заливка срезается по доле здоровья, после удара видны блёклый «откушенный» кусок и вспышка урона.
+
+### Библиотека — полевой блокнот
+
+Нарисовано автором по макету: `library-book.png` (разворот блокнота, 1160×597), `library-page.png` и `library-paper.png` (страница и клетчатая бумага для телефонов), `library-cards.png` (6 полароидов: обычный, наведение, выбранный; то же для босса — окна выровнены), `library-tabs.png` (8 закладок глав: тусклая/яркая), `library-seals.png` (10 печатей способностей), `library-arrows.png`, `library-plate.png`, `library-strip.png`, `library-note.png`, `library-tag.png`, `library-stages.png` (4 стенда-фона по главам). Вёрстка — блок «Library: Uma's field notebook» в конце `style.css`, разметка и печати способностей — `screens.js`.
