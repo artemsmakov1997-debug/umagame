@@ -8,7 +8,7 @@ export function drawEnemySources(c,g,time,assets){
  if(!assets?.sources)return;
  const art=assets.sources,sw=art.width/3,sh=art.height/3;
  for(const e of g.enemies){
-  if(e.room!==g.room||!e.source||e.source.transient&&e.dead)continue;
+  if(e.room!==g.room||!e.source||e.source.transient&&e.dead||e.source.kind==='belt')continue;
   const pos=sourcePosition(g,e);if(!pos||pos.x<g.camera-80||pos.x>g.camera+(g.viewWidth||768)+80)continue;
   const index=sourceCells[e.source.kind]??3,opening=e.spawnTime>0,shake=opening?Math.sin(time*65)*1.5:0,w=['rift','portal','print'].includes(e.source.kind)?58:49,h=49;
   c.save();c.translate(Math.round(pos.x+shake),Math.round(pos.y));c.drawImage(art,index%3*sw,Math.floor(index/3)*sh,sw,sh,-w/2,-h,w,h);
@@ -16,6 +16,11 @@ export function drawEnemySources(c,g,time,assets){
  }
 }
 
+// Newsroom: the newspaper on the belt bulges, tears open and the monster climbs out (assets/newsroom-paper-burst.png).
+export function drawBeltEmergence(c,a,e){
+ const img=a.newsroomPaperBurst;if(!img||e.source?.kind!=='belt'||!(e.spawnTime>0))return;const k=1-e.spawnTime/(e.arrivalDuration||.8),frame=Math.min(5,Math.floor(k*6)),w=96,h=w*85/135;
+ c.drawImage(img,frame*135,0,135,85,Math.round(e.x+e.w/2-w/2),Math.round(e.y+e.h-h+6),w,h);
+}
 export function drawEchoVortex(c,e,time){
  if(!['windup','pulling'].includes(e.state))return;
  const pulling=e.state==='pulling',cx=e.x+e.w/2,cy=e.y+e.h/2;

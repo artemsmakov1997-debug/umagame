@@ -52,6 +52,6 @@ test('portal minions on a travelling platform inherit its current position and p
 test('Нагнетатели stand on roofs and their wave really blows Uma off the edge',()=>{
  const g=setup(3,3,930),roof=g.platforms.find(s=>s.id==='3:3'),e=enemy('inflator',3,1010,3,{active:true,noticed:true,state:'blast',timer:.3,dir:-1});g.enemies=[e];tick(g,1);assert.ok(g.player.knock>0);for(let i=0;i<40&&g.player.grounded!==false;i++)tick(g,1);tick(g,12);assert.ok(g.player.x+g.player.w<roof.x+4,'blown off the roof');assert.equal(g.health,4);for(const m of new Game().enemies.filter(e=>e.type==='inflator'))assert.equal(platforms.find(s=>s.room===m.room&&s.index===m.platformIndex).roof?.type,'building');
 });
-test('satellites are on high platforms and open from one swing; the Agitator arena has no consoles',()=>{
- const dishes=createRelays();assert.equal(dishes.length,10);assert.ok(dishes.every(d=>d.room!==4),'the Agitator fight has no consoles');assert.ok(dishes.every(d=>d.room!==7),'the Dimension has no transmitters');assert.ok(dishes.every(d=>d.room!==1),'the newsroom conveyor has no nodes');for(const d of dishes){assert.equal(d.hp,d.scripted?0:1);assert.equal(d.kind,({1:'printer',3:'broadcast',5:'edit',7:'signal'})[d.room]||'dish');const s=platforms.find(s=>s.room===d.room&&s.index===d.platformIndex);assert.equal(d.y+d.h,s.y);if(d.room!==8&&d.room!==3&&d.room!==5&&!d.scripted)assert.ok(s.y<=204);if(d.room===3)assert.equal(s.roof.type,'building');else if(d.room===5)assert.equal(s.studio.type,'fixed');else assert.ok(d.scripted||d.platformIndex>=7);}
+test('transmitters are gone from every map',()=>{
+ assert.deepEqual(createRelays(),[]);
 });

@@ -71,6 +71,8 @@ export class Game {
   if(!n)return false;n.taken=true;if(n.unlock)this.abilities[n.unlock]=true;
   const pages=n.scenes.filter(id=>!this.seenScenes.has(id)).flatMap(id=>scenes[id]?.pages||[]);
   n.scenes.forEach(id=>this.seenScenes.add(id));this.emit('notebook',{id:n.id,unlock:n.unlock,x:n.x,y:n.y});
+  // With the transmitters gone, the room's investigation clues are found in Yuri's notebooks.
+  const found=(relayClues[n.room]||[]).find((text,i)=>!this.clues.some(c=>c.room===n.room&&c.ordinal===i));if(found){const ordinal=relayClues[n.room].indexOf(found);this.clues.push({id:'note-'+n.id,room:n.room,ordinal,text:found,effect:null});this.emit('clue',{room:n.room,text:found,effect:null,x:n.x});}
   return this.openDialogue('notebook:'+n.id,'playing',pages);
  }
  completeChapter(room){

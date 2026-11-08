@@ -1,9 +1,9 @@
 import {rooms} from './level.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
-import {PRESSES,PRESS_W,pressState,BELT_TOP,BELT_SPEED,CENSOR} from './newsroom-systems.js?v=0.21.5';
+import {PRESSES,PRESS_W,PRESS_H,PRESS_REST,PRESS_SLAM,PRESS_HOLD,PRESS_CYCLE,pressState,BELT_TOP,BELT_SPEED,CENSOR} from './newsroom-systems.js?v=0.21.5';
 import {drawCensorSprite} from './censor-art.js?v=0.21.5';
 // Newsroom conveyor art. Atlases: newsroom-conveyor.png (tile | left drive end | right end, stored at 2×),
-// newsroom-papers.png (newspapers riding the belt, 2×), newsroom-press.png (frame, head, lamps, 1×), censor-emerge.png.
+// newsroom-papers.png (newspapers riding the belt, 2×), newsroom-press-frames.png (the press, 4 states), censor-emerge.png.
 const TILE=[0,0,208,89],BAND=13,LEFT=[216,0,316,145],LEFT_TOP=57,RIGHT=[540,0,300,112],RIGHT_TOP=24;
 const PAPERS=[[0,0,67,49],[71,0,70,41],[145,0,81,42],[299,0,73,57],[376,0,41,42],[421,0,86,52],[552,0,57,46]];
 const FRAME=[0,0,132,282],HEAD=[140,0,153,65],LAMP_OFF=[140,72,19,18],LAMP_ON=[166,70,22,24],LAMP_AT=[61,4],CYLINDER_BOTTOM=97,ROD=[59,15];
@@ -33,18 +33,19 @@ export function drawNewsroomConveyor(c,a,g,t){
  }
 }
 
-// Behind the platforms: press frames, rods and heads.
+// Behind the platforms: the hydraulic presses (assets/newsroom-press-frames.png, 4 cells of 190×252:
+// raised, shaking before the slam, slammed with dust, rising). The sprite stands on the belt; its platen matches
+// the collision head: bottom at PRESS_REST+PRESS_H when raised and at the belt when slammed.
+export const PRESS_SPRITE={w:190,h:252,scale:1.434,platen:165.5};
+export function pressFrame(s){if(s.drop===0)return s.warn?1:0;const rising=s.phase>=PRESS_HOLD;if(rising)return s.drop>.35?3:0;return s.drop>.5?2:3;}
 export function drawNewsroomScenery(c,a,g,t){
- if(g.room!==1)return;const image=a.newsroomPress,r=rooms[1];if(!image)return;
+ if(g.room!==1)return;const image=a.newsroomPressFrames,r=rooms[1];if(!image)return;const S=PRESS_SPRITE,w=S.w*S.scale,h=S.h*S.scale,top=PRESS_REST+PRESS_H-S.platen*S.scale;
  for(const press of PRESSES){
-  const cx=r.x+press.x+PRESS_W/2;if(!visible(g,cx-80,160))continue;
-  const s=pressState(press,t),fx=cx-FRAME[2]/2,fy=474-FRAME[3],shake=s.warn?Math.round(Math.sin(t*40)):0;
-  part(c,image,FRAME,fx,fy);
-  const lit=s.warn?Math.floor(t*8)%2===0:s.drop>0;
-  part(c,image,lit?LAMP_ON:LAMP_OFF,fx+LAMP_AT[0]-(lit?2:0),fy+LAMP_AT[1]-(lit?4:0));
-  const top=Math.round(s.top),rodTop=fy+CYLINDER_BOTTOM;
-  for(const [i,color] of ROD_COLORS.entries())rect(c,fx+ROD[0]+i*3+shake,rodTop,3,top-rodTop+6,color);
-  part(c,image,HEAD,cx-HEAD[2]/2+shake,top);
+  const cx=r.x+press.x+PRESS_W/2;if(!visible(g,cx-w/2,w))continue;
+  const s=pressState(press,t),frame=pressFrame(s),shake=s.warn?Math.round(Math.sin(t*40)):0;
+  // A soft shadow behind the machine lifts it off the wall.
+  c.save();c.globalAlpha=.35;c.fillStyle='#02040c';c.fillRect(Math.round(cx-w/2+10),Math.round(top+18),Math.round(w-8),Math.round(BELT_TOP-top-14));c.restore();
+  c.drawImage(image,frame*S.w,0,S.w,S.h,Math.round(cx-w/2+shake),Math.round(top),Math.round(w),Math.round(h));
  }
 }
 
@@ -52,14 +53,11 @@ export function drawNewsroomScenery(c,a,g,t){
 export function drawNewsroomMachines(c,g,t,a){
  if(g.room!==1)return;const r=rooms[1];
  for(const press of PRESSES){
-  const x=r.x+press.x;if(!visible(g,x,PRESS_W))continue;const s=pressState(press,t);
-  if(s.warn||s.drop>0){
-   // A shadow on the belt grows as the slam approaches: stand clear of it.
-   const k=s.drop>0?1:Math.min(1,(s.phase-2.4)/1);c.save();c.globalAlpha=.25+.35*k;rect(c,x+6,BELT_TOP-3,PRESS_W-12,4,'#05070f');
-   if(s.warn&&Math.floor(t*8)%2===0){c.globalAlpha=.55;rect(c,x+6,BELT_TOP-3,6,4,'#ff4a4a');rect(c,x+PRESS_W-12,BELT_TOP-3,6,4,'#ff4a4a');}
-   c.restore();
-  }
-  if(s.drop===1){c.save();c.globalAlpha=.7;for(let k=0;k<8;k++)rect(c,x+6+k*(PRESS_W-12)/7,BELT_TOP-4-((k*7+Math.floor(t*30))%9),5,2,'#f2e6c8');c.restore();}
+  const x=r.x+press.x;if(!visible(g,x-30,PRESS_W+60))continue;const s=pressState(press,t),cx=x+PRESS_W/2;
+  // Danger stripes on the belt under the press while it is about to slam or down.
+  if(a?.newsroomStripe&&(s.warn||s.drop>0)){const blink=s.warn&&Math.floor(t*8)%2===0;c.save();c.globalAlpha=s.drop>0?.95:blink?.95:.55;c.drawImage(a.newsroomStripe,0,0,170,40,Math.round(x),BELT_TOP-6,PRESS_W,12);c.restore();}
+  // Paper dust bursts out when the platen hits the belt.
+  if(a?.newsroomDust&&s.drop>0&&s.phase>=PRESS_SLAM){const k=Math.min(.999,(s.phase-PRESS_SLAM)/(PRESS_CYCLE-PRESS_SLAM)),frame=Math.min(2,Math.floor(k*3));c.save();c.globalAlpha=1-k*.6;c.drawImage(a.newsroomDust,frame*135,0,135,85,Math.round(cx-PRESS_W*.75),BELT_TOP-62,Math.round(PRESS_W*1.5),62);c.restore();}
  }
  if(!a)return;
  for(const censor of g.censors||[]){
