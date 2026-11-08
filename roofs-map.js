@@ -1,39 +1,39 @@
 // «Крыши»: an ascent over rooftops to the Agitator's mast. Pure data, local x, y = top surface.
 // Buildings are solid blocks (their walls stop Uma below the roof line); the street between them is a fall.
-// Three blocks of one screen each: fire escapes → washing lines → antenna forest.
+// Three blocks of trampolines over the alleys; Нагнетатели blow across the whole map, Сенсации fly to its edge.
 // Platform indices follow this order: buildings, then the rope, the awning and the roof props.
 export const ROOF_BUILDINGS=[
- {x:0,w:260,y:420,style:'brick'},                 // 0 A0 start roof
- {x:330,w:232,y:392,style:'tin'},                 // 1 A1
- {x:520,w:248,y:262,style:'brick',wall:562},      // 2 A2 tall; eave over A1 for the fire-escape ladder
- {x:900,w:180,y:298,style:'brick'},               // 3 B0 (Нагнетатель faces the washing line)
- {x:1110,w:130,y:338,style:'tin'},                // 4 B1
- {x:1306,w:230,y:200,style:'brick',wall:1316},    // 5 B2 tall; reached only by the awning
- {x:1630,w:170,y:230,style:'tin'},                // 6 C0 behind the windy gap
- {x:1840,w:175,y:262,style:'brick'},              // 7 C1
- {x:1972,w:332,y:150,style:'brick',wall:2015}     // 8 C2 the mast roof and the arena door
+ {x:0,w:250,y:420,style:'brick'},                 // 0 A0 start roof
+ {x:400,w:210,y:300,style:'tin',wall:405},        // 1 A1 — reached from the alley trampoline
+ {x:700,w:190,y:250,style:'brick'},               // 2 A2
+ {x:1080,w:170,y:300,style:'tin'},                // 3 B0 — reached from the second trampoline
+ {x:1330,w:110,y:250,style:'brick'},              // 4 B1 (a Нагнетатель blows over the trampoline chain)
+ {x:1760,w:160,y:230,style:'brick',wall:1765},    // 5 C0 behind the trampoline chain
+ {x:1990,w:110,y:190,style:'tin'},                // 6 C1
+ {x:2160,w:144,y:150,style:'brick',wall:2165}     // 7 C2 the mast roof and the arena door
 ];
-export const ROOF_ROPES=[{x:768,w:132,y:270}];                    // 9 washing line over the first alley
-export const ROOF_AWNINGS=[{x:1250,w:80,y:376}];                  // 10 striped awning on B2's wall: a trampoline
+export const ROOF_ROPES=[];
+// Trampolines (striped awnings and tarps) hang in the alleys between the roofs: a bounce reaches the next roof,
+// a miss drops Uma into the street. Holding ↓ lets her stand on one.
+export const ROOF_AWNINGS=[{x:285,w:85,y:430},{x:940,w:85,y:430},{x:1480,w:80,y:440},{x:1630,w:80,y:410}]; // 8–11
 export const ROOF_PROPS=[
- {kind:'chimney',x:400,w:30,y:320,base:392},                      // 11 A1 chimney (soup)
- {kind:'chimney',x:1490,w:40,y:152,base:200},                     // 12 B2 chimney (life)
- {kind:'tank',x:1700,w:70,y:162,base:230}                         // 13 C0 water tank (life)
+ {kind:'chimney',x:470,w:30,y:252,base:300},                      // 12 A1 chimney (soup)
+ {kind:'tank',x:1150,w:60,y:240,base:300},                        // 13 B0 water tank (life)
+ {kind:'chimney',x:1860,w:34,y:182,base:230}                      // 14 C0 chimney (life)
 ];
-export const ROOF_LADDERS=[{x:524,top:262,bottom:392},{x:1980,top:150,bottom:262}];
-// Flocks of Сенсации cross a lane at a fixed height; birds fly over [x1,x2] from the `from` side.
-// Every flock is fired from a firework launcher at its entry: on a pole standing on a roof or bolted to a wall.
+export const ROOF_LADDERS=[];
+// Flocks of Сенсации are fired from a launcher and fly on to the edge of the map.
 export const SENSATION_LANES=[
- {id:'rope',x1:730,x2:944,y:228,from:1,period:5,phase:0,launcher:{mount:'pole',base:298}},        // head height on the washing line: crouch or wait
- {id:'jump',x1:1056,x2:1260,y:224,from:-1,period:3.8,phase:1.4,launcher:{mount:'pole',base:298}}, // jump height between B0 and B1: don't jump into it
- {id:'ladder',x1:1820,x2:2030,y:220,from:1,period:4.6,phase:2.2,launcher:{mount:'wall'}}          // fired from the mast roof's wall over C1 and the last ladder
+ {id:'a2',x1:0,x2:900,y:208,from:1,period:5.2,phase:0,launcher:{mount:'pole',base:250}},          // head height on A2: crouch
+ {id:'b0',x1:1060,x2:2304,y:258,from:-1,period:6,phase:1.6,launcher:{mount:'wall'}},              // across B0 and on over the chain
+ {id:'chain',x1:0,x2:1960,y:300,from:1,period:7.6,phase:3.1,launcher:{mount:'wall'}}              // through the trampoline chain, right to left
 ];
-// Wind gusts sweep the antenna forest (block 3) right → left; they move Uma only while she is in the air.
-export const WIND={x1:1536,x2:2304,period:5,warn:.8,gust:1.6,speed:-95};
-// Checkpoints after losing a life: start, end of block 1, end of block 2.
-export const ROOF_CHECKPOINTS=[{x:45,index:0},{x:690,index:2},{x:1400,index:5}];
-export const ROOF_ENTRANCE={x:2168,h:166};
-export const roofSectionNames=['Пожарные лестницы','Бельевые верёвки','Антенный лес'];
+// Nothing blows without a Нагнетатель: the gusts come from them (roofs-systems.js).
+export const WIND={x1:0,x2:2304,period:5.3,warn:.9,gust:1.8,speed:-120,ground:-45};
+// Checkpoints after losing a life: start, A2, B1.
+export const ROOF_CHECKPOINTS=[{x:45,index:0},{x:720,index:2},{x:1340,index:4}];
+export const ROOF_ENTRANCE={x:2196,h:150};
+export const roofSectionNames=['Батуты','Переулки','Ветреные крыши'];
 // What stands at a room-3 platform index.
 export function roofPiece(index){
  const nb=ROOF_BUILDINGS.length,nr=ROOF_ROPES.length,na=ROOF_AWNINGS.length;

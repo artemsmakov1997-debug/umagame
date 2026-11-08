@@ -8,18 +8,29 @@ import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
 export const ROOM=3,AWNING_BOUNCE=-700,BIRD={w:34,h:18,gap:44,count:3,speed:270,warn:.9};
 const x0=()=>rooms[ROOM].x;
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
-export function createRoofs(){return {flocks:SENSATION_LANES.map(l=>({id:l.id,cycle:-1,birds:[],warned:false})),checkpoint:0,lastSupport:null,bounceTime:0,introduced:false,gust:false,gustWarned:false};}
+export function createRoofs(){return {flocks:SENSATION_LANES.map(l=>({id:l.id,cycle:-1,birds:[],warned:false})),checkpoint:0,lastSupport:null,bounceTime:0,introduced:false,gust:false,gustWarned:false,wind:{phase:'calm',timer:2,source:null,dir:-1}};}
 
-// Wind phase at time t: 'calm' | 'warn' | 'gust'.
-export function windPhase(t){const k=((t%WIND.period)+WIND.period)%WIND.period,calm=WIND.period-WIND.warn-WIND.gust;return k<calm?'calm':k<calm+WIND.warn?'warn':'gust';}
-export function inWind(g,x=g.player.x){const local=x-x0();return local>=WIND.x1&&local<WIND.x2;}
+// The roofs' wind comes from the Нагнетатели: the one nearest to Uma runs its cycle calm → warn → gust,
+// and its gust sweeps the whole map in the direction it faces.
+export function windPhase(g){return g.roofs?.wind?.phase||'calm';}
+export function inWind(g){return true;}
+export function roofInflators(g){return g.enemies.filter(e=>e.room===ROOM&&e.type==='inflator'&&!e.dead);}
+function stepWind(g,dt){
+ const q=g.roofs,w=q.wind,p=g.player,blowers=roofInflators(g);
+ const near=blowers.slice().sort((a,b)=>Math.abs(a.x-p.x)-Math.abs(b.x-p.x))[0];
+ if(!near||Math.abs(near.x-p.x)>1100){w.phase='calm';w.source=null;for(const e of blowers)e.state='patrol';return;}
+ if(w.source!==near.id&&w.phase==='calm'){w.source=near.id;}
+ w.timer-=dt;const calm=WIND.period-WIND.warn-WIND.gust;
+ if(w.timer<=0){if(w.phase==='calm'){w.phase='warn';w.timer=WIND.warn;w.source=near.id;w.dir=near.dir;}else if(w.phase==='warn'){w.phase='gust';w.timer=WIND.gust;g.emit('blast',{x:near.x,y:near.y});}else{w.phase='calm';w.timer=calm;}}
+ for(const e of blowers){const mine=e.id===w.source;e.state=mine&&w.phase==='warn'?'windup':mine&&w.phase==='gust'?'blast':mine&&w.phase==='calm'&&w.timer>calm-.8?'recover':'patrol';if(e.state==='blast')e.walkTime+=dt*6;}
+}
 
-// Bird i of a lane at time t: position and whether the flock is crossing.
+// Bird i of a lane at time t: position and whether the flock is crossing. A flock flies on to the edge of the map.
 export function flockState(lane,t){
  const total=lane.period,k=(((t+lane.phase)%total)+total)%total,cycle=Math.floor((t+lane.phase)/total);
- const fly=k-BIRD.warn,span=lane.x2-lane.x1,entry=lane.from>0?lane.x2:lane.x1,dir=-lane.from;
+ const entry=lane.from>0?lane.x2:lane.x1,dir=-lane.from,fly=k-BIRD.warn,span=dir<0?entry:rooms[ROOM].width-entry;
  const birds=[];for(let i=0;i<BIRD.count;i++){const d=fly*BIRD.speed-i*BIRD.gap,x=entry+dir*d;birds.push({i,x,visible:fly>0&&d>=0&&d<=span});}
- return {warn:k<BIRD.warn,cycle,dir,birds,entry};
+ return {warn:k<BIRD.warn,cycle,dir,birds,entry,span};
 }
 export function birdBox(lane,bird){return {x:x0()+bird.x-BIRD.w/2,y:lane.y-BIRD.h/2,w:BIRD.w,h:BIRD.h};}
 
@@ -48,11 +59,11 @@ export function stepRoofs(g,dt,paw,input={}){
  const support=p.grounded?g.platforms.find(s=>s.id===p.supportId):null;
  if(support?.roof?.type==='awning'&&q.lastSupport!==support.id&&!p.sneaking&&!input.down){p.vy=AWNING_BOUNCE;p.grounded=false;p.supportId=null;q.bounceTime=.35;g.emit('roofBounce',{x:p.x+p.w/2,y:support.y});}
  q.lastSupport=p.grounded?p.supportId:null;
- // Wind: airborne Uma drifts left during a gust in the antenna forest.
- const phase=windPhase(g.time);q.gust=phase==='gust';
- if(phase==='warn'&&!q.gustWarned&&inWind(g)){q.gustWarned=true;g.emit('gustWarning',{x:p.x,y:p.y});if(!q.windIntroduced){q.windIntroduced=true;g.emit('windIntroduction',{x:p.x,y:p.y});}}
+ // Wind from the Нагнетатели: in the air Uma is carried along, on a roof she is pushed unless she crouches.
+ stepWind(g,dt);const w=q.wind,phase=w.phase;q.gust=phase==='gust';
+ if(phase==='warn'&&!q.gustWarned){q.gustWarned=true;g.emit('gustWarning',{x:p.x,y:p.y});if(!q.windIntroduced){q.windIntroduced=true;g.emit('windIntroduction',{x:p.x,y:p.y});}}
  if(phase==='calm')q.gustWarned=false;
- if(q.gust&&inWind(g)&&!p.grounded&&!p.climbing&&p.dash===0)p.x+=WIND.speed*dt;
+ if(q.gust&&!p.climbing&&p.dash===0){const speed=p.grounded?(p.sneaking?0:Math.abs(WIND.ground)):Math.abs(WIND.speed);p.x+=w.dir*speed*dt;const r=rooms[ROOM];p.x=Math.max(r.x,Math.min(r.end-p.w,p.x));}
  // Сенсации: each flock crosses its lane; contact knocks Uma along their flight, a paw pops one bird.
  for(const [li,lane] of SENSATION_LANES.entries()){
   const f=q.flocks[li],s=flockState(lane,g.time);

@@ -75,6 +75,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
      const tx=e.aim.x-(e.x+24),ty=e.aim.y-(e.y-6),len=Math.hypot(tx,ty)||1;
      g.bolts.push({kind:'packet',x:e.x+24,y:e.y-6,w:16,h:12,vx:tx/len*205,vy:ty/len*205,ttl:4,sourceId:e.id});e.shots++;e.attackFlash=.2;e.timer=.22;g.emit('enemyShot',{x:e.x,y:e.y});if(e.shots>=2){e.state='recover';e.timer=1.35;}
     }else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.8;}
+   }else if(e.type==='inflator'&&e.room===3){/* Крыши: the gusts are driven by roofs-systems.js (wind over the whole map). */
    }else if(e.type==='inflator'){
     if(e.state==='patrol'&&Math.abs(dx)<360&&Math.abs(dy)<85){e.dir=dx<0?-1:1;e.state='windup';e.timer=.55;e.blastHit=false;g.emit('inflatorWarning',{x:e.x,y:e.y});}
     else if(e.state==='windup'&&e.timer<=0){e.state='blast';e.timer=.23;g.emit('blast',{x:e.x,y:e.y});for(const other of g.enemies)if(other.active&&!other.dead&&other.type==='fakenews'&&other.room===e.room&&Math.abs(other.x-e.x)<360){other.pressureTime=4;g.emit('inflate',{x:other.x,y:other.y});}}
@@ -97,7 +98,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.5;}
     if(e.revealed&&e.state==='patrol')e.x+=e.dir*e.speed*dt;
    }
-   if((e.type==='inflator'||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*(e.inkSlow||1)*dt;
+   if((e.type==='inflator'&&e.room!==3||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*(e.inkSlow||1)*dt;
   }
   if(!e.flying&&!e.jumpPhase&&!e.terrainFall&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
   e.moving=!e.teleport&&Math.abs(e.x-previousX)>.01;if(e.moving)e.walkTime+=Math.abs(e.x-previousX)/24;
@@ -108,6 +109,8 @@ export function stepEnemies(g,dt,paw,prevBottom){
    const mouth={x:e.dir>0?e.x+2:e.x-40,y:e.y-30,w:88,h:72};
    if(e.state==='snap'&&g.overlap(p,mouth)&&p.dash>0){e.state='recover';e.timer=1.4;}
    else if(e.state==='snap'&&p.inv===0&&g.overlap(p,mouth)){g.swallow={enemyId:e.id,x:p.x,y:p.y,targetX:e.x+12,targetY:e.y-14,timer:.48,total:.48};p.attack=0;p.vx=0;p.vy=0;e.state='recover';e.timer=2;e.attackFlash=.48;e.captureTime=0;g.emit('swallow',{x:e.x,y:e.y});return;}
+  }else if(e.type==='inflator'&&e.room===3){
+   // A bolted machine: it does not bite; standing in front of it during a gust is what hurts.
   }else if(e.type==='botfarm'||e.frozen){
    // The rack only takes a stomp; hanging bots no longer hurt.
    if(e.type==='botfarm'&&g.overlap(p,e)&&p.vy>0&&prevBottom<e.y+12){g.hitEnemy(e,true);p.vy=-330;}

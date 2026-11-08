@@ -1,7 +1,7 @@
 import {rect,text} from './pixel.js?v=0.21.5';
 import {rooms,HEIGHT} from './level.js?v=0.21.5';
-import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE,SENSATION_LANES,WIND} from './roofs-map.js?v=0.21.5';
-import {flockState,birdBox,windPhase,BIRD,ROOM} from './roofs-systems.js?v=0.21.5';
+import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE,SENSATION_LANES} from './roofs-map.js?v=0.21.5';
+import {flockState,birdBox,BIRD,ROOM} from './roofs-systems.js?v=0.21.5';
 // Source boxes. assets/roofs-pieces.png: parapet and tin roof (left cap, repeatable middle, right cap), chimneys, vent, tank.
 const PIECES={brickL:[49,86,382,187],brickM:[458,108,623,165],brickR:[1109,86,377,187],tinL:[40,356,378,156],tinM:[454,356,630,156],tinR:[1119,356,377,156],
  chimney:[92,633,130,326],chimneyWide:[333,624,270,335],vent:[663,664,392,295],tank:[1127,562,332,397]};
@@ -13,7 +13,7 @@ const ENTRANCE={closed:[53,28,662,936],open:[782,28,663,936]};
 // assets/sensation.png: 4×2 cells of 384×512. Row 1: four flight frames; row 2: dash, hit, crumpled, burst.
 const CELL_W=384,CELL_H=512,PIVOT_Y=[285,780],BIRD_SCALE=.14;
 // Scenery that is not collision: antennas and the sign that points to the mast.
-const DECOR=[{kind:'sign',x:196,bottom:420,h:52},{kind:'vane',x:1000,bottom:298,h:56},{kind:'antenna',x:1646,bottom:230,h:64},{kind:'dish',x:1872,bottom:262,h:44},{kind:'antenna',x:2070,bottom:150,h:70},{kind:'dish',x:2120,bottom:150,h:46}];
+const DECOR=[{kind:'sign',x:186,bottom:420,h:52},{kind:'vane',x:560,bottom:300,h:56},{kind:'antenna',x:740,bottom:250,h:60},{kind:'antenna',x:1790,bottom:230,h:64},{kind:'dish',x:2040,bottom:190,h:40},{kind:'antenna',x:2272,bottom:150,h:66}];
 const X0=()=>rooms[ROOM].x;
 const blit=(c,image,box,x,y,w,h)=>c.drawImage(image,box[0],box[1],box[2],box[3],Math.round(x),Math.round(y),Math.round(w),Math.round(h));
 const hash=n=>{n=Math.sin(n*127.1)*43758.5453;return n-Math.floor(n);};
@@ -56,15 +56,23 @@ export function drawRoofProps(c,a,g,t){
  const lb=PROPS.ladder,lk=31/lb[2],lh=lb[3]*lk;
  for(const l of ROOF_LADDERS){c.save();c.beginPath();c.rect(x0+l.x-4,l.top-14,40,l.bottom-l.top+14);c.clip();for(let y=l.bottom-lh;y>l.top-lh;y-=lh-6)blit(c,a.roofsProps,lb,x0+l.x,y,31,lh);c.restore();}
  // The mast stairs and its door: closed while any transmitter of the roofs still works.
- if(a.roofsEntrance){const open=!g.relays.some(d=>d.room===ROOM&&d.hp>0),box=ENTRANCE[open?'open':'closed'],k=ROOF_ENTRANCE.h/box[3];blit(c,a.roofsEntrance,box,x0+ROOF_ENTRANCE.x,ROOF_BUILDINGS[8].y-ROOF_ENTRANCE.h+4,box[2]*k,ROOF_ENTRANCE.h);}
+ if(a.roofsEntrance){const open=!g.relays.some(d=>d.room===ROOM&&d.hp>0),box=ENTRANCE[open?'open':'closed'],k=ROOF_ENTRANCE.h/box[3];blit(c,a.roofsEntrance,box,x0+ROOF_ENTRANCE.x,ROOF_BUILDINGS.at(-1).y-ROOF_ENTRANCE.h+4,box[2]*k,ROOF_ENTRANCE.h);}
 }
 
-// Wind: streaks thicken before a gust and race left during it.
-export function drawRoofWind(c,g,t){
- if(g.room!==ROOM)return;const phase=windPhase(t),x0=X0(),from=Math.max(g.camera-20,x0+WIND.x1),to=Math.min(g.camera+(g.viewWidth||768)+20,x0+WIND.x2);if(to<=from)return;
- const count=phase==='gust'?34:phase==='warn'?12:5,len=phase==='gust'?46:22;c.save();c.globalAlpha=phase==='gust'?.55:.3;
- for(let i=0;i<count;i++){const span=to-from,x=to-((i*137+t*(phase==='gust'?520:160))%(span+80)),y=40+(i*53)%380;rect(c,x,y,len,1,i%3?'#cfe4ff':'#ffffff');}
+// Wind from a Нагнетатель: streaks and the painted gust tiles (assets/inflator-wind.png, 3 cells of 235×85) race across the view.
+export function drawRoofWind(c,g,t,a){
+ if(g.room!==ROOM)return;const w=g.roofs?.wind;if(!w||w.phase==='calm')return;const view=g.viewWidth||768,from=g.camera-40,span=view+80,dir=w.dir,gust=w.phase==='gust';
+ c.save();const count=gust?30:10,len=gust?46:20;c.globalAlpha=gust?.5:.28;
+ for(let i=0;i<count;i++){const d=(i*137+t*(gust?560:180))%span,x=dir>0?from+d:from+span-d,y=30+(i*53)%400;rect(c,x,y,len,1,i%3?'#cfe4ff':'#ffffff');}
+ const img=a?.inflatorWind;if(gust&&img)for(let i=0;i<5;i++){const d=(i*233+t*480)%span,x=dir>0?from+d:from+span-d,y=70+i*72,frame=Math.floor(t*10+i)%3;c.save();c.globalAlpha=.55;c.translate(Math.round(x),Math.round(y));if(dir<0)c.scale(-1,1);c.drawImage(img,frame*235,0,235,85,-118,-42,235,85);c.restore();}
  c.restore();
+}
+// The Нагнетатель machine (assets/inflator-machine.png, 8 cells of 192×155, feet at y=143.5, horn to the right):
+// 0–1 idle, 2 drawing breath, 3–5 blowing, 6 cooling down, 7 struck (unharmed).
+export function inflatorFrame(e,t){if(e.hurtTime>0||e.guardFlash>0)return 7;if(e.state==='windup')return 2;if(e.state==='blast')return 3+Math.floor(t*12)%3;if(e.state==='recover')return 6;return Math.floor(t*3)%2;}
+export function drawInflatorMachine(c,a,e,t,x=e.x+e.w/2,feet=e.y+e.h,width=96){
+ const img=a.inflatorMachine;if(!img)return false;const k=width/163,shake=e.state==='blast'?Math.sin(t*50):0;
+ c.save();c.translate(Math.round(x+shake),Math.round(feet));if(e.dir<0)c.scale(-1,1);c.drawImage(img,inflatorFrame(e,t)*192,0,192,155,-88*k,-143.5*k,192*k,155*k);c.restore();return true;
 }
 
 export function drawSensations(c,a,g,t){
@@ -74,7 +82,7 @@ export function drawSensations(c,a,g,t){
   drawLauncher(c,lane,s,t,a);
   for(const bird of s.birds){if(!bird.visible)continue;const state=same?f.birds[bird.i]:null;if(state?.dead&&state.deathTime<=0)continue;
    const box=birdBox(lane,bird),frame=state?.dead?7:state?.hit?5:Math.floor(t*12+bird.i)%4,row=frame>>2,col=frame%4,w=CELL_W*BIRD_SCALE,h=CELL_H*BIRD_SCALE;
-   const d=Math.abs(bird.x-s.entry),span=lane.x2-lane.x1;c.save();c.globalAlpha=state?.dead?Math.max(0,state.deathTime/.35):Math.min(1,(span-d)/36+.15);const cx=box.x+box.w/2,cy=box.y+box.h/2;c.translate(Math.round(cx),Math.round(cy));if(s.dir<0)c.scale(-1,1);
+   const d=Math.abs(bird.x-s.entry),span=s.span;c.save();c.globalAlpha=state?.dead?Math.max(0,state.deathTime/.35):Math.min(1,(span-d)/36+.15);const cx=box.x+box.w/2,cy=box.y+box.h/2;c.translate(Math.round(cx),Math.round(cy));if(s.dir<0)c.scale(-1,1);
    c.drawImage(a.sensation,col*CELL_W,row*CELL_H,CELL_W,CELL_H,-200*BIRD_SCALE,-(PIVOT_Y[row]-row*CELL_H)*BIRD_SCALE,w,h);c.restore();
   }
  }

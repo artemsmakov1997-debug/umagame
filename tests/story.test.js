@@ -27,7 +27,9 @@ test('Yuri curates the quiet-room course: run, crawl, dash, jump and paw in orde
  assert.equal(q.complete,true);assert.ok(q.barrierBroken&&q.monitorBroken&&q.doorOpen);assert.equal(g.health,4);assert.equal('clock'in g,false);
  const lessons=g.events.filter(e=>e.type==='lesson');assert.deepEqual(lessons.map(e=>e.station),['run','crouch','dash','jump','attack','exit']);assert.ok(lessons.every(e=>e.text.length>10));
 });
-function atLadder(g,top){const l=ladders.find(l=>l.room===3),s=g.platforms.find(s=>s.room===3&&Math.abs(s.y-l.y)<1&&l.x>=s.x&&l.x<s.x+s.w),floor=g.platforms.find(s=>s.room===3&&Math.abs(s.y-l.y-l.h)<1&&l.x+15>=s.x&&l.x+15<s.x+s.w);g.tutorial.complete=true;g.room=3;g.unlockForRoom(3);Object.assign(g.player,{x:l.x-2,y:top?l.y-48:l.y+l.h-48,h:48,vx:0,vy:0,grounded:true,supportId:top?s.id:floor.id,climbing:false,knock:0,dash:0,inv:0});g.enemies=[];g.notebooks=[];return l;}
+// The roofs have no ladders any more: the Agitator's tower ladders are the climbing test bed.
+const ROOM_L=4;
+function atLadder(g,top){const l=ladders.find(l=>l.room===ROOM_L),s=g.platforms.find(s=>s.room===ROOM_L&&Math.abs(s.y-l.y)<1&&l.x>=s.x&&l.x<s.x+s.w),floor=g.platforms.find(s=>s.room===ROOM_L&&Math.abs(s.y-l.y-l.h)<1&&l.x+15>=s.x&&l.x+15<s.x+s.w);g.tutorial.complete=true;g.room=ROOM_L;g.unlockForRoom(ROOM_L);g.boss.active=false;Object.assign(g.player,{x:l.x-2,y:top?l.y-48:l.y+l.h-48,h:48,vx:0,vy:0,grounded:true,supportId:top?s.id:floor.id,climbing:false,knock:0,dash:0,inv:0});g.enemies=[];g.notebooks=[];return l;}
 test('down at a ladder descends instead of crouching, including a safe stop on the bottom rung',()=>{
  const g=ready();g.storyEnabled=false;const l=atLadder(g,true),y=g.player.y;tick(g,20,{down:true});assert.equal(g.player.sneaking,false);assert.equal(g.player.climbing,true);assert.ok(g.player.y>y);tick(g,240,{down:true});assert.equal(g.player.y+g.player.h,l.y+l.h);assert.equal(g.health,4);
 });
