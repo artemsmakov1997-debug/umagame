@@ -49,7 +49,15 @@ function parkFor(g,index){const b=g.boss,r=rooms[6],s=studioDock(g,index),tipY=s
 function panStart(g){const n=g.boss.studio,c=n.crane,r=rooms[6],reach=ARM*Math.cos(PAN_ANGLE);
  const fromLeft=Math.abs(c.x-r.x)<Math.abs(c.x-r.end),dir=fromLeft?1:-1;
  return {from:fromLeft?r.x+TRACK_MARGIN:r.end-TRACK_MARGIN,to:fromLeft?r.end-TRACK_MARGIN-reach:r.x+TRACK_MARGIN+reach,dir};}
-function moveCrane(c,target,dt,speed){const d=target.x-c.x,step=speed*dt;c.x=Math.abs(d)<=step?target.x:c.x+Math.sign(d)*step;const da=target.angle-c.angle;c.angle+=clamp(da,-1.4*dt,1.4*dt);return Math.abs(d)<=step&&Math.abs(da)<.01;}
+// Rolls the dolly towards target.x and swings the arm to target.angle. Turning round (target.dir) is never a snap:
+// the arm first rises to almost vertical, flips over the top there, then comes down on the other side.
+export const TURN_ANGLE=Math.PI/2;
+function moveCrane(c,target,dt,speed){
+ const d=target.x-c.x,step=speed*dt;c.x=Math.abs(d)<=step?target.x:c.x+Math.sign(d)*step;
+ const want=target.dir??c.dir,turning=want!==c.dir,goal=turning?TURN_ANGLE:target.angle,da=goal-c.angle;c.angle+=clamp(da,-1.6*dt,1.6*dt);
+ if(turning&&c.angle>=TURN_ANGLE-1e-3)c.dir=want;
+ return Math.abs(d)<=step&&!turning&&Math.abs(target.angle-c.angle)<.01;
+}
 // The beam leaves the lens at BEAM_ANGLE below the horizon and stops on the first surface it meets.
 // The lens of the tilted camera pose (camera sheet frame 5), so the beam leaves exactly where the painted beam starts.
 export function lensPoint(g){const b=g.boss;return {x:b.x+b.w/2+b.dir*16,y:b.y+b.h-51};}
@@ -98,17 +106,17 @@ function stepCrane(g,dt){
  const c=n.crane;c.moving=false;
  switch(n.mode){
   case 'intro':case 'overheat':{hangCamera(g);if(n.timer<=0){setMode(g,'raise',RAISE);g.emit('craneRaise',{x:b.x,y:b.y});}return;}
-  case 'raise':{c.angle+=(PAN_ANGLE-c.angle)*Math.min(1,dt/Math.max(.05,n.timer+dt));hangCamera(g);if(n.timer<=0){c.angle=PAN_ANGLE;n.pan=panStart(g);setMode(g,'roll',6);}return;}
-  case 'roll':{c.moving=true;const done=moveCrane(c,{x:n.pan.from,angle:PAN_ANGLE},dt,ROLL_SPEED);if(Math.abs(c.x-n.pan.from)>20)c.dir=Math.sign(n.pan.from-c.x)||c.dir;hangCamera(g);
-   if(done||n.timer<=0){c.x=n.pan.from;c.dir=n.pan.dir;hangCamera(g);setMode(g,'aim',AIM);n.beam=castBeam(g);g.emit('bossWarning',{boss:b.id,ability:'pan',x:b.x,y:b.y});}return;}
+  case 'raise':{c.angle+=(PAN_ANGLE-c.angle)*Math.min(1,dt/Math.max(.05,n.timer+dt));hangCamera(g);if(n.timer<=0){c.angle=PAN_ANGLE;n.pan=panStart(g);setMode(g,'roll',9);}return;}
+  case 'roll':{c.moving=true;const done=moveCrane(c,{x:n.pan.from,angle:PAN_ANGLE,dir:n.pan.dir},dt,ROLL_SPEED);hangCamera(g);
+   if(done||n.timer<=0){if(!done){c.x=n.pan.from;c.dir=n.pan.dir;c.angle=PAN_ANGLE;}hangCamera(g);setMode(g,'aim',AIM);n.beam=castBeam(g);g.emit('bossWarning',{boss:b.id,ability:'pan',x:b.x,y:b.y});}return;}
   case 'aim':{hangCamera(g);n.beam=castBeam(g);if(n.timer<=0){setMode(g,'pan',12);g.emit('bossCast',{boss:b.id,ability:'pan',x:b.x,y:b.y});}return;}
   case 'pan':{c.moving=true;const done=moveCrane(c,{x:n.pan.to,angle:PAN_ANGLE},dt,PAN_SPEED);hangCamera(g);n.beam=castBeam(g);const s=n.beam.surface,live=beamLive(n);n.beam.live=live;
    if(live&&s&&s.studioPlatform&&s.studioPhase==='solid'){s.studioPhase='warning';s.studioTimer=.45;s.burned=true;g.emit('cutWarning',{x:n.beam.x2,y:s.y,enemyType:'manipulator'});}
    if(live&&Math.floor(n.elapsed*12)!==Math.floor((n.elapsed-dt)*12))n.scorches.push({x:n.beam.x2,y:n.beam.y2,t:0});
    if(live&&!g.player.dash&&segmentHits(n.beam,g.player))hurtUma(g,n.beam.x2);
-   if(done||n.timer<=0){n.beam=null;n.target=nearestDock(g);n.park=parkFor(g,n.target);setMode(g,'park',6);}return;}
-  case 'park':{c.moving=true;const done=moveCrane(c,n.park,dt,ROLL_SPEED);if(Math.abs(c.x-n.park.x)>2){c.dir=Math.abs(n.park.x-c.x)>140?Math.sign(n.park.x-c.x):n.park.dir;}else c.dir=n.park.dir;hangCamera(g);
-   if(done||n.timer<=0){Object.assign(c,n.park);onDock(g,n.target);b.dir=c.dir;setMode(g,'overheat',OVERHEAT);g.emit('cameraOverheat',{x:b.x,y:b.y});}return;}
+   if(done||n.timer<=0){n.beam=null;n.target=nearestDock(g);n.park=parkFor(g,n.target);setMode(g,'park',9);}return;}
+  case 'park':{c.moving=true;const done=moveCrane(c,n.park,dt,ROLL_SPEED);hangCamera(g);
+   if(done||n.timer<=0){if(!done)Object.assign(c,n.park);onDock(g,n.target);b.dir=c.dir;setMode(g,'overheat',OVERHEAT);g.emit('cameraOverheat',{x:b.x,y:b.y});}return;}
  }
 }
 function stepStopFrame(g,dt){
