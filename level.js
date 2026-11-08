@@ -5,7 +5,7 @@ import {ROOF_BUILDINGS,ROOF_ROPES,ROOF_AWNINGS,ROOF_PROPS,ROOF_LADDERS,roofPiece
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const chapters=[
  {id:'newsroom',name:'РЕДАКЦИЯ',room:1,arena:2,monsters:['fakenews','stamp','censor'],boss:'spreader'},
- {id:'roofs',name:'КРЫШИ',room:3,arena:4,monsters:['informant','inflator','sensation'],boss:'agitator'},
+ {id:'roofs',name:'КРЫШИ',room:3,arena:4,monsters:['paparazzi','inflator','sensation'],boss:'agitator'},
  {id:'studio',name:'СТУДИЯ',room:5,arena:6,monsters:['botfarm','cutter','splicer'],boss:'manipulator'},
  {id:'dimension',name:'ИЗМЕРЕНИЕ',room:7,arena:8,monsters:['echo','clickbait','static'],boss:'infoshum'}
 ];
@@ -94,24 +94,27 @@ export const ladders=rooms.flatMap(r=>{
 });
 export const ladder=ladders[0];
 export const spawns=rooms.map(r=>({x:r.x+(r.tutorial?78:r.arena?74:45),y:layouts[r.index][0][1]-48}));
-export const enemyTypes=['fakenews','clickbait','inflator','informant','panicker','stamp','copier','cutter','splicer','injection','echo','static','botfarm','bot'];
+export const enemyTypes=['fakenews','clickbait','inflator','informant','paparazzi','spotlight','boom','panicker','stamp','copier','cutter','splicer','injection','echo','static','botfarm','bot'];
 export function enemy(type,room,x,platformIndex,extra={}){
  if(type==='montager')type='cutter';
  if(!enemyTypes.includes(type))throw new Error('Unknown enemy type: '+type);
  const s=platforms.find(p=>p.room===room&&p.index===platformIndex);if(!s)throw new Error('Unknown enemy platform');
- const hp=['fakenews','injection','bot'].includes(type)?1:['inflator','informant','copier','splicer','botfarm','echo'].includes(type)?3:2;
+ const hp=['fakenews','injection','bot'].includes(type)?1:['inflator','informant','copier','splicer','botfarm','echo','spotlight','boom'].includes(type)?3:2;
  const r=rooms[room],flying=['echo','static'].includes(type);
  const actor={id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:r.x+x,y:s.y-(flying?100:29),w:flying?40:48,h:flying?38:29,origin:s.x+12,end:s.x+s.w-60,
- dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,panicker:16,stamp:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105,botfarm:0,bot:78}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
+ dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,paparazzi:0,spotlight:0,boom:0,panicker:16,stamp:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105,botfarm:0,bot:78}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
  if(type==='echo'){actor.w=30;actor.h=40;actor.y=s.y-actor.h;actor.pose='stand';}
  if(type==='botfarm'){actor.w=40;actor.h=68;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
+ if(type==='paparazzi'){actor.w=44;actor.h=52;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  if(room===5&&studioContainer(platformIndex))seatInContainer(actor,s);
- if(type==='inflator'&&room===3){actor.w=74;actor.h=56;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;actor.speed=0;actor.hp=actor.maxHp=99;}
- const kinds={botfarm:'printer',fakenews:platformIndex%3?'papers':'bin',informant:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',stamp:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
+ if(type==='inflator'&&room===3){actor.w=74;actor.h=56;actor.y=(extra.mountY??s.y)-actor.h;actor.origin=actor.end=actor.x;actor.speed=0;actor.hp=actor.maxHp=99;}
+ const kinds={botfarm:'printer',fakenews:platformIndex%3?'papers':'bin',informant:'receiver',paparazzi:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',stamp:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
  // In the newsroom every monster tears out of a newspaper riding the conveyor.
  if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':room===1?'belt':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
  if(actor.container){delete actor.source;actor.arrivalDuration=.05;}
+ // Roof machines hang on brackets and the Папарацци simply stands on its roof: no arrival source next to them.
+ if(room===3&&['inflator','paparazzi'].includes(type))delete actor.source;
  actor.arrivalDuration=actor.arrivalDuration||actor.spawnTime||(room===1?.8:.55);return actor;
 }
 // A studio monster sits behind the glass of its container: its box is centred on the window (see studio-container-art.js).
@@ -123,8 +126,8 @@ export function createEnemies(){const all=[
  enemy('fakenews',1,330,0,{trigger:90}),enemy('fakenews',1,760,0),
  enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,960,0),
  enemy('stamp',1,1580,0),enemy('fakenews',1,1900,0),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
- // Крыши: Нагнетатели are bolted to the roofs and blow across the whole map; Информаторы guard the landings.
- enemy('informant',3,180,0,{trigger:100}),enemy('inflator',3,800,2,{dir:1}),enemy('informant',3,1180,3),enemy('inflator',3,1360,4,{dir:1}),enemy('inflator',3,2030,6,{dir:-1}),enemy('informant',3,2240,7),
+ // Крыши: Нагнетатели sit on wall brackets high above the roofs, out of reach, and blow across the whole map.
+ enemy('paparazzi',3,180,0,{trigger:100}),enemy('inflator',3,520,1,{dir:1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:1,mountY:112}),enemy('inflator',3,1680,10,{dir:-1,mountY:98}),enemy('paparazzi',3,2240,7),
  // Студия: every monster is sealed in a container off the route — Нарезчик in a hanging capsule, Склейка in a floor grate,
  // Ботоферма in a cage on the wall that prints bots onto the truss below. None of them can be hit through the glass.
  enemy('cutter',5,845,15,{hunter:true}),enemy('botfarm',5,590,19),enemy('splicer',5,1055,16),enemy('botfarm',5,1440,20),enemy('cutter',5,1640,17,{hunter:true}),enemy('botfarm',5,1905,21),enemy('splicer',5,2010,18),
@@ -132,7 +135,7 @@ export function createEnemies(){const all=[
  enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,430,4,{trigger:250,ride:true}),enemy('clickbait',7,580,8,{trigger:300,ride:true}),enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
  enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('clickbait',7,1760,22)
  ];
- const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,800,1180,1360,2030,2240],5:[845,590,1055,1440,1640,1905,2010],7:[330,430,580,760,1250,1700,1960,1760]};
+ const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,520,1150,1060,1680,2240],5:[845,590,1055,1440,1640,1905,2010],7:[330,430,580,760,1250,1700,1960,1760]};
  const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
@@ -155,7 +158,7 @@ export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:70,scenes:['arrival1','fakenews','stamp','censor','press']},
 
- {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','informant','inflator']},
+ {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','paparazzi','inflator']},
  {id:'sensation',room:3,index:3,x:1110,scenes:['sensation']},
  {id:'agitator',room:3,index:7,x:2230,scenes:['agitator']},
  {id:'studio',room:5,index:0,x:95,scenes:['arrival3','cutter','botfarm']},{id:'splicer',room:5,index:4,x:830,scenes:['splicer']},

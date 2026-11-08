@@ -130,7 +130,9 @@ export class Game {
  push(dir,sourceX){const p=this.player;if(this.mode!=='playing'||p.dash>0)return;wakePlayer(p);p.sneaking=false;playerHeight(p,48);p.knock=.26;p.vx=dir*640;p.vy=-65;p.climbing=false;this.emit('pushed',{x:sourceX,y:p.y});}
  hitEnemy(e,stomp=false,amount=null,{reflected=false,sourceX=this.player.x+this.player.w/2}={}){
   if(e.inv>0||e.dead||e.phased||e.frozen)return false;
-  if(e.type==='clickbait'||e.container||e.type==='inflator'&&e.room===3||e.type==='copier'&&!['printing','recover'].includes(e.state)){
+  // A roof Нагнетатель hangs out of reach: nothing to show, nothing to block.
+  if(e.type==='inflator'&&e.room===3)return false;
+  if(e.type==='clickbait'||e.container||e.type==='copier'&&!['printing','recover'].includes(e.state)){
    e.guardFlash=.24;this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
   }
   if(e.type==='informant'&&e.shieldBroken===0&&['windup','casting'].includes(e.state)&&!reflected){this.emit('blocked',{x:e.x,y:e.y});return false;}
@@ -160,7 +162,9 @@ export class Game {
    else this.loseLife('clickbait');this.updateCamera();}return;}
   stepWorldPlatforms(this,dt);
   stepTacticalTerrain(this,dt);
-  for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace','frightTime','joyTime','launch'])p[key]=Math.max(0,(p[key]||0)-dt);
+  for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace','frightTime','joyTime','launch','blindTime'])p[key]=Math.max(0,(p[key]||0)-dt);
+  // Blinded by a Папарацци flash: Uma freezes, shielding her eyes.
+  if(p.blindTime>0)input={...input,left:false,right:false,jump:false,attack:false,dash:false,axisX:0};
   const keyboardAxis=(input.right?1:0)-(input.left?1:0),axis=keyboardAxis||Math.max(-1,Math.min(1,input.axisX||0));if(Math.abs(axis)>.05&&p.dash===0)p.dir=axis>0?1:-1;
   const ladder=ladders.find(l=>p.x+p.w>l.x&&p.x<l.x+l.w&&p.y+p.h>=l.y&&p.y<l.y+l.h);
   let useLadder=ladder&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);

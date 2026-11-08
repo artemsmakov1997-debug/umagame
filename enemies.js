@@ -9,6 +9,7 @@ import {beginInformantTeleport,stepInformantTeleport} from './informant-teleport
 import {stepEnemyFall} from './terrain.js?v=0.21.5';
 import {TACTICAL_TYPES,stepTacticalEnemy,updateEnemyInk,cleanCopies} from './tactical-enemies.js?v=0.21.5';
 import {stepBotfarm,stepBot} from './botfarm.js?v=0.21.5';
+import {stepPaparazzi} from './paparazzi.js?v=0.21.5';
 export function alertNearby(g,caller){
  const targets=g.enemies.filter(e=>e.active&&!e.dead&&e.room===caller.room&&e!==caller&&e.type!=='clickbait'&&e.type!=='panicker'&&Math.abs(e.x-caller.x)<420).sort((a,b)=>Math.abs(a.x-caller.x)-Math.abs(b.x-caller.x)).slice(0,4);
  for(const e of targets){e.alert=6;if(e.state==='patrol'||e.state==='recover')e.dir=g.player.x<e.x?-1:1;if(e.state==='patrol')e.timer=Math.min(e.timer,.3);}
@@ -65,6 +66,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
     else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.7;}
    }else if(e.type==='splicer')stepSplicer(g,e,dt,dx,dy);
    else if(e.type==='botfarm')stepBotfarm(g,e,dt,dx,dy);
+   else if(e.type==='paparazzi')stepPaparazzi(g,e,dt,dx,dy);
    else if(e.type==='bot')stepBot(g,e,dt,dx);
    else if(e.type==='informant'){
     if(e.state==='patrol'){

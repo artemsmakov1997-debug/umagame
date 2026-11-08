@@ -9,7 +9,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
   const r=await page.evaluate(async()=>{
    const {activateRoom}=await import('./room-transitions.js?v=0.21.5'),m=await import('./infoshum-combat.js?v=0.21.5');
    const g=testGame,real=Object.getPrototypeOf(g).step;g.hintsEnabled=false;document.getElementById('toast').classList.remove('visible');activateRoom(g,8);g.mode='playing';g.storyEnabled=false;g.enemies=[];g.fishes=[];g.soups=[];g.notebooks=[];g.lifePickups=[];g.boss.noticeTime=0;g.step=()=>{};
-   const a=testUI.assets,out={sheets:['infoshumScreens','infoshumCable','infoshumCore','infoshumPoses','infoshumSilence','infoshumBreakout','infoshumTransfer','sensationLauncher'].map(k=>[k,a[k]?.naturalWidth>0])},n=g.boss.network,shots={};
+   const a=testUI.assets,out={sheets:['infoshumScreens','infoshumCable','infoshumCore','infoshumPoses','infoshumSilence','infoshumBreakout','infoshumTransfer','sensation'].map(k=>[k,a[k]?.naturalWidth>0])},n=g.boss.network,shots={};
    const docks=[6,7,8].map(i=>g.platforms.find(s=>s.room===8&&s.index===i));out.clearScreens=docks.every((p,i)=>p.y>m.glassRect(n.monitors[i]).y+m.glassRect(n.monitors[i]).h);
    const draw=(k,t=2)=>{g.updateCamera();testRenderer.draw(g,0,t);shots[k]=document.getElementById('game').toDataURL();};
    n.activeIndex=1;draw('static');

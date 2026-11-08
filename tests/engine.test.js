@@ -85,8 +85,8 @@ test('Inflator gives a shorter readable telegraph and a stronger push without di
 test('Uma behind the Inflator is safe; jumping or dashing avoids the wave',()=>{
  for(const avoid of ['behind','jump','dash']){const g=isolated(1,0,20),e=enemy('inflator',1,125,0,{state:'blast',timer:.3,dir:-1});g.enemies=[e];if(avoid==='behind')g.player.x=campaignRooms[1].x+185;else if(avoid==='jump'){g.player.y-=90;g.player.grounded=false;}else g.player.dash=.2;const x=g.player.x;tick(g,1);assert.equal(g.player.knock,0,avoid);if(avoid!=='dash')assert.equal(g.player.x,x,avoid);}
 });
-test('a roof Нагнетатель is a bolted machine: a paw cannot break it',()=>{
- const g=isolated(3,2,40),e=enemy('inflator',3,120,2,{active:true,noticed:true,dir:1});g.enemies=[e];assert.equal(g.hitEnemy(e),false);assert.equal(e.dead,false);assert.ok(g.events.some(v=>v.type==='blocked'));
+test('a roof Нагнетатель hangs out of reach: a paw cannot break it and no shield flashes',()=>{
+ const g=isolated(3,2,40),e=enemy('inflator',3,120,2,{active:true,noticed:true,dir:1});g.enemies=[e];assert.equal(g.hitEnemy(e),false);assert.equal(e.dead,false);assert.ok(!g.events.some(v=>v.type==='blocked'));assert.ok(!(e.guardFlash>0));
 });
 test('Informer locks its aim, emits two real long-range packets and opens a recovery window',()=>{
  const g=isolated(4,0,20),e=enemy('informant',4,150,0,{timer:0});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');const aim={...e.aim};g.player.x=campaignRooms[4].x;tick(g,20);assert.deepEqual(e.aim,aim);tick(g,53);assert.equal(g.events.filter(e=>e.type==='enemyShot').length,2);assert.equal(e.state,'recover');assert.ok(g.bolts.every(b=>b.kind==='packet'&&b.sourceId===e.id));

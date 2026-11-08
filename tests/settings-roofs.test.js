@@ -30,17 +30,31 @@ test('a taller building\'s wall stops Uma below its roof line',()=>{
 test('the roofs are crossed with real trampoline bounces and jumps, waiting out the gusts',async()=>{
  const g=ready(),lib=await roofLib();assert.equal(climbRoofs(g,lib),true);assert.equal(g.lives,3);
 });
-test('a flock of Сенсации warns, knocks a standing Uma along its flight, misses a crouched one and pops to a paw',async()=>{
- const {flockState,BIRD,lanes}=await roofLib(),lane=lanes.SENSATION_LANES[0];
- const at=(g,k)=>{g.time=Math.ceil(g.time/lane.period+1)*lane.period-lane.phase+k;};
- for(const pose of ['stand','crouch','dash']){const g=ready(),rope=g.platforms.find(s=>s.id==='3:2'),seen=[],emit=g.emit.bind(g);g.emit=(type,data)=>{seen.push({type,...data});return emit(type,data);};Object.assign(g.player,{x:rope.x+50,y:rope.y-48,grounded:true,supportId:rope.id,inv:0});g.updateCamera();
-  at(g,.2);tick(g,1);assert.ok(seen.some(e=>e.type==='sensationWarning'));assert.ok(seen.some(e=>e.type==='enemyIntroduction'&&e.enemyType==='sensation'));
-  const health=g.health;for(let i=0;i<120;i++){if(pose==='dash')g.player.dash=.2;tick(g,1,pose==='crouch'?{down:true}:{});}
+test('a flock of Сенсации cries from the left, sweeps the whole map left to right at Uma\'s head height: it knocks a standing Uma, misses a crouched one and pops to a paw',async()=>{
+ const {BIRD}=await roofLib();
+ const arm=g=>{g.roofs.flock.timer=0;};
+ for(const pose of ['stand','crouch','dash']){const g=ready(),roof=g.platforms.find(s=>s.id==='3:2'),seen=[],emit=g.emit.bind(g);g.emit=(type,data)=>{seen.push({type,...data});return emit(type,data);};Object.assign(g.player,{x:roof.x+90,y:roof.y-48,grounded:true,supportId:roof.id,inv:0});g.updateCamera();
+  tick(g,1);arm(g);tick(g,1);assert.equal(g.roofs.flock.phase,'warn');assert.ok(seen.some(e=>e.type==='sensationWarning'&&e.x<g.player.x));assert.ok(seen.some(e=>e.type==='enemyIntroduction'&&e.enemyType==='sensation'));
+  const health=g.health;for(let i=0;i<200;i++){if(pose==='dash'){g.player.dash=.2;Object.assign(g.player,{x:roof.x+90,y:roof.y-48,vy:0,grounded:true,supportId:roof.id});}tick(g,1,pose==='crouch'?{down:true}:{});}
   if(pose==='stand'){assert.equal(g.health,health-1);assert.ok(seen.some(e=>e.type==='sensationHit'));assert.ok(seen.some(e=>e.type==='pushed'));}
   else{assert.equal(g.health,health,pose);assert.ok(!seen.some(e=>e.type==='sensationHit'),pose);}
  }
- const g=ready(true),rope=g.platforms.find(s=>s.id==='3:2');Object.assign(g.player,{x:rope.x+50,y:rope.y-48,grounded:true,supportId:rope.id,dir:1});at(g,BIRD.warn+.05);tick(g,1);
- const bird=flockState(lane,g.time).birds[0];g.player.x=bird.x+rooms[3].x-58;g.player.cooldown=0;tick(g,1,{attack:true});
- assert.ok(g.roofs.flocks[0].birds.some(b=>b.dead),'one bird popped');assert.ok(g.kills>0);
+ // They fly on to the right edge of the map, then the next flock comes after a pause.
+ const f=ready(true),r=rooms[3];Object.assign(f.player,{x:r.x+60});f.updateCamera();tick(f,1);arm(f);let maxX=0;for(let i=0;i<60*14&&f.roofs.flock.phase!=='wait'||i<5;i++){tick(f,1);for(const b of f.roofs.flock.birds)maxX=Math.max(maxX,b.x);}
+ assert.ok(maxX>r.end,'the flock crosses the whole map');assert.equal(f.roofs.flock.phase,'wait');
+ // A paw pops a bird.
+ const g=ready(true),roof=g.platforms.find(s=>s.id==='3:2');Object.assign(g.player,{x:roof.x+90,y:roof.y-48,grounded:true,supportId:roof.id,dir:-1});g.updateCamera();tick(g,1);arm(g);
+ for(let i=0;i<200&&!g.roofs.flock.birds.some(b=>b.x>g.player.x-70);i++)tick(g,1);g.player.cooldown=0;tick(g,1,{attack:true});tick(g,10);
+ assert.ok(g.roofs.flock.birds.some(b=>b.dead),'one bird popped');assert.ok(g.kills>0);
 });
 test('an echo field still transfers the protected cat but never consumes the last stock or reports a false lost life',()=>{const g=ready(true),e={kind:'echoOrb',type:'echo',id:'orb-test',room:3,w:40,h:38,ttl:99,state:'pulling',warpCooldown:0};g.lives=1;g.player.inv=0;g.echoImmunity=0;Object.assign(e,{x:g.player.x,y:g.player.y});handleFlyingContact(g,e);assert.equal(g.mode,'echoWarp');tick(g,50);assert.equal(g.lives,1);assert.equal(g.mode,'playing');assert.ok(g.events.some(e=>e.type==='testRescue'&&e.reason==='echo'));assert.ok(!g.events.some(e=>e.type==='lifeLost'||e.type==='lost'));});
+test('a Папарацци aims, charges and flashes: looking at it blinds Uma, turning away or a chimney between them does not; two hits break it',()=>{
+ const setup=(face,{roof='3:2',ex=830,ux=720}={})=>{const g=ready(),s=g.platforms.find(p=>p.id===roof),e=enemy('paparazzi',3,ex,+roof.slice(2),{active:true,noticed:true,timer:0});g.enemies=[e];Object.assign(g.player,{x:rooms[3].x+ux,y:s.y-48,grounded:true,supportId:s.id,dir:face,inv:0});g.updateCamera();return {g,e};};
+ const flash=(g,e,input={})=>{for(let i=0;i<120&&e.state!=='flash';i++)g.step(1/60,input);return g.events.find(v=>v.type==='cameraFlash');};
+ let {g,e}=setup(1);const shot=flash(g,e);assert.ok(g.events.some(v=>v.type==='flashWarning'),'the lamp warns first');assert.equal(shot.seen,true);assert.ok(g.player.blindTime>0);
+ const x=g.player.x;for(let i=0;i<20;i++)g.step(1/60,{right:true,jump:true});assert.equal(g.player.x,x,'blinded Uma freezes');assert.equal(g.player.grounded,true);
+ ({g,e}=setup(-1));assert.equal(flash(g,e).seen,false,'turned away');assert.ok(!(g.player.blindTime>0));
+ // The chimney on A1 stands between the camera and Uma's eyes.
+ ({g,e}=setup(-1,{roof:'3:1',ex:430,ux:540}));assert.equal(flash(g,e,{down:true}).seen,false,'hidden behind the chimney');
+ ({g,e}=setup(1,{ex:760,ux:715}));for(let k=0;k<2;k++){e.inv=0;g.hitEnemy(e);}assert.equal(e.dead,true);
+});

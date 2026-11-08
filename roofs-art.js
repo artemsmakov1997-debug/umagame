@@ -1,7 +1,8 @@
 import {rect,text} from './pixel.js?v=0.21.5';
 import {rooms,HEIGHT} from './level.js?v=0.21.5';
-import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE,SENSATION_LANES} from './roofs-map.js?v=0.21.5';
-import {flockState,birdBox,BIRD,ROOM} from './roofs-systems.js?v=0.21.5';
+import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE} from './roofs-map.js?v=0.21.5';
+import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
+import {birdBox,ROOM} from './roofs-systems.js?v=0.21.5';
 // Source boxes. assets/roofs-pieces.png: parapet and tin roof (left cap, repeatable middle, right cap), chimneys, vent, tank.
 const PIECES={brickL:[49,86,382,187],brickM:[458,108,623,165],brickR:[1109,86,377,187],tinL:[40,356,378,156],tinM:[454,356,630,156],tinR:[1119,356,377,156],
  chimney:[92,633,130,326],chimneyWide:[333,624,270,335],vent:[663,664,392,295],tank:[1127,562,332,397]};
@@ -72,40 +73,21 @@ export function drawRoofWind(c,g,t,a){
 export function inflatorFrame(e,t){if(e.hurtTime>0||e.guardFlash>0)return 7;if(e.state==='windup')return 2;if(e.state==='blast')return 3+Math.floor(t*12)%3;if(e.state==='recover')return 6;return Math.floor(t*3)%2;}
 export function drawInflatorMachine(c,a,e,t,x=e.x+e.w/2,feet=e.y+e.h,width=96){
  const img=a.inflatorMachine;if(!img)return false;const k=width/163,shake=e.state==='blast'?Math.sin(t*50):0;
+ // The wall bracket it is bolted to, high above the roofs.
+ if(e.room===3&&e.mountY!==undefined){const fx=Math.round(x),fy=Math.round(feet);rect(c,fx-44,fy-2,88,6,'#2a2f3a');rect(c,fx-44,fy-2,88,2,'#5d6676');for(const s of[-1,1])for(let i=0;i<14;i++)rect(c,fx+s*(30-i*2)-2,fy+4+i*2,4,2,'#2a2f3a');}
  c.save();c.translate(Math.round(x+shake),Math.round(feet));if(e.dir<0)c.scale(-1,1);c.drawImage(img,inflatorFrame(e,t)*192,0,192,155,-88*k,-143.5*k,192*k,155*k);c.restore();return true;
 }
 
 export function drawSensations(c,a,g,t){
- if(g.room!==ROOM||!a.sensation)return;const x0=X0();
- for(const [li,lane] of SENSATION_LANES.entries()){
-  const s=flockState(lane,t),f=g.roofs?.flocks?.[li],same=f&&f.cycle===s.cycle;
-  drawLauncher(c,lane,s,t,a);
-  for(const bird of s.birds){if(!bird.visible)continue;const state=same?f.birds[bird.i]:null;if(state?.dead&&state.deathTime<=0)continue;
-   const box=birdBox(lane,bird),frame=state?.dead?7:state?.hit?5:Math.floor(t*12+bird.i)%4,row=frame>>2,col=frame%4,w=CELL_W*BIRD_SCALE,h=CELL_H*BIRD_SCALE;
-   const d=Math.abs(bird.x-s.entry),span=s.span;c.save();c.globalAlpha=state?.dead?Math.max(0,state.deathTime/.35):Math.min(1,(span-d)/36+.15);const cx=box.x+box.w/2,cy=box.y+box.h/2;c.translate(Math.round(cx),Math.round(cy));if(s.dir<0)c.scale(-1,1);
-   c.drawImage(a.sensation,col*CELL_W,row*CELL_H,CELL_W,CELL_H,-200*BIRD_SCALE,-(PIVOT_Y[row]-row*CELL_H)*BIRD_SCALE,w,h);c.restore();
-  }
+ if(g.room!==ROOM||!a.sensation)return;const f=g.roofs?.flock;if(!f)return;
+ // The cry before a flock: a «!» blinking at the left edge of the view, at the height they will fly.
+ if(f.phase==='warn')drawAttackFx(c,a,'bang',Math.floor(t*8)%2?0:2,g.camera+26,f.lane,40,{alpha:.9});
+ if(f.phase!=='fly')return;
+ for(const bird of f.birds){if(bird.dead&&bird.deathTime<=0)continue;
+  const box=birdBox(f,bird,g.time),frame=bird.dead?7:bird.hit?5:Math.floor(t*12+bird.i)%4,row=frame>>2,col=frame%4,w=CELL_W*BIRD_SCALE,h=CELL_H*BIRD_SCALE;
+  c.save();c.globalAlpha=bird.dead?Math.max(0,bird.deathTime/.35):1;c.translate(Math.round(box.x+box.w/2),Math.round(box.y+box.h/2));
+  c.drawImage(a.sensation,col*CELL_W,row*CELL_H,CELL_W,CELL_H,-200*BIRD_SCALE,-(PIVOT_Y[row]-row*CELL_H)*BIRD_SCALE,w,h);c.restore();
  }
-}
-// The firework launcher a flock is fired from: on a pole standing on a roof, or bolted to a wall.
-// Before a salvo its fuse sparks and the red lamp burns; every rocket leaves a muzzle flash and smoke.
-// assets/sensation-launcher.png: 8 cells of 152×172 (feet on y=168), tubes pointing right and up:
-// 0 on a pole, 1 on a wall bracket, 2 warning, 3 salvo, 4 smoke after the shot, 5 reloading, 6 muzzle flash, 7 smoke puff.
-const LAUNCHER={w:152,h:172,feet:168,muzzle:{pole:[128,44],wall:[132,44]}};
-function launcherFrame(c,img,frame,x,feet,k,flip){c.save();c.translate(Math.round(x),Math.round(feet));if(flip)c.scale(-1,1);c.drawImage(img,frame*LAUNCHER.w,0,LAUNCHER.w,LAUNCHER.h,-LAUNCHER.w/2*k,-LAUNCHER.feet*k,LAUNCHER.w*k,LAUNCHER.h*k);c.restore();}
-function drawLauncher(c,lane,s,t,a){
- const x0=X0(),dir=s.dir,mx=x0+s.entry,y=lane.y,L=lane.launcher||{},img=a?.sensationLauncher;
- const fired=s.birds.some(b=>b.visible&&Math.abs(b.x-s.entry)<70),pole=L.mount==='pole';
- if(!img){rect(c,mx-12,y-10,24,20,'#5a2d24');return;}
- const m=LAUNCHER.muzzle[pole?'pole':'wall'],k=pole?Math.max(.5,Math.min(.8,(L.base-y+6)/(LAUNCHER.feet-m[1]))):.58,feet=pole?L.base+2:y+(LAUNCHER.feet-m[1])*k,cx=mx-dir*(m[0]-LAUNCHER.w/2)*k;
- const frame=pole?(s.warn?2:fired?4:Math.floor(t*.7+s.entry)%5===4?5:0):1;
- launcherFrame(c,img,frame,cx,feet,k,dir<0);
- // The lamp and the fuse on the wall mount (the pole frames have them painted).
- if(s.warn){const blink=Math.floor(t*8)%2;if(!pole){c.save();c.globalAlpha=blink?.9:.45;rect(c,cx-4,feet-60*k,8,8,'#ff5a4a');c.restore();}
-  for(let i=0;i<4;i++){const q=(t*9+i*1.7)%1;rect(c,cx-dir*30*k+Math.cos(i*2.1+t*14)*q*9,feet-40*k-q*10,2,2,i%2?'#ffd36e':'#ff7a3a');}
-  c.save();c.globalAlpha=blink?.95:.5;rect(c,mx-4,y-42,9,20,'#2a0d10');rect(c,mx-2,y-40,5,11,'#ff5a4a');rect(c,mx-2,y-27,5,3,'#ff5a4a');c.restore();}
- if(fired){const d=Math.min(...s.birds.filter(b=>b.visible).map(b=>Math.abs(b.x-s.entry))),q=Math.min(1,d/70);
-  c.save();c.globalAlpha=1-q;launcherFrame(c,img,6,mx+dir*6,y+22,.5,dir<0);c.globalAlpha=(1-q)*.8;launcherFrame(c,img,7,mx-dir*(14+d*.4),y+30-d*.2,.55,dir<0);c.restore();}
 }
 // Library and notebook portrait: the flight cycle.
 export function drawSensationPortrait(c,a,x,y,w,h,time=0,actor={}){
