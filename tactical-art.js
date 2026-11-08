@@ -33,7 +33,7 @@ export function drawTacticalTerrain(c,g,time){
  }
 }
 export function drawEnemyDefense(c,e,time){
- if(e.type==='inflator')drawPixelBarrier(c,e.x+e.w/2,e.y-5,50,44,{half:e.dir,alpha:.8,flash:e.guardFlash,time});
+ if(e.type==='inflator'&&e.room!==3)drawPixelBarrier(c,e.x+e.w/2,e.y-5,50,44,{half:e.dir,alpha:.8,flash:e.guardFlash,time});
  if(e.type==='clickbait'){
   const x=e.x+19,y=e.y-60;rect(c,x,y,10,9,'#b2c4ce');rect(c,x+2,y+2,6,5,'#31546c');rect(c,x+3,y+9,4,2,'#b2c4ce');
  }

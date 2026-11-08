@@ -1,14 +1,14 @@
 import {rooms} from './level.js?v=0.21.5';
-import {ROOF_BUILDINGS,SENSATION_LANES,WIND,ROOF_CHECKPOINTS} from './roofs-map.js?v=0.21.5';
+import {ROOF_BUILDINGS,FLOCK,WIND,ROOF_CHECKPOINTS} from './roofs-map.js?v=0.21.5';
 import * as roofMap from './roofs-map.js?v=0.21.5';
 export const lanes=roofMap;
 // «Крыши» mechanics: solid building walls, a fall costs one heart and returns Uma to the last safe roof,
 // the awning is a trampoline, wind gusts in the antenna forest and flocks of Сенсации.
 import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
-export const ROOM=3,AWNING_BOUNCE=-700,BIRD={w:34,h:18,gap:44,count:3,speed:270,warn:.9};
+export const ROOM=3,AWNING_BOUNCE=-700,BIRD={w:34,h:18};
 const x0=()=>rooms[ROOM].x;
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
-export function createRoofs(){return {flocks:SENSATION_LANES.map(l=>({id:l.id,cycle:-1,birds:[],warned:false})),checkpoint:0,lastSupport:null,bounceTime:0,introduced:false,gust:false,gustWarned:false,wind:{phase:'calm',timer:2,source:null,dir:-1}};}
+export function createRoofs(){return {flock:{phase:'wait',timer:FLOCK.first,lane:0,birds:[],serial:0},checkpoint:0,lastSupport:null,bounceTime:0,introduced:false,gust:false,gustWarned:false,wind:{phase:'calm',timer:2,source:null,dir:-1}};}
 
 // The roofs' wind comes from the Нагнетатели: the one nearest to Uma runs its cycle calm → warn → gust,
 // and its gust sweeps the whole map in the direction it faces.
@@ -25,14 +25,24 @@ function stepWind(g,dt){
  for(const e of blowers){const mine=e.id===w.source;e.state=mine&&w.phase==='warn'?'windup':mine&&w.phase==='gust'?'blast':mine&&w.phase==='calm'&&w.timer>calm-.8?'recover':'patrol';if(e.state==='blast')e.walkTime+=dt*6;}
 }
 
-// Bird i of a lane at time t: position and whether the flock is crossing. A flock flies on to the edge of the map.
-export function flockState(lane,t){
- const total=lane.period,k=(((t+lane.phase)%total)+total)%total,cycle=Math.floor((t+lane.phase)/total);
- const entry=lane.from>0?lane.x2:lane.x1,dir=-lane.from,fly=k-BIRD.warn,span=dir<0?entry:rooms[ROOM].width-entry;
- const birds=[];for(let i=0;i<BIRD.count;i++){const d=fly*BIRD.speed-i*BIRD.gap,x=entry+dir*d;birds.push({i,x,visible:fly>0&&d>=0&&d<=span});}
- return {warn:k<BIRD.warn,cycle,dir,birds,entry,span};
+// The flock: wait → warn (a cry from the left edge of the view; the lane is fixed at Uma's head height) → fly.
+// Birds keep a V (the leader lowest, at Uma's head; the wings above) and bob; they fly on to the right edge of the map and only then the next wait starts.
+function startFlock(q,g){
+ const f=q.flock,p=g.player,view=g.viewWidth||768;f.serial++;
+ f.birds=Array.from({length:FLOCK.count},(_,i)=>({i,x:g.camera-60-i*FLOCK.spacing,dy:[0,-12,-12,-24,-24][i]||0,phase:i*1.7,dead:false,hit:false,deathTime:0}));
 }
-export function birdBox(lane,bird){return {x:x0()+bird.x-BIRD.w/2,y:lane.y-BIRD.h/2,w:BIRD.w,h:BIRD.h};}
+export function birdBox(f,bird,t){return {x:bird.x-BIRD.w/2,y:f.lane+bird.dy+Math.sin(t*6+bird.phase)*FLOCK.wave-BIRD.h/2,w:BIRD.w,h:BIRD.h};}
+function stepFlock(g,dt,paw){
+ const q=g.roofs,f=q.flock,p=g.player,r=rooms[ROOM];f.timer-=dt;
+ if(f.phase==='wait'&&f.timer<=0){f.phase='warn';f.timer=FLOCK.warn;f.lane=Math.max(FLOCK.minY,Math.min(FLOCK.maxY,p.y+2));g.emit('sensationWarning',{x:g.camera+20,y:f.lane});if(!q.introduced){q.introduced=true;g.emit('enemyIntroduction',{enemyType:'sensation',x:g.camera+20,y:f.lane});}}
+ else if(f.phase==='warn'&&f.timer<=0){f.phase='fly';startFlock(q,g);}
+ if(f.phase!=='fly')return;
+ for(const bird of f.birds){bird.x+=FLOCK.speed*dt;bird.deathTime=Math.max(0,bird.deathTime-dt);if(bird.dead)continue;const box=birdBox(f,bird,g.time);
+  if(p.attack>0&&overlap(paw,box)){bird.dead=true;bird.deathTime=.35;g.kills++;g.emit('enemyHit',{x:box.x+17,y:box.y,enemyType:'sensation'});continue;}
+  if(!bird.hit&&p.dash===0&&p.inv===0&&overlap(p,box)){bird.hit=true;g.hurt(false,box.x+17);if(g.mode==='playing')g.push(1,box.x+17);g.emit('sensationHit',{x:box.x+17,y:box.y});}
+ }
+ if(f.birds.every(b=>b.x-FLOCK.count*FLOCK.spacing>r.end||b.dead&&b.deathTime<=0)){f.phase='wait';f.timer=FLOCK.period;f.birds=[];}
+}
 
 // Buildings are solid below their roof line: walking or being blown into a taller wall stops Uma.
 export function applyRoofWalls(g,oldX){
@@ -64,15 +74,6 @@ export function stepRoofs(g,dt,paw,input={}){
  if(phase==='warn'&&!q.gustWarned){q.gustWarned=true;g.emit('gustWarning',{x:p.x,y:p.y});if(!q.windIntroduced){q.windIntroduced=true;g.emit('windIntroduction',{x:p.x,y:p.y});}}
  if(phase==='calm')q.gustWarned=false;
  if(q.gust&&!p.climbing&&p.dash===0){const speed=p.grounded?(p.sneaking?0:Math.abs(WIND.ground)):Math.abs(WIND.speed);p.x+=w.dir*speed*dt;const r=rooms[ROOM];p.x=Math.max(r.x,Math.min(r.end-p.w,p.x));}
- // Сенсации: each flock crosses its lane; contact knocks Uma along their flight, a paw pops one bird.
- for(const [li,lane] of SENSATION_LANES.entries()){
-  const f=q.flocks[li],s=flockState(lane,g.time);
-  if(s.cycle!==f.cycle){f.cycle=s.cycle;f.birds=s.birds.map(()=>({dead:false,hit:false,deathTime:0}));f.warned=false;}
-  const onScreen=Math.abs(x0()+s.entry-(g.camera+(g.viewWidth||768)/2))<(g.viewWidth||768)/2+160;
-  if(s.warn&&!f.warned&&onScreen){f.warned=true;g.emit('sensationWarning',{x:x0()+s.entry,y:lane.y});if(!q.introduced){q.introduced=true;g.emit('enemyIntroduction',{enemyType:'sensation',x:x0()+s.entry,y:lane.y});}}
-  for(const bird of s.birds){const state=f.birds[bird.i];state.deathTime=Math.max(0,state.deathTime-dt);if(!bird.visible||state.dead)continue;const box=birdBox(lane,bird);
-   if(p.attack>0&&overlap(paw,box)){state.dead=true;state.deathTime=.35;g.kills++;g.emit('enemyHit',{x:box.x+17,y:box.y,enemyType:'sensation'});continue;}
-   if(!state.hit&&p.dash===0&&p.inv===0&&overlap(p,box)){state.hit=true;g.hurt(false,box.x+17);if(g.mode==='playing'){g.push(s.dir,box.x+17);}g.emit('sensationHit',{x:box.x+17,y:box.y});}
-  }
- }
+ // Сенсации: a flock sweeps the map from left to right.
+ stepFlock(g,dt,paw);
 }

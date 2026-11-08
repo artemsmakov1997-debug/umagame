@@ -22,12 +22,11 @@ export const ROOF_PROPS=[
  {kind:'chimney',x:1860,w:34,y:182,base:230}                      // 14 C0 chimney (life)
 ];
 export const ROOF_LADDERS=[];
-// Flocks of Сенсации are fired from a launcher and fly on to the edge of the map.
-export const SENSATION_LANES=[
- {id:'a2',x1:0,x2:900,y:208,from:1,period:5.2,phase:0,launcher:{mount:'pole',base:250}},          // head height on A2: crouch
- {id:'b0',x1:1060,x2:2304,y:258,from:-1,period:6,phase:1.6,launcher:{mount:'wall'}},              // across B0 and on over the chain
- {id:'chain',x1:0,x2:1960,y:300,from:1,period:7.6,phase:3.1,launcher:{mount:'wall'}}              // through the trampoline chain, right to left
-];
+// Сенсации: a flock of birds now and then sweeps across the whole map from left to right, at the height Uma's head
+// was at when the warning sounded (crouch, jump over or pop one with a paw). No launchers.
+// period: seconds from one flock to the next; first: delay of the first one; warn: the cry before they come in.
+export const FLOCK={period:7.5,first:3.5,warn:1.1,count:5,speed:250,spacing:38,wave:6,minY:90,maxY:430};
+
 // Nothing blows without a Нагнетатель: the gusts come from them (roofs-systems.js).
 export const WIND={x1:0,x2:2304,period:5.3,warn:.9,gust:1.8,speed:-120,ground:-45};
 // Checkpoints after losing a life: start, A2, B1.

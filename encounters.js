@@ -1,6 +1,6 @@
 import {rooms} from './level.js?v=0.21.5';
 // Introduce one species at a time; optional notebooks never gate encounters.
-export const introductionOrder={1:['fakenews','stamp'],3:['informant','inflator'],5:['cutter','botfarm','splicer'],7:['static','clickbait','echo']};
+export const introductionOrder={1:['fakenews','stamp'],3:['paparazzi','inflator'],5:['cutter','botfarm','splicer'],7:['static','clickbait','echo']};
 export const introductionDistance={1:[90,820],3:[100,820,1400],5:[100,480,800],7:[150,600,960]};
 export const SPECIES_GAP=5,FIRST_ENCOUNTER_GRACE=3;
 export function canActivateEnemy(g,e){

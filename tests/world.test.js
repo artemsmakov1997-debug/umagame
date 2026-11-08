@@ -49,10 +49,11 @@ test('a lift carries feet vertically, releases a jump and freezes with the whole
 test('portal minions on a travelling platform inherit its current position and patrol bounds',()=>{
  const g=legacy(7,13,840),owner=seat(enemy('panicker',7,900,13,{active:true,noticed:true,state:'alarm',timer:999}));g.enemies=[owner];alertNearby(g,owner);tick(g,70);const s=g.platforms.find(s=>s.room===7&&s.index===13),minion=g.enemies.find(e=>e.portalMinion);assert.ok(minion);assert.equal(minion.y+minion.h,s.y);assert.ok(minion.x>=s.x+12&&minion.x<=s.x+s.w-60);assert.equal(minion.origin,s.x+12);assert.equal(minion.end,s.x+s.w-60);
 });
-test('Нагнетатели stand on roofs; the nearest one blows across the whole map: airborne Uma is carried, crouching on a roof holds',()=>{
- for(const m of new Game().enemies.filter(e=>e.type==='inflator'))assert.equal(platforms.find(s=>s.room===m.room&&s.index===m.platformIndex).roof?.type,'building');
+test('Нагнетатели hang high above the roofs, out of reach; the nearest one blows across the whole map: airborne Uma is carried, crouching on a roof holds',()=>{
+ // Out of reach: higher than any jump from a roof under it (or a trampoline throw) can bring Uma's head.
+ for(const m of new Game().enemies.filter(e=>e.type==='inflator')){const under=platforms.filter(s=>s.room===3&&s.x<m.x+m.w&&s.x+s.w>m.x);assert.ok(under.length);for(const s of under){const reach=s.roof?.type==='awning'?227:115;assert.ok(m.y+m.h<s.y-48-reach,m.id+' over '+s.id);}}
  const g=setup(3,0,60);g.enemies=new Game().enemies.filter(e=>e.room===3&&e.type==='inflator');for(const e of g.enemies)e.active=true;
- const far=g.enemies.find(e=>e.platformIndex===2);far.dir=1;tick(g,1);g.roofs.wind={phase:'warn',timer:0,source:far.id,dir:1};tick(g,1);assert.equal(g.roofs.wind.phase,'gust');
+ const far=g.enemies[0];far.dir=1;tick(g,1);g.roofs.wind={phase:'warn',timer:0,source:far.id,dir:1};tick(g,1);assert.equal(g.roofs.wind.phase,'gust');
  const x=g.player.x;g.player.grounded=false;g.player.vy=-200;tick(g,10);assert.ok(g.player.x>x+12,'carried in the air far from the machine');
  const h=setup(3,0,60);h.enemies=new Game().enemies.filter(e=>e.room===3&&e.type==='inflator');tick(h,1);h.roofs.wind={phase:'gust',timer:1.5,source:h.enemies[0].id,dir:1};const hx=h.player.x;tick(h,10,{down:true});assert.ok(Math.abs(h.player.x-hx)<1,'crouching holds');
 });

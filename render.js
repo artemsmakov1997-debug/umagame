@@ -29,6 +29,7 @@ import {drawArenaBoss} from './boss-art.js?v=0.21.5';
 import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
 import {drawStudioContainer} from './studio-container-art.js?v=0.21.5';
+import {drawPaparazzi,drawBlind} from './new-monsters-art.js?v=0.21.5';
 import {drawBossProjectile,drawAttackFxList} from './boss-attack-fx.js?v=0.21.5';
 import {drawRoofSurface,drawRoofProps,drawRoofWind,drawSensations,drawInflatorMachine} from './roofs-art.js?v=0.21.5';
 import {drawStudioSurface,drawStudioBack,drawStudioProps} from './studio-art.js?v=0.21.5';
@@ -105,6 +106,7 @@ export class Renderer{
    else if(['stamp','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
    if(e.type==='botfarm'&&!e.container)drawMonster(c,a,e.type,e.x+e.w/2-46,e.y+e.h-82,92,82,t,false,e);
    if(e.type==='bot')drawMonster(c,a,e.type,e.x+e.w/2-20,e.y+e.h-38,40,38,t,false,e);
+   if(e.type==='paparazzi')drawPaparazzi(c,a,e,t,drawMonster);
    if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
    if(e.type==='echo'){if(e.flipped){c.save();c.translate(0,2*(e.y+e.h/2));c.scale(1,-1);}drawMonster(c,a,e.type,e.x+e.w/2-34,e.y+e.h-54,68,54,t,e.dir<0,{...e,chase:e.state==='chase',forming:e.state==='forming'});if(e.flipped)c.restore();}
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}
@@ -167,7 +169,7 @@ export class Renderer{
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   if(g.tether){const e=g.tether.ownerId==='boss:'+g.boss.id?g.boss:g.enemies.find(e=>e.id===g.tether.ownerId);if(e){c.strokeStyle='#c9a4ed';c.lineWidth=3;c.setLineDash([5,4]);c.beginPath();c.moveTo(e.x+24,e.y+2);c.lineTo(p.x+17,p.y+28);c.stroke();c.setLineDash([]);for(let i=0;i<5;i++)rect(c,e.x+5+i*8,e.y-58,5,3,i<Math.ceil(g.tether.remaining)?'#ffdb9b':'#263a55');}}
   drawYuriSignal(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawBossDefeat(c,a,g);
-  drawExitArrow(c,g,t,worldWidth);c.restore();
+  drawBlind(c,g,worldWidth);drawExitArrow(c,g,t,worldWidth);c.restore();
   drawInterferenceOverlay(c,g,vw,a);drawArenaTransfer(c,g,vw);if(!drawRouteTransition(c,a,g,vw))drawLocationLoading(c,g,vw);
   if(g.defeat&&(g.mode==='bossDefeat'||g.mode==='paused'&&g.pausedFrom==='bossDefeat')){c.save();c.globalAlpha=Math.max(0,Math.min(1,(g.defeat.time-1.42)/.28));rect(c,0,0,vw,HEIGHT,'#030919');c.restore();}
   if(g.mode==='respawning'||g.pausedFrom==='respawning'){

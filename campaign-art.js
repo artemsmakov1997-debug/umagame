@@ -5,13 +5,26 @@ import {sprite,idleCats} from './assets.js?v=0.21.5';
 import {drawEmotion,wakePose} from './cat-animation.js?v=0.21.5';
 import {drawMonster,drawHauntedMonitor} from './art.js?v=0.21.5';
 import {drawDish,drawTowerPortal} from './stage-art.js?v=0.21.5';
+// Three painted 768-wide blocks side by side, with no visible joins: each block is drawn a little wider than its
+// slot so neighbours overlap by `overlap` px, and the later block fades in across the overlap.
+function blendBlocks(c,images,overlap=96,h=512){
+ const n=images.length,slot=768,w=slot+overlap;
+ images.forEach((image,i)=>{
+  const x=i===0?0:i*slot-overlap/2,width=i===0||i===n-1?slot+overlap/2:w;
+  if(i===0){c.drawImage(image,x,0,width,h);return;}
+  const tmp=document.createElement('canvas');tmp.width=Math.ceil(width);tmp.height=h;const t=tmp.getContext('2d');t.imageSmoothingEnabled=false;t.drawImage(image,0,0,width,h);
+  // One full-size mask (destination-in clears everything outside the shape it is given).
+  const mask=t.createLinearGradient(0,0,width,0);mask.addColorStop(0,'rgba(0,0,0,0)');mask.addColorStop(overlap/width,'rgba(0,0,0,1)');mask.addColorStop(1,'rgba(0,0,0,1)');t.globalCompositeOperation='destination-in';t.fillStyle=mask;t.fillRect(0,0,width,h);
+  c.drawImage(tmp,Math.round(x),0);
+ });
+}
 export function sceneLayers(assets){
  return rooms.map(room=>{
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
   if(room.index===2){canvas.height=480;const image=assets.spreaderArena,scale=Math.max(canvas.width/image.width,480/image.height);c.drawImage(image,(canvas.width-image.width*scale)/2,(480-image.height*scale)/2,image.width*scale,image.height*scale);return canvas;}
-  if(room.index===5&&assets.studioBlock1){[assets.studioBlock1,assets.studioBlock2,assets.studioBlock3].forEach((image,i)=>c.drawImage(image,i*768,0,768,512));for(const seam of[768,1536]){const fade=c.createLinearGradient(seam-60,0,seam+60,0);fade.addColorStop(0,'#03021000');fade.addColorStop(.5,'#030210dd');fade.addColorStop(1,'#03021000');c.fillStyle=fade;c.fillRect(seam-60,0,120,512);}return canvas;}
-  if(room.index===7&&assets.dimensionBlock1){[assets.dimensionBlock1,assets.dimensionBlock2,assets.dimensionBlock3].forEach((image,i)=>c.drawImage(image,i*768,0,768,512));for(const seam of[768,1536]){const fade=c.createLinearGradient(seam-60,0,seam+60,0);fade.addColorStop(0,'#08004000');fade.addColorStop(.5,'#080040cc');fade.addColorStop(1,'#08004000');c.fillStyle=fade;c.fillRect(seam-60,0,120,512);}return canvas;}
-  if(room.index===3&&assets.roofsBlock1){[assets.roofsBlock1,assets.roofsBlock2,assets.roofsBlock3].forEach((image,i)=>c.drawImage(image,i*768,0,768,512));c.drawImage(assets.roofsBlock2,1080,40,70,70,768+582,18,35,35);/* one moon where blocks 2 and 3 meet */for(const seam of[768,1536]){const fade=c.createLinearGradient(seam-50,0,seam+50,0);fade.addColorStop(0,'#04092000');fade.addColorStop(.5,'#040920cc');fade.addColorStop(1,'#04092000');c.fillStyle=fade;c.fillRect(seam-50,0,100,512);}return canvas;}
+  if(room.index===5&&assets.studioBlock1){blendBlocks(c,[assets.studioBlock1,assets.studioBlock2,assets.studioBlock3]);return canvas;}
+  if(room.index===7&&assets.dimensionBlock1){blendBlocks(c,[assets.dimensionBlock1,assets.dimensionBlock2,assets.dimensionBlock3]);return canvas;}
+  if(room.index===3&&assets.roofsBlock1){blendBlocks(c,[assets.roofsBlock1,assets.roofsBlock2,assets.roofsBlock3]);c.drawImage(assets.roofsBlock2,1080,40,70,70,768+582,18,35,35);/* one moon where blocks 2 and 3 meet */return canvas;}
   if(room.tutorial){c.drawImage(assets.cozy,0,0,768,512);if(assets.tutorialRoom){c.drawImage(assets.tutorialRoom,768,0,768,512);c.drawImage(assets.tutorialRoom,60,150,90,110,768+78,75,45,55);/* the joined window keeps one moon */}return canvas;}
   const index={newsroom:0,roofs:1,studio:2,noise:3}[room.theme],sw=assets.backdrops.width/2,sh=assets.backdrops.height/2;
   c.filter='saturate(.62) brightness(.65)';
