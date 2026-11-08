@@ -106,8 +106,9 @@ export function drawCrane(c,a,crane,withClaw=true){
 function cameraFrame(b,n,t){
  if(b.hurtTime>0)return n.phase===1?3:7;
  switch(n.mode){
-  case 'aim':return 10;case 'pan':return n.beam?.live?5:10;case 'overheat':return 6;case 'intro':case 'raise':case 'roll':case 'park':return Math.floor(t*5)%2;
-  case 'frame':return 10;case 'snap':return 4;case 'eject':return 8;case 'develop':return 9;case 'detach':return 11;
+  // Frames 4–5 have a beam painted in: the beam is drawn separately (smooth, aimed), so the body uses clean frames.
+  case 'aim':return 10;case 'pan':return n.beam?.live?1:10;case 'overheat':return 6;case 'intro':case 'raise':case 'roll':case 'park':return Math.floor(t*5)%2;
+  case 'frame':return 10;case 'snap':return 3;case 'eject':return 8;case 'develop':return 9;case 'detach':return 11;
   case 'transform':return n.timer>.5?11:2;case 'warp':return 2;
   default:return Math.floor(t*5)%2;
  }
@@ -138,21 +139,29 @@ export function drawManipulator(c,a,g,t){
  if(n.mode==='overheat'){const k=.5+.5*Math.sin(t*8);c.save();c.globalAlpha=.25+.2*k;c.fillStyle='#ffcf7a';c.beginPath();c.ellipse(cx,bottom-2,62,7,0,0,Math.PI*2);c.fill();c.restore();}
  if(b.hurtTime>0)centered(c,a.manipulatorFx,MFX.burst,cx+b.dir*30,bottom-50,60,clamp01(b.hurtTime/.3));
 }
+// A seamless beam from (x1,y1) to (x2,y2): the core is the beam tile's middle column stretched along the whole length
+// (no tile joins to tear), and short sparks cut from the tile run along it.
+const SPARK=[75,4,27,7];
+function smoothBeam(c,a,x1,y1,x2,y2,thick,t,alpha=1,speed=320){
+ const image=a.manipulatorFx;if(!image||alpha<=0)return;const box=MFX.beam,len=Math.hypot(x2-x1,y2-y1),angle=Math.atan2(y2-y1,x2-x1);
+ c.save();c.globalAlpha*=alpha;c.translate(x1,y1);c.rotate(angle);
+ c.drawImage(image,box[0]+Math.round(box[2]/2),box[1]+box[3]*.28,1,box[3]*.45,0,-thick/2,len,thick);
+ c.globalCompositeOperation='lighter';
+ for(let i=0;i<Math.max(3,len/40);i++){const x=((t*speed+i*73)%(len+40))-20,side=i%2?-1:1,w=18+(i%3)*6;c.globalAlpha=alpha*.7;c.drawImage(image,box[0]+SPARK[0],box[1]+SPARK[1],SPARK[2],SPARK[3],x,side*thick*.62-2,w,4);}
+ c.restore();
+}
 function drawPanBeam(c,a,n,t){
- const s=n.beam,len=Math.hypot(s.x2-s.x1,s.y2-s.y1),angle=Math.atan2(s.y2-s.y1,s.x2-s.x1);
- if(n.mode==='aim'||!s.live){c.save();c.globalAlpha=n.mode==='aim'?.5+.35*Math.abs(Math.sin(t*12)):.28;c.translate(s.x1,s.y1);c.rotate(angle);for(let x=0;x<len;x+=14)rect(c,x,-1,8,2,'#ff6fae');c.restore();return;}
- const image=a.manipulatorFx,box=MFX.beam,thick=16,tw=box[2]*thick/(box[3]*.45);
- c.save();c.translate(s.x1,s.y1);c.rotate(angle);c.beginPath();c.rect(0,-thick,len,thick*2);c.clip();
- for(let x=-((t*240)%tw);x<len;x+=tw-2)c.drawImage(image,box[0],box[1]+box[3]*.28,box[2],box[3]*.45,x,-thick/2,tw,thick);
- rect(c,0,-1,len,2,'#fff5ed');c.restore();
+ const s=n.beam;
+ // Aiming: a thin flickering trace of the beam to come.
+ if(n.mode==='aim'||!s.live){smoothBeam(c,a,s.x1,s.y1,s.x2,s.y2,5,t,n.mode==='aim'?.35+.3*Math.abs(Math.sin(t*12)):.2,120);return;}
+ smoothBeam(c,a,s.x1,s.y1,s.x2,s.y2,16,t,1);
  centered(c,a.manipulatorFx,MFX.flash,s.x2,s.y2-6,34+6*Math.sin(t*30),.9);
+ centered(c,a.manipulatorFx,MFX.flash,s.x1,s.y1,22+4*Math.sin(t*24),.8);
 }
 function drawLaser(c,a,n,t){
  const beam=n.beam;if(!beam)return;const y=beam.y+6;
- if(n.mode==='charge'){c.save();c.globalAlpha=.45+.3*Math.abs(Math.sin(t*12));for(let x=beam.x;x<beam.x+beam.w;x+=13)rect(c,x,y,7,2,'#ff78d2');c.restore();return;}
- const image=a.manipulatorFx,box=MFX.beam,h=16,tw=box[2]*h/(box[3]*.45);
- c.save();c.beginPath();c.rect(beam.x,y-h,beam.w,h*2);c.clip();for(let x=beam.x-((t*300)%tw);x<beam.x+beam.w;x+=tw-2)c.drawImage(image,box[0],box[1]+box[3]*.28,box[2],box[3]*.45,x,y-h/2,tw,h);c.restore();
- rect(c,beam.x,y-1,beam.w,2,'#fff5ed');
+ if(n.mode==='charge'){smoothBeam(c,a,beam.x,y,beam.x+beam.w,y,5,t,.35+.3*Math.abs(Math.sin(t*12)),120);return;}
+ smoothBeam(c,a,beam.x,y,beam.x+beam.w,y,16,t,1,380);
 }
 function drawStopFrame(c,a,g,n,t){
  const image=a.manipulatorFx;
