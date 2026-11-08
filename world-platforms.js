@@ -15,7 +15,8 @@ export function stepWorldPlatforms(g,dt){
   if(s.room===g.room&&s.dim)placeDimensionPiece(g,s);
   if(s.room===g.room&&s.motion){const offset=Math.sin(g.platformClocks[g.room]*Math.PI*2/s.motion.period)*s.motion.amplitude;if(s.motion.axis==='x')s.x=s.baseX+offset;else s.y=s.baseY+offset;s.dx=s.x-s.prevX;s.dy=s.y-s.prevY;}
  }
- const p=g.player,feet=p.y+p.h;
+ // An upside-down Uma (Измерение) stands with her paws on a line above her: her «feet» are her top edge.
+ const p=g.player,feet=p.flipped?p.y:p.y+p.h;
  const support=p.grounded&&!p.climbing?g.platforms.find(s=>s.room===g.room&&Math.abs(feet-s.prevY)<2&&p.x+p.w>s.prevX+1&&p.x<s.prevX+s.w-1&&(s.id===p.supportId||!p.supportId))||g.platforms.find(s=>s.room===g.room&&Math.abs(feet-s.prevY)<1&&p.x+p.w>s.prevX+1&&p.x<s.prevX+s.w-1):null;
  if(support){p.x+=support.dx;p.y+=support.dy;p.supportId=support.id;}
  for(const e of g.enemies){

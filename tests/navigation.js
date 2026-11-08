@@ -1,21 +1,26 @@
 import {feedState} from '../dimension-systems.js';
+import {MIRROR} from '../dimension-map.js';
 import {rooms as campaignRooms} from '../level.js';
 // Test pilot: supplies only ordinary movement/jump inputs to the live game model.
 export function supportOf(g){const p=g.player;return g.platforms.find(s=>s.room===g.room&&Math.abs(s.y-p.y-p.h)<1&&p.x+p.w>s.x&&p.x<s.x+s.w);}
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-function future(g,s,seconds){if(s.dim?.type==='copy')return {...s,y:feedState(s.dim,g.time+seconds).y};const t=(g.platformClocks[s.room]||0)+seconds,offset=s.motion?Math.sin(t*Math.PI*2/s.motion.period)*s.motion.amplitude:0;return {...s,x:s.motion?.axis==='x'?s.baseX+offset:s.x,y:s.motion?.axis==='y'?s.baseY+offset:s.y};}
+function future(g,s,seconds){if(s.dim?.type==='copy'){const y=feedState(s.dim,g.time+seconds).y;return {...s,y:s.dim.reversed?MIRROR-y:y};}const t=(g.platformClocks[s.room]||0)+seconds,offset=s.motion?Math.sin(t*Math.PI*2/s.motion.period)*s.motion.amplitude:0;return {...s,x:s.motion?.axis==='x'?s.baseX+offset:s.x,y:s.motion?.axis==='y'?s.baseY+offset:s.y};}
 function tick(g,input){if(g.mode==='dialogue')g.advanceDialogue(true);else g.step(1/60,input);}
 export function walkTo(g,x,max=500){for(let i=0;i<max;i++){if(g.mode==='dialogue'){g.advanceDialogue(true);continue;}if(g.mode!=='playing')return false;const d=x-g.player.x;if(Math.abs(d)<=3)return true;tick(g,{right:d>0,left:d<0});}return false;}
+// Upside down (Измерение) the pilot works in the mirror image, where the flipped physics are the ordinary ones.
+const view=(g,s)=>s&&g.player.flipped?{...s,y:MIRROR-s.y}:s;
+const feetOf=p=>p.flipped?MIRROR-p.y:p.y+p.h;
+function supportView(g){const p=g.player;if(!p.flipped)return supportOf(g);return view(g,g.platforms.find(s=>s.room===g.room&&s.dim?.inverted&&Math.abs(s.y-p.y)<1&&p.x+p.w>s.x&&p.x<s.x+s.w));}
 export function jumpTo(g,room,index,max=1800){
  let airborne=false,landing=0,sourceAtLaunch=null;
  for(let frame=0;frame<max;frame++){
   if(g.mode==='dialogue'){g.advanceDialogue(true);continue;}if(g.mode!=='playing')return false;
-  const p=g.player,target=g.platforms.find(s=>s.room===room&&s.index===index),source=supportOf(g);if(!target)return false;
+  const p=g.player,target=g.platforms.find(s=>s.room===room&&s.index===index),source=supportView(g);if(!target)return false;
   if(p.grounded&&source?.id===target.id)return true;
   if(p.grounded){
    airborne=false;if(!source){tick(g,{});continue;}
    let flight=.9,destination=target;
-   for(let n=0;n<3;n++){destination=future(g,target,flight);const discriminant=250000+2160*(destination.y-source.y);flight=discriminant>=0?(500+Math.sqrt(discriminant))/1080:0;}
+   for(let n=0;n<3;n++){destination=view(g,future(g,target,flight));const discriminant=250000+2160*(destination.y-source.y);flight=discriminant>=0?(500+Math.sqrt(discriminant))/1080:0;}
    const launch=destination.x>source.x+source.w-48?source.x+source.w-p.w-6:destination.x+destination.w<source.x+48?source.x+6:clamp(destination.x+(destination.w-p.w)/2,source.x+6,source.x+source.w-p.w-6);
    landing=clamp(launch,destination.x+6,destination.x+destination.w-p.w-6);
    if(destination.y>source.y+15){if(destination.x+destination.w>source.x+source.w+p.w+8)landing=Math.max(landing,source.x+source.w+7);else if(destination.x<source.x-p.w-8)landing=Math.min(landing,source.x-p.w-7);}
@@ -29,8 +34,8 @@ export function jumpTo(g,room,index,max=1800){
    sourceAtLaunch={...source};airborne=true;const axis=landing-p.x;tick(g,{jump:true,right:axis>3,left:axis< -3});
   }else{
    if(!airborne){landing=target.x+(target.w-p.w)/2;airborne=true;}
-   const destination=future(g,target,.35);landing=clamp(landing,destination.x+4,destination.x+destination.w-p.w-4);
-   if(sourceAtLaunch&&destination.y>sourceAtLaunch.y+15&&p.y+p.h<sourceAtLaunch.y+8){
+   const destination=view(g,future(g,target,.35));landing=clamp(landing,destination.x+4,destination.x+destination.w-p.w-4);
+   if(sourceAtLaunch&&destination.y>sourceAtLaunch.y+15&&feetOf(p)<sourceAtLaunch.y+8){
     if(destination.x+destination.w>sourceAtLaunch.x+sourceAtLaunch.w+p.w+8)landing=Math.max(landing,sourceAtLaunch.x+sourceAtLaunch.w+7);
     else if(destination.x<sourceAtLaunch.x-p.w-8)landing=Math.min(landing,sourceAtLaunch.x-p.w-7);
    }
@@ -91,30 +96,31 @@ export function crossStudio(g,lib,{relays=true}={}){
  return on(14);
 }
 
-// «Измерение» pilot with ordinary inputs: ride the feed, walk into the envelopes, cross both rifts.
-export function crossDimension(g,{dashBoost=false}={}){
+// «Измерение» pilot with ordinary inputs: ride the rising feed, walk into the first rift, ride the upside-down feed
+// (the same moves in the mirror image), walk into the second rift and hop to the threshold.
+export function crossDimension(g){
  const p=g.player,x0=campaignRooms[7].x,piece=i=>g.platforms.find(s=>s.id==='7:'+i);
  const run=(cond,input,max=900)=>{for(let i=0;i<max&&!cond();i++)tick(g,typeof input==='function'?input(i):input);return cond();};
  const on=i=>p.grounded&&p.supportId==='7:'+i;
- const lane=l=>[1,2,3].map(k=>piece(l*3+k));
- // Pick the copy in a lane that will sit at a comfortable height for a hop from the current surface.
- const pick=(l,lo,hi)=>()=>{const cand=lane(l).map(s=>({s,y:feedState(s.dim,g.time+.6).y,k:feedState(s.dim,g.time+1.4).k})).filter(c=>c.y>=lo()&&c.y<=hi()&&c.k<.8&&c.k>.05).sort((a,b)=>b.y-a.y)[0];return cand?.s;};
- const hopToLane=(l,lo,hi)=>{let target=null;if(!run(()=>(target=pick(l,lo,hi)()),{},900))return false;return jumpTo(g,7,target.index,400);};
- const feet=()=>p.y+p.h;
+ // A lane of copies; `first` is 1 for the rising feed, 12 for the upside-down one. In the mirror both look the same.
+ const lane=(first,l)=>[0,1,2].map(k=>piece(first+l*3+k));
+ const feet=()=>feetOf(p);
+ const pick=(first,l,lo,hi)=>()=>{const cand=lane(first,l).map(s=>({s,y:feedState(s.dim,g.time+.6).y,k:feedState(s.dim,g.time+1.4).k})).filter(c=>c.y>=lo()&&c.y<=hi()&&c.k<.8&&c.k>.05).sort((a,b)=>b.y-a.y)[0];return cand?.s;};
+ const hopToLane=(first,l,lo,hi)=>{let target=null;if(!run(()=>(target=pick(first,l,lo,hi)()),{},900))return false;return jumpTo(g,7,target.index,400);};
+ const feed=(first,end)=>{
+  if(!hopToLane(first,0,()=>330,()=>430))return 'lane0@'+first;
+  if(!hopToLane(first,1,()=>feet()-80,()=>feet()+50))return 'lane1@'+first;
+  if(!hopToLane(first,2,()=>feet()-80,()=>feet()+50))return 'lane2@'+first;
+  if(!run(()=>feet()<=405&&feet()>=210,{},400))return 'wait@'+first;
+  if(!jumpTo(g,7,end,400))return 'end@'+first;return true;
+ };
  walkTo(g,x0+170);
- if(!hopToLane(0,()=>330,()=>430))return 'lane0';
- if(!hopToLane(1,()=>feet()-80,()=>feet()+50))return 'lane1';
- if(!hopToLane(2,()=>feet()-80,()=>feet()+50))return 'lane2';
- if(!run(()=>feet()<=405&&feet()>=210,{},400))return 'wait10';
- if(!jumpTo(g,7,10,400))return 'p10';
- // First envelope: just walk in.
- if(!run(()=>on(11),{right:true},400))return 'island11 '+Math.round(p.x-x0)+' '+Math.round(feet());
- // Turn back: the near envelope is a dead link, the live one is behind.
- if(!run(()=>on(12)||on(13),(i)=>dashBoost&&p.x<x0+1150?{left:true,dash:p.x<x0+1150&&p.x>x0+1130}:{left:true},400))return 'island12 '+Math.round(p.x-x0)+' '+Math.round(feet());
- if(on(12)&&!jumpTo(g,7,13,400))return 'island13';
- if(!run(()=>p.flipped&&on(14),{right:true},300))return 'flip14 '+Math.round(p.x-x0)+' '+Math.round(p.y)+' '+p.flipped;
- if(!run(()=>p.x>x0+1925-p.w-4,{right:true},300))return 'edge14';
- if(!run(()=>on(15),i=>({right:true,jump:i<2}),200))return 'hang15 '+Math.round(p.x-x0)+' '+Math.round(p.y);
- if(!run(()=>!p.flipped&&on(16),i=>({right:p.x<x0+2160}),300))return 'land16 '+Math.round(p.x-x0)+' '+Math.round(p.y)+' '+p.flipped;
- return true;
+ let r=feed(1,10);if(r!==true)return r;
+ // The first rift runs through the far end of Yuri's message: walk into it and fall up under the hanging one.
+ if(!run(()=>p.flipped&&on(11),{right:true},300))return 'flip11 '+Math.round(p.x-x0)+' '+Math.round(p.y)+' '+p.flipped;
+ walkTo(g,x0+1000);
+ r=feed(12,21);if(r!==true)return r;
+ if(!run(()=>!p.flipped&&on(22),{right:p.x<x0+1730},300))return 'land22 '+Math.round(p.x-x0)+' '+Math.round(p.y)+' '+p.flipped;
+ if(!jumpTo(g,7,23,400)||!jumpTo(g,7,24,400))return 'threshold';
+ return on(24);
 }
