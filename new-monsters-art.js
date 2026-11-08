@@ -30,7 +30,7 @@ function drawFlash(c,a,frame,x,y,w,alpha){
 // Library and notebook portrait.
 export function drawPaparazziPortrait(c,a,x,y,w,h,time,actor={},drawMonster){
  const e={x,y,w,h,dir:1,state:actor.state==='casting'?'flash':actor.state==='windup'?'charge':'patrol',timer:.15,hurtTime:actor.hurtTime||0};
- if(a.paparazzi){const frame=paparazziFrame(e,time);stripFrame(c,a.paparazzi,PAPARAZZI_ART.cell,frame,x+w/2,y+h-2,Math.min(h*.95,w),PAPARAZZI_ART.body,PAPARAZZI_ART.feet,false);return;}
+ if(a.paparazzi){const frame=actor.moving&&!e.hurtTime?Math.floor((actor.walkTime||0)*7)%2:paparazziFrame(e,time);stripFrame(c,a.paparazzi,PAPARAZZI_ART.cell,frame,x+w/2,y+h-2,Math.min(h*.95,w),PAPARAZZI_ART.body,PAPARAZZI_ART.feet,false);return;}
  c.save();c.filter='grayscale(.6) sepia(.4) brightness(.9)';drawMonster(c,a,'informant',x,y,w,h,time,false,actor);c.restore();
 }
 // Blinded: the whole view washes out white and slowly comes back.
