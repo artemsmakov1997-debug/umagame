@@ -107,13 +107,14 @@ export function enemy(type,room,x,platformIndex,extra={}){
  if(type==='echo'){actor.w=30;actor.h=40;actor.y=s.y-actor.h;actor.pose='stand';}
  if(type==='botfarm'){actor.w=40;actor.h=68;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  const kinds={botfarm:'printer',fakenews:platformIndex%3?'papers':'bin',informant:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',stamp:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
- if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
- actor.arrivalDuration=actor.spawnTime||.55;return actor;
+ // In the newsroom every monster tears out of a newspaper riding the conveyor.
+ if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':room===1?'belt':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
+ actor.arrivalDuration=actor.spawnTime||(room===1?.8:.55);return actor;
 }
 export function createEnemies(){const all=[
  enemy('fakenews',1,330,0,{trigger:90}),enemy('fakenews',1,760,0),
- enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,300,1),
- enemy('stamp',1,1580,0),enemy('fakenews',1,1900,6),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
+ enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,960,0),
+ enemy('stamp',1,1580,0),enemy('fakenews',1,1900,0),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
  enemy('informant',3,180,0,{trigger:100}),enemy('inflator',3,470,1),enemy('informant',3,680,2),enemy('inflator',3,1010,3),enemy('inflator',3,1730,6),enemy('informant',3,2120,8),
  // Студия: the Нарезчик and Склейка work from perches off the route; a Ботоферма guards each transmitter.
  enemy('cutter',5,712,15,{hunter:true}),enemy('botfarm',5,718,3),enemy('splicer',5,1046,16),enemy('botfarm',5,1522,8),enemy('cutter',5,1672,17,{hunter:true}),enemy('botfarm',5,1984,11),enemy('splicer',5,2084,18),
@@ -134,7 +135,9 @@ export function createFish(){return rooms.flatMap(r=>{
 });}
 export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.index===2?4:r.arena?5:r.index===1?4:r.index===3?11:r.index===5?4:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 const antennaPlaces=[[2,4],[3,2],[3,5],[3,7],[5,3],[5,8],[5,11],[6,13],[8,10],[8,13]];
-export function createRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
+// Transmitters were removed from every map: the list stays empty, so gates are open and bosses unshielded.
+export function createRelays(){return [];}
+export function legacyRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
  const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
  return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:room===4?3:[2,6].includes(room)?0:1,maxHp:room===4?3:1,rewardWhenOverloaded:room===4,lastSwing:-1,breakTime:0,kind,ordinal,scripted:[2,4,6].includes(room)};});}
 export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,12],[3,13],[4,4],[5,15],[5,17],[6,3],[7,10],[7,13],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}

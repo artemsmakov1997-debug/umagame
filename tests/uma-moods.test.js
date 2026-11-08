@@ -51,7 +51,6 @@ test('dash, glue and joy poses',()=>{
  const g=ready(1);standOn(g,'1:0',300);tick(g,1,{dash:true});assert.equal(moodPose(g.player,g),MOOD.dash);
  const s=ready(5);standOn(s,'5:6',1200);const splicer=enemy('splicer',5,1046,16,{active:true,noticed:true,timer:0,noticeTime:0});s.enemies=[splicer];s.player.inv=999;
  for(let i=0;i<80&&!s.tether;i++)tick(s,1);assert.ok(s.tether);tick(s,1);assert.equal(moodPose(s.player,s),MOOD.dragged);
- const r=ready(5);const relay=r.relays.find(d=>d.room===5&&d.platformIndex===3);standOn(r,'5:3',relay.x-rooms[5].x-37);r.player.dir=1;
- tick(r,1,{attack:true});assert.equal(relay.hp,0);for(let i=0;i<20;i++)tick(r,1);assert.equal(moodPose(r.player,r),MOOD.joy);
+ const r=ready(5);standOn(r,'5:3',40);r.player.joyTime=1.1;for(let i=0;i<20;i++)tick(r,1);assert.equal(moodPose(r.player,r),MOOD.joy);
  tick(r,80);assert.equal(moodPose(r.player,r),null);
 });

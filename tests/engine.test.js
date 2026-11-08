@@ -112,12 +112,12 @@ test('eight fish heal once and a collected packet cannot be collected again',()=
 test('all gameplay timers, warnings, portal growth, buffs and transitions freeze in the menu',()=>{
  const g=isolated(5);g.enemies=[enemy('panicker',5,125)];alertNearby(g,g.enemies[0]);g.player.powerTime=7;g.transition={from:4,to:5,time:.2,duration:.85};g.mode='paused';const snapshot=JSON.stringify(g);tick(g,150,{right:true,attack:true});assert.equal(JSON.stringify(g),snapshot);
 });
-test('one paw destroys a satellite dish and opens its gate even while a defender is alive',()=>{
- const relay=platforms.find(p=>p.room===3&&p.index===2),local=relay.x-campaignRooms[3].x+relay.w/2-20;const g=isolated(3,2,local-40),r=g.relays.find(d=>d.room===3&&d.platformIndex===2),e=enemy('fakenews',3,local+70,2,{hp:3,guardian:true});g.enemies=[e];g.step(1/60,{right:true,attack:true});assert.equal(r.hp,0);assert.equal(g.evidence.length,0);assert.equal(g.relays.filter(d=>d.room===3&&d.hp>0).length,2);assert.equal(e.dead,false);assert.ok(r.breakTime>0);tick(g,20,{attack:true});assert.equal(g.evidence.length,0);
+test('there are no transmitters on any map, so every gate is open',()=>{
+ const g=isolated(3);assert.equal(g.relays.length,0);for(const room of [1,3,5,7])assert.equal(g.relays.filter(d=>d.room===room&&d.hp>0).length,0);
 });
 
 test('checkpoint retry preserves records, open gates and collections but resets local enemies and portals',()=>{
- const g=isolated(3);g.completeChapter(2);g.relays[0].hp=0;g.fish=7;g.health=1;g.hurt();assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.mode,'playing');assert.equal(g.room,3);assert.equal(g.health,MAX_HEALTH);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.equal(g.fish,7);assert.equal(g.portals.length,0);assert.ok(g.enemies.some(e=>e.room===3&&!e.active));
+ const g=isolated(3);g.completeChapter(2);g.fish=7;g.health=1;g.hurt();assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.mode,'playing');assert.equal(g.room,3);assert.equal(g.health,MAX_HEALTH);assert.equal(g.evidence.length,1);assert.equal(g.fish,7);assert.equal(g.portals.length,0);assert.ok(g.enemies.some(e=>e.room===3&&!e.active));
 });
 test('death has its own pose timer and taking another protected hit does not restart it',()=>{
  const g=isolated();g.hurt();assert.equal(g.player.hurtTime,.5);tick(g,10);const time=g.player.hurtTime;g.hurt();assert.equal(g.player.hurtTime,time);g.player.inv=0;g.health=1;g.lives=1;g.hurt();assert.equal(g.mode,'lost');assert.equal(g.player.hurtTime,.5);

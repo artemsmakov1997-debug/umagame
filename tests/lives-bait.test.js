@@ -13,7 +13,7 @@ test('health and three lives are independent; normal damage consumes only hearts
  const g=isolated();assert.equal(g.health,MAX_HEALTH);assert.equal(g.lives,START_LIVES);g.hurt();assert.equal(g.health,3);assert.equal(g.lives,3);assert.equal(g.mode,'playing');
 });
 test('losing all hearts consumes exactly one life and restores the checkpoint after a pause in combat',()=>{
- const g=isolated();g.completeChapter(2);g.relays[0].hp=0;g.player.powerTime=6;g.fish=7;g.health=1;const time=g.time;g.hurt();assert.equal(g.mode,'respawning');assert.equal(g.health,0);assert.equal(g.lives,2);tick(g,30,{right:true,attack:true});assert.equal(g.time,time);assert.equal(g.player.powerTime,6);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.room,1);assert.equal(g.evidence.length,1);assert.equal(g.relays[0].hp,0);assert.equal(g.fish,7);
+ const g=isolated();g.completeChapter(2);g.player.powerTime=6;g.fish=7;g.health=1;const time=g.time;g.hurt();assert.equal(g.mode,'respawning');assert.equal(g.health,0);assert.equal(g.lives,2);tick(g,30,{right:true,attack:true});assert.equal(g.time,time);assert.equal(g.player.powerTime,6);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.room,1);assert.equal(g.evidence.length,1);assert.equal(g.fish,7);
 });
 test('the respawn transition freezes when Esc pauses the game',()=>{
  const g=isolated();g.health=1;g.hurt();tick(g,10);g.mode='paused';const before=JSON.stringify(g);tick(g,180);assert.equal(JSON.stringify(g),before);g.mode='respawning';waitRespawn(g);assert.equal(g.lives,2);assert.equal(g.health,4);

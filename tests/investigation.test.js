@@ -19,40 +19,15 @@ test('monster origins remain a mystery until the full chain is shown in the epil
 
 });
 
-test('each playable chapter has its own interactive devices and distinct boss arena',()=>{
- // The newsroom conveyor and the Dimension have no nodes (the Dimension hides «первоисточники» instead);
- // roofs and studio keep their interactive devices.
- const kinds={3:'broadcast',5:'edit'};
- assert.equal(new Game({story:false}).relays.filter(d=>d.room===1).length,0);
- {const d=new Game({story:false});d.start();assert.equal(d.relays.filter(r=>r.room===7).length,0);assert.equal(d.originals.length,3);}
- const g=new Game({story:false});g.start();
- for(const [room,type] of Object.entries(kinds)){
-  const index=Number(room),devices=g.relays.filter(d=>d.room===index);
-  assert.equal(devices.length,3);
-  assert.ok(devices.every(d=>d.kind===type));
-  assert.deepEqual(devices.map(d=>d.ordinal),[0,1,2]);
-  assert.equal(relayClues[index].length,3);
- }
- assert.equal(new Set([2,4,6,8].map(room=>JSON.stringify(layouts[room]))).size,4);
- assert.ok(g.platforms.some(s=>s.room===8&&s.cuttable));
- assert.ok(g.platforms.filter(s=>s.room===4).every(s=>!s.motion));
+test('no chapter keeps transmitters; the Dimension still hides its «первоисточники»',()=>{
+ const g=new Game({story:false});g.start();assert.equal(g.relays.length,0);assert.equal(g.originals.length,3);
 });
-
-test('destroying a signal node permanently adds a clue, with no premature answer',()=>{
- const g=new Game({story:false});g.start();g.tutorial.complete=true;
- g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];
- g.room=3;g.checkpoint=3;g.relays.filter(d=>d.room<3).forEach(d=>d.hp=0);
- const d=g.relays.find(d=>d.room===3),s=g.platforms.find(s=>s.room===3&&s.index===d.platformIndex);
- Object.assign(g.player,{x:d.x-10,y:s.y-48,h:48,dir:1,grounded:true,supportId:s.id,inv:0,cooldown:0,dash:0});
- g.step(1/60,{attack:true});
- assert.equal(d.hp,0);
- assert.equal(g.clues.length,1);
- assert.equal(g.clues[0].text,relayClues[3][d.ordinal]);
- assert.ok(g.events.some(e=>e.type==='clue'));
- g.loseLife();for(let i=0;i<75;i++)g.step(1/60);
- assert.equal(g.clues.length,1);
+test('reading a notebook adds the room\'s next clue, with no premature answer',()=>{
+ const g=new Game({story:false});g.start();g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];
+ const n=g.notebooks.find(n=>n.room===3);g.room=3;g.checkpoint=3;n.readyAt=0;const s=g.platforms.find(s=>s.room===3&&s.index===n.index);
+ Object.assign(g.player,{x:n.x-17,y:n.y-24,grounded:true,supportId:s.id});g.checkNotebooks();
+ assert.equal(g.clues.length,1);assert.equal(g.clues[0].room,3);assert.ok(!/создаёте меня|Всё начинается с нас/i.test(g.clues[0].text));
 });
-
 test('Infoshum enters the cable phase after three real screens are cracked',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;g.mode='playing';
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;

@@ -14,7 +14,7 @@ import {drawPassages} from './passage-art.js?v=0.21.5';
 import {drawNewsroomScenery,drawNewsroomConveyor} from './newsroom-art.js?v=0.21.5';
 import {drawMapProps} from './chapter-route-art.js?v=0.21.5';
 import {drawExitArrow} from './navigation-art.js?v=0.21.5';
-import {drawEnemySources,drawEchoVortex} from './enemy-arrival-art.js?v=0.21.5';
+import {drawEnemySources,drawEchoVortex,drawBeltEmergence} from './enemy-arrival-art.js?v=0.21.5';
 import {drawFinaleBackdrop} from './ending-ui.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
 import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.21.5';
@@ -93,6 +93,7 @@ export class Renderer{
   for(const e of g.enemies)if(e.active&&!e.dead&&e.room===g.room&&e.teleport)drawTeleportMarkers(c,e,t);
   for(const e of g.enemies)if(e.room===g.room&&e.active&&(!e.dead||e.deathTime>0)&&e.x>cam-140&&e.x<cam+vw+140){
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
+   drawBeltEmergence(c,a,e);
    c.save();
    if(e.spawnTime>0){const progress=Math.max(0,Math.min(1,(1-e.spawnTime/(e.arrivalDuration||.55)-.12)/.88));c.beginPath();c.rect(e.x-140,e.y-170,328,e.h+170);c.clip();c.translate(0,(1-progress)*(e.type==='servant'?12:78));c.globalAlpha=progress>.01?1:0;}
    else if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
