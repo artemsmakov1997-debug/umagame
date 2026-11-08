@@ -1,7 +1,6 @@
-import {drawInfoshumTentacle} from './infoshum-tentacle-art.js?v=0.21.5';
-import {drawPixelBarrier} from './shield-art.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {drawScreenContent,drawCableBlob,drawBreakout,drawSmokingCase} from './infoshum-anim-art.js?v=0.21.5';
+import {drawCableBlob,drawBreakout,drawSmokingCase} from './infoshum-anim-art.js?v=0.21.5';
+import {monitorRect,glassRect,corePoint,headlineBoxes,figureBox,SPLIT} from './infoshum-combat.js?v=0.21.5';
 // Rendered production assets for the two-stage Infoshum encounter.
 // Frame atlases are original pixel PNG assets, preloaded in assets.js and drawn with pixel smoothing off.
 import {rooms} from './level.js?v=0.21.5';
@@ -17,77 +16,101 @@ function point(c,x,y,r,time,color=cyan){
  c.restore();
 }
 function thickCable(c,a,b,lit,time){const x1=a.x+a.w/2,y1=a.y+a.h-8,x2=b.x+b.w/2,y2=b.y+b.h-8;for(let i=0;i<=96;i++){const t=i/96,q=1-t,x=q*q*q*x1+3*q*q*t*(x1+95)+3*q*t*t*(x2-95)+t*t*t*x2,y=q*q*q*y1+3*q*q*t*(y1+118)+3*q*t*t*(y2+118)+t*t*t*y2;rect(c,Math.round(x)-6,Math.round(y)-6,12,12,'#07112b');rect(c,Math.round(x)-2,Math.round(y)-2,4,4,lit?'#4fcbe9':'#5e3b87');if(lit&&(i+Math.floor(time*12))%10===0)rect(c,x-2,y-3,4,5,'#dcfcff');}}
+// Cable path between neighbouring monitors (bottom to bottom), used by the lit cable and the pulses.
+function cablePoint(a,b,t){const x1=a.x+a.w/2,y1=a.y+a.h-8,x2=b.x+b.w/2,y2=b.y+b.h-8,q=1-t;return {x:q*q*q*x1+3*q*q*t*(x1+95)+3*q*t*t*(x2-95)+t*t*t*x2,y:q*q*q*y1+3*q*q*t*(y1+118)+3*q*t*t*(y2+118)+t*t*t*y2};}
+// A move 0↔2 runs through the middle monitor: two cable spans.
+function pathPoint(n,from,to,t){const ms=n.monitors;if(Math.abs(from-to)===1)return cablePoint(ms[from],ms[to],t);const mid=ms[1];return t<.5?cablePoint(ms[from],mid,t*2):cablePoint(mid,ms[to],t*2-1);}
 function cables(c,n,time){
- const ms=n.monitors;
- thickCable(c,ms[0],ms[1],n.stage==='network'&&(n.fromIndex===0||n.toIndex===0),time);
- thickCable(c,ms[1],ms[2],n.stage==='network'&&(n.fromIndex===2||n.toIndex===2),time);
+ const ms=n.monitors,moving=[n.transit,...(n.stage==='network'&&n.mode==='shuffle'?n.decoys:[])].filter(m=>m&&!m.done);
+ const lit=(i,j)=>n.stage==='network'&&moving.some(m=>m.from===i||m.to===i||m.from===j||m.to===j);
+ thickCable(c,ms[0],ms[1],lit(0,0),time);thickCable(c,ms[1],ms[2],lit(2,2),time);
 }
+const SCREEN_W=183,SCREEN_H=176;
+function screen(c,a,m,frame,alpha=1){const img=a.infoshumScreens;if(!img)return false;const r=monitorRect(m);c.save();c.globalAlpha*=alpha;c.drawImage(img,frame*SCREEN_W,0,SCREEN_W,SCREEN_H,Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.round(r.h));c.restore();return true;}
+function cracks(c,m,count){if(!count)return;const g=glassRect(m);c.save();c.strokeStyle='#bff8ff';c.globalAlpha=.75;c.lineWidth=2;for(let k=0;k<count;k++){const sx=g.x+g.w*(.25+.25*k),sy=g.y+g.h*(.3+.2*(k%2));c.beginPath();for(let i=0;i<5;i++){const ang=i*1.26+k;c.moveTo(sx,sy);c.lineTo(sx+Math.cos(ang)*28,sy+Math.sin(ang)*22);}c.stroke();}c.restore();}
 function monitorFrame(m,n,time){
- if(m.state==='broken')return m.destroyTime>.45?4:5;
- if(n.stage==='rupture'||n.stage==='free')return 4;
- if(m.state==='open')return m.shieldTime>0?1:2;
- if(n.mode==='transit'&&(m.index===n.fromIndex||m.index===n.toIndex))return 2;
- if(n.mode==='transferWarning'&&m.index===n.activeIndex)return Math.floor(time*8)%3===0?2:1;
- if(m.index===n.activeIndex)return n.mode==='charge'?3:1;
- return 0;
+ if(m.burst>0)return 5;
+ if(n.mode==='hit'&&m.index===n.lastMonitorIndex)return 4;
+ if(m.face!==null&&m.face!==undefined)return m.face;
+ if(m.pulse)return m.pulse.kind==='real'?6:7;
+ return 8;
 }
-function crt(c,a,m,n,time){
- const frame=monitorFrame(m,n,time);
- atlas(c,a.infoshumCRT,frame,crtFrame,crtHeight,m.x,m.y-35,m.w,m.w*271/319,a,'crt');
- if(m.destroyTime>0){for(let i=0;i<8;i++){const travel=(.9-m.destroyTime)*55,ang=i*2.4;c.save();c.globalAlpha=Math.min(1,m.destroyTime*2);c.drawImage(a.infoshumCRT,36+(i%3)*85,77+Math.floor(i/3)*80,38,34,m.x+m.w/2+Math.cos(ang)*travel,m.y+m.h/2+Math.sin(ang)*travel,8,7);c.restore();}}
- // Screen content for the moves between screens drawn over the glass.
- if(n.stage==='network'&&m.state!=='broken'){const active=m.index===n.activeIndex,p=n.mode==='transit'?Math.min(1,n.transitTime/n.transitDuration):0;
-  const kind=n.mode==='transit'?(m.index===n.fromIndex?'empty':m.index===n.toIndex&&p>.6?'eyes':null):(m.arrival||0)>0&&active?'assemble':active&&n.mode==='transferWarning'?'socket':active&&n.mode==='charge'?'pressed':active&&n.mode==='attack'?'strike':null;
-  if(kind)drawScreenContent(c,a,m,kind,kind==='eyes'?.6+.4*Math.abs(Math.sin(time*20)):1);}
- if(frame<4){c.save();c.globalAlpha=.16;rect(c,m.x+20,m.y+20+(time*24+m.index*25)%(m.h-35),m.w-40,2,'#94f5ff');c.restore();}
- if(frame===3){point(c,m.x+m.w/2,m.y+m.h/2,48,time,magenta);}
- if(frame===4){point(c,m.x+m.w/2,m.y+m.h/2,72,time,magenta);}
- if((m.state!=='open'||m.shieldTime>0)&&m.state!=='broken'&&n.stage==='network')drawPixelBarrier(c,m.x+m.w/2,m.y+55,m.w*.56,105,{time,alpha:m.shieldTime>0?.8:.45,flash:m.guardFlash});
- // The hittable terminal below is marked by target-highlight.js; the screen itself is not a target.
+function pulse(c,a,n,move,time,decoy){
+ const t=Math.min(1,move.time/move.duration),p=pathPoint(n,move.from,move.to,t),q=pathPoint(n,move.from,move.to,Math.min(1,t+.03)),angle=Math.atan2(q.y-p.y,q.x-p.x||1e-6);
+ for(let i=12;i>=1;i--){const r=Math.max(0,t-i/60),o=pathPoint(n,move.from,move.to,r);rect(c,o.x-2,o.y-2,4+i%3,3,decoy?(i%2?'#ff5ad8':'#8a2f86'):(i%2?'#3ecaff':'#b8f6ff'));}
+ c.save();if(decoy){c.globalAlpha=.45+.35*Math.abs(Math.sin(time*18));c.filter='hue-rotate(70deg) saturate(1.5)';}
+ drawCableBlob(c,a,p.x,p.y,angle,time);c.restore();
 }
-function terminal(c,a,m,n,time){
- if(n.stage!=='network')return;
- const frame=m.destroyTime>.45?2:m.state==='broken'?3:m.state==='open'&&m.shieldTime<=0?1:0;
- const x=m.terminalX-40,y=m.terminalY-27;
- atlas(c,a.infoshumTerminal,frame,terminalFrame,terminalHeight,x,y,80,60,a,'terminal');
- for(let i=0;i<2;i++)rect(c,m.terminalX-10+i*12,m.terminalY+30,8,3,i<(m.armor??2)?'#72edff':'#553b69');
- if(m.state==='open'&&m.shieldTime<=0){point(c,m.terminalX,m.terminalY+19,29,time,magenta);}
-}
-function transfer(c,a,n,time){
- if(n.mode!=='transit')return;
- const f=n.monitors[n.fromIndex],t=n.monitors[n.toIndex],p=Math.min(1,n.transitTime/n.transitDuration);
- const sx=f.x+f.w/2,sy=f.y+f.h/2,ex=t.x+t.w/2,ey=t.y+t.h/2;
- const x=sx+(ex-sx)*p,y=sy+(ey-sy)*p-Math.sin(p*Math.PI)*54;
- for(let i=20;i>=0;i--){
-  const r=Math.max(0,p-i/36),px=sx+(ex-sx)*r,py=sy+(ey-sy)*r-Math.sin(r*Math.PI)*54;
-  rect(c,px-12*Math.sin(i*2),py+9*Math.cos(i*4),4+i%4*2,3+i%3,i%3?'#3ecaff':'#fa70e9');
+function drawShells(c,a,g,time){
+ const n=g.boss.network;
+ for(const m of n.monitors){
+  const frame=monitorFrame(m,n,time);if(!screen(c,a,m,frame))drawInfoshumSprite(c,a,'crt',0,m.x,m.y-35,m.w,m.w*271/319);
+  if(frame>=6||frame===8)cracks(c,m,m.cracks);
+  if(n.mode==='reveal'&&m.face===0&&n.hintTime>0){const r=glassRect(m);c.save();c.globalAlpha=Math.min(1,n.hintTime)*(.55+.35*Math.sin(time*10));c.strokeStyle='#7ff4ff';c.lineWidth=4;c.strokeRect(r.x-6,r.y-6,r.w+12,r.h+12);c.restore();}
+  if(frame===8){c.save();c.globalAlpha=.14;rect(c,m.x+20,m.y+20+(time*24+m.index*25)%(m.h-35),m.w-40,2,'#94f5ff');c.restore();}
  }
- // A blob of noise travelling inside the cable, turned along the arc.
- const q=Math.min(1,p+.02),nx=sx+(ex-sx)*q,ny=sy+(ey-sy)*q-Math.sin(q*Math.PI)*54,angle=Math.atan2(ny-y,nx-x||1e-6);
- if(!drawCableBlob(c,a,x,y,angle,time)){c.save();c.globalAlpha=.85;atlas(c,a.infoshumBody,7,bodyFrame,bodyHeight,x-66,y-58,132,117,a,'body');c.restore();}
+ if(n.mode==='shuffle'){if(n.transit)pulse(c,a,n,n.transit,time,false);for(const d of n.decoys)if(!d.done)pulse(c,a,n,d,time,true);}
+ drawCableMap(c,g,time);
+ if(n.mode==='reveal'){const left=n.timer;c.save();c.globalAlpha=.8;for(const m of n.monitors){if(m.face===null)continue;const r=glassRect(m),k=Math.max(0,left/5.4);rect(c,r.x,r.y+r.h+10,r.w*k,3,'#ff9bea');}c.restore();}
 }
-// The screen Infoshum tears open: the one still standing when the others are broken.
-const ruptureMonitor=n=>n.monitors.find(m=>m.state!=='broken')||n.monitors[n.lastMonitorIndex]||n.monitors.at(-1);
-function screenExit(c,a,g,time){
- const b=g.boss,n=b.network,near=ruptureMonitor(n);
- if(!near)return;
- const x=near.x+near.w/2,y=near.y+near.h/2;
- if(drawBreakout(c,a,near,n.transitionProgress,time))return;
- c.save();c.globalAlpha=.2+n.transitionProgress*.8;
- const scale=.5+n.transitionProgress*.75;
- atlas(c,a.infoshumBody,7,bodyFrame,bodyHeight,x-170*scale,y-148*scale,340*scale,296*scale,a,'body');
+// A small cable map at the top of the view: all three screens and every pulse stay readable
+// even when two monitors are off-screen.
+function drawCableMap(c,g,time){
+ const n=g.boss.network,x0=g.camera+22,y=12,xs=[0,46,92].map(v=>x0+v),ys=[y+6,y,y+6];
+ c.save();c.globalAlpha=.88;rect(c,x0-8,y-6,132,34,"#0b0f26");rect(c,x0-8,y-6,132,2,"#5f3f96");
+ for(const [i,j] of[[0,1],[1,2]])for(let k=0;k<=10;k++){const t=k/10;rect(c,xs[i]+12+(xs[j]-xs[i])*t,ys[i]+18+(ys[j]-ys[i])*t+Math.sin(t*Math.PI)*5,2,2,'#4a3f78');}
+ for(const m of n.monitors){const i=m.index,lit=m.pulse?.kind==='real'?'#7ff4ff':m.pulse?.kind==='decoy'?'#ff6cda':m.face!==null?'#ffe08a':'#3a3d6a';rect(c,xs[i],ys[i],24,18,'#7a5bc4');rect(c,xs[i]+3,ys[i]+3,18,12,lit);for(let k=0;k<m.cracks;k++)rect(c,xs[i]+5+k*6,ys[i]+7,4,2,'#ffffff');}
+ const dot=(move,decoy)=>{const t=Math.min(1,move.time/move.duration),seg=Math.abs(move.from-move.to)===1?null:t<.5?[move.from,1,t*2]:[1,move.to,t*2-1],[a,b,q]=seg||[move.from,move.to,t];const px=xs[a]+12+(xs[b]-xs[a])*q,py=ys[a]+18+(ys[b]-ys[a])*q+Math.sin(q*Math.PI)*5;
+  if(decoy){rect(c,px-3,py-3,6,2,'#ff6cda');rect(c,px-3,py+1,6,2,'#ff6cda');rect(c,px-3,py-3,2,6,'#ff6cda');rect(c,px+1,py-3,2,6,'#ff6cda');}else{rect(c,px-3,py-3,6,6,'#b8f6ff');rect(c,px-1,py-1,2,2,'#ffffff');}};
+ if(n.mode==='shuffle'){for(const d of n.decoys)if(!d.done)dot(d,true);if(n.transit)dot(n.transit,false);}
  c.restore();
- for(let i=0;i<33;i++){const a=i*2.4+time*3,r=(15+(i%12)*7)*n.transitionProgress;
-  rect(c,x+Math.cos(a)*r,y+Math.sin(a)*r,3+i%3*3,3+i%4,i%2?'#ff55ed':'#4ae6fb');}
 }
-function tendril(c,a,b,n,time){
- if(!n.target||!['slamWarning','slam','weak'].includes(n.mode))return;
- const x=n.target.x,y=n.target.y-26,headX=b.x+b.w/2,headY=b.y+b.h*.5;
- if(n.mode==='slamWarning'){
-  c.save();c.strokeStyle='#fd76d4';c.lineWidth=3;c.setLineDash([7,5]);c.strokeRect(x-30,y-5,60,30);c.restore();
-  point(c,x,y,25,time,magenta);return;
+// The screen Infoshum tears open: the one with the third crack.
+const ruptureMonitor=n=>n.monitors[n.lastMonitorIndex]||n.monitors[1];
+function screenExit(c,a,g,time){
+ const n=g.boss.network,near=ruptureMonitor(n);if(!near)return;
+ if(drawBreakout(c,a,near,n.transitionProgress,time))return;
+}
+// ——— Phase 2: core, headline ring and the cable staircase ———
+let g_boss=null;const CABLE_W=184,CABLE_H=180,CORE_W=184,CORE_H=192,POSE_W=190,POSE_H=204,SILENCE_W=172,SILENCE_H=192;
+function cell(c,img,cw,ch,frame,cx,cy,w,{flip=false,rot=0,alpha=1}={}){if(!img)return;const h=w*ch/cw;c.save();c.globalAlpha*=alpha;c.translate(Math.round(cx),Math.round(cy));if(rot)c.rotate(rot);if(flip)c.scale(-1,1);c.drawImage(img,frame*cw,0,cw,ch,-w/2,-h/2,w,h);c.restore();}
+// The cable is tiled from the 30° segment (frame 1: axis (0,135)→(184,46), ribbed top 24 px above the axis),
+// so its thickness stays the same however far the slam reaches. The steps lie on the ribbed top.
+const SEG={cx:92,cy:90.5,angle:Math.atan2(46-135,184),len:204,top:24},CABLE_SCALE=.6;
+function drawCable(c,a,n,frame,time){
+ const cab=n.cable,img=a.infoshumCable;if(!cab||!img)return;const dx=(cab.to.x-cab.from.x)*cab.dir,dy=cab.to.y-cab.from.y,len=Math.hypot(dx,dy),angle=Math.atan2(dy,dx),k=CABLE_SCALE,piece=SEG.len*k*.86;
+ c.save();c.translate(cab.from.x,cab.from.y);if(cab.dir<0)c.scale(-1,1);c.rotate(angle);
+ for(let d=-piece*.3;d<len+piece*.2;d+=piece){c.save();c.translate(d+piece/2,SEG.top*k);c.rotate(-SEG.angle);c.drawImage(img,CABLE_W,0,CABLE_W,CABLE_H,-SEG.cx*k,-SEG.cy*k,CABLE_W*k,CABLE_H*k);c.restore();}
+ if(frame===5){c.globalAlpha=.6+.4*Math.abs(Math.sin(time*20));c.strokeStyle='#ff6cf0';c.lineWidth=2;c.beginPath();for(let d=0;d<=len;d+=14)c.lineTo(d,SEG.top*k+Math.sin(d*.31+time*30)*8);c.stroke();}
+ c.restore();
+ // The end that bites into the platform.
+ cell(c,img,CABLE_W,CABLE_H,2,cab.from.x+cab.dir*6,cab.from.y-30,70,{flip:cab.dir<0,alpha:.95});
+}
+function drawWhip(c,a,n){const t=n.target;if(!t||!a.infoshumCable)return;const cp=corePoint(g_boss);cell(c,a.infoshumCable,CABLE_W,CABLE_H,6,(t.x+cp.x)/2,(t.y+cp.y)/2,150,{flip:cp.x<t.x,alpha:Math.max(0,n.timer/.35)});}
+function drawRing(c,a,n,b,time){const img=a.infoshumCore;if(!img)return;for(const h of headlineBoxes(n,b))cell(c,img,CORE_W,CORE_H,4+(h.i+Math.floor(n.ring/6.283))%4,h.x+20,h.y+15,58,{rot:Math.sin(time*3+h.i)*.15});}
+function drawFree(c,a,g,time){
+ const b=g.boss,n=b.network,cp=corePoint(b),wob=Math.sin(time*2.7)*6;
+ if(n.mode==='aim'&&n.target){cell(c,a.infoshumCable,CABLE_W,CABLE_H,7,n.target.x,n.target.y-14,96,{alpha:.6+.4*Math.abs(Math.sin(time*9))});}
+ g_boss=b;if(n.cable)drawCable(c,a,n,n.mode==='retractWarn'?5:4,time);else if(n.mode==='retract')drawWhip(c,a,n);
+ const exposed=['anchored','retractWarn','reel'].includes(n.mode);
+ if(exposed&&a.infoshumCore){const frame=b.hurtTime>0?2:n.mode==='reel'?3:n.mode==='retractWarn'&&Math.floor(time*8)%2?1:0;cell(c,a.infoshumCore,CORE_W,CORE_H,frame,cp.x,cp.y-26+wob,300);}
+ else if(a.infoshumPoses&&['aim','slam','retract'].includes(n.mode)){const frame=n.mode==='aim'?0:n.mode==='slam'?1:2;cell(c,a.infoshumPoses,POSE_W,POSE_H,frame,cp.x,cp.y-30+wob,320,{flip:n.target&&n.target.x<cp.x});}
+ else{const frame=b.hurtTime>0?5:n.mode==='volley'?3:0;drawInfoshumSprite(c,a,'body',frame,b.x+b.w/2-175,b.y-74+wob,350,302);}
+ drawRing(c,a,n,b,time);
+}
+// ——— Phase 3: the doubles ———
+function drawNoise(c,a,g,time){
+ const n=g.boss.network,img=a.infoshumPoses;
+ for(const f of n.figures){
+  if(f.state==='warn'){c.save();c.strokeStyle=f.real?'#ff7ad8':'#b48cff';c.globalAlpha=.6;c.setLineDash([8,6]);c.lineWidth=2;c.beginPath();c.moveTo(f.x,f.y);c.lineTo(f.tx,f.ty-20);c.stroke();c.restore();colorWarning(c,{x:f.tx,y:f.ty},time,'wave');}
+  const flicker=f.real?1:.62+.25*Math.sin(time*23+f.id);
+  if(f.state==='split')cell(c,img,POSE_W,POSE_H,5,f.x,f.y,330);
+  else if(f.state==='dive'){const ang=Math.atan2(f.ty-f.y,f.tx-f.x),flip=f.tx<f.x;cell(c,img,POSE_W,POSE_H,3,f.x,f.y,300,{flip,rot:flip?ang-Math.PI+.6:ang-.6,alpha:flicker});}
+  else if(f.state==='stuck')cell(c,img,POSE_W,POSE_H,4,f.x,f.ty-40,280);
+  else if(f.state==='burst')cell(c,img,POSE_W,POSE_H,7,f.x,f.y,300,{alpha:Math.max(0,1-f.time/.45)});
+  else if(f.real){const bob=Math.sin(time*2.7)*6;drawInfoshumSprite(c,a,'body',f.state==='warn'?1:0,f.x-150,f.y-130+bob,300,260);}
+  else cell(c,img,POSE_W,POSE_H,6,f.x,f.y,300,{alpha:flicker});
  }
- drawInfoshumTentacle(c,a,b,n,time);
 }
 export function drawInfoshumBackdrop(c,a,g,time){
  const b=g.boss,n=b.network;if(g.room!==8||!n)return;
@@ -102,7 +125,7 @@ export function drawInfoshumBackdrop(c,a,g,time){
  }
 }
 export function drawInfoshumPlatform(c,a,p,time){
- if(!a.infoshumPlatform?.complete)return;
+ if(!a.infoshumPlatform?.complete||p.infoshumStep)return;
  const image=a.infoshumPlatform,scale=30/177,cap=Math.min(140*scale,p.w/3),y=p.y-3;
  c.drawImage(image,22,299,140,177,p.x,y,cap,30);
  for(let x=cap;x<p.w-cap;x+=300*scale){const w=Math.min(300*scale,p.w-cap-x);c.drawImage(image,430,299,w/scale,177,p.x+x,y,w,30);}
@@ -110,34 +133,22 @@ export function drawInfoshumPlatform(c,a,p,time){
 }
 export function drawInfoshumForeground(c,a,g,time){
  const b=g.boss,n=b.network;if(g.room!==8||!n)return;
- if(b.hp<=0){if(n.stage==='free')for(const m of n.monitors)drawInfoshumSprite(c,a,'crt',5,m.x+m.w/2-55,380,110,94);return;}
- if(n.stage==='network'){
-  for(const m of n.monitors)crt(c,a,m,n,time);
-  for(const m of n.monitors)terminal(c,a,m,n,time);
-  transfer(c,a,n,time);
-  if(n.mode==='charge'&&n.target){
-   for(const t of[n.target,...(n.extraTargets||[])])colorWarning(c,t,time,n.attackKind);
-  }
-  if(n.mode==='transferWarning'){
-   const t=n.monitors[n.toIndex];if(t)point(c,t.x+t.w/2,t.y+t.h/2,48,time,cyan);
-  }
-  return;
- }
+ if(b.hp<=0){if(n.stage!=='network')for(const m of n.monitors)drawInfoshumSprite(c,a,'crt',5,m.x+m.w/2-55,380,110,94);return;}
+ if(n.stage==='network'){drawShells(c,a,g,time);return;}
  if(n.stage==='rupture'){
-  const torn=ruptureMonitor(n);for(const m of n.monitors)if(m!==torn||!a.infoshumBreakout)crt(c,a,m,n,time);
+  const torn=ruptureMonitor(n),k=n.transitionProgress;
+  for(const m of n.monitors)if(m!==torn||!a.infoshumBreakout)screen(c,a,m,k<.3?8:k<.5?9:k<.7?10:11);
   screenExit(c,a,g,time);return;
  }
- // The last screen tears open. Free form is a dedicated eight-pose sprite atlas, not a
- // reused projection of the old CRT sprite.
  for(const m of n.monitors)if(!(m===ruptureMonitor(n)&&drawSmokingCase(c,a,m)))drawInfoshumSprite(c,a,'crt',5,m.x+m.w/2-55,380,110,94);
- const frame=b.hurtTime>0?5:n.mode==='weak'?4:n.mode==='slam'?2:['slamWarning','rainWarning','beamWarning'].includes(n.mode)?1:['waveWarning','scan','rain'].includes(n.mode)?3:0;
- const wobble=Math.sin(time*2.7)*8,spread=n.mode==='slam'?1.1:1;
- const w=350*spread,h=302*spread;
- atlas(c,a.infoshumBody,frame,bodyFrame,bodyHeight,b.x+b.w/2-w/2,b.y-74+wobble,w,h,a,'body');
- tendril(c,a,b,n,time);
- if(['waveWarning','rainWarning','beamWarning','platformWarning','slamWarning'].includes(n.mode)&&n.target){for(const t of[n.target,...(n.extraTargets||[])])colorWarning(c,t,time,n.mode==='rainWarning'?'rain':n.mode==='beamWarning'?'beam':'wave');}
- if(n.mode==='scan'&&n.target){const x=n.scanX;rect(c,x-7,20,14,n.target.y-20,'#c642b54d');rect(c,x-2,20,4,n.target.y-20,'#ffa5f2');drawInfoshumSprite(c,a,'effect',3,x-24,n.target.y-30,48,44);}
-
+ if(n.stage==='free')drawFree(c,a,g,time);else drawNoise(c,a,g,time);
+}
+// «Тишина»: he shrinks into a line and a dot like an old TV switching off (boss-defeat-art.js).
+export function drawInfoshumDefeat(c,a,d){
+ const img=a.infoshumSilence;if(!img)return false;const t=d.time,cx=d.x+d.w/2,cy=d.y+d.h/2,frame=t<.45?0:t<.85?1:t<1.25?2:3,alpha=frame===3?Math.max(0,1-(t-1.25)/.45):1;
+ if(frame===0){const sh=Math.sin(t*80)*3;cell(c,img,SILENCE_W,SILENCE_H,0,cx+sh,cy,300);}else cell(c,img,SILENCE_W,SILENCE_H,frame,cx,cy,frame===1?320:200,{alpha});
+ if(frame>=1&&frame<3){c.save();c.globalAlpha=.25*(1-(t-.45)/.8);c.fillStyle='#ffffff';c.fillRect(cx-800,0,1600,480);c.restore();}
+ return true;
 }
 function colorWarning(c,t,time,kind){
  const w=kind==='rain'?110:kind==='beam'?190:kind==='wave'?86:76;

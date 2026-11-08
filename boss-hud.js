@@ -22,11 +22,11 @@ export function drawBossHud(c,a,g,width,{y=8}={}){
  rect(c,barX-4,y-3,barW+10,58,'#02091be8');c.drawImage(portrait(a,b.id),x,y-5,face,face);
  rect(c,barX-2,y+3,barW+4,16,style.edge);rect(c,barX,y+5,barW,12,style.dark);
  rect(c,barX+2,y+7,(barW-4)*Math.max(0,b.hp/b.maxHp),8,style.fill);rect(c,barX+2,y+7,(barW-4)*Math.max(0,b.hp/b.maxHp),2,'#ffe8c3');
- for(const fraction of b.network?[20/32,24/32,28/32]:b.id==='spreader'?Array.from({length:b.maxHp-1},(_,i)=>(i+1)/b.maxHp):[1/3,2/3])rect(c,barX+barW*fraction,y+5,2,12,'#020817');
+ for(const fraction of b.id==='spreader'?Array.from({length:b.maxHp-1},(_,i)=>(i+1)/b.maxHp):[1/3,2/3])rect(c,barX+barW*fraction,y+5,2,12,'#020817');
  c.save();c.font=`${width<360?17:20}px UmaText, monospace`;c.fillStyle='#ffe4b1';c.textAlign='center';c.textBaseline='top';c.fillText(style.name,barX+barW/2,y+24,barW);c.restore();
  if(style.kind==='paper')for(let i=0;i<3;i++)rect(c,x+7+i*7,y+43,4,3,style.edge);
  if(style.kind==='broadcast')for(let i=0;i<3;i++){const done=i<b.phase-1,now=i===b.phase-1;rect(c,barX+i*14,y+46,10,7,done?'#5d4a63':now?'#ff8a5c':'#2c3552');if(now)rect(c,barX+i*14+2,y+48,6,3,'#ffe0a8');}
  if(style.kind==='film')for(let i=0;i<Math.floor(w/12);i++)rect(c,x+i*12,y+49,5,3,style.edge);
- if(style.kind==='static'){if(b.network)for(const m of b.network.monitors){rect(c,barX+m.index*22,y+45,15,9,m.state==='broken'?'#3c3658':m.index===b.network.activeIndex&&b.network.stage==='network'?'#ff6cda':'#70dfe8');rect(c,barX+m.index*22+2,y+47,11,5,'#10182d');}else for(let i=0;i<8;i++)rect(c,barX+i*barW/8,y+48+i%2,8,2,i%2?style.fill:style.edge);}
+ if(style.kind==='static'){if(b.network)for(let i=0;i<3;i++){const done=i<b.phase-1,now=i===b.phase-1;rect(c,barX+i*14,y+46,10,7,done?'#3c3658':now?'#ff6cda':'#2c3552');if(now)rect(c,barX+i*14+2,y+48,6,3,'#b8f6ff');}else for(let i=0;i<8;i++)rect(c,barX+i*barW/8,y+48+i%2,8,2,i%2?style.fill:style.edge);}
  const sx=b.x+b.w/2-g.camera,world=g.viewWidth||768;if(sx<24||sx>world-24){const right=sx>world-24,px=right?x+w-10:x+7;for(let i=0;i<4;i++)rect(c,px+(right?i:-i),y+45+i,1,8-i*2,style.edge);}
 }

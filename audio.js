@@ -75,6 +75,11 @@ export class GameAudio{
   const dx=Number.isFinite(event.x)&&game?event.x-game.player.x:0,pan=Math.max(-.7,Math.min(.7,dx/450)),level=Math.abs(dx)>650?.18:Math.abs(dx)>350?.55:1;
   const tone=(frequency,to,duration=.15,gain=.07,wave='square',delay=0)=>this.voice({frequency,to,duration,gain:gain*level,wave,pan,start:now+.006+delay});
   const noise=(duration=.12,gain=.07,filter=2000,delay=0)=>this.voice({noise:true,duration,gain:gain*level,filter,pan,start:now+.006+delay});
+  if(type==='infoshumScreenCrack'){noise(.3,.08,3000);tone(700,160,.3,.05,'square');return;}
+  if(type==='infoshumFakeHit'){noise(.25,.06,6000);tone(240,120,.2,.04,'sawtooth');return;}
+  if(type==='infoshumDive'){tone(520,90,.35,.04,'sawtooth');return;}
+  if(type==='infoshumStuck'){noise(.2,.08,500);tone(80,40,.25,.06,'triangle');return;}
+  if(type==='infoshumSplit'){tone(200,600,.4,.04,'triangle');return;}
   if(type==='letterLand'){noise(.09,.07,500);tone(120,70,.12,.05,'square');return;}
   if(type==='agitatorOverheat'){noise(.5,.04,5200);tone(900,300,.45,.025,'sawtooth');return;}
   if(type==='mastBend'){tone(140,55,.6,.06,'sawtooth');noise(.4,.05,1200,.05);return;}

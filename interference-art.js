@@ -28,7 +28,7 @@ function drawTextures(c,img,fill,width,time){
  c.restore();
 }
 export function drawInterferenceOverlay(c,g,width,assets){
- const n=g.boss.network;if(g.room!==8||!n||n.stage!=='free'||g.boss.hp<=0)return;
+ const n=g.boss.network;if(g.room!==8||!n||n.stage!=='noise'||g.boss.hp<=0)return;
  const fill=n.noise||0,img=assets?.interferenceTextures;
  if(img?.width)drawTextures(c,img,fill,width,g.time);
  else{c.save();c.globalAlpha=Math.min(.72,.08+fill*.6);const lines=Math.floor(fill*110);
