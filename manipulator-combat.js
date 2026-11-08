@@ -2,8 +2,8 @@ import {rooms} from './level.js?v=0.21.5';
 import {phasePlans} from './boss-phases.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
 // «Монтаж»: the Manipulator films the fight in three phases of two hits (each paw hit deals 3 of 18).
-// 1 «Панорама»: the camera rides a crane that rolls along the dolly track and pans a slanted beam across
-//   the stage. The beam stops on the first surface it meets: the permanent docks cast a safe shadow, the
+// 1 «Панорама»: the camera rides a crane that rolls along the dolly track behind the stage (it never hurts) and
+//   pans a slanted beam across the stage in bursts. The beam stops on the first surface it meets: the permanent docks cast a safe shadow, the
 //   studio platforms it touches burn out. After the pan the crane lowers the camera onto a dock: it smokes.
 // 2 «Стоп-кадр»: the camera leaves the crane. A viewfinder follows Uma and snaps a stop-frame; scissors cut
 //   the film-strip platforms. After two snaps the camera ejects its reel and stands open without it.
@@ -14,7 +14,7 @@ export const STUDIO_DOCKS=[1,2,3];
 export const STRIPS=[6,7,8,9,10,11,12,13,14,15,16,17];
 // The crane: dolly on the track at floor level, column, arm of ARM px from the pivot.
 export const TRACK_Y=422,PIVOT_H=140,ARM=300,DOLLY={w:110,h:48},CLAW=66;
-export const PAN_TIP_Y=40,BEAM_ANGLE=55*Math.PI/180,ROLL_SPEED=320,PAN_SPEED=220,AIM=1,OVERHEAT=2.6,LOWER=.7,RAISE=.6,TRACK_MARGIN=40;
+export const PAN_TIP_Y=40,BEAM_ANGLE=36*Math.PI/180,ROLL_SPEED=320,PAN_SPEED=220,AIM=1,OVERHEAT=2.6,LOWER=.7,RAISE=.6,TRACK_MARGIN=40;
 export const FRAME=1.6,FRAME_LOCK=.45,SNAP=.55,VIEWFINDER=96,SNAPS=2,EJECT=.5,DEVELOP=2.4,WARP=.9;
 export const SCISSORS_EVERY=2.6,SCISSORS_AIM=.9,CUT_GAP=2.2,MAX_CUTS=3;
 export const PROJECT=1.4,CHARGE=1,BEAM=.7,DARK=2.4;
@@ -51,7 +51,11 @@ function panStart(g){const n=g.boss.studio,c=n.crane,r=rooms[6],reach=ARM*Math.c
  return {from:fromLeft?r.x+TRACK_MARGIN:r.end-TRACK_MARGIN,to:fromLeft?r.end-TRACK_MARGIN-reach:r.x+TRACK_MARGIN+reach,dir};}
 function moveCrane(c,target,dt,speed){const d=target.x-c.x,step=speed*dt;c.x=Math.abs(d)<=step?target.x:c.x+Math.sign(d)*step;const da=target.angle-c.angle;c.angle+=clamp(da,-1.4*dt,1.4*dt);return Math.abs(d)<=step&&Math.abs(da)<.01;}
 // The beam leaves the lens at BEAM_ANGLE below the horizon and stops on the first surface it meets.
-export function lensPoint(g){const b=g.boss;return {x:b.x+b.w/2+b.dir*30,y:b.y+b.h-12};}
+// The lens of the tilted camera pose (camera sheet frame 5), so the beam leaves exactly where the painted beam starts.
+export function lensPoint(g){const b=g.boss;return {x:b.x+b.w/2+b.dir*16,y:b.y+b.h-51};}
+// The pan beam fires in bursts: while the shutter is closed Uma can slip past it.
+export const BURST=.8,SHUTTER=.55;
+export function beamLive(n){return n.mode==='pan'&&(n.elapsed%(BURST+SHUTTER))<BURST;}
 export function castBeam(g){
  const b=g.boss,l=lensPoint(g),dx=b.dir*Math.cos(BEAM_ANGLE),dy=Math.sin(BEAM_ANGLE);let best=(480-l.y)/dy,hit=null;
  for(const s of solidSurfaces(g)){if(s.room!==6||s.y<=l.y+1)continue;const t=(s.y-l.y)/dy,x=l.x+dx*t;if(x>=s.x&&x<=s.x+s.w&&t<best){best=t;hit=s;}}
@@ -87,7 +91,6 @@ export function stepManipulator(g,dt){
  if(n.mode==='warp')stepWarp(g);else if(n.phase===1)stepCrane(g,dt);else if(n.phase===2)stepStopFrame(g,dt);else stepProjector(g,dt);
  if(n.phase>1&&n.crane){const r=rooms[6];c_roll(n.crane,{x:r.x+TRACK_MARGIN,angle:1.05},dt);}
  // A rolling dolly runs Uma over on the floor.
- const c=n.crane;if(c&&c.moving&&g.overlap(g.player,dollyBox(c))&&!g.player.dash&&hurtUma(g,c.x)&&g.mode==='playing')g.push(Math.sign(g.player.x+17-c.x)||1,c.x);
 }
 function stepCrane(g,dt){
  const b=g.boss,n=b.studio,r=rooms[6];
@@ -99,10 +102,10 @@ function stepCrane(g,dt){
   case 'roll':{c.moving=true;const done=moveCrane(c,{x:n.pan.from,angle:PAN_ANGLE},dt,ROLL_SPEED);if(Math.abs(c.x-n.pan.from)>20)c.dir=Math.sign(n.pan.from-c.x)||c.dir;hangCamera(g);
    if(done||n.timer<=0){c.x=n.pan.from;c.dir=n.pan.dir;hangCamera(g);setMode(g,'aim',AIM);n.beam=castBeam(g);g.emit('bossWarning',{boss:b.id,ability:'pan',x:b.x,y:b.y});}return;}
   case 'aim':{hangCamera(g);n.beam=castBeam(g);if(n.timer<=0){setMode(g,'pan',12);g.emit('bossCast',{boss:b.id,ability:'pan',x:b.x,y:b.y});}return;}
-  case 'pan':{c.moving=true;const done=moveCrane(c,{x:n.pan.to,angle:PAN_ANGLE},dt,PAN_SPEED);hangCamera(g);n.beam=castBeam(g);const s=n.beam.surface;
-   if(s&&s.studioPlatform&&s.studioPhase==='solid'){s.studioPhase='warning';s.studioTimer=.45;s.burned=true;g.emit('cutWarning',{x:n.beam.x2,y:s.y,enemyType:'manipulator'});}
-   if(Math.floor(n.elapsed*12)!==Math.floor((n.elapsed-dt)*12))n.scorches.push({x:n.beam.x2,y:n.beam.y2,t:0});
-   if(!g.player.dash&&segmentHits(n.beam,g.player))hurtUma(g,n.beam.x2);
+  case 'pan':{c.moving=true;const done=moveCrane(c,{x:n.pan.to,angle:PAN_ANGLE},dt,PAN_SPEED);hangCamera(g);n.beam=castBeam(g);const s=n.beam.surface,live=beamLive(n);n.beam.live=live;
+   if(live&&s&&s.studioPlatform&&s.studioPhase==='solid'){s.studioPhase='warning';s.studioTimer=.45;s.burned=true;g.emit('cutWarning',{x:n.beam.x2,y:s.y,enemyType:'manipulator'});}
+   if(live&&Math.floor(n.elapsed*12)!==Math.floor((n.elapsed-dt)*12))n.scorches.push({x:n.beam.x2,y:n.beam.y2,t:0});
+   if(live&&!g.player.dash&&segmentHits(n.beam,g.player))hurtUma(g,n.beam.x2);
    if(done||n.timer<=0){n.beam=null;n.target=nearestDock(g);n.park=parkFor(g,n.target);setMode(g,'park',6);}return;}
   case 'park':{c.moving=true;const done=moveCrane(c,n.park,dt,ROLL_SPEED);if(Math.abs(c.x-n.park.x)>2){c.dir=Math.abs(n.park.x-c.x)>140?Math.sign(n.park.x-c.x):n.park.dir;}else c.dir=n.park.dir;hangCamera(g);
    if(done||n.timer<=0){Object.assign(c,n.park);onDock(g,n.target);b.dir=c.dir;setMode(g,'overheat',OVERHEAT);g.emit('cameraOverheat',{x:b.x,y:b.y});}return;}
@@ -177,13 +180,13 @@ export function stepStudioPlatforms(g,dt){
  for(const s of list)s.intangible=!!(live&&n.phase===3&&n.fakes.includes(s.index));
  if(!live){for(const s of list){s.studioPhase='solid';s.studioTimer=5;}return;}
  if(n.phase===1){
-  let missing=list.filter(s=>['gap','forming'].includes(s.studioPhase)).length;
+  let missing=list.filter(s=>['gap','forming'].includes(s.studioPhase)&&!s.burnGap).length;
   for(const s of list){
    s.studioPhase??='solid';s.studioTimer??=5+s.index*.33;s.studioTimer-=dt;
    if(s.studioPhase==='solid'&&(g.player.grounded&&g.player.supportId===s.id||s.studioTimer<=0)){s.studioPhase='warning';s.studioTimer=.7;g.emit('cutWarning',{x:s.x+s.w/2,y:s.y,enemyType:'manipulator'});}
-   else if(s.studioPhase==='warning'&&s.studioTimer<=0&&(missing<2||s.burned)){s.studioPhase='gap';s.studioTimer=1.15;s.burned=false;missing++;g.emit('platformCut',{x:s.x+s.w/2,y:s.y});}
+   else if(s.studioPhase==='warning'&&s.studioTimer<=0&&(missing<2||s.burned)){s.studioPhase='gap';s.studioTimer=1.15;s.burnGap=!!s.burned;if(!s.burned)missing++;s.burned=false;g.emit('platformCut',{x:s.x+s.w/2,y:s.y});}
    else if(s.studioPhase==='gap'&&s.studioTimer<=0){s.studioPhase='forming';s.studioTimer=.35;}
-   else if(s.studioPhase==='forming'&&s.studioTimer<=0){s.studioPhase='solid';s.studioTimer=6+s.index*.17;missing--;g.emit('platformRestore',{x:s.x+s.w/2,y:s.y});}
+   else if(s.studioPhase==='forming'&&s.studioTimer<=0){s.studioPhase='solid';s.studioTimer=6+s.index*.17;if(!s.burnGap)missing--;s.burnGap=false;g.emit('platformRestore',{x:s.x+s.w/2,y:s.y});}
   }
  }else if(n.phase===2){
   for(const s of list){if(s.studioPhase==='warning')s.studioPhase='solid';if(!['gap','forming'].includes(s.studioPhase))continue;s.studioTimer-=dt;if(s.index in n.cuts)n.cuts[s.index]+=dt;

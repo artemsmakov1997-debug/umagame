@@ -713,3 +713,6 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
  #app #library-screen .library-dots{margin-left:auto}
  #app #library-screen .library-dots i{width:9px;height:9px}
 }
+
+/* Authors: four credits. */
+.authors-list{list-style:none;margin:14px 0;padding:0;display:grid;gap:clamp(8px,1cqw,16px);font-size:clamp(12px,1.45cqw,21px)}.authors-list li{display:flex;gap:.6em;flex-wrap:wrap;align-items:baseline}.authors-list li::before{content:counter(list-item) '.';color:#ffd36a;min-width:1.4em}.authors-list strong{color:#ffe6a4;font-weight:normal}

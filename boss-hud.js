@@ -47,7 +47,10 @@ export function drawBossHud(c,a,g,width,{y=8}={}){
   for(let xx=bar.x+lw-1;xx<bar.x+bar.w-rw+1;xx+=mw){c.save();c.beginPath();c.rect(bar.x+lw-1,bar.y,bar.w-lw-rw+2,bar.h);c.clip();put(c,img,Mb,xx,bar.y,mw,bar.h);c.restore();}
   put(c,img,Lb,bar.x,bar.y,lw,bar.h);put(c,img,Rb,bar.x+bar.w-rw,bar.y,rw,bar.h);};
  strip(S.empty);const cut=bar.x+bar.w*frac;
- if(frac>0){c.save();c.beginPath();c.rect(bar.x,bar.y-2,cut-bar.x,bar.h+4);c.clip();strip(S.fill);c.restore();}
+ // The lost part is dimmed so the remaining health stands out against the casing.
+ c.save();c.globalAlpha=.45;c.fillStyle='#050212';c.fillRect(cut,bar.y+1,bar.x+bar.w-cut,bar.h-2);c.restore();
+ if(frac>0){c.save();c.beginPath();c.rect(bar.x,bar.y-2,cut-bar.x,bar.h+4);c.clip();if(b.id==='infoshum')c.filter='brightness(1.45) saturate(1.35)';strip(S.fill);c.restore();
+  c.save();c.globalAlpha=.9;c.fillStyle='#fff6e0';c.fillRect(Math.round(cut)-1,bar.y+1,2,bar.h-2);c.restore();}
  // A fresh hit: a fading ghost of the lost chunk and the boss's own damage burst.
  let m=hits.get(b);if(!m||b.hp>m.hp){m={hp:b.hp,at:-9,from:frac};hits.set(b,m);}
  if(b.hp<m.hp){m.from=m.hp/b.maxHp;m.hp=b.hp;m.at=g.time;}

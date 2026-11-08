@@ -77,9 +77,14 @@ test('«Прямой эфир»: gusts blow an exposed Uma away from the tower; 
  place(g,X0+c.x+c.w/2-17,'4:'+AGI.chimneys[2]);assert.equal(sheltered(g),false,'standing on top is exposed');
  place(g,X0+TOWERS[1].ladder-17);assert.ok(sheltered(g),'at the foot of his tower');
 });
-test('every gust carries two Сенсации: a low one to duck under and a high one; chimneys burst them',()=>{
- const g=ready(false),n=air(g,1);place(g,X0+300);n.wind={phase:'warn',timer:0};g.step(1/60,{});assert.equal(n.birds.length,2);assert.ok(n.birds.every(s=>s.dir===-1));
+test('every gust carries three Сенсации at different heights; chimneys burst them',()=>{
+ const g=ready(false),n=air(g,1);place(g,X0+300);n.wind={phase:'warn',timer:0};g.step(1/60,{});assert.equal(n.birds.length,3);assert.equal(new Set(n.birds.map(s=>s.y)).size,3);assert.ok(n.birds.every(s=>s.dir===-1));
  tick(g,240);assert.ok(n.birds.every(s=>s.state==='burst')||n.birds.length===0,'the tall chimney on the right stops the low one');
+});
+test('phase 2: when Uma is far away or up high a sound wave from the megaphone flies to her',()=>{
+ const g=ready(false),b=g.boss,n=rally(g);n.shoutTimer=0;place(g,X0+300);const h=g.health;
+ assert.ok(until(g,()=>n.mode==='shoutWarn',60));assert.ok(until(g,()=>n.shouts.length>0,60));const w=n.shouts[0];assert.ok(w.vx<0);
+ assert.ok(until(g,()=>g.health<h,240),'the wave reaches her');
 });
 test('the tower ladder is climbed with ↑; on the deck a paw on the screen sends him leaping to the other tower',()=>{
  const g=ready(),b=g.boss,n=air(g,1),t=TOWERS[1];place(g,X0+t.ladder-17);assert.ok(until(g,()=>g.player.grounded&&g.player.supportId===towerDeckId(1),300,{up:true}),'climb the ladder');

@@ -17,6 +17,7 @@ export const COLLECT_SOURCES=[76,250,432,614,788];
 export const COLLECT=2.2,STREAM_SPEED=300,SINK=.6,HEAVY=2.6;
 export const WINDUP=1.2,DASH_SPEED=560,OVERSHOOT=170,SKID=.35,STUN=2.2,DASHES=2;
 export const AIM=.9,AIM_LOCK=.3,SPEAR_SPEED=720,STUCK=1.9,DIVES=3;
+export const TURN=.9;
 export const COVER_HOVER=300,SERVANT_RECOVER=1.3;
 export const DASH_HITBOX={h:54};
 export const SHELTERS=[1,2];
@@ -79,6 +80,8 @@ function goNext(g){
  else if(phase==='ground'){f.dashes=0;setMode(b,'dive',.8);}
  else{f.dives=0;setMode(b,'ascend',.7);}
 }
+// Glide at a cruising speed with soft starts and stops; the mode lasts at least as long as the flight.
+function glide(b,to,speed,min){const f=b.fight;if(!f.from){f.from={x:b.x,y:b.y};f.dur=Math.max(min,Math.hypot(to.x-b.x,to.y-b.y)/speed);f.timer=Math.max(f.timer,f.dur);}const k=clamp(f.elapsed/f.dur,0,1),e=k*k*(3-2*k);b.x=f.from.x+(to.x-f.from.x)*e;b.y=f.from.y+(to.y-f.from.y)*e;}
 function fly(b,to,t){const f=b.fight;if(!f.from)f.from={x:b.x,y:b.y};const k=clamp(t,0,1),e=k*k*(3-2*k);b.x=f.from.x+(to.x-f.from.x)*e;b.y=f.from.y+(to.y-f.from.y)*e;}
 export function stepSpreader(g,dt){
  const b=g.boss,f=fight(b),p=g.player,r=rooms[b.room],px=p.x+p.w/2;
@@ -86,18 +89,18 @@ export function stepSpreader(g,dt){
  if(!f.relaysCleared){f.relaysCleared=true;g.relays.filter(d=>d.room===b.room).forEach(d=>{d.hp=0;d.breakTime=.45;});summonServants(g);g.emit('bossPhase',{boss:b.id,phase:1,name:phasePlans.spreader[0][0]});}
  b.state=OPENINGS.includes(f.mode)?'recover':['windup','aim','collect'].includes(f.mode)?'windup':'casting';
  switch(f.mode){
-  case 'enter':{if(f.side===undefined||f.elapsed<=dt)f.side=px<r.x+r.width/2?1:-1;fly(b,{x:edgeX(g,-f.side),y:FLY_Y},f.elapsed/.8);b.dir=f.side;
+  case 'enter':{if(f.side===undefined||f.elapsed<=dt)f.side=px<r.x+r.width/2?1:-1;glide(b,{x:edgeX(g,-f.side),y:FLY_Y},420,.8);b.dir=f.side;
    if(f.timer<=0){setMode(b,'bombing',PASS_TIME);f.startX=b.x;f.dropDistance=0;g.emit('bossWarning',{boss:b.id,ability:'rain',x:b.x,y:b.y});}return;}
-  case 'bombing':{const endX=edgeX(g,f.side),t=clamp(f.elapsed/PASS_TIME,0,1),x=f.startX+(endX-f.startX)*t;f.dropDistance+=Math.abs(x-b.x);b.x=x;b.y=FLY_Y+Math.sin(f.elapsed*5)*6;b.dir=f.side;b.ability='rain';
+  case 'bombing':{const endX=edgeX(g,f.side),u=clamp(f.elapsed/PASS_TIME,0,1),t=u-Math.sin(2*Math.PI*u)/(2*Math.PI),x=f.startX+(endX-f.startX)*t;f.dropDistance+=Math.abs(x-b.x);b.x=x;b.y=FLY_Y+Math.sin(f.elapsed*5)*6;b.dir=f.side;b.ability='rain';
    while(f.dropDistance>=BUNDLE_SPACING){f.dropDistance-=BUNDLE_SPACING;dropBundle(g,b);}
-   if(f.timer<=0){f.passes--;if(f.passes>0){f.side*=-1;setMode(b,'turn',.6);}else if(f.phase==='air'){setMode(b,'collect',COLLECT);f.sources=COLLECT_SOURCES;g.emit('bossWarning',{boss:b.id,ability:'collect',x:b.x,y:b.y});}else if(f.phase==='ground'){f.dashes=0;setMode(b,'dive',.8);}else{f.dives=0;setMode(b,'aim',AIM);}}return;}
-  case 'turn':{b.dir=f.side;if(f.timer<=0){setMode(b,'bombing',PASS_TIME);f.startX=b.x;f.dropDistance=0;}return;}
-  case 'collect':{fly(b,{x:r.x+r.width/2-b.w/2,y:FLY_Y+20},f.elapsed/.6);spawnStreams(g,dt);if(f.timer<=0){f.streams=[];
+   if(f.timer<=0){f.passes--;if(f.passes>0){f.side*=-1;setMode(b,'turn',TURN);}else if(f.phase==='air'){setMode(b,'collect',COLLECT);f.sources=COLLECT_SOURCES;g.emit('bossWarning',{boss:b.id,ability:'collect',x:b.x,y:b.y});}else if(f.phase==='ground'){f.dashes=0;setMode(b,'dive',.8);}else{f.dives=0;setMode(b,'aim',AIM);}}return;}
+  case 'turn':{if(f.turnX===undefined)f.turnX=b.x;const k=clamp(f.elapsed/TURN,0,1);b.dir=k<.5?-f.side:f.side;b.x=f.turnX-f.side*Math.sin(k*Math.PI)*36;b.y=FLY_Y-Math.sin(k*Math.PI)*30;if(f.timer<=0){b.x=f.turnX;b.y=FLY_Y;f.turnX=undefined;setMode(b,'bombing',PASS_TIME);f.startX=b.x;f.dropDistance=0;}return;}
+  case 'collect':{glide(b,{x:r.x+r.width/2-b.w/2,y:FLY_Y+20},380,.6);spawnStreams(g,dt);if(f.timer<=0){f.streams=[];
     // Overloaded, he sinks beside Uma, onto the surface she stands on.
     f.sinkTo=sinkSpot(g);setMode(b,'sink',SINK);g.emit('spreaderOverload',{x:b.x,y:b.y});}return;}
   case 'sink':{fly(b,f.sinkTo,f.elapsed/SINK);b.dir=px<b.x+b.w/2?-1:1;if(f.timer<=0)setMode(b,'heavy',HEAVY);return;}
   case 'heavy':{b.dir=px<b.x+b.w/2?-1:1;if(f.timer<=0)setMode(b,'rise',.7);return;}
-  case 'rise':{fly(b,{x:b.x,y:FLY_Y},f.elapsed/.7);if(f.timer<=0)goNext(g);return;}
+  case 'rise':{glide(b,{x:b.x,y:FLY_Y},260,.7);if(f.timer<=0)goNext(g);return;}
   case 'dive':{if(!f.diveTo){const far=px<r.x+r.width/2?1:-1;f.diveTo={x:edgeX(g,far),y:FLOOR_Y-b.h};f.dashDir=-far;}fly(b,f.diveTo,f.elapsed/.8);b.dir=f.dashDir;
    if(f.timer<=0){b.x=f.diveTo.x;b.y=f.diveTo.y;f.diveTo=null;setMode(b,'landed',.4);g.emit('bossLand',{boss:b.id,x:b.x,y:b.y});}return;}
   case 'landed':{if(f.timer<=0)beginWindup(g);return;}
@@ -108,15 +111,15 @@ export function stepSpreader(g,dt){
    if(f.dashDir>0?b.x>=f.dashTarget:b.x<=f.dashTarget){b.x=f.dashTarget;f.dashes++;setMode(b,'crash',SKID);g.emit('spreaderCrash',{x:b.x+b.w/2,y:FLOOR_Y});}return;}
   case 'crash':{if(f.timer<=0)setMode(b,'stunned',STUN);return;}
   case 'stunned':{if(f.timer<=0){if(spreaderPhase(b)!=='ground'){setMode(b,'takeoff',.7);}else if(f.dashes<DASHES)beginWindup(g);else setMode(b,'takeoff',.7);}return;}
-  case 'takeoff':{fly(b,{x:b.x,y:FLY_Y},f.elapsed/.7);if(f.timer<=0){const phase=spreaderPhase(b);if(phase!==f.phase)goNext(g);else{f.passes=1;f.side=px<r.x+r.width/2?1:-1;setMode(b,'enter',.6);}}return;}
-  case 'ascend':{fly(b,{x:b.x,y:FLY_Y},f.elapsed/.7);if(f.timer<=0)setMode(b,'aim',AIM);return;}
+  case 'takeoff':{glide(b,{x:b.x,y:FLY_Y},300,.7);if(f.timer<=0){const phase=spreaderPhase(b);if(phase!==f.phase)goNext(g);else{f.passes=1;f.side=px<r.x+r.width/2?1:-1;setMode(b,'enter',.6);}}return;}
+  case 'ascend':{glide(b,{x:b.x,y:FLY_Y},300,.7);if(f.timer<=0)setMode(b,'aim',AIM);return;}
   case 'aim':{const tx=clamp(px-b.w/2,r.x+EDGE,r.end-EDGE-b.w);if(f.timer>AIM_LOCK)b.x+=(tx-b.x)*Math.min(1,dt*6);b.y+=(FLY_Y-b.y)*Math.min(1,dt*6);f.aimX=b.x+b.w/2;f.aimY=surfaceAt(g,f.aimX);
    if(f.elapsed<=dt)g.emit('bossWarning',{boss:b.id,ability:'spear',x:f.aimX,y:f.aimY});if(f.timer<=0)setMode(b,'spear',2);return;}
   case 'spear':{b.y+=SPEAR_SPEED*dt;b.x=f.aimX-b.w/2;if(b.y+b.h>=f.aimY){b.y=f.aimY-b.h;f.dives++;
     if(p.dash===0&&Math.abs(px-f.aimX)<44&&Math.abs(p.y+p.h-f.aimY)<70){g.hurt(false,f.aimX);}
     for(const dir of[-1,1])f.shocks.push({x:f.aimX+dir*30,y:f.aimY,vx:dir*230,t:0});g.emit('spreaderImpact',{x:f.aimX,y:f.aimY});setMode(b,'stuck',STUCK);}return;}
   case 'stuck':{if(f.timer<=0)setMode(b,'pull',.45);return;}
-  case 'pull':{fly(b,{x:b.x,y:FLY_Y},f.elapsed/.45);if(f.timer<=0){if(spreaderPhase(b)!=='spear')goNext(g);else if(f.dives<DIVES)setMode(b,'aim',AIM);else{f.passes=1;f.side=px<r.x+r.width/2?1:-1;setMode(b,'enter',.6);}}return;}
+  case 'pull':{glide(b,{x:b.x,y:FLY_Y},520,.45);if(f.timer<=0){if(spreaderPhase(b)!=='spear')goNext(g);else if(f.dives<DIVES)setMode(b,'aim',AIM);else{f.passes=1;f.side=px<r.x+r.width/2?1:-1;setMode(b,'enter',.6);}}return;}
  }
 }
 function beginWindup(g){const b=g.boss,f=b.fight,px=g.player.x+g.player.w/2;f.dashDir=px<b.x+b.w/2?-1:1;setMode(b,'windup',WINDUP);g.emit('bossWarning',{boss:b.id,ability:'dash',x:b.x,y:b.y});}

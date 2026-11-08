@@ -10,7 +10,7 @@ for(const[width,height]of[[1920,1080],[1366,768],[390,844],[320,568],[844,390]])
  await p.evaluate(async()=>{const g=testGame,{activateRoom}=await import('./room-transitions.js?v=0.21.5'),{stepBoss}=await import('./boss.js?v=0.21.5');g.mode='playing';g.notebooks=[];g.enemies=[];activateRoom(g,2);g.boss.noticeTime=0;g.step=()=>{};g.testingInvulnerable=true;
   window.advanceSpreader=n=>{for(let i=0;i<n;i++){g.time+=1/60;stepBoss(g,1/60);}};});
  await place(p,'under');
- await p.evaluate(()=>{advanceSpreader(150);testGame.enemies.forEach((e,i)=>Object.assign(e,{spawnTime:0,x:testGame.player.x+(i?120:-110),y:300}));testGame.updateCamera();});
+ await p.evaluate(()=>{for(let i=0;i<60*8&&!(testGame.boss.fight?.mode==='bombing'&&testGame.boss.fight.elapsed>1.4);i++)advanceSpreader(1);testGame.enemies.forEach((e,i)=>Object.assign(e,{spawnTime:0,x:testGame.player.x+(i?120:-110),y:300}));testGame.updateCamera();});
  await p.waitForTimeout(60);
  assert.equal(await mode(p),'air:bombing');
  assert.ok(await p.evaluate(()=>testGame.boss.fight.bundles.length>=2));
