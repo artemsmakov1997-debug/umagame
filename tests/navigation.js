@@ -1,10 +1,10 @@
 import {feedState} from '../dimension-systems.js';
-import {MIRROR} from '../dimension-map.js';
+import {MIRROR,slideX} from '../dimension-map.js';
 import {rooms as campaignRooms} from '../level.js';
 // Test pilot: supplies only ordinary movement/jump inputs to the live game model.
 export function supportOf(g){const p=g.player;return g.platforms.find(s=>s.room===g.room&&Math.abs(s.y-p.y-p.h)<1&&p.x+p.w>s.x&&p.x<s.x+s.w);}
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-function future(g,s,seconds){if(s.dim?.type==='copy'){const y=feedState(s.dim,g.time+seconds).y;return {...s,y:s.dim.reversed?MIRROR-y:y};}const t=(g.platformClocks[s.room]||0)+seconds,offset=s.motion?Math.sin(t*Math.PI*2/s.motion.period)*s.motion.amplitude:0;return {...s,x:s.motion?.axis==='x'?s.baseX+offset:s.x,y:s.motion?.axis==='y'?s.baseY+offset:s.y};}
+function future(g,s,seconds){if(s.dim?.type==='slide')return {...s,x:campaignRooms[s.room].x+slideX(s.dim,g.time+seconds)};if(s.dim?.type==='copy'){const y=feedState(s.dim,g.time+seconds).y;return {...s,y:s.dim.reversed?MIRROR-y:y};}const t=(g.platformClocks[s.room]||0)+seconds,offset=s.motion?Math.sin(t*Math.PI*2/s.motion.period)*s.motion.amplitude:0;return {...s,x:s.motion?.axis==='x'?s.baseX+offset:s.x,y:s.motion?.axis==='y'?s.baseY+offset:s.y};}
 function tick(g,input){if(g.mode==='dialogue')g.advanceDialogue(true);else g.step(1/60,input);}
 export function walkTo(g,x,max=500){for(let i=0;i<max;i++){if(g.mode==='dialogue'){g.advanceDialogue(true);continue;}if(g.mode!=='playing')return false;const d=x-g.player.x;if(Math.abs(d)<=3)return true;tick(g,{right:d>0,left:d<0});}return false;}
 // Upside down (Измерение) the pilot works in the mirror image, where the flipped physics are the ordinary ones.
@@ -122,6 +122,9 @@ export function crossDimension(g){
  walkTo(g,x0+1000);
  r=feed(12,21);if(r!==true)return r;
  if(!run(()=>!p.flipped&&on(22),{right:p.x<x0+1730},300))return 'land22 '+Math.round(p.x-x0)+' '+Math.round(p.y)+' '+p.flipped;
- if(!jumpTo(g,7,23,400)||!jumpTo(g,7,24,400))return 'threshold';
- return on(24);
+ // «Пересылка»: hop along the sliding messages to the threshold.
+ // Wait until the next piece has swung close (the gap between the edges, a little ahead in time, is small), then hop.
+ const gapTo=(i,dt)=>{const src=g.platforms.find(s=>s.id===p.supportId),dst=piece(i);if(!src)return 0;const a=future(g,src,dt),b=future(g,dst,dt);return Math.max(b.x-(a.x+a.w),a.x-(b.x+b.w));};
+ for(const i of [23,24,25,26,27,28]){if(!run(()=>gapTo(i,.3)<55&&gapTo(i,.9)<75,{},900))return 'wait'+i;if(!jumpTo(g,7,i,900))return 'slide'+i+' '+Math.round(p.x-x0)+' '+Math.round(p.y);}
+ return on(28);
 }

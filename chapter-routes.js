@@ -1,5 +1,5 @@
 import {rooms,platforms} from './level.js?v=0.21.5';
-export const sectionNames={1:['Редакционный зал','Печатный цех','Серверная'],3:['Батуты','Переулки','Ветреные крыши'],5:['Павильон','Прожекторы','Монтажная'],7:['Лента','Изнанка','Разлом']};
+export const sectionNames={1:['Редакционный зал','Печатный цех','Серверная'],3:['Батуты','Переулки','Ветреные крыши'],5:['Павильон','Прожекторы','Монтажная'],7:['Лента','Изнанка','Разлом','Пересылка']};
 export function hazardZone(room,section){return [260,370];}
 // A location machine runs while its controller is intact.
 export function machineActive(g,room,section){const control=g.mapProps?.find(d=>d.room===room&&d.section===section);return !!control?.hp;}
@@ -23,7 +23,7 @@ export function tryRouteShortcut(g){
 export function stepSection(g){
  // Sectors share one running world. Crossing never freezes physics or changes mode.
  if(!g.cinematic||!sectionNames[g.room])return;
- const index=Math.min(2,Math.max(0,Math.floor((g.player.x-rooms[g.room].x)/768))),key=g.room+':'+index;
+ const index=Math.min(sectionNames[g.room].length-1,Math.max(0,Math.floor((g.player.x-rooms[g.room].x)/768))),key=g.room+':'+index;
  if(index===0||g.visitedSections.has(key))return;
  g.visitedSections.add(key);g.emit('sectionEnter',{room:g.room,section:index,title:sectionNames[g.room][index]});
 }

@@ -121,7 +121,7 @@ export class Renderer{
    if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,e.dir<0,e);
    if(e.type==='clickbait')drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);
    c.restore();c.filter='none';c.globalAlpha=1;if(e.dead||e.spawnTime>0||e.phased)continue;
-   drawEnemyDefense(c,e,t);
+   drawEnemyDefense(c,e,t,a);
    if(e.guardian)text(c,'!',e.x+38,e.y-72,'#ffcf77');if(e.state==='windup')text(c,'!',e.x+19,e.y-(e.type==='inflator'&&e.room===3?62:78),'#ffcf79',2);
    if(e.type==='inflator'&&e.room!==3&&['windup','blast'].includes(e.state)){
     const start=e.dir>0?e.x+40:e.x-360;if(e.state==='windup'){rect(c,e.x+16,e.y-34,16,3,'#e7ad63');}
