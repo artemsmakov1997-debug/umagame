@@ -88,7 +88,7 @@ async function boot(){
    if(event.type==='antennaHit')notify('Попадание '+event.hits+'/3. Чередуй антенны!',2800);
    if(event.type==='interferenceLost')notify(game.testingInvulnerable?'Тестовая защита: помехи достигли предела.':'Помехи заполнили эфир. Потеряна жизнь.',3000);
    if(event.type==='broadcastShieldBreak')notify('Щит разрушен! Догони Агитатора до заполнения помех.',3600);
-   if(event.type==='infoshumReveal'&&event.first)notify('Настоящий — там, куда прибежал бирюзовый импульс. Ищи золотую печать и стрелку вправо!',4200);
+   if(event.type==='infoshumReveal'&&event.first)notify('Мониторы летают! Запрыгни сверху на тот, где показался Инфошум.',4200);
    if(event.type==='infoshumFakeHit'&&!event.double)notify('Подделка! У настоящего экрана есть печать.',2600);
    if(event.type==='infoshumRupture')notify('Последний экран не выдерживает! Инфошум вырывается наружу.',3700);
    if(event.type==='infoshumFreed')notify('Его кабель — лестница. Взбегай к ядру и бей!',4200);
