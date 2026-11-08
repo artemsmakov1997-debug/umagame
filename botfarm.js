@@ -1,8 +1,12 @@
 import {enemy,rooms} from './level.js?v=0.21.5';
-// Ботоферма (Студия): a server rack that stamps out identical bots. The rack never moves and never hurts on touch;
-// it takes three paw hits. Its bots hop together on one shared beat towards Uma, hurt on contact and die from one hit.
+import {solidSurfaces} from './terrain.js?v=0.21.5';
+// Ботоферма (Студия): a server rack that stamps out identical bots. In the studio it is sealed in a cage on the wall
+// and cannot be hit; elsewhere it takes three paw hits. Its bots jump together on one shared beat, from platform to
+// platform towards Uma; they hurt on contact and die from one hit. A bot that jumps onto a riser that goes dark falls.
 // When the rack breaks, every bot it made hangs (grey, spinner) and falls apart.
 export const BOT_BEAT=1.2,MAX_BOTS=3,PRINT_TIME=.6,PRINT_COOLDOWN=2.6,BOT_SPEED=78,BOT_HOP=44,FREEZE_TIME=.6;
+// A real jump between platforms: take-off speed, gravity and the horizontal speed of the leap (≈70 px up, ≈80 px across).
+export const BOT_JUMP={vy:-380,vx:112,gravity:1080};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // The shared hop: everyone crouches, jumps and lands at the same moment.
 export function botHop(t){
@@ -14,11 +18,11 @@ export function botHop(t){
 }
 export const botsOf=(g,farm)=>g.enemies.filter(e=>e.type==='bot'&&e.ownerId===farm.id&&!e.dead);
 function printBot(g,farm){
- const s=g.platforms.find(s=>s.room===farm.room&&s.index===farm.platformIndex);if(!s)return;
+ const s=g.platforms.find(s=>s.room===farm.room&&s.index===(farm.printOn??farm.platformIndex));if(!s)return;
  const side=g.player.x<farm.x?-1:1,x=clamp(farm.x+farm.w/2-14+side*24,s.x+4,s.x+s.w-32);
  g.botSerial=(g.botSerial||0)+1;
- const bot=enemy('bot',farm.room,x-rooms[farm.room].x,farm.platformIndex,{id:'bot-'+g.botSerial,ownerId:farm.id,active:true,noticed:true,spawnTime:.4,w:28,h:28,dir:side});
- bot.y=s.y-bot.h;bot.origin=s.x+4;bot.end=s.x+s.w-bot.w-4;delete bot.source;bot.arrivalDuration=.4;
+ const bot=enemy('bot',farm.room,x-rooms[farm.room].x,s.index,{id:'bot-'+g.botSerial,ownerId:farm.id,active:true,noticed:true,spawnTime:.4,w:28,h:28,dir:side});
+ bot.y=s.y-bot.h;bot.origin=s.x+4;bot.end=s.x+s.w-bot.w-4;delete bot.source;bot.arrivalDuration=.4;bot.vx=0;bot.vy=0;bot.lastBeat=Math.floor(g.time/BOT_BEAT);
  g.enemies.push(bot);g.emit('botSpawn',{x:bot.x,y:bot.y,enemyType:'bot'});
 }
 export function stepBotfarm(g,e,dt,dx,dy){
@@ -34,7 +38,22 @@ export function stepBot(g,e,dt,dx){
   else if(e.timer<=0){e.dead=true;e.hp=0;e.deathTime=.35;g.emit('copyDissolve',{x:e.x,y:e.y,enemyType:'bot'});}
   return;
  }
- const hop=botHop(g.time);e.hopPhase=hop.phase;
- if(hop.phase==='air'){if(e.noticed)e.dir=dx<0?-1:1;e.x=clamp(e.x+e.dir*BOT_SPEED*dt,e.origin,e.end);}
- e.y=base-hop.h;
+ const hop=botHop(g.time),beat=Math.floor(g.time/BOT_BEAT);e.hopPhase=e.jumpPhase==='air'?'air':hop.phase;
+ const surfaces=solidSurfaces(g).filter(s=>s.room===e.room);
+ if(e.jumpPhase==='air'){
+  const feet=e.y+e.h;e.x+=e.vx*dt;e.vy=Math.min(560,e.vy+BOT_JUMP.gravity*dt);e.y+=e.vy*dt;
+  const landed=e.vy>=0&&surfaces.filter(s=>e.x+e.w>s.x+2&&e.x<s.x+s.w-2&&feet<=(s.prevY??s.y)+1&&e.y+e.h>=s.y).sort((a,b)=>a.y-b.y)[0];
+  if(landed){e.y=landed.y-e.h;e.platformIndex=landed.index;e.origin=landed.x+2;e.end=Math.max(e.origin,landed.x+landed.w-e.w-2);e.vx=0;e.vy=0;e.jumpPhase=null;e.hopPhase='land';g.emit('botLand',{x:e.x,y:e.y,enemyType:'bot'});}
+  else if(e.y>520){e.dead=true;e.hp=0;e.deathTime=.28;g.emit('copyDissolve',{x:e.x,y:e.y,enemyType:'bot'});}
+  return;
+ }
+ // Standing: if the floor under the bot vanished (a dark riser, a cut), it drops.
+ if(!surfaces.some(s=>Math.abs(s.y-e.y-e.h)<3&&e.x+e.w>s.x+2&&e.x<s.x+s.w-2)){e.jumpPhase='air';e.vx=0;e.vy=40;return;}
+ // On each beat every bot leaps towards Uma: across to the next platform when one is within reach, else on the spot.
+ if(hop.phase==='air'&&e.lastBeat!==beat){e.lastBeat=beat;if(e.noticed)e.dir=dx<0?-1:1;
+  // The longest leap that still lands on something: across a gap if it can, else a shorter hop to its own edge.
+  const T=2*-BOT_JUMP.vy/BOT_JUMP.gravity,feet=e.y+e.h,reach=k=>{const x=e.x+e.w/2+e.dir*BOT_JUMP.vx*T*k;return surfaces.find(s=>x>s.x+4&&x<s.x+s.w-4&&s.y>feet-60&&s.y<feet+140);};
+  const k=[1,.75,.5,.3].find(k=>reach(k)),target=k&&reach(k);
+  e.vx=target&&Math.abs(dx)>12?e.dir*BOT_JUMP.vx*k:0;e.vy=BOT_JUMP.vy;e.jumpPhase='air';e.hopPhase='air';
+ }
 }

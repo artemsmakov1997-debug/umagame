@@ -52,7 +52,7 @@ export function stepEchoWarp(g,dt){
 export function stepSplicer(g,e,dt,dx,dy){
  if(e.state==='patrol'){
   e.x+=e.dir*e.speed*dt;
-  if(Math.abs(dx)<285&&Math.abs(dy)<120&&e.timer<=0&&!g.tether&&!(g.player.glueGrace>0)){e.state='windup';e.timer=.7;g.emit('glueWarning',{x:e.x,y:e.y,enemyType:e.type});}
+  if(Math.abs(dx)<285&&Math.abs(dy)<(e.container?210:120)&&e.timer<=0&&!g.tether&&!(g.player.glueGrace>0)){e.state='windup';e.timer=.7;g.emit('glueWarning',{x:e.x,y:e.y,enemyType:e.type});}
  }else if(e.state==='windup'&&e.timer<=0){e.state='pulling';e.timer=5;g.tether={ownerId:e.id,remaining:5,total:5};g.emit('gluePull',{x:e.x,y:e.y,enemyType:e.type});}
  else if(e.state==='pulling'&&e.timer<=0){releaseTether(g,e.id);e.state='recover';e.timer=2;}
  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=2.3;}
@@ -65,7 +65,7 @@ export function releaseTether(g,ownerId=null){
 export function stepTether(g,dt){
  const p=g.player;p.pulled=false;if(!g.tether)return;
  const e=actorById(g,g.tether.ownerId),t=g.tether;
- if(!e||e.dead||e.room!==g.room||!(e.state==='pulling'||e===g.boss&&e.state==='casting'&&e.ability==='splice')||p.dash>0||Math.abs(e.x-p.x)>380||Math.abs(e.y+e.h-p.y-p.h)>145){if(p.dash>0)p.glueGrace=1.8;releaseTether(g);return;}
+ if(!e||e.dead||e.room!==g.room||!(e.state==='pulling'||e===g.boss&&e.state==='casting'&&e.ability==='splice')||p.dash>0||Math.abs(e.x-p.x)>380||Math.abs(e.y+e.h-p.y-p.h)>(e.container?230:145)){if(p.dash>0)p.glueGrace=1.8;releaseTether(g);return;}
  t.remaining-=dt;if(t.remaining<=0){releaseTether(g);return;}
  p.pulled=true;p.sleeping=false;p.idleTime=0;p.slideTime=(p.slideTime||0)+dt;
  if(!p.knock)p.vx=clamp(p.vx+Math.sign(e.x+e.w/2-p.x-p.w/2)*175,-260,260);

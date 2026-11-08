@@ -2,6 +2,7 @@ import {rect,text} from './pixel.js?v=0.21.5';
 import {rooms} from './level.js?v=0.21.5';
 import {STUDIO_PIECES,SPOTLIGHTS,STUDIO_DOOR} from './studio-map.js?v=0.21.5';
 import {spotSpan,liveTake,ROOM} from './studio-systems.js?v=0.21.5';
+// The studio is dark: a stage riser is drawn only where a lamp's light falls on it (see drawPiece).
 // assets/studio-platforms.png: holograms (solid / warning / gone), stage risers (lit / dark), red and blue takes (live / idle),
 // each as left cap, repeatable middle and right cap; then the camera dolly, a truss section and a flight case.
 const P={
@@ -14,8 +15,9 @@ const P={
 // assets/studio-set.png: spotlight (left/down/right), ceiling truss, clapper (open/closed), sign (off/on), camera, boom, monitor, cable, door (closed/open).
 const Q={spotL:[113,10,177,202],spotD:[427,10,174,202],spotR:[727,10,172,202],rail:[1036,67,443,94],clapOpen:[104,243,199,181],clapShut:[433,288,207,137],
  signOff:[777,296,279,120],signOn:[1152,296,280,120],camera:[108,459,238,251],boom:[467,457,288,253],monitor:[882,470,173,243],cable:[1198,572,240,138],doorShut:[271,741,347,268],doorOpen:[845,741,404,275]};
-const DECOR=[{key:'camera',x:150,bottom:400,h:62},{key:'cable',x:40,bottom:400,h:18},{key:'boom',x:690,bottom:352,h:60},{key:'cable',x:1440,bottom:300,h:16},{key:'monitor',x:1930,bottom:262,h:46}];
-const RISER_Y=310;
+const DECOR=[{key:'camera',x:150,bottom:400,h:62},{key:'cable',x:40,bottom:400,h:18},{key:'boom',x:62,bottom:400,h:60},{key:'cable',x:1440,bottom:300,h:16},{key:'monitor',x:1930,bottom:262,h:46}];
+// Fixed lamps over the takes: warm for «дубль 1» (red), cold for «дубль 2» (blue).
+const TAKE_LIGHT={red:['#ffd27a','#ffb35a'],blue:['#b9d4ff','#6f9cff']};
 const X0=()=>rooms[ROOM].x;
 const blit=(c,image,box,x,y,w,h)=>c.drawImage(image,box[0],box[1],box[2],box[3],Math.round(x),Math.round(y),Math.round(w),Math.round(h));
 function strip(c,image,set,x,y,w,h){
@@ -25,33 +27,32 @@ function strip(c,image,set,x,y,w,h){
  blit(c,image,L,x,y,lw,h);blit(c,image,R,x+w-rw,y,rw,h);c.restore();
 }
 function setFor(piece,state){
- if(piece.type==='holo')return state==='gone'?P.holoGone:state==='warn'?P.holoWarn:P.holoSolid;
- if(piece.type==='stage')return state==='dark'?P.stageDark:P.stageLit;
- if(piece.type==='take')return P[piece.color+(state==='idle'?'Idle':'Live')];
+ if(piece.type==='stage')return P.stageLit;
+ if(piece.type==='take')return P[piece.color+'Live'];
+}
+// The part of a riser a light reveals: the swinging lamps' spans; a take's own lamp lights all of it.
+function litSpans(piece,x0,t){
+ if(piece.type==='take')return [[x0+piece.x-4,piece.w+8]];
+ return SPOTLIGHTS.map(l=>spotSpan(l,t)).filter(s=>s.x<piece.x+piece.w&&s.x+s.w>piece.x).map(s=>[x0+s.x,s.w]);
 }
 function drawPiece(c,a,piece,x,y,state,t){
  const image=a.studioPlatforms;
  if(piece.type==='fixed'){
   if(piece.kind==='truss'){const h=40,k=h/P.truss[3],tw=P.truss[2]*k;c.save();c.beginPath();c.rect(x,y-2,piece.w,h+4);c.clip();for(let xx=x;xx<x+piece.w;xx+=tw-3)blit(c,image,P.truss,xx,y-1,tw,h);c.restore();return;}
-  if(piece.kind==='perch'){
-  // A lighting perch: hangs on two cables from the grid, or (low) stands on two stage legs.
-  const h=20,k=h/P.truss[3],tw=P.truss[2]*k;
-  if(piece.low)for(const lx of [x+10,x+piece.w-14]){rect(c,lx,y+h-3,4,484-y,'#1b1828');rect(c,lx+1,y+h-3,1,484-y,'#45405e');}
-  else for(const lx of [x+9,x+piece.w-11]){rect(c,lx,0,2,y+2,'#2b2639');rect(c,lx-2,y-3,6,4,'#4a4560');}
-  c.save();c.beginPath();c.rect(x,y-2,piece.w,h+4);c.clip();for(let xx=x;xx<x+piece.w;xx+=tw-3)blit(c,image,P.truss,xx,y-1,tw,h);c.restore();return;
- }
  const box=P[piece.kind],k=piece.w/box[2],h=box[3]*k,top=piece.kind==='dolly'?117*k:4*k;blit(c,image,box,x,y-top,piece.w,h);return;
  }
- const set=setFor(piece,state),h=piece.type==='holo'?18:piece.type==='stage'?22:21;
- c.save();
- if(piece.type==='holo'&&state==='warn')c.globalAlpha=.55+.45*Math.abs(Math.sin(t*22));
- if(piece.type==='holo'&&state==='back')c.globalAlpha=.6;
- if(piece.type==='take'&&state==='swap')c.globalAlpha=.55+.45*Math.abs(Math.sin(t*16));
- strip(c,image,set,x,y-2,piece.w,h);c.restore();
+ // Dark risers and idle takes are not drawn at all: the studio floor is visible only in the light.
+ if(state==='dark'||state==='idle')return;
+ const set=setFor(piece,state),h=piece.type==='stage'?22:21,x0=X0(),spans=litSpans(piece,x0,t);
+ c.save();if(piece.type==='take'&&state==='swap')c.globalAlpha=.45+.55*Math.abs(Math.sin(t*16));
+ // Fully bright inside the light, a dim edge just outside it so the riser's ends read.
+ c.save();c.globalAlpha*=.32;strip(c,image,set,x,y-2,piece.w,h);c.restore();
+ c.beginPath();for(const [sx,sw]of spans)c.rect(sx,y-30,sw,h+60);c.clip();strip(c,image,set,x,y-2,piece.w,h);c.restore();
 }
 
 export function drawStudioSurface(c,a,g,s){
  if(s.room!==ROOM||!s.studio||!a.studioPlatforms)return false;const piece=s.studio,x=X0()+piece.x;
+ if(piece.type==='container')return true; // drawn with its monster (studio-container-art.js)
  // A Нарезчик cut splits the surface into pieces: draw the whole prop, clipped to this piece, with ragged ends at the hole.
  if(Math.abs(s.w-piece.w)<.5){drawPiece(c,a,piece,s.x,s.y,s.studioState,g.time);return true;}
  c.save();c.beginPath();c.rect(s.x,s.y-140,s.w,300);c.clip();drawPiece(c,a,piece,x,s.y,s.studioState,g.time);c.restore();
@@ -59,15 +60,26 @@ export function drawStudioSurface(c,a,g,s){
  return true;
 }
 // Spotlight cones and the ceiling truss go behind the risers.
+function drawCone(c,lx,ly,sx,sw,floor,colors,alpha=1){
+ const cone=c.createLinearGradient(0,ly,0,floor);cone.addColorStop(0,colors[0]+'88');cone.addColorStop(1,colors[1]+'22');
+ c.save();c.globalAlpha=alpha;c.fillStyle=cone;c.beginPath();c.moveTo(lx-8,ly);c.lineTo(lx+8,ly);c.lineTo(sx+sw,floor+6);c.lineTo(sx,floor+6);c.closePath();c.fill();
+ c.globalAlpha=.35*alpha;c.fillStyle='#fff1c0';c.beginPath();c.ellipse(sx+sw/2,floor+4,sw/2,6,0,0,Math.PI*2);c.fill();c.restore();
+}
+// Spotlight cones and the ceiling truss go behind the risers.
 export function drawStudioBack(c,a,g,t){
  if(g.room!==ROOM||!a.studioSet)return;const x0=X0(),rail=Q.rail,rk=26/rail[3],rw=rail[2]*rk;
- for(let x=x0+780;x<x0+1530;x+=rw-4)blit(c,a.studioSet,rail,x,2,rw,26);
- for(const light of SPOTLIGHTS){const span=spotSpan(light,t),lx=x0+light.x,ly=58,sx=x0+span.x,cx=x0+span.center;
-  const cone=c.createLinearGradient(0,ly,0,RISER_Y);cone.addColorStop(0,'#ffd27a88');cone.addColorStop(1,'#ffb35a22');
-  c.save();c.fillStyle=cone;c.beginPath();c.moveTo(lx-8,ly);c.lineTo(lx+8,ly);c.lineTo(sx+span.w,RISER_Y+6);c.lineTo(sx,RISER_Y+6);c.closePath();c.fill();
-  c.globalAlpha=.35;c.fillStyle='#fff1c0';c.beginPath();c.ellipse(cx,RISER_Y+4,span.w/2,6,0,0,Math.PI*2);c.fill();
-  c.globalAlpha=.6;for(let i=0;i<8;i++){const k=((t*.3+i*.13)%1),px=lx+(cx-lx)*k+Math.sin(i*3+t)*span.w*.25*k,py=ly+(RISER_Y-ly)*k;rect(c,px,py,1,1,'#ffe9b0');}c.restore();
+ for(const [from,to]of [[300,500],[780,1530],[1580,2240]])for(let x=x0+from;x<x0+to;x+=rw-4)blit(c,a.studioSet,rail,x,2,rw,26);
+ for(const light of SPOTLIGHTS){const span=spotSpan(light,t),lx=x0+light.x,ly=58,floor=light.floor,sx=x0+span.x,cx=x0+span.center;
+  drawCone(c,lx,ly,sx,span.w,floor,['#ffd27a','#ffb35a']);
+  c.save();c.globalAlpha=.6;for(let i=0;i<8;i++){const k=((t*.3+i*.13)%1),px=lx+(cx-lx)*k+Math.sin(i*3+t)*span.w*.25*k,py=ly+(floor-ly)*k;rect(c,px,py,1,1,'#ffe9b0');}c.restore();
   const angle=cx-lx,box=angle<-40?Q.spotL:angle>40?Q.spotR:Q.spotD,k=48/box[3];blit(c,a.studioSet,box,lx-box[2]*k/2,14,box[2]*k,48);
+ }
+ // The two lamp banks over the takes: the live colour shines, flickers before the clapper, the other bank is off.
+ const live=liveTake(t);
+ for(const piece of STUDIO_PIECES){if(piece.type!=='take')continue;const lx=x0+piece.x+piece.w/2,on=live.color===piece.color,box=Q.spotD,k=44/box[3];
+  if(on)drawCone(c,lx,56,x0+piece.x-4,piece.w+8,piece.y,TAKE_LIGHT[piece.color],live.warn?.45+.55*Math.abs(Math.sin(t*16)):1);
+  c.save();if(!on)c.filter='brightness(.45)';blit(c,a.studioSet,box,lx-box[2]*k/2,14,box[2]*k,44);c.restore();
+  rect(c,lx-5,14+40,10,3,on?TAKE_LIGHT[piece.color][0]:'#2a2434');
  }
 }
 export function drawStudioProps(c,a,g,t){

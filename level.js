@@ -1,4 +1,4 @@
-import {STUDIO_PIECES,studioCuttable} from './studio-map.js?v=0.21.5';
+import {STUDIO_PIECES,studioCuttable,studioContainer,containerGlass} from './studio-map.js?v=0.21.5';
 import {DIM_PIECES} from './dimension-map.js?v=0.21.5';
 import {AGITATOR_LAYOUT,AGITATOR_LADDERS,AGITATOR_FISH} from './agitator-map.js?v=0.21.5';
 import {ROOF_BUILDINGS,ROOF_ROPES,ROOF_AWNINGS,ROOF_PROPS,ROOF_LADDERS,roofPiece} from './roofs-map.js?v=0.21.5';
@@ -42,7 +42,7 @@ layouts[1]=[
 ];
 // «Крыши» (roofs-map.js): buildings, then the washing line, the awning and roof props.
 layouts[3]=[...ROOF_BUILDINGS.map(b=>[b.x,b.y,b.w]),...ROOF_ROPES.map(r=>[r.x,r.y,r.w]),...ROOF_AWNINGS.map(a=>[a.x,a.y,a.w]),...ROOF_PROPS.map(p=>[p.x,p.y,p.w])];
-// «Студия» (studio-map.js): fixed islands, holograms, spotlight risers and red/blue takes.
+// «Студия» (studio-map.js): fixed islands, spotlight risers, lamp banks on the clapper, containers off the route.
 layouts[5]=STUDIO_PIECES.map(p=>[p.x,p.y,p.w]);
 layouts[7]=DIM_PIECES.map(p=>[p.x,p.y,p.w]);
 const arenaBase=[
@@ -106,11 +106,18 @@ export function enemy(type,room,x,platformIndex,extra={}){
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
  if(type==='echo'){actor.w=30;actor.h=40;actor.y=s.y-actor.h;actor.pose='stand';}
  if(type==='botfarm'){actor.w=40;actor.h=68;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
+ if(room===5&&studioContainer(platformIndex))seatInContainer(actor,s);
  if(type==='inflator'&&room===3){actor.w=74;actor.h=56;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;actor.speed=0;actor.hp=actor.maxHp=99;}
  const kinds={botfarm:'printer',fakenews:platformIndex%3?'papers':'bin',informant:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',stamp:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
  // In the newsroom every monster tears out of a newspaper riding the conveyor.
  if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':room===1?'belt':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
- actor.arrivalDuration=actor.spawnTime||(room===1?.8:.55);return actor;
+ if(actor.container){delete actor.source;actor.arrivalDuration=.05;}
+ actor.arrivalDuration=actor.arrivalDuration||actor.spawnTime||(room===1?.8:.55);return actor;
+}
+// A studio monster sits behind the glass of its container: its box is centred on the window (see studio-container-art.js).
+function seatInContainer(actor,s){
+ const piece=STUDIO_PIECES[s.index],glass=containerGlass(piece,s.x-piece.x);
+ Object.assign(actor,{container:piece.kind,printOn:piece.print,w:48,h:29,speed:0});actor.x=glass.x+glass.w/2-actor.w/2;actor.y=glass.y+glass.h/2-actor.h/2;actor.origin=actor.end=actor.x;
 }
 export function createEnemies(){const all=[
  enemy('fakenews',1,330,0,{trigger:90}),enemy('fakenews',1,760,0),
@@ -118,14 +125,15 @@ export function createEnemies(){const all=[
  enemy('stamp',1,1580,0),enemy('fakenews',1,1900,0),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
  // Крыши: Нагнетатели are bolted to the roofs and blow across the whole map; Информаторы guard the landings.
  enemy('informant',3,180,0,{trigger:100}),enemy('inflator',3,800,2,{dir:1}),enemy('informant',3,1180,3),enemy('inflator',3,1360,4,{dir:1}),enemy('inflator',3,2030,6,{dir:-1}),enemy('informant',3,2240,7),
- // Студия: the Нарезчик and Склейка work from perches off the route; a Ботоферма guards each transmitter.
- enemy('cutter',5,712,15,{hunter:true}),enemy('botfarm',5,718,3),enemy('splicer',5,1046,16),enemy('botfarm',5,1522,8),enemy('cutter',5,1672,17,{hunter:true}),enemy('botfarm',5,1984,11),enemy('splicer',5,2084,18),
+ // Студия: every monster is sealed in a container off the route — Нарезчик in a hanging capsule, Склейка in a floor grate,
+ // Ботоферма in a cage on the wall that prints bots onto the truss below. None of them can be hit through the glass.
+ enemy('cutter',5,845,15,{hunter:true}),enemy('botfarm',5,590,19),enemy('splicer',5,1055,16),enemy('botfarm',5,1440,20),enemy('cutter',5,1640,17,{hunter:true}),enemy('botfarm',5,1905,21),enemy('splicer',5,2010,18),
  // Измерение: Помеха over the feed and the rifts, an Эхо per later block, Кликбейт on Yuri's message and at the threshold.
  enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,768,10,{trigger:600}),enemy('echo',7,1120,11,{trigger:960}),enemy('static',7,1300,12),
  enemy('echo',7,1600,13,{trigger:1500}),enemy('static',7,1950,15,{y:220}),enemy('clickbait',7,2200,16)
  ];
- const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,800,1180,1360,2030,2240],5:[712,718,1046,1522,1672,1984,2084],7:[330,768,1120,1300,1600,1950,2200]};
- const roster=all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
+ const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,800,1180,1360,2030,2240],5:[845,590,1055,1440,1640,1905,2010],7:[330,768,1120,1300,1600,1950,2200]};
+ const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
  return roster;

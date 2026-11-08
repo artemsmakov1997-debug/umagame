@@ -111,6 +111,8 @@ export function stepEnemies(g,dt,paw,prevBottom){
    else if(e.state==='snap'&&p.inv===0&&g.overlap(p,mouth)){g.swallow={enemyId:e.id,x:p.x,y:p.y,targetX:e.x+12,targetY:e.y-14,timer:.48,total:.48};p.attack=0;p.vx=0;p.vy=0;e.state='recover';e.timer=2;e.attackFlash=.48;e.captureTime=0;g.emit('swallow',{x:e.x,y:e.y});return;}
   }else if(e.type==='inflator'&&e.room===3){
    // A bolted machine: it does not bite; standing in front of it during a gust is what hurts.
+  }else if(e.container){
+   // Sealed behind glass in the studio: touching the container never hurts.
   }else if(e.type==='botfarm'||e.frozen){
    // The rack only takes a stomp; hanging bots no longer hurt.
    if(e.type==='botfarm'&&g.overlap(p,e)&&p.vy>0&&prevBottom<e.y+12){g.hitEnemy(e,true);p.vy=-330;}

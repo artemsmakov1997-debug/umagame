@@ -130,7 +130,7 @@ export class Game {
  push(dir,sourceX){const p=this.player;if(this.mode!=='playing'||p.dash>0)return;wakePlayer(p);p.sneaking=false;playerHeight(p,48);p.knock=.26;p.vx=dir*640;p.vy=-65;p.climbing=false;this.emit('pushed',{x:sourceX,y:p.y});}
  hitEnemy(e,stomp=false,amount=null,{reflected=false,sourceX=this.player.x+this.player.w/2}={}){
   if(e.inv>0||e.dead||e.phased||e.frozen)return false;
-  if(e.type==='clickbait'||e.type==='inflator'&&e.room===3||e.type==='copier'&&!['printing','recover'].includes(e.state)){
+  if(e.type==='clickbait'||e.container||e.type==='inflator'&&e.room===3||e.type==='copier'&&!['printing','recover'].includes(e.state)){
    e.guardFlash=.24;this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
   }
   if(e.type==='informant'&&e.shieldBroken===0&&['windup','casting'].includes(e.state)&&!reflected){this.emit('blocked',{x:e.x,y:e.y});return false;}
