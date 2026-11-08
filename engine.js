@@ -131,7 +131,7 @@ export class Game {
  hitEnemy(e,stomp=false,amount=null,{reflected=false,sourceX=this.player.x+this.player.w/2}={}){
   if(e.inv>0||e.dead||e.phased||e.frozen)return false;
   // A roof Нагнетатель hangs out of reach: nothing to show, nothing to block.
-  if(e.type==='inflator'&&e.room===3)return false;
+  if(e.type==='inflator'&&e.room===3||e.type==='spotlight')return false;
   if(e.type==='clickbait'||e.container||e.type==='copier'&&!['printing','recover'].includes(e.state)){
    e.guardFlash=.24;this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
   }
@@ -139,6 +139,8 @@ export class Game {
   if(reflected)e.shieldBroken=3;
   e.hp-=amount??(!stomp&&this.player.powerTime>0?2:1);e.inv=.24;e.hurtTime=.28;e.state='recover';e.timer=.7;
   if(e.type==='echo'&&e.kind!=='echoOrb'&&e.hp>0)scatterEcho(this,e);
+  // A hit Журавль drops his boom to the floor for a moment.
+  if(e.type==='boom'){e.state='stunned';e.timer=1.8;}
   cancelInformantTeleport(e);releaseTether(this,e.id);if(this.echoPull?.ownerId===e.id)releaseEchoPull(this,true);
   for(const portal of this.portals)if(portal.ownerId===e.id)portal.cancelled=true;
   if(!stomp&&!reflected&&e.type==='fakenews'&&!e.jumpPhase&&!e.terrainFall)e.x=Math.max(e.origin,Math.min(e.end,e.x+this.player.dir*18));

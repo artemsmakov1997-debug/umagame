@@ -19,7 +19,7 @@ function setup(room=1,index=0,x=45){
  const s=g.platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,h:48,grounded:true,supportId:s.id,inv:0});return g;
 }
 test('new small enemies are introduced gradually, have their own notebooks and do not invade training',()=>{
- const roster=createEnemies();for(const [id,first]of [['stamp',1],['cutter',5]]){assert.equal(Math.min(...roster.filter(e=>e.type===id).map(e=>e.room)),first);assert.ok(createNotebooks().some(n=>n.id===id||n.scenes?.includes(id)));assert.ok(roster.filter(e=>e.type===id).every(e=>e.h===29&&e.w===48));}assert.ok(roster.every(e=>e.room>0));
+ const roster=createEnemies();for(const [id,first]of [['stamp',1]]){assert.equal(Math.min(...roster.filter(e=>e.type===id).map(e=>e.room)),first);assert.ok(createNotebooks().some(n=>n.id===id||n.scenes?.includes(id)));assert.ok(roster.filter(e=>e.type===id).every(e=>e.h===29&&e.w===48));}assert.ok(roster.every(e=>e.room>0));
 });
 test('Clickbait is immune to paws, stomps, soup damage and reflected projectiles from either side',()=>{
  const g=setup(2,1,295),e=actor('clickbait',2,365,1,{revealed:true,state:'patrol'});g.enemies=[e];g.player.powerTime=10;
