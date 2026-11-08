@@ -1,5 +1,5 @@
 import {createBroadcastFight,stepAgitator,damageAgitator,placeAgitator,AGITATOR_HP} from './agitator-combat.js?v=0.21.5';
-import {createStudioFight,stepManipulator,beginStudioRelocation,STUDIO_DOCKS} from './manipulator-combat.js?v=0.21.5';
+import {createStudioFight,stepManipulator,damageManipulator,STUDIO_DOCKS,MANIPULATOR_HP} from './manipulator-combat.js?v=0.21.5';
 import {stepSpreader,damageSpreader,SPREADER_HP} from './spreader-combat.js?v=0.21.5';
 import {createInfoshumNetwork,stepInfoshum} from './infoshum-combat.js?v=0.21.5';
 import {phasePattern,stepBossPhase,phasePlans} from './boss-phases.js?v=0.21.5';
@@ -15,7 +15,7 @@ export const bossPatterns={spreader:['summon','rain','scatter'],agitator:['sloga
 export const phaseTwoPatterns=Object.fromEntries(Object.entries(phasePlans).map(([id,p])=>[id,p[1][1]]));
 export const phaseThreePatterns=Object.fromEntries(Object.entries(phasePlans).map(([id,p])=>[id,(p[2]||p[1])[1]]));
 export const abilityNames={beam:'ЛУЧ',rewrite:'ПЕРЕЗАПИСЬ',volley:'ЗАЛП',wave:'ВОЛНА',rain:'ДОЖДЬ',summon:'ПРИЗЫВ',scatter:'ГАЗЕТНЫЙ ДОЖДЬ',swoop:'ПИКИРОВАНИЕ',broadcast:'ЛОЗУНГИ',pressure:'НАПОР',spotlight:'РАМКА',cut:'РАЗРЕЗ',ink:'ЧЕРНИЛА',copy:'КОПИРОВАНИЕ',alarm:'ТРЕВОГА',telecast:'РАССЫЛКА',ticker:'ВБРОС',splice:'ПРИТЯГИВАНИЕ',echoPulse:'ЭХО',staticRush:'ПОМЕХА',lure:'ПРИМАНКА'};
-const health={spreader:SPREADER_HP,agitator:AGITATOR_HP,manipulator:18,infoshum:BOSS_HEALTH},clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const health={spreader:SPREADER_HP,agitator:AGITATOR_HP,manipulator:MANIPULATOR_HP,infoshum:BOSS_HEALTH},clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function bossDocksForRoom(room=LAST_ROOM,surfaces=platforms){const r=rooms[room],h=r?.boss==='infoshum'?136:76,w=r?.boss==='infoshum'?128:100;return(room===4?[1,7,8]:room===6?STUDIO_DOCKS:[1,2,4]).map(index=>{const s=surfaces.find(s=>s.room===room&&s.index===index);return{x:s.x+(s.w-w)/2,y:s.y-h,platformIndex:index};});}
 export const bossDocks=bossDocksForRoom();
 export function createBoss(room=LAST_ROOM){const r=rooms[room],id=r.boss||null,docks=r.arena?bossDocksForRoom(room):[],h=id==='infoshum'?136:76,w=id==='infoshum'?128:100,hp=health[id]||0;const boss={...(docks[id==='spreader'?2:1]||{x:r.x+100,y:180}),id,room,docks,dock:1,w,h,hp,maxHp:hp,phase:1,state:'idle',timer:0,turn:0,ability:null,targets:[],summonTargets:[],summonCursor:0,cooldown:0,hurtTime:0,noticeTime:0,lastSwing:-1,active:false,justMoved:false,castElapsed:0,dropTimer:0,dir:-1,shieldBroken:0,shots:0};if(id==='infoshum')boss.network=createInfoshumNetwork(room);if(id==='agitator'){boss.broadcast=createBroadcastFight();placeAgitator(boss);}if(id==='manipulator'){boss.studio=createStudioFight();Object.assign(boss,docks[0],{dock:0});}return boss;}
@@ -62,12 +62,11 @@ export function stepBoss(g,dt,paw=null){
  else if(b.turn>0&&b.turn%3===0&&!b.justMoved){b.state='shift';b.timer=1.15;b.shifted=false;b.nextDock=(b.dock+1)%3;b.shiftFrom={x:b.x,y:b.y};g.emit('bossShift',{x:b.docks[b.nextDock].x,y:b.docks[b.nextDock].y,boss:b.id});}else planAttack(g);
 }
 export function damageBoss(g,amount,reflected=false,sourceX=g.player.x+g.player.w/2){
- const b=g.boss;if(b.id==='agitator'&&b.broadcast)return damageAgitator(g,amount,reflected?undefined:sourceX);if(b.id==='spreader')return damageSpreader(g,amount);if(b.id==='infoshum'&&b.network)return false;if(!b.active||b.hp<=0||b.cooldown>0||['shift','phaseChange'].includes(b.state)||b.phased)return false;if(bossShielded(g)){b.guardFlash=.24;return false;}
+ const b=g.boss;if(b.id==='agitator'&&b.broadcast)return damageAgitator(g,amount,reflected?undefined:sourceX);if(b.id==='spreader')return damageSpreader(g,amount);if(b.id==='manipulator'&&b.studio)return damageManipulator(g,amount,reflected);if(b.id==='infoshum'&&b.network)return false;if(!b.active||b.hp<=0||b.cooldown>0||['shift','phaseChange'].includes(b.state)||b.phased)return false;if(bossShielded(g)){b.guardFlash=.24;return false;}
  if(b.id==='agitator'&&(sourceX-b.x-b.w/2)*b.dir>=-6&&!b.shieldBroken){if(reflected){b.shieldBroken=2;b.state='recover';b.timer=1.4;}else{b.guardFlash=.24;return false;}}
  if(!reflected){const exposed=b.id==='spreader'?b.phase===3||b.state==='recover':b.id==='agitator'?true:b.id==='manipulator'?b.state==='recover'||b.state==='casting'&&b.ability==='splice':b.state==='recover';if(!exposed)return false;}
  if(b.id==='spreader'){if(b.phase!==3&&b.state!=='recover')return false;}
- if(b.id==='manipulator'&&b.studio&&amount<3)amount=3;
- b.hp=Math.max(0,b.hp-amount);b.cooldown=.22;b.hurtTime=.28;releaseTether(g,'boss:'+b.id);for(const p of g.portals)if(p.ownerId==='boss:'+b.id)p.cancelled=true;g.emit('bossHit',{x:b.x+b.w/2,y:b.y+b.h-14,boss:b.id});if(b.hp===0){clearBossHelpers(g);g.bossDefeated();}else if(b.id==='manipulator'&&b.studio)beginStudioRelocation(g);return true;
+ b.hp=Math.max(0,b.hp-amount);b.cooldown=.22;b.hurtTime=.28;releaseTether(g,'boss:'+b.id);for(const p of g.portals)if(p.ownerId==='boss:'+b.id)p.cancelled=true;g.emit('bossHit',{x:b.x+b.w/2,y:b.y+b.h-14,boss:b.id});if(b.hp===0){clearBossHelpers(g);g.bossDefeated();}return true;
 }
 export function bossContact(g){const b=g.boss,p=g.player;if(b.id==='agitator'&&b.broadcast)return;if(b.id==='manipulator'&&b.studio)return;if(b.id==='infoshum'&&b.network&&!(b.ability==='staticRush'&&b.state==='casting'))return;if(b.id==='spreader')return;if(['shift','phaseChange'].includes(b.state)||b.phased||!g.overlap(p,b))return;const before=g.health;g.hurt(false,b.x);if(b.id==='infoshum'&&b.ability==='staticRush'&&b.state==='casting'&&g.mode==='playing'&&g.health<before){p.vx=(p.x>b.x?1:-1)*280;p.vy=150;p.knock=.24;p.grounded=false;g.emit('staticPush',{x:b.x,y:b.y});}}
 export function stepProjectiles(g,dt,paw){
