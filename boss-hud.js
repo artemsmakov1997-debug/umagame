@@ -12,7 +12,7 @@ function portrait(assets,id){
  if(!map.has(id)){
   const c=document.createElement('canvas');c.width=100;c.height=100;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;
   if(id==='infoshum')drawInfoshumSprite(ctx,assets,'body',0,0,0,100,100);
-  else {const box=id==='spreader'?[105,126,137,145]:id==='agitator'?[44,56,126,112]:[39,25,182,151],image=id==='agitator'?assets.agitatorBoss:id==='manipulator'?assets.manipulator:assets.minibosses,scale=Math.min(100/box[2],100/box[3]),w=box[2]*scale,h=box[3]*scale;ctx.drawImage(image,...box,(100-w)/2,(100-h)/2,w,h);}
+  else {const box=id==='spreader'?[50,25,140,140]:id==='agitator'?[44,56,126,112]:[39,25,182,151],image=id==='spreader'?assets.spreaderAir:id==='agitator'?assets.agitatorBoss:id==='manipulator'?assets.manipulator:assets.minibosses,scale=Math.min(100/box[2],100/box[3]),w=box[2]*scale,h=box[3]*scale;ctx.drawImage(image,...box,(100-w)/2,(100-h)/2,w,h);}
   map.set(id,c);
  }return map.get(id);
 }

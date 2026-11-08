@@ -1,5 +1,5 @@
 export const phasePlans={
- spreader:[['Ковровая бомбардировка',['rain','summon']],['Рывок',['dash','summon']]],
+ spreader:[['Ковровая бомбардировка',['rain','collect','summon']],['Рывок',['dash','summon']],['Срочный выпуск',['spear','rain']]],
  agitator:[['Лозунг',['slogan']],['Митинг',['ura','swing','stomp']],['Прямой эфир',['gust','swing']]],
  manipulator:[['Преследование',['rewrite','beam']],['Перезапись',['rewrite','beam']],['Последний дубль',['rewrite','beam']]],
  infoshum:[['Напёрстки',['shuffle','packet']],['Кабели',['cable','rain','wave']],['Белый шум',['split','dive']]]
