@@ -4,32 +4,31 @@
 // Block 1 «Павильон»: one lamp swings slowly over two risers.
 // Block 2 «Прожекторы»: two lamps swing together over three risers.
 // Block 3 «Монтажная»: two banks of lamps (warm «дубль 1», cold «дубль 2») switch on the clapper's beat.
-// The studio monsters sit in sealed containers off the route: a capsule hanging above it, a floor grate below it,
-// a cage bolted to the wall. A paw only clangs off the glass. Platform indices follow this order.
+// Monsters: a Журавль on each long truss sweeps its boom microphone at head height (crawl under or wait);
+// a Прожекторщик hangs from the ceiling over the dolly and over the takes, its red beam burns (the hanging flat
+// over the dolly shields from it); the Ботоферма sits in a cage over the door at the far end and sends its
+// bots hopping towards Uma. Platform indices follow this order.
 export const STUDIO_PIECES=[
  {type:'fixed',kind:'truss',x:0,w:230,y:400},          // 0 start
  {type:'stage',x:285,w:96,y:386},                       // 1 under the first lamp
  {type:'stage',x:420,w:96,y:330},                       // 2
- {type:'fixed',kind:'truss',x:575,w:190,y:352},         // 3 Ботоферма's cage on the wall above
+ {type:'fixed',kind:'truss',x:575,w:190,y:352},         // 3 Журавль at its right end
  {type:'fixed',kind:'dolly',x:800,w:170,y:330},         // 4 camera dolly
  {type:'stage',x:1010,w:100,y:320},                     // 5
  {type:'stage',x:1150,w:100,y:300},                     // 6
  {type:'stage',x:1290,w:100,y:318},                     // 7
- {type:'fixed',kind:'truss',x:1420,w:150,y:300},        // 8 Ботоферма's cage on the wall above
+ {type:'fixed',kind:'truss',x:1420,w:150,y:300},        // 8 Журавль at its right end
  {type:'take',color:'red',x:1610,w:100,y:290},          // 9
  {type:'take',color:'blue',x:1750,w:100,y:270},         // 10
- {type:'fixed',kind:'case',x:1890,w:140,y:262},         // 11 Ботоферма's cage on the wall above
+ {type:'fixed',kind:'case',x:1890,w:140,y:262},         // 11
  {type:'take',color:'red',x:2050,w:100,y:244},          // 12
  {type:'take',color:'blue',x:2150,w:70,y:232},          // 13
  {type:'fixed',kind:'truss',x:2214,w:90,y:226},         // 14 the pavilion door
  // Containers (never solid, never on the route). x/w is the box, y its bottom edge.
- {type:'container',kind:'hang',x:845,w:110,y:212},      // 15 Нарезчик over the dolly
- {type:'container',kind:'floor',x:1055,w:150,y:452},    // 16 Склейка in the pit under the gap between risers 5 and 6
- {type:'container',kind:'hang',x:1640,w:110,y:176},     // 17 Нарезчик over the takes
- {type:'container',kind:'floor',x:2010,w:150,y:420},    // 18 Склейка in the pit under the last takes
- {type:'container',kind:'wall',x:590,w:120,y:292,print:3},  // 19 Ботоферма: prints bots onto truss 3
- {type:'container',kind:'wall',x:1440,w:120,y:240,print:8}, // 20 Ботоферма: prints bots onto truss 8
- {type:'container',kind:'wall',x:1905,w:120,y:200,print:11} // 21 Ботоферма: prints bots onto the case
+ // A hanging set flat over the dolly: a low ceiling (crawl under it — or hop on top). It also blocks the red beam.
+ {type:'fixed',kind:'flat',x:840,w:84,y:282,shelter:300},  // 15
+ // The Ботоферма's cage on the wall over the door: it prints bots onto the door truss.
+ {type:'container',kind:'wall',x:2186,w:110,y:166,print:14} // 16
 ];
 export const HOLO={warn:.7,gone:1.6,back:.35};
 // Spotlights hang from the ceiling truss; the lit spot sweeps along its risers' level (floor).
@@ -43,7 +42,7 @@ export const SPOT_MIN_OVERLAP=30;
 // «Дубли»: red is live for `beat` seconds, then blue; the last `warn` seconds blink before the swap.
 export const TAKES={beat:2.4,warn:.6};
 // The Нарезчик may cut anything Uma walks on except the door island; containers are not surfaces at all.
-export function studioCuttable(index){const p=STUDIO_PIECES[index];return !!p&&p.type!=='container'&&index!==14;}
+export function studioCuttable(index){const p=STUDIO_PIECES[index];return !!p&&p.type!=='container'&&p.kind!=='flat'&&index!==14;}
 export const studioContainer=index=>STUDIO_PIECES[index]?.type==='container';
 export const STUDIO_CHECKPOINTS=[{x:45,index:0},{x:600,index:3},{x:1440,index:8},{x:1910,index:11}];
 export const STUDIO_DOOR={x:2216,h:74};

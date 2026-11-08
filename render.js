@@ -29,7 +29,8 @@ import {drawArenaBoss} from './boss-art.js?v=0.21.5';
 import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
 import {drawStudioContainer} from './studio-container-art.js?v=0.21.5';
-import {drawPaparazzi,drawBlind} from './new-monsters-art.js?v=0.21.5';
+import {drawPaparazzi,drawBlind,drawSpotlighter,drawBoom} from './new-monsters-art.js?v=0.21.5';
+import {beamFloor,boomBox} from './studio-monsters.js?v=0.21.5';
 import {drawBossProjectile,drawAttackFxList} from './boss-attack-fx.js?v=0.21.5';
 import {drawRoofSurface,drawRoofProps,drawRoofWind,drawSensations,drawInflatorMachine} from './roofs-art.js?v=0.21.5';
 import {drawStudioSurface,drawStudioBack,drawStudioProps} from './studio-art.js?v=0.21.5';
@@ -107,6 +108,8 @@ export class Renderer{
    if(e.type==='botfarm'&&!e.container)drawMonster(c,a,e.type,e.x+e.w/2-46,e.y+e.h-82,92,82,t,false,e);
    if(e.type==='bot')drawMonster(c,a,e.type,e.x+e.w/2-20,e.y+e.h-38,40,38,t,false,e);
    if(e.type==='paparazzi')drawPaparazzi(c,a,e,t,drawMonster);
+   if(e.type==='spotlight')drawSpotlighter(c,a,g,e,t,beamFloor(g,e));
+   if(e.type==='boom')drawBoom(c,a,e,t,boomBox(g,e));
    if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
    if(e.type==='echo'){if(e.flipped){c.save();c.translate(0,2*(e.y+e.h/2));c.scale(1,-1);}drawMonster(c,a,e.type,e.x+e.w/2-34,e.y+e.h-54,68,54,t,e.dir<0,{...e,chase:e.state==='chase',forming:e.state==='forming'});if(e.flipped)c.restore();}
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}

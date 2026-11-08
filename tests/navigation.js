@@ -89,7 +89,8 @@ export function crossStudio(g,lib,{relays=true}={}){
  const litSoon=i=>solidFor(i,t=>stageLit(piece(i),t));
  const takeSoon=i=>solidFor(i,t=>liveTake(t).color===piece(i).color);
  if(!hop(1,litSoon(1))||!hop(2,litSoon(2))||!hop(3))return false;hit(3);
- if(!hop(4))return false;
+ // Over the hanging flat: hop on top of it and walk off its far end onto the dolly (the tests also crawl under it).
+ if(!hop(15))return false;if(!run(()=>on(4),{right:true},300))return false;
  if(!hop(5,litSoon(5))||!hop(6,litSoon(6))||!hop(7,litSoon(7))||!hop(8))return false;hit(8);
  if(!hop(9,takeSoon(9))||!hop(10,takeSoon(10))||!hop(11))return false;hit(11);
  if(!hop(12,takeSoon(12))||!hop(13,takeSoon(13))||!hop(14))return false;

@@ -39,6 +39,8 @@ function drawPiece(c,a,piece,x,y,state,t){
  const image=a.studioPlatforms;
  if(piece.type==='fixed'){
   if(piece.kind==='truss'){const h=40,k=h/P.truss[3],tw=P.truss[2]*k;c.save();c.beginPath();c.rect(x,y-2,piece.w,h+4);c.clip();for(let xx=x;xx<x+piece.w;xx+=tw-3)blit(c,image,P.truss,xx,y-1,tw,h);c.restore();return;}
+ // The hanging set flat: a slab of truss on two cables from the grid — low enough to crawl under.
+ if(piece.kind==='flat'){const h=18,k=h/P.truss[3],tw=P.truss[2]*k;for(const lx of [x+10,x+piece.w-12]){rect(c,lx,0,2,y+2,'#2b2639');rect(c,lx-2,y-3,6,4,'#4a4560');}c.save();c.beginPath();c.rect(x,y-2,piece.w,h+4);c.clip();for(let xx=x;xx<x+piece.w;xx+=tw-3)blit(c,image,P.truss,xx,y-1,tw,h);c.restore();return;}
  const box=P[piece.kind],k=piece.w/box[2],h=box[3]*k,top=piece.kind==='dolly'?117*k:4*k;blit(c,image,box,x,y-top,piece.w,h);return;
  }
  // Dark risers and idle takes are not drawn at all: the studio floor is visible only in the light.
@@ -86,7 +88,7 @@ export function drawStudioProps(c,a,g,t){
  if(g.room!==ROOM||!a.studioSet)return;const x0=X0();
  for(const d of DECOR){const box=Q[d.key],k=d.h/box[3];blit(c,a.studioSet,box,x0+d.x,d.bottom-d.h+1,box[2]*k,d.h);}
  // «В ЭФИРЕ» board over the takes and the clapper that snaps on every swap.
- const live=liveTake(t),sign=live.warn?(Math.floor(t*8)%2?Q.signOn:Q.signOff):Q.signOn,sk=34/sign[3],sw=sign[2]*sk,sx=x0+1800,sy=128;
+ const live=liveTake(t),sign=live.warn?(Math.floor(t*8)%2?Q.signOn:Q.signOff):Q.signOn,sk=34/sign[3],sw=sign[2]*sk,sx=x0+1935,sy=128;
  rect(c,sx+sw*.25,0,2,sy,'#2a2434');rect(c,sx+sw*.75,0,2,sy,'#2a2434');blit(c,a.studioSet,sign,sx,sy,sw,34);
  text(c,'В ЭФИРЕ',sx+sw/2-21,sy+8,'#fff1e6',1,1);text(c,live.color==='red'?'ДУБЛЬ 1':'ДУБЛЬ 2',sx+sw/2-21,sy+19,live.color==='red'?'#ffb0a8':'#a8c8ff',1,1);
  const clap=live.warn?Q.clapOpen:Q.clapShut,ck=30/clap[3];blit(c,a.studioSet,clap,x0+1532,300-30,clap[2]*ck,30);

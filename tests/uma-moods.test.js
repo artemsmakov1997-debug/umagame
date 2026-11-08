@@ -49,7 +49,7 @@ test('only a long fall shows the frightened pose; an ordinary jump never does',(
 
 test('dash, glue and joy poses',()=>{
  const g=ready(1);standOn(g,'1:0',300);tick(g,1,{dash:true});assert.equal(moodPose(g.player,g),MOOD.dash);
- const s=ready(5);standOn(s,'5:6',1200);const splicer=enemy('splicer',5,1046,16,{active:true,noticed:true,timer:0,noticeTime:0});s.enemies=[splicer];s.player.inv=999;
+ const s=ready(5);standOn(s,'5:6',1200);const splicer=enemy('splicer',5,1430,8,{active:true,noticed:true,timer:0,noticeTime:0,speed:0});s.enemies=[splicer];s.player.inv=999;
  for(let i=0;i<80&&!s.tether;i++)tick(s,1);assert.ok(s.tether);tick(s,1);assert.equal(moodPose(s.player,s),MOOD.dragged);
  const r=ready(5);standOn(r,'5:3',40);r.player.joyTime=1.1;for(let i=0;i<20;i++)tick(r,1);assert.equal(moodPose(r.player,r),MOOD.joy);
  tick(r,80);assert.equal(moodPose(r.player,r),null);

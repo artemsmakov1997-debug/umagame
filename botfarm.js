@@ -26,7 +26,7 @@ function printBot(g,farm){
  g.enemies.push(bot);g.emit('botSpawn',{x:bot.x,y:bot.y,enemyType:'bot'});
 }
 export function stepBotfarm(g,e,dt,dx,dy){
- e.alarm=e.noticed&&Math.abs(dx)<430&&Math.abs(dy)<200;
+ e.alarm=(e.noticed||e.range)&&Math.abs(dx)<(e.range||430)&&Math.abs(dy)<(e.range?320:200);
  if(e.state==='printing'){if(e.timer<=0){printBot(g,e);e.state='patrol';e.timer=PRINT_COOLDOWN;}return;}
  if(e.state==='recover'){if(e.timer<=0){e.state='patrol';e.timer=.9;}return;}
  if(e.timer<=0&&e.alarm&&botsOf(g,e).length<MAX_BOTS){e.state='printing';e.timer=PRINT_TIME;g.emit('botPrint',{x:e.x,y:e.y,enemyType:'botfarm'});}
