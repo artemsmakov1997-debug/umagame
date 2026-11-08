@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {Game} from '../engine.js';
 import {activateRoom,beginLocationTransition} from '../room-transitions.js';
 import {stepBoss,damageBoss,bossShielded} from '../boss.js';
-import {stepStudioPlatforms,studioDock} from '../manipulator-combat.js';
+import {stepStudioPlatforms,studioDock,exposeManipulator,castBeam,craneTip,dollyBox,manipulatorExposed,STRIPS,DECOYS,FRAME,FRAME_LOCK,SCISSORS_AIM,CUT_GAP,MANIPULATOR_HP} from '../manipulator-combat.js';
 import {solidSurfaces} from '../terrain.js';
 import {jumpTo} from './navigation.js';
 import {rooms} from '../level.js';
@@ -31,26 +31,6 @@ test('standing on a hologram warns, removes its actual collision, then restores 
  g.player.grounded=false;for(let i=0;i<95;i++)stepStudioPlatforms(g,1/60);assert.equal(s.studioPhase,'solid');assert.ok(solidSurfaces(g).includes(s));
 });
 test('the camera never removes all holographic routes together',()=>{const g=ready();g.player.grounded=false;for(let i=0;i<2400;i++){stepStudioPlatforms(g,1/60);assert.ok(g.platforms.filter(s=>s.room===6&&['gap','forming'].includes(s.studioPhase)).length<=2);}});
-test('laser has a fixed telegraph and real horizontal damage, jumping and Shift protect',()=>{
- for(const evade of['none','dash','jump']){
-  const g=ready(),b=g.boss,n=b.studio,s=studioDock(g,b.dock);g.testingInvulnerable=false;Object.assign(g.player,{x:s.x+5,y:s.y-48,inv:0,dash:0});
-  n.mode='rewrite';n.timer=0;stepBoss(g,1/60);assert.equal(n.mode,'charge');const beam={...n.beam};
-  g.player.x-=10;stepBoss(g,.2);assert.deepEqual(n.beam,beam);assert.equal(g.health,4);
-  n.timer=0;stepBoss(g,1/60);assert.equal(n.mode,'beam');Object.assign(g.player,{x:beam.x+beam.w-25,y:beam.y-5,inv:0,dash:evade==='dash'?.2:0});if(evade==='jump')g.player.y=beam.y-60;
-  stepBoss(g,1/60);assert.equal(g.health,evade==='none'?3:4);
- }
-});
-test('six real counters move the camera between supported docks and preserve the original interlude',()=>{
- const g=ready(),b=g.boss,positions=[];assert.equal(bossShielded(g),false);
- for(let i=0;i<6;i++){
-  positions.push(b.dock);b.studio.mode='recover';b.state='recover';b.cooldown=0;
-  assert.ok(damageBoss(g,1));if(i<5){assert.equal(b.studio.mode,'relocate');assert.equal(damageBoss(g,1),false);for(let j=0;j<60;j++)stepBoss(g,1/60);const s=studioDock(g,b.dock);assert.equal(b.y+b.h,s.y);}
- }
- assert.equal(new Set(positions).size,3);assert.equal(g.mode,'bossDefeat');assert.equal(g.bolts.length,0);g.storyEnabled=true;g.skipBossDefeat();assert.equal(g.mode,'interlude');assert.equal(g.interlude.boss,'manipulator');
-});
-test('pause freezes beam and disappearing floors, and retry restores the arena',()=>{
- const g=ready();g.platforms.find(s=>s.id==='6:7').studioPhase='gap';g.mode='paused';const before=JSON.stringify(g);ticks(g,120);assert.equal(JSON.stringify(g),before);g.retryLocation();assert.ok(g.platforms.filter(s=>s.room===6).every(s=>s.studioPhase==='solid'));assert.equal(g.boss.studio.relocations,0);assert.equal(bossShielded(g),false);
-});
 test('three chapter maps use the right landmarks, transfer once and respect pause',()=>{
  for(const [room,to,fromIndex,toIndex]of[[2,3,0,1],[4,5,1,2],[6,7,2,3]]){
   const g=ready();activateRoom(g,room);g.relays.forEach(d=>d.hp=0);g.bossesDefeated.add(g.boss.id);assert.ok(beginLocationTransition(g,to));assert.deepEqual(routeInfo(g.loading),{from:fromIndex,to:toIndex,step:fromIndex});
@@ -58,3 +38,97 @@ test('three chapter maps use the right landmarks, transfer once and respect paus
  }
 });
 test('Spreader has no shield and an arena of floor, two shelters and two side ledges',()=>{const g=ready();activateRoom(g,2);assert.equal(bossShielded(g),false);const s=g.platforms.filter(s=>s.room===2);assert.equal(s.length,5);assert.equal(s.filter(p=>p.shelter).length,2);});
+
+
+const mode=g=>g.boss.studio.phase+':'+g.boss.studio.mode;
+function until(g,target,max=60*40){for(let i=0;i<max&&mode(g)!==target;i++)stepBoss(g,1/60);return mode(g);}
+function next(g,target){for(let i=0;i<60*20&&mode(g)===target;i++)stepBoss(g,1/60);return until(g,target);}
+const at=(g,index,dx=20,h=48)=>{const s=g.platforms.find(s=>s.id==='6:'+index);Object.assign(g.player,{x:s.x+dx,y:s.y-h,h,grounded:true,supportId:s.id,vx:0,vy:0,inv:0,dash:0});return s;};
+const toPhase=(g,phase)=>{const b=g.boss;b.hp=MANIPULATOR_HP-(phase-1)*6;b.studio.phase=phase;b.studio.mode=phase===2?'detach':'transform';b.studio.timer=.5;};
+function phases(g){const seen=[];let last='';return (n,stop)=>{for(let i=0;i<n&&!(stop&&seen.includes(stop));i++){stepBoss(g,1/60);stepStudioPlatforms(g,1/60);const m=mode(g);if(m!==last){seen.push(m);last=m;}}return seen;};}
+
+test('panorama: the crane raises, rolls to the end, aims, pans across, parks by Uma and the camera smokes on a dock',()=>{
+ const g=ready();at(g,4,200);const run=phases(g),seen=run(60*20,'1:overheat');
+ assert.deepEqual(seen.slice(0,7),['1:intro','1:raise','1:roll','1:aim','1:pan','1:park','1:overheat']);
+ const b=g.boss,s=studioDock(g,b.studio.dock);assert.equal(b.y+b.h,s.y);assert.ok(manipulatorExposed(b));
+ // The tip of the crane holds the camera above the dock.
+ const tip=craneTip(b.studio.crane);assert.ok(Math.abs(tip.x-(b.x+b.w/2))<1);assert.ok(tip.y<b.y);
+});
+
+test('the pan beam stops on the first surface: a dock shadow is safe, the open floor is hit, Shift protects',()=>{
+ for(const [where,dash,expected] of [['open',0,1],['open',.3,0],['shadow',0,0]]){
+  const g=ready();g.testingInvulnerable=false;at(g,4,200);until(g,'1:pan');const b=g.boss,n=b.studio,dock=studioDock(g,0),floor=g.platforms.find(s=>s.id==='6:4');
+  // Put the crane so the beam lands on the middle floor or on the dock right above Uma.
+  const reach=Math.cos(55*Math.PI/180);let hit=0;const h=g.health;
+  for(let i=0;i<60*8&&n.mode==='pan';i++){
+   if(where==='shadow'){const near=Math.abs(n.crane.x-(dock.x+dock.w/2+n.crane.dir*70))<90;Object.assign(g.player,{x:dock.x+dock.w/2-17+n.crane.dir*70,y:floor.y-48-(near?70:0),grounded:!near,supportId:near?null:floor.id,inv:0});}
+   else{const beam=castBeam(g);if(beam.surface===floor&&beam.x2>floor.x+30&&beam.x2<floor.x+floor.w-30&&!hit){Object.assign(g.player,{x:beam.x2-17,y:floor.y-48,grounded:true,supportId:floor.id,inv:0,dash});hit=1;}else if(!hit)Object.assign(g.player,{x:g.platforms.find(s=>s.id==='6:0').x+10,y:374,inv:0});}
+   g.player.dash=dash;stepBoss(g,1/60);}
+  assert.equal(h-g.health>0?1:0,expected,where+dash);
+ }
+});
+
+test('studio platforms the beam touches burn out and come back',()=>{
+ const g=ready();at(g,4,200);until(g,'1:pan');const burned=new Set();
+ for(let i=0;i<60*7&&mode(g)==='1:pan';i++){stepBoss(g,1/60);stepStudioPlatforms(g,1/60);for(const s of g.platforms)if(s.room===6&&s.studioPlatform&&s.studioPhase==='gap')burned.add(s.index);}
+ assert.ok(burned.size>=2,String([...burned]));
+ for(let i=0;i<60*4;i++)stepStudioPlatforms(g,1/60);assert.ok([...burned].every(i=>g.platforms.find(s=>s.id==='6:'+i).studioPhase!=='forming'));
+});
+
+test('the rolling dolly runs Uma over on the floor; jumping over it is safe',()=>{
+ for(const [air,expected] of [[false,1],[true,0]]){
+  const g=ready();g.testingInvulnerable=false;at(g,0,10);until(g,'1:pan');const c=g.boss.studio.crane,floor=g.platforms.find(s=>s.id==='6:4'),h=g.health;
+  for(let i=0;i<60*8&&mode(g)==='1:pan';i++){if(c.x>floor.x+60&&c.x<floor.x+floor.w-60)Object.assign(g.player,{x:c.x-17,y:air?dollyBox(c).y-70:floor.y-48});else Object.assign(g.player,{x:g.platforms.find(s=>s.id==='6:3').x+20,y:220-48,inv:0});stepBoss(g,1/60);}
+  assert.equal(h-g.health>0?1:0,expected,String(air));
+ }
+});
+
+test('stop-frame: the viewfinder follows Uma, locks, then snaps; stepping out after the lock is safe',()=>{
+ for(const [leave,expected] of [[false,1],[true,0]]){
+  const g=ready();g.testingInvulnerable=false;toPhase(g,2);at(g,4,200);until(g,'2:frame');const n=g.boss.studio,h=g.health;
+  for(let i=0;i<60*3&&n.mode==='frame';i++){if(leave&&n.timer<FRAME_LOCK-.05&&!n.left){g.player.x+=80;n.left=true;}stepBoss(g,1/60);}
+  assert.equal(mode(g),'2:snap');assert.equal(h-g.health,expected,String(leave));
+ }
+ const g=ready();toPhase(g,2);at(g,4,200);const seen=phases(g)(60*12,'2:develop');
+ assert.deepEqual(seen.slice(0,8),['2:detach','2:warp','2:frame','2:snap','2:frame','2:snap','2:eject','2:develop']);assert.ok(manipulatorExposed(g.boss));assert.ok(FRAME>=1.4);
+});
+
+test('scissors cut the film strip Uma stands on; it falls away and comes back taped',()=>{
+ const g=ready();toPhase(g,2);until(g,'2:frame');const s=at(g,14,40),n=g.boss.studio;n.scissorsClock=0;
+ for(let i=0;i<3;i++){stepBoss(g,1/60);stepStudioPlatforms(g,1/60);}assert.equal(n.scissors.index,14);
+ for(let i=0;i<Math.ceil(SCISSORS_AIM*60)+2;i++){stepBoss(g,1/60);stepStudioPlatforms(g,1/60);}assert.equal(s.studioPhase,'gap');assert.ok(!solidSurfaces(g).includes(s));
+ for(let i=0;i<Math.ceil((CUT_GAP+.5)*60);i++)stepStudioPlatforms(g,1/60);assert.equal(s.studioPhase,'solid');assert.equal(n.taped[14],true);
+});
+
+test('projector: three strips become shadowless fakes, never the route to the projector or under Uma; the lamp goes dark',()=>{
+ const g=ready();toPhase(g,3);const under=at(g,7,20);const seen=phases(g)(60*8,'3:dark');
+ assert.deepEqual(seen.slice(0,5),['3:transform','3:project','3:charge','3:beam','3:dark']);
+ const n=g.boss.studio,fakes=g.platforms.filter(s=>s.room===6&&s.intangible).map(s=>s.index);
+ assert.equal(fakes.length,3);assert.deepEqual(fakes.sort(),[...n.fakes].sort());assert.ok(!fakes.includes(under.index));assert.equal(n.decoys.length,3);assert.ok(n.decoys.every(i=>i<DECOYS.length));
+ for(const i of fakes)assert.ok(!solidSurfaces(g).some(s=>s.id==='6:'+i));assert.ok(manipulatorExposed(g.boss));
+ const route={0:[6,7,13,14],1:[14,9,10,15,11,12],2:[6,17,8]}[n.dock];assert.ok(fakes.every(i=>!route.includes(i)));
+});
+
+test('the projector laser hurts at lens height; dropping below it or Shift protects',()=>{
+ for(const [where,expected] of [['level',1],['below',0],['dash',0]]){
+  const g=ready();g.testingInvulnerable=false;toPhase(g,3);at(g,4,200);until(g,'3:beam');const beam=g.boss.studio.beam;
+  Object.assign(g.player,{x:beam.x+beam.w/2-17,y:where==='below'?beam.y+40:beam.y-20,inv:0,dash:where==='dash'?.3:0});const h=g.health;stepBoss(g,1/60);assert.equal(h-g.health,expected,where);
+ }
+});
+
+test('six hits through the three openings: 3 damage each, two per phase, then the original interlude',()=>{
+ const g=ready(),b=g.boss;assert.equal(b.hp,18);at(g,4,200);const names=[];
+ for(const target of ['1:overheat','1:overheat','2:develop','2:develop','3:dark','3:dark']){assert.equal(next(g,target),target);names.push(b.phaseName);assert.equal(damageBoss(g,2),true);assert.equal(damageBoss(g,1),false);}
+ assert.deepEqual(names,['Панорама','Панорама','Стоп-кадр','Стоп-кадр','Проектор','Проектор']);
+ assert.equal(g.mode,'bossDefeat');assert.equal(g.bolts.length,0);g.storyEnabled=true;g.skipBossDefeat();assert.equal(g.mode,'interlude');assert.equal(g.interlude.boss,'manipulator');
+});
+
+test('no hit outside an opening; exposeManipulator opens the current phase',()=>{
+ const g=ready();at(g,4,200);until(g,'1:pan');assert.equal(damageBoss(g,1),false);
+ for(const [hp,m] of [[18,'1:overheat'],[12,'2:develop'],[6,'3:dark']]){const h=ready();h.boss.hp=hp;exposeManipulator(h);assert.equal(mode(h),m);assert.ok(manipulatorExposed(h.boss));}
+});
+
+test('pause freezes the fight and the floors, and retry restores the arena',()=>{
+ const g=ready();toPhase(g,3);ticks(g,90);g.mode='paused';const before=JSON.stringify(g);ticks(g,120);assert.equal(JSON.stringify(g),before);
+ g.mode='playing';g.retryLocation();g.boss.noticeTime=0;assert.ok(g.platforms.filter(s=>s.room===6).every(s=>s.studioPhase==='solid'&&!s.intangible));assert.equal(g.boss.hp,18);assert.equal(g.boss.studio.phase,1);assert.equal(bossShielded(g),false);
+});

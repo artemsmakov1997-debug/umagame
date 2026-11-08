@@ -1,7 +1,7 @@
 export const phasePlans={
  spreader:[['Ковровая бомбардировка',['rain','collect','summon']],['Рывок',['dash','summon']],['Срочный выпуск',['spear','rain']]],
  agitator:[['Лозунг',['slogan']],['Митинг',['ura','swing','stomp']],['Прямой эфир',['gust','swing']]],
- manipulator:[['Преследование',['rewrite','beam']],['Перезапись',['rewrite','beam']],['Последний дубль',['rewrite','beam']]],
+ manipulator:[['Панорама',['pan','beam']],['Стоп-кадр',['snap','cut']],['Проектор',['beam','illusion']]],
  infoshum:[['Напёрстки',['shuffle','packet']],['Кабели',['cable','rain','wave']],['Белый шум',['split','dive']]]
 };
 export function phasePattern(b){return phasePlans[b.id][Math.min(phasePlans[b.id].length-1,b.phase-1)][1];}

@@ -118,6 +118,12 @@ export class GameAudio{
   else if(type==='platformRestore')tone(350,660,.15,.035,'triangle');
   else if(type==='antennaHit'){tone(350,800,.18,.05,'triangle');noise(.08,.04,2200);}
   else if(type==='broadcastShieldBreak'){noise(.4,.08,3000);tone(180,800,.5,.05,'triangle');}
+  else if(type==='stopFrame'){noise(.08,.12,6000);tone(1800,600,.12,.05,'square');}
+  else if(type==='filmCut'){noise(.07,.09,5200);tone(900,300,.08,.04,'triangle');}
+  else if(type==='filmTape')tone(500,700,.1,.03,'triangle');
+  else if(type==='reelSwap'||type==='projectorOn'){tone(220,440,.3,.04,'triangle');noise(.2,.03,1500);}
+  else if(type==='projectorDark'||type==='cameraOverheat'){noise(.45,.05,900);tone(300,90,.4,.05,'sawtooth');}
+  else if(type==='reelEject'){tone(700,200,.2,.05,'square');}
   else if(type==='bundleBurst'){noise(.12,.06,2600);tone(180,90,.1,.035,'triangle');}
   else if(type==='spreaderCrash'){noise(.26,.1,900);tone(120,50,.25,.07,'sawtooth');}
   else if(type==='spreaderImpact'){noise(.34,.11,700);tone(80,35,.35,.08,'sawtooth');}
