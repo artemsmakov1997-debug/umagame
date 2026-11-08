@@ -106,6 +106,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
  if(type==='echo'){actor.w=30;actor.h=40;actor.y=s.y-actor.h;actor.pose='stand';}
  if(type==='botfarm'){actor.w=40;actor.h=68;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
+ if(type==='inflator'&&room===3){actor.w=74;actor.h=56;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;actor.speed=0;actor.hp=actor.maxHp=99;}
  const kinds={botfarm:'printer',fakenews:platformIndex%3?'papers':'bin',informant:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',stamp:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
  // In the newsroom every monster tears out of a newspaper riding the conveyor.
  if(type!=='clickbait')actor.source={kind:actor.copyOwnerId?'print':actor.portalMinion?'portal':room===1?'belt':kinds[type],platformIndex,localX:Math.max(24,Math.min(s.w-24,actor.x+actor.w/2-s.x)),transient:!!(actor.copyOwnerId||actor.portalMinion||actor.bossOwnerId)};
@@ -115,14 +116,15 @@ export function createEnemies(){const all=[
  enemy('fakenews',1,330,0,{trigger:90}),enemy('fakenews',1,760,0),
  enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,960,0),
  enemy('stamp',1,1580,0),enemy('fakenews',1,1900,0),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
- enemy('informant',3,180,0,{trigger:100}),enemy('inflator',3,470,1),enemy('informant',3,680,2),enemy('inflator',3,1010,3),enemy('inflator',3,1730,6),enemy('informant',3,2120,8),
+ // Крыши: Нагнетатели are bolted to the roofs and blow across the whole map; Информаторы guard the landings.
+ enemy('informant',3,180,0,{trigger:100}),enemy('inflator',3,800,2,{dir:1}),enemy('informant',3,1180,3),enemy('inflator',3,1360,4,{dir:1}),enemy('inflator',3,2030,6,{dir:-1}),enemy('informant',3,2240,7),
  // Студия: the Нарезчик and Склейка work from perches off the route; a Ботоферма guards each transmitter.
  enemy('cutter',5,712,15,{hunter:true}),enemy('botfarm',5,718,3),enemy('splicer',5,1046,16),enemy('botfarm',5,1522,8),enemy('cutter',5,1672,17,{hunter:true}),enemy('botfarm',5,1984,11),enemy('splicer',5,2084,18),
  // Измерение: Помеха over the feed and the rifts, an Эхо per later block, Кликбейт on Yuri's message and at the threshold.
  enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,768,10,{trigger:600}),enemy('echo',7,1120,11,{trigger:960}),enemy('static',7,1300,12),
  enemy('echo',7,1600,13,{trigger:1500}),enemy('static',7,1950,15,{y:220}),enemy('clickbait',7,2200,16)
  ];
- const kept={1:[330,760,1120,1420,300,1580,1900,2250],3:[180,470,680,1010,1730,2120],5:[712,718,1046,1522,1672,1984,2084],7:[330,768,1120,1300,1600,1950,2200]};
+ const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,800,1180,1360,2030,2240],5:[712,718,1046,1522,1672,1984,2084],7:[330,768,1120,1300,1600,1950,2200]};
  const roster=all.filter(e=>kept[e.room].includes(Math.round(e.x-rooms[e.room].x)));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
@@ -133,21 +135,21 @@ export function createFish(){return rooms.flatMap(r=>{
  const points=r.index===4?AGITATOR_FISH:r.tutorial?[[330,415],[538,428],[880,415],[980,380],[1110,415],[1330,415]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
-export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.index===2?4:r.arena?5:r.index===1?4:r.index===3?11:r.index===5?4:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createSoup(){return rooms.filter(r=>!r.tutorial&&r.index!==2).map(r=>{const s=platforms.find(s=>s.room===r.index&&s.index===(r.index===2?4:r.arena?5:r.index===1?4:r.index===3?12:r.index===5?4:14));return{room:r.index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 const antennaPlaces=[[2,4],[3,2],[3,5],[3,7],[5,3],[5,8],[5,11],[6,13],[8,10],[8,13]];
 // Transmitters were removed from every map: the list stays empty, so gates are open and bosses unshielded.
 export function createRelays(){return [];}
 export function legacyRelays(){return antennaPlaces.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);const kind={1:'printer',3:'broadcast',5:'edit',7:'signal'}[room]||'dish';
  const ordinal=antennaPlaces.slice(0,i).filter(([r])=>r===room).length;
  return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:room===4?3:[2,6].includes(room)?0:1,maxHp:room===4?3:1,rewardWhenOverloaded:room===4,lastSwing:-1,breakTime:0,kind,ordinal,scripted:[2,4,6].includes(room)};});}
-export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,12],[3,13],[4,4],[5,15],[5,17],[6,3],[7,10],[7,13],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
+export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,13],[3,14],[4,4],[5,15],[5,17],[6,3],[7,10],[7,13],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
  const entries=[
  {id:'paw',room:1,index:0,x:70,scenes:['arrival1','fakenews','stamp','censor','press']},
 
  {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','informant','inflator']},
- {id:'sensation',room:3,index:3,x:925,scenes:['sensation']},
- {id:'agitator',room:3,index:8,x:2040,scenes:['agitator']},
+ {id:'sensation',room:3,index:3,x:1110,scenes:['sensation']},
+ {id:'agitator',room:3,index:7,x:2230,scenes:['agitator']},
  {id:'studio',room:5,index:0,x:95,scenes:['arrival3','cutter','botfarm']},{id:'splicer',room:5,index:4,x:830,scenes:['splicer']},
  {id:'manipulator',room:5,index:11,x:1925,scenes:['manipulator']},
  {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:11,x:1110,scenes:['echo']},{id:'clickbait',room:7,index:10,x:735,scenes:['clickbait']},{id:'infoshum',room:7,index:16,x:2165,scenes:['infoshum']},

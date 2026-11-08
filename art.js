@@ -23,6 +23,8 @@ export function drawMonster(c,a,id,x,y,w,h,time=0,flip=false,actor={}){
  if(id==='static'&&a.staticMotion)return drawStaticPortrait(c,a,x,y,w,h,time,flip,actor);
  if(id==='botfarm')return drawBotfarmPortrait(c,a,x,y,w,h,time,actor);
  if(id==='bot')return drawBotPortrait(c,a,x,y,w,h,time,actor);
+ // The Нагнетатель is the bolted roof machine.
+ if(id==='inflator'&&a.inflatorMachine){const st=actor.hurtTime>0?'hit':actor.state==='windup'?'windup':['casting','blast'].includes(actor.state)?'blast':'patrol',e={state:st,hurtTime:actor.hurtTime||0,dir:flip?-1:1};const f=st==='hit'?7:st==='windup'?2:st==='blast'?4:Math.floor((actor.moving?actor.walkTime??time:time)*7)%2;const k=Math.min(w/192,h/155);c.save();c.translate(Math.round(x+w/2),Math.round(y+h/2));if(flip)c.scale(-1,1);c.drawImage(a.inflatorMachine,f*192,0,192,155,-96*k,-77*k,192*k,155*k);c.restore();return;}
  // Spreader and Infoshum are drawn exactly as in their fights.
  if(id==='spreader'&&a.spreaderAir){const frame=actor.hurtTime>0?7:actor.state==='casting'?3:actor.state==='windup'?5:Math.floor((actor.moving?actor.walkTime??time:time)*7)%2,s=Math.min(w/192,h/184);c.save();c.translate(Math.round(x+w/2),Math.round(y+h/2));if(flip)c.scale(-1,1);c.drawImage(a.spreaderAir,frame*192,0,192,184,-96*s,-92*s,192*s,184*s);c.restore();return;}
  if(id==='infoshum'&&a.infoshumBody&&!actor.projection){const frame=actor.hurtTime>0?5:actor.state==='casting'?3:actor.state==='windup'?1:[0,2][Math.floor((actor.moving?actor.walkTime??time:time)*7)%2];drawInfoshumSprite(c,a,'body',frame,x,y,w,h);return;}

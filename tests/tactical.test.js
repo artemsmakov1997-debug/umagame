@@ -29,10 +29,6 @@ test('Clickbait is immune to paws, stomps, soup damage and reflected projectiles
 test('Нагнетатель takes paw hits from the front and from behind in both directions',()=>{
  for(const dir of [-1,1]){const g=setup(),e=actor('inflator',1,125,0,{dir});g.enemies=[e];const center=e.x+e.w/2;assert.equal(g.hitEnemy(e,false,1,{sourceX:center+dir*80}),true);assert.equal(e.hp,2);e.inv=0;assert.equal(g.hitEnemy(e,false,1,{sourceX:center-dir*80}),true);assert.equal(e.hp,1);}
 });
-test('the strong forward blast carries Uma over a ledge while dash remains protected',()=>{
- const g=setup(3,9,165),e=actor('inflator',3,210,9,{state:'blast',timer:.23,dir:-1});g.enemies=[e];const x=g.player.x;tick(g,1);assert.equal(g.player.vx,-640);tick(g,16);assert.ok(g.player.x<x-120);assert.equal(g.health,4);
- const safe=setup(3,9,165);safe.enemies=[actor('inflator',3,210,9,{state:'blast',timer:.23,dir:-1})];tick(safe,1,{dash:true});assert.equal(safe.player.knock,0);assert.equal(safe.health,4);
-});
 test('Stamp stamps a bounded patch on its actual platform, with warning and a finite lifetime',()=>{
  const g=setup(3,3,20),e=actor('stamp',3,125,3,{timer:0,speed:0});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');assert.equal(g.inks.length,0);tick(g,32);assert.equal(g.inks.length,1);const ink=g.inks[0],s=g.platforms.find(s=>s.id===ink.platformId);assert.ok(ink.localX>=0&&ink.localX+ink.w<=s.w);g.enemies=[];tick(g,560);assert.equal(g.inks.length,0);
 });

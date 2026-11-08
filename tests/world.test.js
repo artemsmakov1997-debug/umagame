@@ -49,8 +49,12 @@ test('a lift carries feet vertically, releases a jump and freezes with the whole
 test('portal minions on a travelling platform inherit its current position and patrol bounds',()=>{
  const g=legacy(7,13,840),owner=seat(enemy('panicker',7,900,13,{active:true,noticed:true,state:'alarm',timer:999}));g.enemies=[owner];alertNearby(g,owner);tick(g,70);const s=g.platforms.find(s=>s.room===7&&s.index===13),minion=g.enemies.find(e=>e.portalMinion);assert.ok(minion);assert.equal(minion.y+minion.h,s.y);assert.ok(minion.x>=s.x+12&&minion.x<=s.x+s.w-60);assert.equal(minion.origin,s.x+12);assert.equal(minion.end,s.x+s.w-60);
 });
-test('Нагнетатели stand on roofs and their wave really blows Uma off the edge',()=>{
- const g=setup(3,3,930),roof=g.platforms.find(s=>s.id==='3:3'),e=enemy('inflator',3,1010,3,{active:true,noticed:true,state:'blast',timer:.3,dir:-1});g.enemies=[e];tick(g,1);assert.ok(g.player.knock>0);for(let i=0;i<40&&g.player.grounded!==false;i++)tick(g,1);tick(g,12);assert.ok(g.player.x+g.player.w<roof.x+4,'blown off the roof');assert.equal(g.health,4);for(const m of new Game().enemies.filter(e=>e.type==='inflator'))assert.equal(platforms.find(s=>s.room===m.room&&s.index===m.platformIndex).roof?.type,'building');
+test('Нагнетатели stand on roofs; the nearest one blows across the whole map: airborne Uma is carried, crouching on a roof holds',()=>{
+ for(const m of new Game().enemies.filter(e=>e.type==='inflator'))assert.equal(platforms.find(s=>s.room===m.room&&s.index===m.platformIndex).roof?.type,'building');
+ const g=setup(3,0,60);g.enemies=new Game().enemies.filter(e=>e.room===3&&e.type==='inflator');for(const e of g.enemies)e.active=true;
+ const far=g.enemies.find(e=>e.platformIndex===2);far.dir=1;tick(g,1);g.roofs.wind={phase:'warn',timer:0,source:far.id,dir:1};tick(g,1);assert.equal(g.roofs.wind.phase,'gust');
+ const x=g.player.x;g.player.grounded=false;g.player.vy=-200;tick(g,10);assert.ok(g.player.x>x+12,'carried in the air far from the machine');
+ const h=setup(3,0,60);h.enemies=new Game().enemies.filter(e=>e.room===3&&e.type==='inflator');tick(h,1);h.roofs.wind={phase:'gust',timer:1.5,source:h.enemies[0].id,dir:1};const hx=h.player.x;tick(h,10,{down:true});assert.ok(Math.abs(h.player.x-hx)<1,'crouching holds');
 });
 test('transmitters are gone from every map',()=>{
  assert.deepEqual(createRelays(),[]);
