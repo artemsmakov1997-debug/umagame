@@ -15,6 +15,8 @@ export const AIR_TIMES={calm:2.6,warn:.8,gust:1.7,wind:120,deckWarn:.6,swingWarn
 export const BOSS_W=88,BOSS_H=140;
 // Phase 2: a sound wave from the megaphone reaches Uma when she is far away or up high.
 export const SHOUT={every:3.2,warn:.6,speed:300,far:300,high:70,size:46};
+// A thrown placard: flight time to the aimed point and the arc's gravity; it breaks on whatever it hits.
+export const PLACARD_THROW={time:.9,gravity:700,size:34,impact:.45};
 const X0=()=>rooms[4].x,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 export const SHELTERS=[...CHIMNEYS,{x:MAST_X-46,w:92,h:150,mast:true}];
@@ -145,12 +147,14 @@ function stepPlacards(g,dt,paw,beatNow){
 function knock(g,c){c.state='knocked';c.time=0;g.emit('enemyHit',{x:c.x+c.w/2,y:c.y,enemyType:'placard'});}
 function stepShouts(g,dt,paw){
  const n=g.boss.broadcast,p=g.player,r=rooms[4];n.shouts??=[];
- for(const w of n.shouts){w.time+=dt;if(w.state!=='fly')continue;w.x+=w.vx*dt;w.y+=w.vy*dt;
-  const box={x:w.x-SHOUT.size/2,y:w.y-SHOUT.size/2,w:SHOUT.size,h:SHOUT.size};
+ for(const w of n.shouts){w.time+=dt;if(w.state!=='fly')continue;if(w.kind==='placard')w.vy+=PLACARD_THROW.gravity*dt;w.x+=w.vx*dt;w.y+=w.vy*dt;
+  const size=w.kind==='placard'?PLACARD_THROW.size:SHOUT.size,box={x:w.x-size/2,y:w.y-size/2,w:size,h:size};
+  // A placard smashes on the floor, a roof or a chimney ledge it comes down on.
+  if(w.kind==='placard'&&w.vy>0&&(w.y>=FLOOR_Y-6||g.platforms.some(s=>s.room===4&&!s.intangible&&!s.bossHidden&&w.x>s.x&&w.x<s.x+s.w&&w.y>=s.y-6&&w.y-w.vy*dt<s.y))){w.state='burst';w.time=0;w.y=Math.min(w.y,FLOOR_Y-6);g.emit('boltImpact',{x:w.x,y:w.y,kind:'placard'});continue;}
   if(paw&&p.attack>0&&w.lastSwing!==p.swing&&overlap(paw,box)){w.lastSwing=p.swing;w.state='burst';w.time=0;g.emit('parry',{x:w.x,y:w.y});continue;}
   if(p.dash===0&&overlap(p,box)){w.state='burst';w.time=0;hurtUma(g,w.x,Math.sign(w.vx)||1);continue;}
   if(w.x<r.x-40||w.x>r.end+40||w.y<-40||w.y>520||w.time>4){w.state='gone';}}
- n.shouts=n.shouts.filter(w=>w.state==='fly'||w.state==='burst'&&w.time<.4);
+ n.shouts=n.shouts.filter(w=>w.state==='fly'||w.state==='burst'&&w.time<(w.kind==='placard'?PLACARD_THROW.impact:.4));
 }
 function stepRally(g,dt,paw,beatNow){
  const b=g.boss,n=b.broadcast,p=g.player,x0=X0(),px=p.x+17,cx=b.x+b.w/2,front=(px-cx)*b.dir;
@@ -169,9 +173,12 @@ function stepRally(g,dt,paw,beatNow){
  else if(n.mode==='ura'&&n.timer<=0){n.mode='walk';n.uraTimer=RALLY_TIMES.ura;}
  else if(n.mode==='swingWarn'&&n.timer<=0){n.mode='swing';n.timer=RALLY_TIMES.swing;const hit={x:n.swingDir>0?b.x+b.w-14:b.x-102,y:b.y+54,w:116,h:86};g.emit('bossCast',{boss:b.id,ability:'swing',x:cx,y:b.y});if(overlap(p,hit)&&p.dash===0)hurtUma(g,cx,n.swingDir);}
  else if(n.mode==='swing'&&n.timer<=0){n.mode='walk';}
- else if(n.mode==='shoutWarn'&&n.timer<=0){n.mode='shout';n.timer=.45;n.shoutTimer=SHOUT.every;const mouth={x:cx+b.dir*40,y:b.y+40},tx=px,ty=p.y+p.h/2,len=Math.hypot(tx-mouth.x,ty-mouth.y)||1;n.shouts.push({x:mouth.x,y:mouth.y,vx:(tx-mouth.x)/len*SHOUT.speed,vy:(ty-mouth.y)/len*SHOUT.speed,time:0,state:'fly',lastSwing:-1});fx(n,'rings',mouth.x,mouth.y+14,.4);g.emit('bossCast',{boss:b.id,ability:'shout',x:mouth.x,y:mouth.y});}
+ else if(n.mode==='shoutWarn'&&n.timer<=0){n.mode='shout';n.timer=.45;n.shoutTimer=SHOUT.every;n.shots=(n.shots||0)+1;const mouth={x:cx+b.dir*40,y:b.y+40},tx=px,ty=p.y+p.h/2;
+  // Every second ranged attack is a placard thrown in an arc instead of a sound wave.
+  if(n.shots%2===0){const T=PLACARD_THROW.time,hand={x:cx+b.dir*30,y:b.y+30};n.shouts.push({kind:'placard',x:hand.x,y:hand.y,vx:(tx-hand.x)/T,vy:(ty-hand.y)/T-PLACARD_THROW.gravity*T/2,time:0,state:'fly',lastSwing:-1});}
+  else{const len=Math.hypot(tx-mouth.x,ty-mouth.y)||1;n.shouts.push({x:mouth.x,y:mouth.y,vx:(tx-mouth.x)/len*SHOUT.speed,vy:(ty-mouth.y)/len*SHOUT.speed,time:0,state:'fly',lastSwing:-1});fx(n,'rings',mouth.x,mouth.y+14,.4);}g.emit('bossCast',{boss:b.id,ability:'shout',x:mouth.x,y:mouth.y});}
  else if(n.mode==='shout'&&n.timer<=0){n.mode='walk';}
- else if(n.mode==='stomp'&&n.timer<=0){n.mode='land';n.timer=.35;n.stompTimer=RALLY_TIMES.stomp;fx(n,'rings',cx,FLOOR_Y-4,.5);fx(n,'dust',cx,FLOOR_Y-8,.5);
+ else if(n.mode==='stomp'&&n.timer<=0){n.mode='land';n.timer=.35;n.stompTimer=RALLY_TIMES.stomp;fx(n,'stomp',cx,FLOOR_Y+2,.55);
   for(const dir of[-1,1])g.bolts.push({room:4,kind:'wave',visual:'agitator',x:cx+dir*50-16,y:FLOOR_Y-12,w:32,h:12,vx:dir*250,vy:0,ttl:4,fixedY:true});g.emit('bossCast',{boss:b.id,ability:'stomp',x:cx,y:FLOOR_Y});}
  else if(n.mode==='land'&&n.timer<=0)n.mode='walk';
  else if(n.mode==='stun'&&n.timer<=0)n.mode='walk';

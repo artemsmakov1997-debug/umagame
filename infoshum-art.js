@@ -1,6 +1,7 @@
+import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
 import {drawCableBlob,drawBreakout,drawSmokingCase} from './infoshum-anim-art.js?v=0.21.5';
-import {monitorRect,glassRect,corePoint,headlineBoxes,figureBox,SPLIT} from './infoshum-combat.js?v=0.21.5';
+import {monitorRect,glassRect,corePoint,headlineBoxes,figureBox,SPLIT,ARRIVE} from './infoshum-combat.js?v=0.21.5';
 // Rendered production assets for the two-stage Infoshum encounter.
 // Frame atlases are original pixel PNG assets, preloaded in assets.js and drawn with pixel smoothing off.
 import {rooms} from './level.js?v=0.21.5';
@@ -98,17 +99,18 @@ function drawFree(c,a,g,time){
  else{const frame=b.hurtTime>0?5:n.mode==='volley'?3:n.mode==='arrive'?1:0;
   // Leaving the monitor: a glitch trail of fading copies follows him to the middle.
   if(n.mode==='arrive'&&n.arriveFrom){for(let i=4;i>=1;i--){const k=i/5,x=b.x+(n.arriveFrom.x-b.x)*k*.5,y=b.y+(n.arriveFrom.y-b.y)*k*.5;c.save();c.globalAlpha=.16*(5-i)/4;c.filter=i%2?'hue-rotate(60deg)':'none';drawInfoshumSprite(c,a,'body',1,x+b.w/2-175+(i%2?-6:6),y-74,350,302);c.restore();}
-   for(let i=0;i<14;i++){const px=b.x+b.w/2+Math.sin(i*7.1+time*20)*120,py=b.y+Math.cos(i*3.3+time*17)*80;rect(c,px,py,6+i%3*4,2,i%2?magenta:cyan);}}
+   // He dissolves into glitch at the monitor and reassembles on the way.
+   const k=Math.min(1,Math.max(0,1-(n.timer??0)/ARRIVE));drawAttackFx(c,a,'glitch',Math.min(3,Math.floor(k*8)),n.arriveFrom.x+b.w/2,n.arriveFrom.y+b.h/2,170,{alpha:Math.max(0,1-k*1.4)});drawAttackFx(c,a,'glitch',k<.7?3:k<.85?4:5,b.x+b.w/2,b.y+b.h/2,200,{alpha:.75});}
   drawInfoshumSprite(c,a,'body',frame,b.x+b.w/2-175,b.y-74+(n.mode==='arrive'?0:wob),350,302);}
 }
 // ——— Phase 3: the doubles ———
 function drawNoise(c,a,g,time){
  const n=g.boss.network,img=a.infoshumPoses;
  // The split: the core bursts in a ring of white noise and the doubles fly out of it.
- if(n.mode==='split'&&n.splitFrom){const f=n.figures[0],k=Math.min(1,(f?.time||0)/.9),cx=n.splitFrom.x,cy=n.splitFrom.y;c.save();c.globalAlpha=Math.max(0,1-k);c.fillStyle='#f4fbff';c.beginPath();c.arc(cx,cy,30+k*60,0,Math.PI*2);c.fill();c.restore();
-  for(let i=0;i<48;i++){const ang=i*2.399,rr=40+k*260+(i%5)*10,px=cx+Math.cos(ang)*rr,py=cy+Math.sin(ang)*rr*.7;c.save();c.globalAlpha=Math.max(0,1-k)*.9;rect(c,px,py,3+(i%4)*2,3,i%3===0?magenta:i%3===1?cyan:'#e8eef6');c.restore();}}
+ if(n.mode==='split'&&n.splitFrom){const f=n.figures[0],k=Math.min(1,(f?.time||0)/.9);drawAttackFx(c,a,'burst',Math.min(3,Math.floor(k*4)),n.splitFrom.x,n.splitFrom.y,220+k*160,{alpha:k>.75?(1-k)/.25:1});}
  for(const f of n.figures){
-  if(f.state==='warn'){c.save();c.strokeStyle=f.real?'#ff7ad8':'#b48cff';c.globalAlpha=.6;c.setLineDash([8,6]);c.lineWidth=2;c.beginPath();c.moveTo(f.x,f.y);c.lineTo(f.tx,f.ty-20);c.stroke();c.restore();colorWarning(c,{x:f.tx,y:f.ty},time,'wave');}
+  // Before a dive: a trail of glitch ghosts points at the landing, where a noise ripple already stirs.
+  if(f.state==='warn'){for(let i=1;i<=3;i++){const q=i/4;drawAttackFx(c,a,'glitch',3,f.x+(f.tx-f.x)*q,f.y+(f.ty-20-f.y)*q,60,{alpha:(.45-.1*i)*(.7+.3*Math.sin(time*14+i))});}colorWarning(c,a,{x:f.tx,y:f.ty},time,'wave');}
   const flicker=f.real?1:.62+.25*Math.sin(time*23+f.id);
   if(f.state==='split')cell(c,img,POSE_W,POSE_H,5,f.x,f.y,330);
   else if(f.state==='dive'){const ang=Math.atan2(f.ty-f.y,f.tx-f.x),flip=f.tx<f.x;cell(c,img,POSE_W,POSE_H,3,f.x,f.y,300,{flip,rot:flip?ang-Math.PI+.6:ang-.6,alpha:flicker});}
@@ -156,10 +158,10 @@ export function drawInfoshumDefeat(c,a,d){
  if(frame>=1&&frame<3){c.save();c.globalAlpha=.25*(1-(t-.45)/.8);c.fillStyle='#ffffff';c.fillRect(cx-800,0,1600,480);c.restore();}
  return true;
 }
-function colorWarning(c,t,time,kind){
- const w=kind==='rain'?110:kind==='beam'?190:kind==='wave'?86:76;
- c.save();c.globalAlpha=.55+.4*Math.abs(Math.sin(time*9));
- rect(c,t.x-w/2,t.y-8,w,3,kind==='wave'?cyan:magenta);
- for(let i=0;i<4;i++)rect(c,t.x-w/2+i*16,t.y-15,10,3,kind==='wave'?'#aafaff':'#ffc3fa');
- c.restore();
+function colorWarning(c,a,t,time,kind){
+ // A target marker drawn from the attack itself: a faint splash ring for rain, a stirring noise ripple for a wave.
+ const pulse=.45+.4*Math.abs(Math.sin(time*9));
+ if(kind==='rain'){drawAttackFx(c,a,'splash',2,t.x,t.y,120,{alpha:pulse});return;}
+ drawAttackFx(c,a,'wave',0,t.x,t.y,kind==='beam'?190:96,{alpha:pulse*.8});
 }
+

@@ -29,6 +29,7 @@ import {drawArenaBoss} from './boss-art.js?v=0.21.5';
 import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
 import {drawStudioContainer} from './studio-container-art.js?v=0.21.5';
+import {drawBossProjectile,drawAttackFxList} from './boss-attack-fx.js?v=0.21.5';
 import {drawRoofSurface,drawRoofProps,drawRoofWind,drawSensations,drawInflatorMachine} from './roofs-art.js?v=0.21.5';
 import {drawStudioSurface,drawStudioBack,drawStudioProps} from './studio-art.js?v=0.21.5';
 import {drawDimensionSurface,drawDimensionProps} from './dimension-art.js?v=0.21.5';
@@ -125,9 +126,9 @@ export class Renderer{
   }
   for(const bolt of g.bolts){
    if(bolt.kind==='echoOrb'){drawEchoVortex(c,bolt,t);drawMonster(c,a,'echo',bolt.x-8,bolt.y-10,48,48,t,false,{...bolt,flying:true,orb:true});continue;}
-   if(!drawInfoshumProjectile(c,a,bolt,t))drawProjectile(c,a,g,bolt,t);
+   if(!drawBossProjectile(c,a,bolt,t)&&!drawInfoshumProjectile(c,a,bolt,t))drawProjectile(c,a,g,bolt,t);
   }
-  drawCombatEffects(c,a,this.combatEffects,dt);this.combatEffects=this.combatEffects.filter(e=>e.time<.32);
+  drawAttackFxList(c,a,g);drawCombatEffects(c,a,this.combatEffects,dt);this.combatEffects=this.combatEffects.filter(e=>e.time<.32);
   if((!p.grounded&&Math.abs(p.vx)>0||p.dash>0)&&g.mode==='playing'){
    this.trailTimer+=dt;if(this.trailTimer>.025){this.trailTimer=0;this.trail.push({x:p.x+9,y:p.y+34,life:.3,dash:p.dash>0});}
   }

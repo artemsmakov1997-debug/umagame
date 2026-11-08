@@ -86,6 +86,17 @@ test('phase 2: when Uma is far away or up high a sound wave from the megaphone f
  assert.ok(until(g,()=>n.mode==='shoutWarn',60));assert.ok(until(g,()=>n.shouts.length>0,60));const w=n.shouts[0];assert.ok(w.vx<0);
  assert.ok(until(g,()=>g.health<h,240),'the wave reaches her');
 });
+test('phase 2: every second ranged attack is a placard thrown in an arc; it hurts, breaks on the floor and a paw smashes it',()=>{
+ const g=ready(false),b=g.boss,n=rally(g);place(g,X0+300);n.shots=1;n.shoutTimer=0;
+ assert.ok(until(g,()=>n.shouts.some(w=>w.kind==='placard'),120));const w=n.shouts.find(w=>w.kind==='placard');assert.ok(w.vy<0,'thrown upwards first');
+ const h=g.health;assert.ok(until(g,()=>g.health<h||w.state==='burst',200));assert.equal(w.state,'burst');
+ // Uma steps aside: it smashes on the floor instead.
+ const f=ready(false),m=rally(f);place(f,X0+300);m.shots=1;m.shoutTimer=0;assert.ok(until(f,()=>m.shouts.some(w=>w.kind==='placard'),120));const q=m.shouts.find(w=>w.kind==='placard');place(f,X0+40);
+ const hp=f.health;assert.ok(until(f,()=>q.state==='burst',200));assert.equal(f.health,hp);assert.ok(f.events.some(e=>e.type==='boltImpact'&&e.kind==='placard'));
+ // A paw in its way smashes it.
+ const k=ready(false),r=rally(k);place(k,X0+300);r.shots=1;r.shoutTimer=0;assert.ok(until(k,()=>r.shouts.some(w=>w.kind==='placard'),120));const z=r.shouts.find(w=>w.kind==='placard');
+ Object.assign(z,{x:k.player.x+50,y:k.player.y+20,vx:-60,vy:0});k.player.dir=1;k.player.cooldown=0;k.step(1/60,{attack:true});tick(k,3);assert.equal(z.state,'burst');assert.equal(k.health,4);
+});
 test('the tower ladder is climbed with ↑; on the deck a paw on the screen sends him leaping to the other tower',()=>{
  const g=ready(),b=g.boss,n=air(g,1),t=TOWERS[1];place(g,X0+t.ladder-17);assert.ok(until(g,()=>g.player.grounded&&g.player.supportId===towerDeckId(1),300,{up:true}),'climb the ladder');
  swingAt(g,b.x+b.w/2);assert.equal(b.hp,4);assert.equal(n.mode,'stun');assert.ok(until(g,()=>n.mode==='idle'&&n.tower===0,200));assert.deepEqual({x:b.x,y:b.y},towerStand(0));

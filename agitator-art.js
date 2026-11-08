@@ -3,6 +3,7 @@ import {rect,text} from './pixel.js?v=0.21.5';
 import {FLOOR_Y,MAST_X,MAST_DECK,LETTER,TOWERS,CHIMNEYS,HATCHES,AGI,PILLARS,slotRect,SLOT_ORDER} from './agitator-map.js?v=0.21.5';
 import {SLOGAN_TIMES,windDir} from './agitator-combat.js?v=0.21.5';
 import {drawSensationBird} from './roofs-art.js?v=0.21.5';
+import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 // assets/agitator-boss.png: 16 cells of 212×248, feet on y=240, facing right.
 // 0 idle, 1 shout, 2 overheated, 3 stomp, 4 stunned, 5 megaphone bursts, 6 jump, 7 land,
 // 8 announce, 9 low swing, 10 rally aura, 11 blow, 12 knocked back, 13 cracked, 14 slumped, 15 scrap.
@@ -97,10 +98,22 @@ export function drawAgitator(c,a,g,t){
  if(n.stage==='slogan'&&n.mode==='windup')drawSlotMarks(c,g,t);
  if(n.blast>0||n.mode==='swingWarn'||n.mode==='stomp'||n.mode==='shoutWarn'){const blink=Math.floor(t*10)%2;text(c,'!',cx-5,b.y-30+(blink?-2:0),'#ffd083',3);}
  // The rally call is a big exclamation mark over his head; his open back is outlined.
- if(n.stage==='rally'&&(n.mode==='ura'||n.mode==='uraWarn')){const k=n.mode==='uraWarn'?.6:1,bob=Math.abs(Math.sin(t*8))*4;c.save();c.globalAlpha=.95;text(c,'!',cx-9-1,b.y-46-bob+2,'#3a0f12',5*k);text(c,'!',cx-9,b.y-46-bob,'#ffd34a',5*k);c.restore();}
+ if(n.stage==='rally'&&(n.mode==='ura'||n.mode==='uraWarn')){const warn=n.mode==='uraWarn',bob=Math.abs(Math.sin(t*8))*4,frame=warn?[0,2][Math.floor(t*8)%2]:[1,0,2,3][Math.floor(t*10)%4];drawAttackFx(c,a,'bang',frame,cx,b.y-34-bob,warn?52:72);}
  if(n.stage==='rally'&&n.mode==='shoutWarn')fxFrame(c,a,'glow',cx+b.dir*40,b.y+40,60,.5+.4*Math.sin(t*20));
- for(const w of n.shouts||[]){const ang=Math.atan2(w.vy,w.vx),k=w.state==='burst'?w.time/.4:0;c.save();c.translate(w.x,w.y);c.rotate(Math.abs(ang)>Math.PI/2?ang+Math.PI:ang);fxFrame(c,a,w.state==='burst'?'burst':'wave',0,0,(w.state==='burst'?60+k*40:56+Math.sin(w.time*18)*6),w.state==='burst'?1-k:.95,Math.abs(ang)>Math.PI/2);c.restore();}
+ for(const w of n.shouts||[])drawShot(c,a,w,t);
  drawLetters(c,a,g,t,true);drawBirds(c,a,g,t);drawWind(c,a,g,t);drawFx(c,a,n,t);
+}
+// Ranged shots of phase 2: a sound wave that widens as it flies (parried → burst), or a spinning placard (→ impact).
+function drawShot(c,a,w,t){
+ if(w.kind==='placard'){
+  if(w.state==='burst')drawAttackFx(c,a,'placard',4+Math.min(2,Math.floor(w.time/.15)),w.x,w.y-26,64,{alpha:w.time>.3?Math.max(0,1-(w.time-.3)/.15):1});
+  else drawAttackFx(c,a,'placard',Math.floor(w.time*12)%4,w.x,w.y,58,{flip:w.vx<0,rot:Math.sin(w.time*9)*.15});
+  return;
+ }
+ const ang=Math.atan2(w.vy,w.vx),back=Math.abs(ang)>Math.PI/2;
+ if(w.state==='burst'){const k=w.time/.4;fxFrame(c,a,'burst',w.x,w.y,60+k*40,1-k);return;}
+ // The wave is drawn from its back edge: the inner arc trails, the outer arcs lead.
+ const frame=Math.min(3,Math.floor(w.time*7)),size=54+frame*10;drawAttackFx(c,a,'shout',frame,w.x-Math.cos(ang)*size*.45,w.y-Math.sin(ang)*size*.45,size,{rot:back?ang+Math.PI:ang,flip:back});
 }
 function drawSlotMarks(c,g,t){
  const n=g.boss.broadcast,blink=Math.floor(t*8)%2;c.save();c.globalAlpha=blink?.65:.3;c.strokeStyle='#ffb36a';c.lineWidth=2;
@@ -143,6 +156,7 @@ function drawFx(c,a,n,t){
  for(const f of n.fx){const k=f.age/f.life,alpha=Math.max(0,1-k);
   if(f.kind==='dust')fxFrame(c,a,'dust',f.x,f.y-(f.small?10:26),f.small?64:130,alpha);
   else if(f.kind==='rings')fxFrame(c,a,'rings',f.x,f.y-14,120+k*70,alpha);
+  else if(f.kind==='stomp')drawAttackFx(c,a,'stomp',Math.min(2,Math.floor(k*3)),f.x,f.y,200+k*40,{alpha:k>.7?(1-k)/.3:1});
   else if(f.kind==='stars')fxFrame(c,a,'stars',f.x,f.y+Math.sin(t*6)*2,90,Math.min(1,alpha*2));
   else if(f.kind==='wave')fxFrame(c,a,'wave',f.x+(f.dir||1)*k*60,f.y,90+k*50,alpha,(f.dir||1)<0);
   else if(f.kind==='explosion')fxFrame(c,a,'explosion',f.x,f.y,80+k*30,alpha);
