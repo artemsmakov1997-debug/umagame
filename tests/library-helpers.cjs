@@ -12,5 +12,6 @@ async function checkLibrary(page){
   const rows=await page.locator('.monster-option:visible').evaluateAll(es=>es.map(e=>Math.round(e.getBoundingClientRect().height)));assert.equal(new Set(rows).size,1);
  }
  await page.keyboard.press('ArrowDown');assert.equal(await page.locator('#monster-title').textContent(),'Эхо');await page.keyboard.press('ArrowLeft');assert.equal(await page.locator('#monster-title').textContent(),'Ботоферма');
+ await page.locator('#library-next').click();assert.equal(await page.locator('#monster-title').textContent(),'Эхо');await page.locator('#library-prev').click();assert.equal(await page.locator('#monster-title').textContent(),'Ботоферма');assert.equal(await page.locator('.library-dots i.on').count(),1);
 }
 module.exports={checkLibrary};
