@@ -3,7 +3,9 @@ import {canLeaveRoom} from './room-transitions.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
 export function exitMarker(g){if(g.room===LAST_ROOM||!canLeaveRoom(g))return null;const r=rooms[g.room];return{x:g.room===PORTAL_ROOM?PORTAL_X-80:r.end-70,y:g.room===0?196:172};}
 const arrow=['0000000011000000','0000000011100000','0000000011110000','0111111111111000','0111111111111100','0111111111111110','0111111111111100','0111111111111000','0000000011110000','0000000011100000','0000000011000000'];
-export function drawExitArrow(c,g,time,width){if(g.room===LAST_ROOM||g.mode!=='playing')return;let mark=exitMarker(g),locked=!mark;if(locked){if(rooms[g.room].end-g.player.x>260)return;mark={x:rooms[g.room].end-70,y:172};}const off=mark.x>g.camera+width-48,x=Math.round(off?g.camera+width-42:mark.x+(locked?0:Math.sin(time*2.6)*2)),y=off?62:mark.y,theme=rooms[g.room].theme;
+export function drawExitArrow(c,g,time,width,a={}){if(g.room===LAST_ROOM||g.mode!=='playing')return;let mark=exitMarker(g),locked=!mark;if(locked){if(rooms[g.room].end-g.player.x>260)return;mark={x:rooms[g.room].end-70,y:172};}const off=mark.x>g.camera+width-48,x=Math.round(off?g.camera+width-42:mark.x+(locked?0:Math.sin(time*2.6)*2)),y=off?62:mark.y,theme=rooms[g.room].theme;
+ // The painted sign on its bracket (assets/exit-sign.png: 4 cells of a gently swinging, glowing sign, 5th — locked).
+ if(a.exitSign){const img=a.exitSign,f=locked?4:[0,1,2,1,0,3][Math.floor(time*3)%6],w=64,h=w*137/150;c.drawImage(img,f*150,0,150,137,Math.round(x-14),Math.round(y-12),w,Math.round(h));return;}
  // A bevelled sign sits on a material-specific bracket, rather than a triangle and stick.
  rect(c,x-4,y+25,39,6,theme==='roofs'?'#684c4d':theme==='studio'?'#443454':theme==='noise'?'#42356a':'#384b5e');rect(c,x-2,y+24,35,2,locked?'#506c7b':'#94c9d3');for(const xx of[x,x+28])rect(c,xx,y+27,2,2,'#b2c8c9');
  for(let row=0;row<arrow.length;row++)for(let col=0;col<16;col++)if(arrow[row][col]==='1'){rect(c,x+col*2+2,y+row*2+3,2,2,'#020a1a');rect(c,x+col*2,y+row*2+1,2,2,locked?'#293d55':'#a16c35');rect(c,x+col*2,y+row*2,2,2,locked?'#78909f':row<4?'#fff2bf':row<8?'#ffdb85':'#dfad5c');}
