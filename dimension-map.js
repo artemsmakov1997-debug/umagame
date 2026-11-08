@@ -1,5 +1,5 @@
 // «Измерение» (room 7) — «Первоисточник». Pure data: pieces in room-local coordinates.
-// Three blocks over a void: «Лента» (rising message bubbles, a Кликбейт sitting on some of them),
+// Four blocks over a void (the fourth, «Пересылка», is messages sliding to and fro): «Лента» (rising message bubbles, a Кликбейт sitting on some of them),
 // «Изнанка» (a rift turns Uma upside down and the feed runs the other way — the mirror image of «Лента»),
 // «Разлом» (a second rift puts her back on her feet before the threshold).
 // Yuri's own messages hold; forwarded copies drift and pop. No transmitters: three optional «первоисточники» weaken Infoshum.
@@ -16,8 +16,13 @@ export const DIM_PIECES=[
  ...[0,1,2].flatMap(lane=>[0,1,2].map(slot=>({type:'copy',lane,slot,reversed:true,inverted:true,x:1095+lane*150,w:110,y:-10}))),
  {type:'island',x:1550,w:170,y:160,inverted:true},    // 21 hanging island; the second rift cuts through it
  {type:'island',x:1640,w:200,y:380},                  // 22 Uma lands back on her feet
- {type:'island',x:1930,w:120,y:330},                  // 23
- {type:'island',x:2150,w:154,y:300}                   // 24 the threshold of Infoshum
+ // «Пересылка»: forwarded messages sliding to and fro over the void; a Кликбейт rides one of them.
+ {type:'slide',x:1880,range:110,w:100,y:340,period:4.6,phase:0},     // 23
+ {type:'slide',x:2120,range:110,w:100,y:300,period:4.6,phase:Math.PI},// 24
+ {type:'island',x:2360,w:130,y:300},                  // 25 a breather
+ {type:'slide',x:2520,range:120,w:100,y:280,period:5.2,phase:0},     // 26
+ {type:'slide',x:2760,range:70,w:90,y:320,period:3.8,phase:1.4},     // 27
+ {type:'island',x:2918,w:154,y:300}                   // 28 the threshold of Infoshum
 ];
 // Rising feed: copies appear at `bottom`, rise at `speed` and pop near `top`. Neighbouring lanes are half a step apart.
 export const FEED={bottom:500,top:110,speed:34,perLane:3,lanePhase:[0,.5,0],fade:.86,pop:.965};
@@ -27,8 +32,10 @@ export const RIFTS=[{x:870,y:120,h:210},{x:1690,y:110,h:220}];
 export const ORIGINALS=[
  {id:'source-1',x:466,y:58},    // above the feed: ride a copy almost to the top and jump
  {id:'source-2',x:1296,y:372},  // its mirror: ride a sinking copy almost to the bottom and jump “down”
- {id:'source-3',x:1985,y:200}   // over the last island: a full jump
+ {id:'source-3',x:2436,y:200}   // over the breather island in «Пересылка»: a full jump
 ];
-export const DIM_CHECKPOINTS=[{x:40,index:0},{x:740,index:10},{x:1660,index:22}];
-export const dimensionSectionNames=['Лента','Изнанка','Разлом'];
+export const DIM_CHECKPOINTS=[{x:40,index:0},{x:740,index:10},{x:1660,index:22},{x:2400,index:25}];
+export const dimensionSectionNames=['Лента','Изнанка','Разлом','Пересылка'];
 export const isSafeDimPiece=p=>!!p&&!p.inverted&&['yuri','island'].includes(p.type);
+// A sliding message: its x at time t (x is the left end of its swing, range the swing width).
+export function slideX(piece,t){return piece.x+piece.range*(.5-.5*Math.cos(2*Math.PI*t/piece.period+piece.phase));}

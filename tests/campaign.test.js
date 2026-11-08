@@ -13,7 +13,7 @@ const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function ready(room=1,story=false){const g=new Game({story});g.start();if(story){g.finishWakeup();g.advanceDialogue(true);}g.tutorial.complete=true;activateRoom(g,room);g.player.inv=0;g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];return g;}
 const actor=(type,room,x,index=0,extra={})=>enemy(type,room,x,index,{active:true,noticed:true,spawnTime:0,...extra});
 test('four large chapters each have a separate complete boss arena and three assigned regular species',()=>{
- assert.equal(rooms.length,9);for(const chapter of chapters){const main=rooms[chapter.room],arena=rooms[chapter.arena];assert.equal(main.width,WIDTH*3);assert.equal(arena.width,chapter.boss==='spreader'?864:WIDTH*2);assert.equal(arena.boss,chapter.boss);assert.deepEqual(new Set(createEnemies().filter(e=>e.room===chapter.room).map(e=>e.type)),new Set(chapter.monsters.filter(type=>type!=='censor'&&type!=='sensation')),'the Censor grows from the conveyor and Сенсации fly in flocks instead of the roster');assert.equal(createEnemies().filter(e=>e.room===chapter.arena).length,0);assert.ok(new Game().platforms.filter(s=>s.room===chapter.arena).length>=(chapter.boss==='spreader'?5:18));}
+ assert.equal(rooms.length,9);for(const chapter of chapters){const main=rooms[chapter.room],arena=rooms[chapter.arena];assert.equal(main.width,chapter.room===7?WIDTH*4:WIDTH*3);assert.equal(arena.width,chapter.boss==='spreader'?864:WIDTH*2);assert.equal(arena.boss,chapter.boss);assert.deepEqual(new Set(createEnemies().filter(e=>e.room===chapter.room).map(e=>e.type)),new Set(chapter.monsters.filter(type=>type!=='censor'&&type!=='sensation')),'the Censor grows from the conveyor and Сенсации fly in flocks instead of the roster');assert.equal(createEnemies().filter(e=>e.room===chapter.arena).length,0);assert.ok(new Game().platforms.filter(s=>s.room===chapter.arena).length>=(chapter.boss==='spreader'?5:18));}
 });
 test('the Dimension has no transmitters at all and its exit is open; the final boss uses CRT terminals instead',()=>{
  {const g=ready(7);assert.equal(g.relays.filter(d=>d.room===7).length,0);assert.equal(canLeaveRoom(g),true);}
@@ -54,7 +54,7 @@ test('location retry restores the local boss while keeping earlier campaign prog
 });
 
 test('the numerous primary enemies can pursue through a complete chapter rather than remaining on the first screen',()=>{
- for(const [type,room,index]of [['fakenews',1,5],['informant',3,7],['static',7,24]]){
+ for(const [type,room,index]of [['fakenews',1,5],['informant',3,7],['static',7,28]]){
   const g=ready(room),s=g.platforms.find(s=>s.room===room&&s.index===index),px=s.x+45,py=s.y-48,e=actor(type,room,100,0,{jumpCooldown:0,teleportCooldown:0});g.enemies=[e];let reached=false;
   for(let i=0;i<11000;i++){Object.assign(g.player,{x:px,y:py,grounded:true,supportId:s.id,inv:999});g.updateCamera();const before=e.x;g.step(1/60);if(['fakenews','injection'].includes(type))assert.ok(Math.abs(e.x-before)<65,'physical pursuit');if(Math.abs(e.x-px)<195&&Math.abs(e.y+e.h-s.y)<145){reached=true;break;}}
   assert.equal(reached,true,type+' crosses the chapter');assert.ok(e.x>rooms[room].x+1600,type+' reaches the final sector');

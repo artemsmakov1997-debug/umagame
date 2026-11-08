@@ -11,7 +11,7 @@ function blit(c,image,box,x,y,w,h,flip=false){if(!image)return;c.save();if(flip)
 // Platforms: bubbles keep their flat top on the platform line; islands hang below or rise above it.
 export function drawDimensionSurface(c,a,g,s){
  if(s.room!==DIM_ROOM||!s.dim||!a.dimensionPieces)return false;const img=a.dimensionPieces,piece=s.dim;
- if(piece.type==='yuri'||piece.type==='copy'){
+ if(piece.type==='yuri'||piece.type==='copy'||piece.type==='slide'){
   // Upside-down messages are the same bubbles mirrored about their line: Uma hangs under them.
   if(piece.inverted){c.save();c.translate(0,2*s.y);c.scale(1,-1);}
   const box=piece.type==='yuri'?P.yuri:s.dimState==='pop'?P.pop:s.dimState==='fade'?P.fade:P.copy,k=s.w/(box===P.pop?P.copy[2]:box[2]);

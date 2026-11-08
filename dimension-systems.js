@@ -1,5 +1,5 @@
 import {rooms} from './level.js?v=0.21.5';
-import {DIM_ROOM,FEED,MIRROR,RIFTS,ORIGINALS,DIM_CHECKPOINTS,isSafeDimPiece} from './dimension-map.js?v=0.21.5';
+import {DIM_ROOM,FEED,MIRROR,RIFTS,ORIGINALS,DIM_CHECKPOINTS,isSafeDimPiece,slideX} from './dimension-map.js?v=0.21.5';
 import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
 // «Измерение» mechanics: rising message copies (and their upside-down mirror), gravity rifts, «первоисточники».
 const x0=()=>rooms[DIM_ROOM].x;
@@ -26,11 +26,15 @@ export function placeDimensionPiece(g,s){
   for(const e of g.enemies||[])if(e.ride&&e.room===DIM_ROOM&&e.platformIndex===s.index&&!e.dead){e.y=s.y-e.h-s.dy;e.x=Math.max(s.x,Math.min(s.x+s.w-e.w,e.x));e.phased=f.state==='pop';}
   return;
  }
+ if(piece.type==='slide'){const x=rooms[DIM_ROOM].x+slideX(piece,g.time);s.dx=x-s.prevX;s.x=x;s.dimState='slide';s.intangible=false;
+  // A Кликбейт riding a slide keeps its place on it (pinned here; the world step adds this frame's dx).
+  for(const e of g.enemies||[])if(e.ride&&e.room===DIM_ROOM&&e.platformIndex===s.index&&!e.dead){const room=Math.max(0,s.w-e.w);e.rideOffset=Math.max(0,Math.min(room,e.rideOffset===undefined?e.x-s.prevX:e.x-s.prevX));e.x=s.x+e.rideOffset-s.dx;e.y=s.y-e.h;}
+  return;}
  if(piece.inverted){s.intangible=true;s.dimState='hanging';return;}
  s.dimState=piece.type;s.intangible=false;
 }
 // Snap every piece to the current time (room entry, retry) without carrying anyone.
-export function updateDimensionPlatforms(g){for(const s of g.platforms)if(s.room===DIM_ROOM&&s.dim){placeDimensionPiece(g,s);s.prevY=s.y;s.dy=0;}}
+export function updateDimensionPlatforms(g){for(const s of g.platforms)if(s.room===DIM_ROOM&&s.dim){placeDimensionPiece(g,s);s.prevY=s.y;s.dy=0;s.prevX=s.x;s.dx=0;}}
 
 // Physics for the upside-down Uma: she stands *under* hanging islands, their line is the floor above her.
 export function landFlipped(g,prevTop){
@@ -60,5 +64,5 @@ export function stepDimension(g,dt,oldX){
  for(const o of g.originals||[])if(o.room===DIM_ROOM&&!o.taken&&g.overlap(p,o)){o.taken=true;g.emit('sourceFound',{x:o.x,y:o.y,count:originalsFound(g),total:ORIGINALS.length});}
  // Checkpoints and one hint per block.
  DIM_CHECKPOINTS.forEach((c,i)=>{if(i>q.checkpoint&&p.grounded&&p.supportId===DIM_ROOM+':'+c.index&&local>=c.x-30)q.checkpoint=i;});
- for(const [key,from] of [['feed',-1],['flip',700],['back',1520]])if(!q.hints[key]&&local>from){q.hints[key]=true;g.emit('dimensionHint',{kind:key});}
+ for(const [key,from] of [['feed',-1],['flip',700],['back',1520],['slide',1860]])if(!q.hints[key]&&local>from){q.hints[key]=true;g.emit('dimensionHint',{kind:key});}
 }

@@ -1,8 +1,8 @@
 // «Найди источник»: the final fight, three phases of six health each.
-// 1 «Напёрстки»: he hides in one of three monitors and moves between them as a cyan pulse along
-//   the cables (decoy pulses are hollow and magenta). Then all screens show his face: the real one
-//   carries a gold seal and a right-pointing ticker; fakes are mirrored, crossed or dripping.
-//   A jump strike on the real glass cracks it; a fake bursts into a Помеха.
+// 1 «Погоня по мониторам»: three monitors hover over the stage, each riding its own path. He shows his face in
+//   one of them and fires packets and data rain at Uma, then dives into a cable and jumps to another monitor.
+//   Landing on top of the monitor he is in cracks its glass (and bounces Uma up); he flees at once.
+//   Three cracks and he tears out of the screen. Faster every round, no guessing.
 // 2 «Кабели»: after the breakout his cable slams a platform and stays as a staircase up to the core.
 //   Climb it and hit the core before the cable is pulled back. Headlines circle the core.
 // 3 «Белый шум»: interference rises; he splits into doubles with purple eyes. Each dives at Uma;
@@ -17,6 +17,11 @@ export const noiseDuration=g=>NOISE_TIME+SOURCE_NOISE_BONUS*originalsFound(g);
 export const coreDamage=()=>HIT_DAMAGE;
 export const revealHint=g=>Math.min(2.4,SOURCE_HINT*originalsFound(g));
 export const SHELL={static:.8,gap:.25,move:[.95,.8,.66],moves:[2,3,4],decoys:[0,1,2],window:[6.8,6.3,5.8],volley:1.3,hit:1.1};
+// The chase: how long he stays in a monitor, how fast he jumps, how often he fires, by round.
+export const CHASE={hold:[3.4,2.9,2.4],hop:[.6,.5,.42],volley:[1.2,1,.85],rainAt:1.1,hit:.55,bounce:-380};
+// Hover paths of the three monitors (room-local): the centre x, the top surface y, the axis, amplitude, period, phase.
+export const MONITOR_PATHS=[{cx:250,top:285,axis:'y',amp:52,period:5,phase:0},{cx:790,top:236,axis:'x',amp:130,period:6.4,phase:.8},{cx:1275,top:290,axis:'y',amp:48,period:4.4,phase:Math.PI}];
+export const MONITOR_W=150,PAD_W=128;
 export const CABLE={drift:1.2,aim:1,slam:.3,anchored:3.4,retractWarn:.6,retract:.35,reel:.9,ring:1.6,ringR:96};
 export const SPLIT={split:1.1,gap:1.1,warn:.8,speed:620,stuck:2.3,reel:.8};
 export const STEP_SLOTS=[6,7,8,13,14,15,16,17];
@@ -24,7 +29,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),overlap=(a,b)=>a.x<b.x+b.w&&a.x+a
 const STAGE_ROOM=8;
 export function createInfoshumNetwork(room=STAGE_ROOM){
  const base=rooms[room].x;
- const layouts=[{x:125,y:145,w:222,h:156},{x:658,y:89,w:222,h:174},{x:1173,y:145,w:222,h:156}];
+ const layouts=MONITOR_PATHS.map(m=>({x:m.cx-MONITOR_W/2,y:monitorYForTop(m.top),w:MONITOR_W,h:MONITOR_W*.7}));
  return {
   stage:'network',mode:'static',timer:1.35,round:0,activeIndex:1,moves:0,
   transit:null,decoys:[],volley:SHELL.volley,hintTime:0,revealed:false,
@@ -32,6 +37,18 @@ export function createInfoshumNetwork(room=STAGE_ROOM){
   lastMonitorIndex:1,transitionProgress:0,target:null,extraTargets:[],cable:null,ring:0,figures:[],order:[],lastSwing:-1,noise:0,noiseTime:0,cycle:0
  };
 }
+// A monitor's y such that its frame's top edge (monitorRect) sits at `top`.
+export function monitorYForTop(top,w=MONITOR_W){return top+w*351/366/2+35-w*271/319/2;}
+// The hover pads Uma lands on: one moving platform on top of each monitor (world-platforms moves and carries them).
+export function ensureMonitorPads(g,room=g.room){
+ if(g.platforms.some(s=>s.infoshumPad!==undefined&&s.room===room))return;const base=rooms[room].x;
+ // The old monitor stands (6–8) are gone: the monitors hover now.
+ for(const s of g.platforms)if(s.room===room&&[6,7,8].includes(s.index))s.bossHidden=true;
+ MONITOR_PATHS.forEach((m,i)=>{const x=base+m.cx-PAD_W/2,y=m.top;g.platforms.push({id:room+':pad'+i,room,index:200+i,x,y,w:PAD_W,baseX:x,baseY:y,prevX:x,prevY:y,dx:0,dy:0,fragile:false,roof:null,studio:null,dim:null,cuttable:false,motion:{axis:m.axis,amplitude:m.amp,period:m.period,phase:m.phase},infoshumPad:i});});
+}
+export function removeMonitorPads(g){g.platforms=g.platforms.filter(s=>s.infoshumPad===undefined);}
+export const monitorPad=(g,i)=>g.platforms.find(s=>s.infoshumPad===i&&s.room===g.room);
+function syncMonitors(g){const n=g.boss.network;for(const m of n.monitors){const s=monitorPad(g,m.index);if(!s)continue;m.x=s.x+s.w/2-m.w/2;m.y=monitorYForTop(s.y-2,m.w);}}
 export function currentInfoshumMonitor(b){const n=b.network;return n?.monitors[n.activeIndex]||null;}
 // The glass of a monitor (drawn over the old CRT frame position) — the phase-one target.
 export function monitorRect(m){const w=m.w,h=w*351/366,cy=m.y-35+m.w*271/319/2;return {x:m.x,y:cy-h/2,w,h};}
@@ -52,7 +69,7 @@ function createWave(g,t){
 }
 function createRain(g,t){for(const dx of[-38,-12,14,40])g.bolts.push({room:g.room,kind:'dataRain',infoshumAttack:'rain',visual:'infoshum',x:t.x+dx-6,y:Math.max(12,t.y-190),w:12,h:34,vx:0,vy:320,ttl:1.5,stopY:t.y+4});g.emit('bossCast',{boss:'infoshum',ability:'rain',x:t.x,y:t.y});}
 function createPacket(g,m){const p=g.player,x=m.x+m.w/2,y=m.y+m.h/2,dx=p.x+p.w/2-x,dy=p.y+p.h/2-y,len=Math.hypot(dx,dy)||1;g.bolts.push({room:g.room,kind:'packet',visual:'infoshum',x,y,w:18,h:16,vx:dx/len*170,vy:dy/len*170,ttl:5});g.emit('bossCast',{boss:'infoshum',ability:'packet',x,y});}
-// ——— Phase 1 «Напёрстки» ———
+// ——— Phase 1 «Погоня по мониторам» (the old shell-game helpers below are kept for the debug tools) ———
 function startShuffle(g){const n=g.boss.network;n.mode='shuffle';n.moves=SHELL.moves[n.round];n.timer=.2;n.transit=null;n.decoys=[];for(const m of n.monitors){m.face=null;}g.emit('infoshumShuffle',{round:n.round});}
 function startMove(g){
  const n=g.boss.network,r=n.round,others=n.monitors.filter(m=>m.index!==n.activeIndex),to=others[Math.floor(Math.random()*others.length)].index,duration=SHELL.move[r];
@@ -67,43 +84,48 @@ function startReveal(g){
  n.mode='reveal';n.timer=SHELL.window[n.round];n.volley=SHELL.volley*.7;n.hintTime=revealHint(g);
  g.emit('infoshumReveal',{index:n.activeIndex,first:!n.revealed});n.revealed=true;
 }
+function startHold(g){
+ // Each «первоисточник» from the Dimension keeps his face on the screen a little longer.
+ const n=g.boss.network,r=Math.min(2,n.round);n.mode='hold';n.timer=CHASE.hold[r]+revealHint(g)*.5;n.volley=.55;n.rained=false;n.transit=null;
+ for(const m of n.monitors)m.face=m.index===n.activeIndex?0:null;
+ g.emit('infoshumReveal',{index:n.activeIndex,first:!n.revealed});n.revealed=true;
+}
+function startHop(g){
+ const n=g.boss.network,p=g.player,r=Math.min(2,n.round),others=n.monitors.filter(m=>m.index!==n.activeIndex);
+ // He prefers the monitor farther from Uma, but not always.
+ others.sort((a,b)=>Math.abs(b.x-p.x)-Math.abs(a.x-p.x));const to=(Math.random()<.7?others[0]:others[others.length-1]).index;
+ n.transit={from:n.activeIndex,to,time:0,duration:CHASE.hop[r]};n.mode='hop';for(const m of n.monitors)m.face=null;
+ g.emit('infoshumTransfer',{from:n.activeIndex,to,x:n.monitors[n.activeIndex].x+n.monitors[n.activeIndex].w/2,y:n.monitors[n.activeIndex].y,decoys:0});
+}
+// Landing on top of the monitor he is in: a crack, a bounce, and he flees.
+function stompMonitor(g){
+ const b=g.boss,n=b.network,p=g.player,pad=monitorPad(g,n.activeIndex),on=!!pad&&p.grounded&&p.supportId===pad.id;
+ const landed=on&&!n.wasOn;n.wasOn=on;if(!landed||n.mode!=='hold')return false;
+ const m=n.monitors[n.activeIndex];m.cracks++;b.hp=Math.max(0,b.hp-HIT_DAMAGE);b.hurtTime=.35;n.round++;n.lastMonitorIndex=m.index;n.mode='hit';n.timer=CHASE.hit;
+ for(const o of n.monitors)if(o!==m)o.face=null;g.bolts=g.bolts.filter(v=>v.kind!=='packet'&&v.kind!=='dataRain');
+ Object.assign(p,{vy:CHASE.bounce,grounded:false,supportId:null});n.wasOn=false;
+ g.emit('bossHit',{boss:'infoshum',x:m.x+m.w/2,y:m.y+m.h/2});g.emit('infoshumScreenCrack',{index:m.index,round:n.round,x:m.x+m.w/2,y:m.y+m.h/2});
+ return true;
+}
 function stepShells(g,dt){
- const b=g.boss,n=b.network;syncToMonitor(b);b.state=n.mode==='reveal'?'recover':'network';
+ const b=g.boss,n=b.network;ensureMonitorPads(g);syncMonitors(g);syncToMonitor(b);b.state=n.mode==='hold'?'recover':'network';
  for(const m of n.monitors){m.burst=Math.max(0,m.burst-dt);if(m.pulse){m.pulse.time-=dt;if(m.pulse.time<=0)m.pulse=null;}}
- n.hintTime=Math.max(0,n.hintTime-dt);
- if(n.mode==='shuffle'){
-  for(const d of n.decoys){if(d.done)continue;d.time+=dt;if(d.time>=d.duration){d.done=true;n.monitors[d.to].pulse={kind:'decoy',time:.6};}}
-  if(n.transit){n.transit.time+=dt;if(n.transit.time>=n.transit.duration){n.activeIndex=n.transit.to;n.monitors[n.activeIndex].pulse={kind:'real',time:.6};n.transit=null;n.moves--;n.timer=SHELL.gap;g.emit('infoshumArrive',{index:n.activeIndex});}return;}
-  if(n.decoys.some(d=>!d.done))return;
-  n.timer-=dt;if(n.timer>0)return;
-  if(n.moves>0)startMove(g);else startReveal(g);
+ if(stompMonitor(g))return;
+ const r=Math.min(2,n.round);
+ if(n.mode==='hop'){n.transit.time+=dt;if(n.transit.time>=n.transit.duration){n.activeIndex=n.transit.to;n.monitors[n.activeIndex].pulse={kind:'real',time:.5};g.emit('infoshumArrive',{index:n.activeIndex});startHold(g);}return;}
+ if(n.mode==='hit'){n.timer-=dt;if(n.timer>0)return;if(n.round>=3){beginRupture(g);return;}startHop(g);return;}
+ if(n.mode==='hold'){
+  n.timer-=dt;n.volley-=dt;
+  if(n.volley<=0){n.volley=CHASE.volley[r];createPacket(g,n.monitors[n.activeIndex]);}
+  if(!n.rained&&n.timer<CHASE.hold[r]-CHASE.rainAt){n.rained=true;createRain(g,targetSurface(g));}
+  if(n.timer<=0)startHop(g);
   return;
  }
- n.timer-=dt;
- if(n.mode==='reveal'){
-  n.volley-=dt;if(n.volley<=0){n.volley=SHELL.volley;const shooters=n.monitors.filter(m=>m.face!==null&&m.burst<=0);if(shooters.length)createPacket(g,shooters[Math.floor(Math.random()*shooters.length)]);}
-  if(n.timer<=0){n.mode='static';n.timer=SHELL.static;for(const m of n.monitors)m.face=null;g.emit('infoshumHide',{});}
-  return;
- }
- if(n.timer>0)return;
- if(n.mode==='hit'&&n.round>=3){beginRupture(g);return;}
- startShuffle(g);
+ // The opening stillness, then he shows himself.
+ n.timer-=dt;if(n.timer<=0)startHold(g);
 }
-function strikeScreens(g,paw){
- const b=g.boss,n=b.network,p=g.player;if(n.mode!=='reveal')return false;
- for(const m of n.monitors){
-  if(m.face===null||m.lastSwing===p.swing||!overlap(paw,glassRect(m)))continue;m.lastSwing=p.swing;
-  if(m.face===0){
-   m.cracks++;b.hp=Math.max(0,b.hp-HIT_DAMAGE);b.hurtTime=.35;n.round++;n.lastMonitorIndex=m.index;n.mode='hit';n.timer=SHELL.hit;for(const o of n.monitors)if(o!==m)o.face=null;
-   g.bolts=g.bolts.filter(v=>v.kind!=='packet');g.emit('bossHit',{boss:'infoshum',x:m.x+m.w/2,y:m.y+m.h/2});g.emit('infoshumScreenCrack',{index:m.index,round:n.round,x:m.x+m.w/2,y:m.y+m.h/2});
-  }else{
-   m.face=null;m.burst=.6;g.emit('infoshumFakeHit',{index:m.index,x:m.x+m.w/2,y:m.y+m.h/2});
-   const made=summonBossTroops(g,{types:['static'],count:1});for(const e of made){e.x=clamp(m.x+m.w/2-e.w/2,rooms[g.room].x+20,rooms[g.room].end-60);}
-  }
-  return true;
- }
- return false;
-}
+// In the chase the glass is cracked from above (stompMonitor); a paw on the screen does nothing.
+function strikeScreens(g,paw){return false;}
 // ——— Rupture: the third crack tears the screen open ———
 const ruptureMonitorIndex=n=>n.lastMonitorIndex;
 export const ARRIVE=1.6;
@@ -113,7 +135,7 @@ function beginRupture(g){
  b.phase=2;b.phaseName='Кабели';b.state='phaseChange';b.timer=2.25;
  g.bolts=[];g.cuts=[];g.inks=[];g.enemies=g.enemies.filter(e=>e.bossOwnerId!=='infoshum');
  g.player.inv=Math.max(g.player.inv,2.9);
- g.emit('bossPhase',{boss:'infoshum',phase:2,name:'Кабели'});
+ g.emit('bossPhase',{boss:'infoshum',phase:2,name:'Кабели'});removeMonitorPads(g);
  const m=n.monitors[ruptureMonitorIndex(n)];g.emit('infoshumRupture',{x:m.x+m.w/2,y:m.y+m.h/2});
 }
 function rebuildArena(g){
@@ -232,10 +254,12 @@ export function strikeInfoshum(g,paw){
 function stepNoiseSwats(g,paw){const n=g.boss.network,p=g.player;let popped=false;for(const f of n.figures)if(!f.real&&['hover','warn','dive','split'].includes(f.state)&&f.lastSwing!==p.swing&&overlap(paw,figureBox(f))){f.lastSwing=p.swing;f.state='burst';f.time=0;n.noiseTime=Math.min(noiseDuration(g)*.98,n.noiseTime+noiseDuration(g)*.08);popped=true;g.emit('infoshumFakeHit',{x:f.x,y:f.y,double:true});}return popped;}
 // Test and debugging helpers.
 export function exposeInfoshum(g){const b=g.boss,n=b.network;b.cooldown=0;
- if(n.stage==='network'){for(const m of n.monitors)m.face=m.index===n.activeIndex?0:1;n.mode='reveal';n.timer=SHELL.window[0];}
+ if(n.stage==='network'){startHold(g);}
  else if(n.stage==='free'){n.target=targetSurface(g);layCable(g);n.mode='anchored';n.timer=CABLE.anchored;}
  else if(n.stage==='noise'){if(!n.figures.some(f=>f.real))newFigures(g);const f=n.figures.find(f=>f.real);const t=targetSurface(g);Object.assign(f,{state:'stuck',time:0,x:t.x,y:t.y});}
 }
+// Test helper: one crack of the chase through the real mechanics — Uma lands on the monitor he is in.
+export function crackInfoshumScreen(g){const n=g.boss.network;if(n.stage!=='network')return false;ensureMonitorPads(g);if(n.mode!=='hold')startHold(g);const pad=monitorPad(g,n.activeIndex);Object.assign(g.player,{x:pad.x+pad.w/2-17,y:pad.y-48,h:48,vy:0,grounded:true,supportId:pad.id});n.wasOn=false;return stompMonitor(g);}
 // Test helper: the final blow through the real mechanics (a stuck real figure under Uma, one paw strike).
 export function finishInfoshum(g){const b=g.boss,n=b.network;b.hp=Math.min(b.hp,HIT_DAMAGE);b.cooldown=0;if(n.stage!=='noise'){n.stage='noise';b.phase=3;n.figures=[];}exposeInfoshum(g);const f=n.figures.find(f=>f.real);g.player.attack=.18;g.player.swing++;return strikeInfoshum(g,figureBox(f));}
 export function infoshumTargets(g){

@@ -41,9 +41,11 @@ export function drawMonster(c,a,id,x,y,w,h,time=0,flip=false,actor={}){
  c.save();c.translate(Math.round(cx),Math.round(feet));if(flip!==(appearance===null&&!reaction&&id==='clickbait'&&index===3))c.scale(-1,1);
  sprite(c,a[appearance===null?(reaction?.asset||atlas.asset):'baitMotion'],box,(box[0]-pivot[0])*scale,(box[1]-pivot[1])*scale,box[2]*scale,box[3]*scale);c.restore();
 }
-export function drawLure(c,a,x,y,time){
+// The bait: a neon-pink fish on a hook under a mouse cursor and a «!» — nothing like the golden reward fish.
+// assets/clickbait-lure.png: 4 cells of 110×150 (bob, glint, twitch, jerk); the fish's centre at (60,106).
+export function drawLure(c,a,x,y,time,frame=null){
+ if(a.clickbaitLure){const k=.42,f=frame??[0,1,0,2][Math.floor(time*4)%4],yy=Math.round(y+Math.sin(time*3)*2);c.drawImage(a.clickbaitLure,f*110,0,110,150,Math.round(x-60*k),Math.round(yy-106*k),Math.round(110*k),Math.round(150*k));return;}
  const yy=Math.round(y+Math.sin(time*3)*2);sprite(c,a.noise,creatures.fish,x-13,yy-8,26,16);
- // A dark silhouette and a broad bright J keep the hook legible at phone scale.
  rect(c,x+6,yy-26,4,19,'#010817');rect(c,x+6,yy-12,12,5,'#010817');rect(c,x+14,yy-18,4,9,'#010817');
  rect(c,x+7,yy-25,2,15,'#a8e8f8');rect(c,x+9,yy-11,6,2,'#e7eff3');rect(c,x+14,yy-16,2,6,'#f8e5ad');rect(c,x+12,yy-17,4,2,'#ffe4a3');
  rect(c,x+7,yy-28,2,3,'#5899bd');

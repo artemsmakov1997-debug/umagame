@@ -23,7 +23,7 @@ export function sceneLayers(assets){
   const canvas=document.createElement('canvas');canvas.width=room.width;canvas.height=512;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
   if(room.index===2){canvas.height=480;const image=assets.spreaderArena,scale=Math.max(canvas.width/image.width,480/image.height);c.drawImage(image,(canvas.width-image.width*scale)/2,(480-image.height*scale)/2,image.width*scale,image.height*scale);return canvas;}
   if(room.index===5&&assets.studioBlock1){blendBlocks(c,[assets.studioBlock1,assets.studioBlock2,assets.studioBlock3]);return canvas;}
-  if(room.index===7&&assets.dimensionBlock1){blendBlocks(c,[assets.dimensionBlock1,assets.dimensionBlock2,assets.dimensionBlock3]);return canvas;}
+  if(room.index===7&&assets.dimensionBlock1){blendBlocks(c,[assets.dimensionBlock1,assets.dimensionBlock2,assets.dimensionBlock2,assets.dimensionBlock3]);return canvas;}
   if(room.index===3&&assets.roofsBlock1){blendBlocks(c,[assets.roofsBlock1,assets.roofsBlock2,assets.roofsBlock3]);c.drawImage(assets.roofsBlock2,1080,40,70,70,768+582,18,35,35);/* one moon where blocks 2 and 3 meet */return canvas;}
   if(room.tutorial){c.drawImage(assets.cozy,0,0,768,512);if(assets.tutorialRoom){c.drawImage(assets.tutorialRoom,768,0,768,512);c.drawImage(assets.tutorialRoom,60,150,90,110,768+78,75,45,55);/* the joined window keeps one moon */}return canvas;}
   const index={newsroom:0,roofs:1,studio:2,noise:3}[room.theme],sw=assets.backdrops.width/2,sh=assets.backdrops.height/2;

@@ -5,7 +5,7 @@ import {layouts,rooms} from '../level.js';
 import {scenes,relayClues} from '../story.js';
 import {endingSlides} from '../finale.js';
 import {createBoss,stepBoss,stepProjectiles} from '../boss.js';
-import {strikeInfoshum,exposeInfoshum,glassRect} from '../infoshum-combat.js';
+import {strikeInfoshum,exposeInfoshum,glassRect,crackInfoshumScreen} from '../infoshum-combat.js';
 
 test('monster origins remain a mystery until the full chain is shown in the epilogue',()=>{
  for(const id of ['intro','chapter1','chapter2','chapter3']){
@@ -32,7 +32,7 @@ test('Infoshum enters the cable phase after three real screens are cracked',()=>
  const g=new Game({story:false});g.start();g.tutorial.complete=true;g.mode='playing';
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
  const n=g.boss.network;
- for(let k=0;k<3;k++){exposeInfoshum(g);const m=n.monitors.find(m=>m.face===0);g.player.attack=.18;g.player.swing++;assert.equal(strikeInfoshum(g,glassRect(m)),true);for(let i=0;i<70&&n.stage==='network';i++)stepBoss(g,1/60);}
+ for(let k=0;k<3;k++){assert.equal(crackInfoshumScreen(g),true);for(let i=0;i<70&&n.stage==='network';i++)stepBoss(g,1/60);}
  assert.equal(n.stage,'rupture');assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
  for(let i=0;i<150;i++)stepBoss(g,1/60);
  assert.equal(n.stage,'free');assert.equal(g.boss.phase,2);assert.equal(n.monitors.reduce((s,m)=>s+m.cracks,0),3);

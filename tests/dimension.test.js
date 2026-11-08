@@ -33,8 +33,9 @@ test('forwarded copies rise steadily and pop near the top; Yuri\'s messages stay
 });
 
 test('a Кликбейт sits on two rising copies, rides them up and around, and cannot bite while its bubble pops',()=>{
- const roster=createEnemies().filter(e=>e.room===7&&e.ride);assert.equal(roster.length,2);assert.ok(roster.every(e=>e.type==='clickbait'&&DIM_PIECES[e.platformIndex].type==='copy'&&!DIM_PIECES[e.platformIndex].reversed));
- const g=ready();g.enemies=createEnemies().filter(e=>e.room===7&&e.ride).map(e=>Object.assign(e,{active:true}));g.player.inv=999;Object.assign(g.player,{x:x0+60});
+ const all=createEnemies().filter(e=>e.room===7&&e.type==='clickbait');assert.ok(all.every(e=>e.ride&&['copy','slide'].includes(DIM_PIECES[e.platformIndex].type)),'a Кликбейт only ever sits on a moving message');
+ const roster=all.filter(e=>DIM_PIECES[e.platformIndex].type==='copy');assert.equal(roster.length,2);assert.ok(roster.every(e=>!DIM_PIECES[e.platformIndex].reversed));
+ const g=ready();g.enemies=roster.map(e=>Object.assign(e,{active:true}));g.player.inv=999;Object.assign(g.player,{x:x0+60});
  const e=g.enemies[0],copy=g.platforms.find(s=>s.id==='7:'+e.platformIndex);let wrapped=false,popPhased=false,last=copy.y;
  for(let i=0;i<60*14;i++){tick(g,1);assert.ok(Math.abs(e.y+e.h-copy.y)<1.5,'stays on its copy');assert.ok(e.x>=copy.x-.5&&e.x+e.w<=copy.x+copy.w+.5);if(copy.y>last+60)wrapped=true;if(copy.dimState==='pop'&&e.phased)popPhased=true;last=copy.y;}
  assert.ok(wrapped,'went around with its copy');assert.ok(popPhased);
@@ -83,9 +84,9 @@ test('each original is reachable as placed: the feed top, the bottom of the mirr
 test('the Echo double copies the flip; checkpoints follow the blocks; Clickbait spits Uma out for two hearts',()=>{
  const g=ready(),e=enemy('echo',7,1600,21,{active:true,noticed:true,spawnTime:0,noticeTime:0});g.enemies=[e];g.player.inv=999;stand(g,10,760);
  for(let i=0;i<60*3.5;i++)tick(g,1,{right:!g.player.flipped||g.player.x<x0+950});assert.equal(e.flipped,true);
- const c=ready();stand(c,10,740);tick(c,2);assert.equal(c.dimension.checkpoint,1);stand(c,22,1670);tick(c,2);assert.equal(c.dimension.checkpoint,2);assert.equal(DIM_CHECKPOINTS.length,3);
+ const c=ready();stand(c,10,740);tick(c,2);assert.equal(c.dimension.checkpoint,1);stand(c,22,1670);tick(c,2);assert.equal(c.dimension.checkpoint,2);stand(c,25,2400);tick(c,2);assert.equal(c.dimension.checkpoint,3);assert.equal(DIM_CHECKPOINTS.length,4);
 });
-test('a full run with ordinary inputs crosses all three blocks without a fall and enters the threshold',()=>{
+test('a full run with ordinary inputs crosses all four blocks without a fall and enters the threshold',()=>{
  const g=ready();assert.equal(crossDimension(g),true);assert.equal(g.health,4);
  for(let i=0;i<200&&g.room===7&&g.mode!=='enteringArena';i++)tick(g,1,{right:true});assert.ok(g.mode==='enteringArena'||g.room===8);
 });

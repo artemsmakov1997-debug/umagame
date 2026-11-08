@@ -22,7 +22,7 @@ function cablePoint(a,b,t){const x1=a.x+a.w/2,y1=a.y+a.h-8,x2=b.x+b.w/2,y2=b.y+b
 // A move 0↔2 runs through the middle monitor: two cable spans.
 function pathPoint(n,from,to,t){const ms=n.monitors;if(Math.abs(from-to)===1)return cablePoint(ms[from],ms[to],t);const mid=ms[1];return t<.5?cablePoint(ms[from],mid,t*2):cablePoint(mid,ms[to],t*2-1);}
 function cables(c,n,time){
- const ms=n.monitors,moving=[n.transit,...(n.stage==='network'&&n.mode==='shuffle'?n.decoys:[])].filter(m=>m&&!m.done);
+ const ms=n.monitors,moving=[n.transit].filter(m=>m&&!m.done);
  const lit=(i,j)=>n.stage==='network'&&moving.some(m=>m.from===i||m.to===i||m.from===j||m.to===j);
  thickCable(c,ms[0],ms[1],lit(0,0),time);thickCable(c,ms[1],ms[2],lit(2,2),time);
 }
@@ -47,12 +47,17 @@ function drawShells(c,a,g,time){
  for(const m of n.monitors){
   const frame=monitorFrame(m,n,time);if(!screen(c,a,m,frame))drawInfoshumSprite(c,a,'crt',0,m.x,m.y-35,m.w,m.w*271/319);
   if(frame>=6||frame===8)cracks(c,m,m.cracks);
-  if(n.mode==='reveal'&&m.face===0&&n.hintTime>0){const r=glassRect(m);c.save();c.globalAlpha=Math.min(1,n.hintTime)*(.55+.35*Math.sin(time*10));c.strokeStyle='#7ff4ff';c.lineWidth=4;c.strokeRect(r.x-6,r.y-6,r.w+12,r.h+12);c.restore();}
   if(frame===8){c.save();c.globalAlpha=.14;rect(c,m.x+20,m.y+20+(time*24+m.index*25)%(m.h-35),m.w-40,2,'#94f5ff');c.restore();}
  }
- if(n.mode==='shuffle'){if(n.transit)pulse(c,a,n,n.transit,time,false);for(const d of n.decoys)if(!d.done)pulse(c,a,n,d,time,true);}
+ // The jump: he dissolves into glitch at one screen, runs down the cable and reassembles in the next.
+ if(n.mode==='hop'&&n.transit){const k=Math.min(1,n.transit.time/n.transit.duration),from=n.monitors[n.transit.from],to=n.monitors[n.transit.to];
+  pulse(c,a,n,n.transit,time,false);
+  drawAttackFx(c,a,'glitch',Math.min(3,Math.floor(k*6)),from.x+from.w/2,from.y+from.h/2,120,{alpha:Math.max(0,1-k)});
+  if(k>.6)drawAttackFx(c,a,'glitch',k<.85?4:5,to.x+to.w/2,to.y+to.h/2,120,{alpha:(k-.6)/.4});}
+ // The crack from above: a white-noise burst on the glass.
+ if(n.mode==='hit'){const m=n.monitors[n.lastMonitorIndex],k=1-Math.max(0,n.timer)/.55;drawAttackFx(c,a,'burst',Math.min(3,Math.floor(k*4)),m.x+m.w/2,m.y+m.h*.45,110+k*60,{alpha:1-k*.5});}
  drawCableMap(c,g,time);
- if(n.mode==='reveal'){const left=n.timer;c.save();c.globalAlpha=.8;for(const m of n.monitors){if(m.face===null)continue;const r=glassRect(m),k=Math.max(0,left/5.4);rect(c,r.x,r.y+r.h+10,r.w*k,3,'#ff9bea');}c.restore();}
+
 }
 // A small cable map at the top of the view: all three screens and every pulse stay readable
 // even when two monitors are off-screen.
@@ -63,7 +68,7 @@ function drawCableMap(c,g,time){
  for(const m of n.monitors){const i=m.index,lit=m.pulse?.kind==='real'?'#7ff4ff':m.pulse?.kind==='decoy'?'#ff6cda':m.face!==null?'#ffe08a':'#3a3d6a';rect(c,xs[i],ys[i],24,18,'#7a5bc4');rect(c,xs[i]+3,ys[i]+3,18,12,lit);for(let k=0;k<m.cracks;k++)rect(c,xs[i]+5+k*6,ys[i]+7,4,2,'#ffffff');}
  const dot=(move,decoy)=>{const t=Math.min(1,move.time/move.duration),seg=Math.abs(move.from-move.to)===1?null:t<.5?[move.from,1,t*2]:[1,move.to,t*2-1],[a,b,q]=seg||[move.from,move.to,t];const px=xs[a]+12+(xs[b]-xs[a])*q,py=ys[a]+18+(ys[b]-ys[a])*q+Math.sin(q*Math.PI)*5;
   if(decoy){rect(c,px-3,py-3,6,2,'#ff6cda');rect(c,px-3,py+1,6,2,'#ff6cda');rect(c,px-3,py-3,2,6,'#ff6cda');rect(c,px+1,py-3,2,6,'#ff6cda');}else{rect(c,px-3,py-3,6,6,'#b8f6ff');rect(c,px-1,py-1,2,2,'#ffffff');}};
- if(n.mode==='shuffle'){for(const d of n.decoys)if(!d.done)dot(d,true);if(n.transit)dot(n.transit,false);}
+ if(n.mode==='hop'&&n.transit)dot(n.transit,false);
  c.restore();
 }
 // The screen Infoshum tears open: the one with the third crack.

@@ -10,11 +10,11 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    const {activateRoom}=await import('./room-transitions.js?v=0.21.5'),m=await import('./infoshum-combat.js?v=0.21.5');
    const g=testGame,real=Object.getPrototypeOf(g).step;g.hintsEnabled=false;document.getElementById('toast').classList.remove('visible');activateRoom(g,8);g.mode='playing';g.storyEnabled=false;g.enemies=[];g.fishes=[];g.soups=[];g.notebooks=[];g.lifePickups=[];g.boss.noticeTime=0;g.step=()=>{};
    const a=testUI.assets,out={sheets:['infoshumScreens','infoshumCable','infoshumCore','infoshumPoses','infoshumSilence','infoshumBreakout','infoshumTransfer','sensation'].map(k=>[k,a[k]?.naturalWidth>0])},n=g.boss.network,shots={};
-   const docks=[6,7,8].map(i=>g.platforms.find(s=>s.room===8&&s.index===i));out.clearScreens=docks.every((p,i)=>p.y>m.glassRect(n.monitors[i]).y+m.glassRect(n.monitors[i]).h);
+   m.ensureMonitorPads(g);const docks=[6,7,8].map(i=>g.platforms.find(s=>s.room===8&&s.index===i));out.clearScreens=docks.every(p=>p.bossHidden)&&[0,1,2].every(i=>!!m.monitorPad(g,i));
    const draw=(k,t=2)=>{g.updateCamera();testRenderer.draw(g,0,t);shots[k]=document.getElementById('game').toDataURL();};
    n.activeIndex=1;draw('static');
-   n.mode='shuffle';n.moves=1;n.transit={from:1,to:2,time:.4,duration:.9};n.decoys=[{from:0,to:1,time:.3,duration:.9}];draw('shuffle');
-   n.transit=null;n.decoys=[];m.exposeInfoshum(g);g.player.x=n.monitors[1].x;draw('reveal');
+   n.mode='hop';n.transit={from:1,to:2,time:.4,duration:.6};draw('shuffle');
+   n.transit=null;m.exposeInfoshum(g);g.player.x=n.monitors[1].x;draw('reveal');
    n.monitors[1].face=null;n.monitors[1].burst=.5;draw('fake');
    n.round=3;n.mode='hit';n.timer=0;n.lastMonitorIndex=1;real.call(g,1/60,{});for(let i=0;i<70;i++)real.call(g,1/60,{});draw('rupture');
    for(let i=0;i<120;i++)real.call(g,1/60,{});out.freed=n.stage;draw('free');
@@ -23,7 +23,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    out.distinct=new Set(Object.values(shots)).size;out.count=Object.keys(shots).length;return out;
   });
   assert.ok(r.sheets.every(([,ok])=>ok),'all Infoshum sheets decode: '+JSON.stringify(r.sheets));
-  assert.equal(r.clearScreens,true,'no platform crosses a screen');assert.equal(r.freed,'free');assert.equal(r.distinct,r.count,'every state looks different');
+  assert.equal(r.clearScreens,true,'the old monitor stands are gone and every monitor hovers on its pad');assert.equal(r.freed,'free');assert.equal(r.distinct,r.count,'every state looks different');
   await shot(page,'infoshum-noise-'+width);await page.close();
  }
  // Full-arena overview: three screens and the cable map at once.

@@ -32,10 +32,12 @@ export function drawTacticalTerrain(c,g,time){
   }
  }
 }
-export function drawEnemyDefense(c,e,time){
+export function drawEnemyDefense(c,e,time,a={}){
  if(e.type==='inflator'&&e.room!==3)drawPixelBarrier(c,e.x+e.w/2,e.y-5,50,44,{half:e.dir,alpha:.8,flash:e.guardFlash,time});
  if(e.type==='clickbait'){
-  const x=e.x+19,y=e.y-60;rect(c,x,y,10,9,'#b2c4ce');rect(c,x+2,y+2,6,5,'#31546c');rect(c,x+3,y+9,4,2,'#b2c4ce');
+  // The Кликбейт's own badge: a pink fish on a hook — it cannot be beaten.
+  if(a.clickbaitIcon){const s=20,bob=Math.sin(time*3)*1.5;c.drawImage(a.clickbaitIcon,Math.round(e.x+24-s/2),Math.round(e.y-66+bob),s,s);}
+  else{const x=e.x+19,y=e.y-60;rect(c,x,y,10,9,'#b2c4ce');rect(c,x+2,y+2,6,5,'#31546c');rect(c,x+3,y+9,4,2,'#b2c4ce');}
  }
  if(e.copyOwnerId){c.save();c.globalAlpha=.55;c.strokeStyle='#92f1fa';c.setLineDash([3,3]);c.strokeRect(e.x-4,e.y-35,e.w+8,e.h+36);c.setLineDash([]);c.restore();}
  if(e.muffled){for(let i=0;i<3;i++)rect(c,e.x+12+i*7,e.y-25+(i%2)*3,5,6,'#6c389e');}

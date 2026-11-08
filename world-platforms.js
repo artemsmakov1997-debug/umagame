@@ -13,7 +13,7 @@ export function stepWorldPlatforms(g,dt){
   s.prevX=s.x;s.prevY=s.y;s.dx=0;s.dy=0;
   if(s.room===g.room&&s.fragile){s.collapseTime=Math.max(0,(s.collapseTime||0)-dt);if(!s.collapseTime){s.collapseCharge=g.player.grounded&&g.player.supportId===s.id?(s.collapseCharge||0)+dt:0;if(s.collapseCharge>.7){s.collapseTime=2.4;s.collapseCharge=0;g.emit('platformCrumble',{x:s.x+s.w/2,y:s.y});}}}
   if(s.room===g.room&&s.dim)placeDimensionPiece(g,s);
-  if(s.room===g.room&&s.motion){const offset=Math.sin(g.platformClocks[g.room]*Math.PI*2/s.motion.period)*s.motion.amplitude;if(s.motion.axis==='x')s.x=s.baseX+offset;else s.y=s.baseY+offset;s.dx=s.x-s.prevX;s.dy=s.y-s.prevY;}
+  if(s.room===g.room&&s.motion){const offset=Math.sin(g.platformClocks[g.room]*Math.PI*2/s.motion.period+(s.motion.phase||0))*s.motion.amplitude;if(s.motion.axis==='x')s.x=s.baseX+offset;else s.y=s.baseY+offset;s.dx=s.x-s.prevX;s.dy=s.y-s.prevY;}
  }
  // An upside-down Uma (Измерение) stands with her paws on a line above her: her «feet» are her top edge.
  const p=g.player,feet=p.flipped?p.y:p.y+p.h;
