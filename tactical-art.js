@@ -6,6 +6,7 @@ export function drawTacticalTerrain(c,g,time,a={}){
  for(const ink of g.inks){
   if(ink.room!==g.room)continue;const s=g.platforms.find(s=>s.id===ink.platformId);if(!s)continue;
   if(ink.glitch&&drawGlitchPatch(c,a,ink,s,time))continue;const x=s.x+ink.localX,y=s.y;
+  if(!ink.glitch&&a.stampInk&&drawStampInk(c,a,ink,x,y))continue;
   c.save();c.globalAlpha=Math.min(1,ink.time/1.1);
   rect(c,x,y-3,ink.w,5,'#0a0421');rect(c,x+3,y-4,ink.w-6,3,'#572682');
   for(let i=0;i<ink.w-4;i+=11){const bob=Math.sin(time*3+i)*1.5;rect(c,x+i,y-5-bob,6,3,'#9852c6');rect(c,x+i+3,y+1,3,4+i%4,'#311047');}
@@ -43,4 +44,13 @@ export function drawEnemyDefense(c,e,time,a={}){
  }
  if(e.copyOwnerId){c.save();c.globalAlpha=.55;c.strokeStyle='#92f1fa';c.setLineDash([3,3]);c.strokeRect(e.x-4,e.y-35,e.w+8,e.h+36);c.setLineDash([]);c.restore();}
  if(e.muffled){for(let i=0;i<3;i++)rect(c,e.x+12+i*7,e.y-25+(i%2)*3,5,6,'#6c389e');}
+}
+// The angry Stamp's ink (assets/stamp-ink.png): 6 cells of 120×110 — three frames of a flung blot, splash, puddle, drying.
+const INK_CELL=120,INK_H=110,INK_FEET=88;
+function drawStampInk(c,a,ink,x,y){
+ const k=ink.w/100;
+ if(ink.fly>0){const t=1-ink.fly/.3,fx=ink.flyFrom.x+(x+ink.w/2-ink.flyFrom.x)*t,fy=ink.flyFrom.y+(y-6-ink.flyFrom.y)*t-Math.sin(t*Math.PI)*34,f=Math.min(2,Math.floor(t*3)),dir=x+ink.w/2<ink.flyFrom.x?-1:1;
+  c.save();c.translate(Math.round(fx),Math.round(fy));c.scale(-dir,1);c.drawImage(a.stampInk,f*INK_CELL,0,INK_CELL,INK_H,-INK_CELL*.55*.5,-INK_H*.55*.6,INK_CELL*.55,INK_H*.55);c.restore();return true;}
+ const f=ink.time>8.7?3:ink.time<1.4?5:4;c.save();c.globalAlpha=Math.min(1,ink.time/1.1);
+ const v=k*.75;c.drawImage(a.stampInk,f*INK_CELL,0,INK_CELL,INK_H,Math.round(x+ink.w/2-INK_CELL*k/2),Math.round(y+3-INK_FEET*v),INK_CELL*k,INK_H*v);c.restore();return true;
 }

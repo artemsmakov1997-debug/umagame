@@ -72,7 +72,19 @@ export function drawRoofWind(c,g,t,a){
 // 0–1 idle, 2 drawing breath, 3–5 blowing, 6 cooling down, 7 struck (unharmed).
 export function inflatorFrame(e,t){if(e.hurtTime>0||e.guardFlash>0)return 7;if(e.state==='windup')return 2;if(e.state==='blast')return 3+Math.floor(t*12)%3;if(e.state==='recover')return 6;return Math.floor(t*3)%2;}
 // assets/inflator-mast.png (optional, once drawn): 3 cells of 120×120 — platform, a mast segment (tiles vertically), base.
-function drawMastArt(c,img,fx,fy,base){const k=.8,w=120*k;c.drawImage(img,0,0,120,120,fx-w/2,fy-w*.18,w,w);for(let y=fy+w*.6;y<base-w*.6;y+=w*.8)c.drawImage(img,120,0,120,120,fx-w/2,y,w,w);c.drawImage(img,240,0,120,120,fx-w/2,base-w,w,w);}
+// The mast (assets/inflator-mast.png, drawn at half size): a cantilever deck with a lamp, a lattice segment (cap + tile)
+// and a pedestal with guy wires. The machine stands on the deck; the tower rises from the roof under the deck's post.
+const MAST={deck:[0,0,259,256],deckTop:107,deckMid:160,post:37,postBottom:250,seg:[261,0,67,128],cap:18,base:[330,0,257,154],baseMid:127,baseTop:60};
+function drawMastArt(c,img,fx,fy,base){
+ const h=v=>v/2,d=MAST.deck,sg=MAST.seg,b=MAST.base,dx=fx-h(MAST.deckMid),dy=fy-h(MAST.deckTop),px=dx+h(MAST.post),sw=h(sg[2]);
+ const top=dy+h(MAST.postBottom)-4,bx=px-h(MAST.baseMid),by=base-h(b[3]);
+ c.save();c.beginPath();c.rect(px-sw,top,sw*2,Math.max(0,by+h(MAST.baseTop)-top));c.clip();
+ c.drawImage(img,sg[0],sg[1],sg[2],MAST.cap,px-sw/2,top,sw,h(MAST.cap));
+ for(let y=top+h(MAST.cap);y<by+h(MAST.baseTop);y+=h(sg[3]-MAST.cap))c.drawImage(img,sg[0],sg[1]+MAST.cap,sg[2],sg[3]-MAST.cap,px-sw/2,y,sw,h(sg[3]-MAST.cap));
+ c.restore();
+ if(by>top-20)c.drawImage(img,b[0],b[1],b[2],b[3],bx,by,h(b[2]),h(b[3]));
+ c.drawImage(img,d[0],d[1],d[2],d[3],dx,dy,h(d[2]),h(d[3]));
+}
 export function drawInflatorMachine(c,a,e,t,x=e.x+e.w/2,feet=e.y+e.h,width=96){
  const img=a.inflatorMachine;if(!img)return false;const k=width/163,shake=e.state==='blast'?Math.sin(t*50):0;
  // The wall bracket it is bolted to, high above the roofs.

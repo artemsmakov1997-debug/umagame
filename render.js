@@ -105,6 +105,7 @@ export class Renderer{
    if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
    if(e.type==='servant')drawServant(c,a,e,t);
    if(e.container)drawStudioContainer(c,a,g,e,t,drawMonster);
+   else if(e.type==='stamp')drawMonster(c,a,e.type,e.x-17,e.y-49,82,78,t,false,e);// the «ФЕЙК» label must never read backwards
    else if(['stamp','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
    if(e.type==='botfarm'&&!e.container)drawMonster(c,a,e.type,e.x+e.w/2-e.w*1.15,e.y+e.h-e.h*1.2,e.w*2.3,e.h*1.2,t,false,e);
    if(e.type==='bot')drawMonster(c,a,e.type,e.x+e.w/2-20,e.y+e.h-38,40,38,t,false,e);

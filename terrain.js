@@ -14,12 +14,12 @@ export function inkAt(g,actor){
  if(!g.inks||actor.climbing||actor.jumpPhase==='air'||actor.terrainFall)return null;
  const feet=actor.y+actor.h;
  return g.inks.find(ink=>{
-  if(ink.room!==g.room||ink.time<=0)return false;
+  if(ink.room!==g.room||ink.time<=0||ink.fly>0)return false;
   const s=g.platforms.find(s=>s.id===ink.platformId);return s&&Math.abs(s.y-feet)<4&&actor.x+actor.w>s.x+ink.localX&&actor.x<s.x+ink.localX+ink.w;
  })||null;
 }
 export function stepTacticalTerrain(g,dt){
- for(const ink of g.inks)if(ink.room===g.room)ink.time-=dt;
+ for(const ink of g.inks)if(ink.room===g.room){ink.time-=dt;if(ink.fly>0)ink.fly=Math.max(0,ink.fly-dt);}
  g.inks=g.inks.filter(i=>i.time>0);
  for(const cut of g.cuts){
   if(cut.room!==g.room)continue;

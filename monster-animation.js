@@ -27,7 +27,8 @@ export const motion={
 };
 export function monsterFrame(id,time,actor={}){
  const state=actor.state||'patrol',step=Math.floor((actor.flying?time:(actor.walkTime??time))*7)%2;
- if(['stamp','copier','cutter','splicer','injection','echo','static','spreader','agitator','manipulator'].includes(id))return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||state==='windup'||id==='copier'&&state==='recover'?3:['stamping','printing','cutting','casting','pulling','strike','lunge','swoop','broadcast'].includes(state)||actor.attackFlash>0?4:actor.moving||['echo','static','spreader'].includes(id)?1+step:0;
+ if(id==='stamp')return actor.dead?7:actor.hurtTime>0?6:actor.noticeTime>0||state==='windup'?3:state==='stamping'||actor.attackFlash>0?4:state==='recover'?5:actor.moving?1+step:0;
+ if(['copier','cutter','splicer','injection','echo','static','spreader','agitator','manipulator'].includes(id))return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||state==='windup'||id==='copier'&&state==='recover'?3:['stamping','printing','cutting','casting','pulling','strike','lunge','swoop','broadcast'].includes(state)||actor.attackFlash>0?4:actor.moving||['echo','static','spreader'].includes(id)?1+step:0;
  if(id==='fakenews'||id==='informant')return actor.hurtTime>0||actor.dead?5:actor.noticeTime>0||['windup','jumpWindup','land'].includes(state)?3:state==='lunge'||state==='casting'||actor.attackFlash>0?4:actor.moving?1+step:0;
  if(id==='infoshum')return state==='windup'?2:state==='casting'?3:Math.floor(time*3)%2;
  if(id==='clickbait')return state==='snap'||actor.attackFlash>0?3:state==='windup'?2:step;
@@ -52,9 +53,11 @@ const newFrames={
  informant:[[[12,567,263,342],[140,904]],[[280,568,238,355],[399,918]],[[524,573,244,350],[654,918]],[[769,558,231,351],[878,904]],[[1000,573,282,345],[1118,913]],[[1293,563,243,351],[1416,909]]]
 };
 for(const [id,frames]of Object.entries(newFrames))motion[id]={asset:'newMotion',width:280,height:id==='fakenews'?310:380,frames:frames.map(([box,pivot])=>({box,pivot}))};
-for(const [id,top,h,feet,height]of [['stamp',90,255,339,256],['copier',350,310,644,310]]){
+for(const [id,top,h,feet,height]of [['copier',350,310,644,310]]){
  motion[id]={asset:'tactics',width:256,height,frames:Array.from({length:6},(_,i)=>({box:[i*256,top,256,h],pivot:[i*256+128,feet]}))};
 }
+// Злой Штамп (assets/stamp-angry.png): 8 cells of 128×144 — stand, two steps, lift, slam, recoil, hurt, puddle.
+motion.stamp={asset:'stampAngry',width:128,height:128,frames:Array.from({length:8},(_,i)=>({box:[i*128,0,128,144],pivot:[i*128+64,131]}))};
 // Нарезчик (assets/cutter.png): 3×2 cells of 512×512 — stand, two steps, notice, cut, hurt; feet on one line per row.
 motion.cutter={asset:'cutter',width:420,height:260,frames:Array.from({length:6},(_,i)=>{const col=i%3,row=i/3|0,feet=row?928:435;return {box:[col*512,row*512+150,512,feet-row*512-150+12],pivot:[col*512+240,feet]};})};
 export const baitEmergenceFrames=[
