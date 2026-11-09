@@ -45,7 +45,7 @@ export function drawTutorialProps(c,a,g,t){
  // Infected monitor; after the paw hit the broken frame stays with fading sparks.
  const ms=MONITOR.h/284,mx=x0+MONITOR.x;
  if(!q.monitorBroken){const shake=Math.sin(t*31)>.92?1:0;draw(c,a,'monitor',mx+shake,FLOOR-MONITOR.h,ms);
-  if(STATIONS[q.step]==='attack'||q.step>=3)drawTargetGlow(c,{x:mx+8,y:FLOOR-MONITOR.h+6,w:MONITOR.w-16,h:MONITOR.h-12,color:TARGET_PINK},t);}
+  if(STATIONS[q.step]==='attack'||q.step>=3)drawTargetGlow(c,{x:mx+8,y:FLOOR-MONITOR.h+6,w:MONITOR.w-16,h:MONITOR.h-12,color:TARGET_PINK},t,a);}
  else{draw(c,a,'monitorBroken',mx-2,FLOOR-MONITOR.h,ms);if(q.monitorTime<.8)for(let i=0;i<6;i++){const k=q.monitorTime/.8,ang=i*1.05+1;rect(c,mx+34+Math.cos(ang)*k*40,FLOOR-48-Math.sin(ang)*k*30+k*k*30,2,2,i%2?'#ffd36e':'#d78bff');}}
  // Door: closed until the monitor falls, then swings open.
  const ds=DOOR.h/364;draw(c,a,q.doorOpen&&q.doorTime>.4?'doorOpen':'door',x0+DOOR.x,FLOOR-DOOR.h+4,ds);

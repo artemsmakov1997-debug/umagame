@@ -253,13 +253,26 @@ The untouched generated originals are retained in `/workspace/generated_images`.
 
 ### Финальный бой с Инфошумом и новые листы врагов
 
-Нарисовано автором по макетам, нарезано без изменения рисунка:
-- `infoshum-wall-tv.png` (6 кадров 190×168) и `infoshum-floor-tv.png` (6 кадров 136×97). Состояния экрана: выключен, помехи, лицо, заряд, трещины, разбит.
-- `infoshum-glass.png`: осколки, 3 кадра. `infoshum-tv-beam.png`: луч, 3 кадра; он же, повёрнутый, служит столбом ядра.
-- `infoshum-storm-core.png`: ядро в клетке из щупалец, 6 кадров. `infoshum-storm-platforms.png`: 3 вида островов. `infoshum-falling-tv.png`: падающий экран, 3 кадра.
-- `infoshum-storm.jpg`: фон бури. Нарисованная на нём кошка убрана, картинка чуть размыта и затемнена, чтобы не спорить с платформами.
+Нарисовано автором по макетам и нарезано без изменения рисунка. Координаты кусков лежат в `infoshum-atlas.js`.
+- Фаза «Стена эфира»:
+  - `infoshum-casings.png`: корпуса мониторов от крошечного до огромной видеостены, лежачие корпуса (из них сложены ярусы), стопка, кабели.
+  - `infoshum-screen-states.png`: картинка на экране — выключен, помехи, лицо, заряд, трещины, разбит. Растягивается под любой корпус.
+  - `infoshum-wall-bg.jpg`: гора мониторов на заднем плане.
+  - `infoshum-glass.png`, `infoshum-tv-beam.png`: осколки и луч экрана.
+- Фаза «Колосс»:
+  - `infoshum-colossus.png`: тело колосса, пять состояний экрана-головы и четыре кадра сборки.
+  - `infoshum-eye-relay.png`: глаз-ретранслятор, 6 состояний.
+  - `infoshum-giant-beam.png`: большой луч и пунктир предупреждения.
+  - `infoshum-debris.png`: обломки, по которым идёт подъём, и три кадра осыпающегося обломка.
+  - `infoshum-noise-wave.png`: волна шума.
+  - `infoshum-ascent.jpg`: фон подъёма, повторяется по вертикали.
+  - `infoshum-falling-tv.png`: брошенный монитор.
+- Фаза «На свободе»:
+  - `infoshum-storm.jpg`: фон бури. Нарисованная на нём кошка убрана, картинка размыта и затемнена.
+  - `infoshum-storm-platforms.png`: острова.
+- `target-marker-gold.png`, `target-marker-pink.png`: метка «бей сюда» — уголки, стрелка с лапкой, свечение, вспышка удара. Золотая для Распространителя, Агитатора и Манипулятора, розовая для Инфошума.
 - `stamp-angry.png` (8 кадров 128×144) и `stamp-ink.png` (6 кадров: полёт кляксы и лужа).
 - `inflator-mast.png`: консоль с лампой, решётчатая секция и основание мачты Нагнетателя.
 - `botfarm.png`: 6 кадров новой Ботофермы.
 
-Код: `infoshum-combat.js`, `infoshum-art.js`, `monster-animation.js`, `tactical-art.js`, `roofs-art.js`, `botfarm-art.js`.
+Код: `infoshum-combat.js`, `infoshum-art.js`, `target-highlight.js`, `monster-animation.js`, `tactical-art.js`, `roofs-art.js`, `botfarm-art.js`.

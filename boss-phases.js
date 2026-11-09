@@ -2,7 +2,7 @@ export const phasePlans={
  spreader:[['Ковровая бомбардировка',['rain','collect','summon']],['Рывок',['dash','summon']],['Срочный выпуск',['spear','rain']]],
  agitator:[['Лозунг',['slogan']],['Митинг',['ura','swing','stomp']],['Прямой эфир',['gust','swing']]],
  manipulator:[['Панорама',['pan','beam']],['Стоп-кадр',['snap','cut']],['Проектор',['beam','illusion']]],
- infoshum:[['Телекомната',['screens','tvBeam']],['Белый шум',['split','dive']],['Буря и ядро',['column','screens']]]
+ infoshum:[['Стена эфира',['screens','tvBeam']],['Колосс',['sweep','eye']],['На свободе',['split','dive']]]
 };
 export function phasePattern(b){return phasePlans[b.id][Math.min(phasePlans[b.id].length-1,b.phase-1)][1];}
 export function stepBossPhase(g,dt){
