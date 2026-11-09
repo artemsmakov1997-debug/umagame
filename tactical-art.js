@@ -1,9 +1,11 @@
 import {drawPixelBarrier} from './shield-art.js?v=0.21.5';
+import {drawGlitchPatch} from './dimension-monsters-art.js?v=0.21.5';
 import {rect,text} from './pixel.js?v=0.21.5';
 import {scanArea} from './tactical-enemies.js?v=0.21.5';
-export function drawTacticalTerrain(c,g,time){
+export function drawTacticalTerrain(c,g,time,a={}){
  for(const ink of g.inks){
-  if(ink.room!==g.room)continue;const s=g.platforms.find(s=>s.id===ink.platformId);if(!s)continue;const x=s.x+ink.localX,y=s.y;
+  if(ink.room!==g.room)continue;const s=g.platforms.find(s=>s.id===ink.platformId);if(!s)continue;
+  if(ink.glitch&&drawGlitchPatch(c,a,ink,s,time))continue;const x=s.x+ink.localX,y=s.y;
   c.save();c.globalAlpha=Math.min(1,ink.time/1.1);
   rect(c,x,y-3,ink.w,5,'#0a0421');rect(c,x+3,y-4,ink.w-6,3,'#572682');
   for(let i=0;i<ink.w-4;i+=11){const bob=Math.sin(time*3+i)*1.5;rect(c,x+i,y-5-bob,6,3,'#9852c6');rect(c,x+i+3,y+1,3,4+i%4,'#311047');}

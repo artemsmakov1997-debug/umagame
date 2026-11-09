@@ -1,3 +1,4 @@
+import {drawClickbaitPortrait,drawStaticPortrait as drawJellyPortrait} from './dimension-monsters-art.js?v=0.21.5';
 import {drawPaparazziPortrait,drawSpotlighterPortrait,drawBoomPortrait} from './new-monsters-art.js?v=0.21.5';
 import {drawAgitatorPose} from './agitator-art.js?v=0.21.5';
 import {drawCensorPortrait} from './censor-art.js?v=0.21.5';
@@ -21,9 +22,11 @@ export function drawMonster(c,a,id,x,y,w,h,time=0,flip=false,actor={}){
  if(id==='censor')return drawCensorPortrait(c,a,x,y,w,h,time,actor);
  if(id==='sensation')return drawSensationPortrait(c,a,x,y,w,h,time,actor);
  if(id==='echo'&&!actor.orb)return drawEchoDoublePortrait(c,a,x,y,w,h,time,flip,actor);
+ if(id==='static'&&drawJellyPortrait(c,a,x,y,w,h,time,actor))return;
  if(id==='static'&&a.staticMotion)return drawStaticPortrait(c,a,x,y,w,h,time,flip,actor);
  if(id==='botfarm')return drawBotfarmPortrait(c,a,x,y,w,h,time,actor);
  if(id==='bot')return drawBotPortrait(c,a,x,y,w,h,time,actor);
+ if(id==='clickbait'&&drawClickbaitPortrait(c,a,x,y,w,h,time,actor))return;
  if(id==='paparazzi')return drawPaparazziPortrait(c,a,x,y,w,h,time,actor,drawMonster);
  if(id==='spotlight')return drawSpotlighterPortrait(c,a,x,y,w,h,time,actor);
  if(id==='boom')return drawBoomPortrait(c,a,x,y,w,h,time,actor);

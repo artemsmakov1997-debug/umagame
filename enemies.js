@@ -34,7 +34,8 @@ export function stepPortals(g,dt){
  g.portals=g.portals.filter(p=>p.cancelled?(p.closeTime||0)<.3:p.time<2.8);
 }
 export function touchesBait(p,e){return Math.abs(p.x+p.w/2-(e.x+24))<26&&Math.abs(p.y+p.h/2-(e.y+8))<32;}
-function reveal(g,e,dx){e.revealed=true;e.dir=dx<0?-1:1;e.state='emerge';e.timer=.16;e.revealTime=0;e.noticed=true;e.noticeTime=0;g.emit('baitReveal',{x:e.x,y:e.y});}
+function vanish(e){e.state='vanish';e.timer=.55;e.attackFlash=0;}
+function reveal(g,e,dx){e.revealed=true;e.dir=dx<0?-1:1;e.state='emerge';e.timer=.2;e.revealTime=0;e.noticed=true;e.noticeTime=0;g.emit('baitReveal',{x:e.x,y:e.y});}
 export function stepEnemies(g,dt,paw,prevBottom){
  const p=g.player;cleanCopies(g);
  for(const e of g.enemies){
@@ -95,13 +96,14 @@ export function stepEnemies(g,dt,paw,prevBottom){
     else if(e.state==='recover'&&e.timer<=0)e.state='patrol';
    }else if(TACTICAL_TYPES.includes(e.type))stepTacticalEnemy(g,e,dt,dx,dy);
    else if(e.type==='clickbait'){
+    // The trap: it shows only once the bait is taken, bites once, then crumbles back into pixels and is gone.
     if(e.state==='lure'&&touchesBait(p,e))reveal(g,e,dx);
-    else if(e.state==='emerge'&&e.timer<=0){e.state='snap';e.timer=.24;e.attackFlash=.24;}
-    else if(e.state==='patrol'&&Math.abs(dx)<100&&Math.abs(dy)<75&&e.timer<=0){e.dir=dx<0?-1:1;e.state='windup';e.timer=.65;}
-    else if(e.state==='windup'&&e.timer<=0){e.state='snap';e.timer=.45;e.attackFlash=.45;}
-    else if(e.state==='snap'&&e.timer<=0){e.state='recover';e.timer=1.4;}
-    else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.5;}
-    if(e.revealed&&e.state==='patrol')e.x+=e.dir*e.speed*dt;
+    else if(e.state==='emerge'&&e.timer<=0){e.state='wait';e.timer=.1;}
+    else if(e.state==='wait'&&e.timer<=0){e.state='snap';e.timer=.3;e.attackFlash=.3;e.dir=dx<0?-1:1;}
+    else if(e.state==='snap'&&e.timer<=0)vanish(e);
+    else if(e.state==='recover'&&!g.swallow){e.state='spit';e.timer=.35;}
+    else if(e.state==='spit'&&e.timer<=0)vanish(e);
+    else if(e.state==='vanish'&&e.timer<=0){e.dead=true;e.hp=0;e.deathTime=0;e.gone=true;g.emit('clickbaitGone',{x:e.x,y:e.y});}
    }
    if((e.type==='inflator'&&e.room!==3||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*(e.inkSlow||1)*dt;
   }
@@ -112,7 +114,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
   if(e.flying){handleFlyingContact(g,e);if(g.mode!=='playing')return;}
   else if(e.type==='clickbait'){
    const mouth={x:e.dir>0?e.x+2:e.x-40,y:e.y-30,w:88,h:72};
-   if(e.state==='snap'&&g.overlap(p,mouth)&&p.dash>0){e.state='recover';e.timer=1.4;}
+   if(e.state==='snap'&&g.overlap(p,mouth)&&p.dash>0){vanish(e);}
    else if(e.state==='snap'&&p.inv===0&&g.overlap(p,mouth)){g.swallow={enemyId:e.id,x:p.x,y:p.y,targetX:e.x+12,targetY:e.y-14,timer:.48,total:.48};p.attack=0;p.vx=0;p.vy=0;e.state='recover';e.timer=2;e.attackFlash=.48;e.captureTime=0;g.emit('swallow',{x:e.x,y:e.y});return;}
   }else if(e.type==='inflator'&&e.room===3){
    // A bolted machine: it does not bite; standing in front of it during a gust is what hurts.

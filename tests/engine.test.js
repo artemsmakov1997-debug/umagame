@@ -70,8 +70,9 @@ test('a Fakenews folds, lunges in its locked direction and exposes a recovery wi
 test('the first Fakenews is weak; one swing cannot damage a tougher one repeatedly',()=>{
  const g=isolated(1,0,45),weak=enemy('fakenews',1,100),tough=enemy('fakenews',1,100,0,{hp:4,maxHp:4});g.enemies=[weak];g.step(1/60,{attack:true});assert.equal(weak.dead,true);g.enemies=[tough];g.player.cooldown=0;tick(g,12,{attack:true});assert.equal(tough.hp,3);
 });
-test('a revealed Clickbait stays visible, patrols, turns at the edge and never becomes a lure again',()=>{
- const g=isolated(2,1,350),e=enemy('clickbait',2,365,1);g.enemies=[e];tick(g,1);assert.equal(e.revealed,true);assert.equal(e.state,'emerge');g.player.x=campaignRooms[2].x+10;g.player.y=282;tick(g,165);assert.equal(e.state,'patrol');const x=e.x;tick(g,30);assert.notEqual(e.x,x);assert.ok(e.x>=e.origin&&e.x<=e.end);tick(g,300);assert.notEqual(e.state,'lure');assert.equal(e.revealed,true);
+test('a revealed Clickbait bites once where the bait was, then crumbles to pixels and is gone for good',()=>{
+ const g=isolated(2,1,350),e=enemy('clickbait',2,365,1);g.enemies=[e];tick(g,1);assert.equal(e.revealed,true);assert.equal(e.state,'emerge');g.player.x=campaignRooms[2].x+10;g.player.y=282;const x=e.x;
+ const seen=new Set();for(let i=0;i<120&&!e.dead;i++){tick(g,1);seen.add(e.state);}assert.deepEqual([...seen].filter(s=>['wait','snap','vanish'].includes(s)),['wait','snap','vanish']);assert.equal(e.dead,true);assert.equal(e.gone,true);assert.equal(e.x,x,'it never walks');assert.equal(g.kills,0,'no kill credit');tick(g,120);assert.notEqual(e.state,'lure');
 });
 test('Clickbait swallowing locks control, freezes in the menu and costs two hearts',()=>{
  const g=isolated(1,0,70),e=enemy('clickbait',1,125,0,{state:'snap',timer:.4,revealed:true});g.enemies=[e];tick(g,1);assert.ok(g.swallow);const x=g.player.x;tick(g,10,{right:true,jump:true,attack:true});assert.equal(g.player.x,x);g.mode='paused';const time=g.swallow.timer;tick(g,120);assert.equal(g.swallow.timer,time);g.mode='playing';tick(g,55);assert.equal(g.swallow,null);assert.equal(g.mode,'playing');assert.equal(g.lives,3);assert.equal(g.health,2);assert.ok(g.player.inv>0);assert.ok(g.events.some(v=>v.type==='clickbaitSpit'));assert.equal(e.revealed,true);

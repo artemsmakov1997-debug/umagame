@@ -1,3 +1,4 @@
+import {trapFrame} from '../dimension-monsters-art.js';
 import {rooms as campaignRooms} from '../level.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -25,13 +26,13 @@ test('fish and soup restore health but do not invent extra lives',()=>{
  const g=isolated();g.lives=2;g.health=1;g.fish=7;g.fishes=[{x:g.player.x+17,y:g.player.y+24,taken:false}];tick(g,1);assert.equal(g.health,2);assert.equal(g.lives,2);g.soups=[{x:g.player.x+17,y:g.player.y+24,taken:false}];tick(g,1);assert.equal(g.health,3);assert.equal(g.lives,2);
 });
 test('Clickbait waits for fish pickup, not mere approach, then bursts and grabs quickly',()=>{
- const g=isolated(5,3,595),e=enemy('clickbait',5,665,3,{active:true,noticed:true});g.enemies=[e];tick(g,45);assert.equal(e.state,'lure');assert.equal(e.revealed,false);g.player.x=campaignRooms[5].x+665;assert.equal(touchesBait(g.player,e),true);tick(g,1);assert.equal(e.state,'emerge');assert.equal(g.fish,0);assert.equal(g.swallow,null);tick(g,11);assert.ok(g.swallow);assert.ok(g.swallow.total<.6);assert.equal(g.player.vx,0);assert.equal(e.revealed,true);
+ const g=isolated(5,3,595),e=enemy('clickbait',5,665,3,{active:true,noticed:true});g.enemies=[e];tick(g,45);assert.equal(e.state,'lure');assert.equal(e.revealed,false);g.player.x=campaignRooms[5].x+665;assert.equal(touchesBait(g.player,e),true);tick(g,1);assert.equal(e.state,'emerge');assert.equal(g.fish,0);assert.equal(g.swallow,null);tick(g,10);assert.equal(g.swallow,null,'a moment to react');tick(g,24);assert.ok(g.swallow);assert.ok(g.swallow.total<.6);assert.equal(g.player.vx,0);assert.equal(e.revealed,true);
 });
-test('Clickbait emergence and capture advance through different jaw poses and freeze on pause',()=>{
- const g=isolated(5,3,665),e=enemy('clickbait',5,665,3,{active:true,noticed:true});g.enemies=[e];tick(g,1);const first=clickbaitAppearanceFrame(e);tick(g,4);assert.notEqual(clickbaitAppearanceFrame(e),first);g.mode='paused';const snapshot=JSON.stringify(g);tick(g,60);assert.equal(JSON.stringify(g),snapshot);g.mode='playing';tick(g,7);assert.ok(g.swallow);assert.equal(clickbaitAppearanceFrame(e),3);tick(g,12);assert.equal(clickbaitAppearanceFrame(e),4);
+test('Clickbait emergence, bite and capture advance through different trap frames and freeze on pause',()=>{
+ const g=isolated(5,3,665),e=enemy('clickbait',5,665,3,{active:true,noticed:true});g.enemies=[e];tick(g,1);const first=trapFrame(e,g.time);assert.equal(first,0);tick(g,10);assert.notEqual(trapFrame(e,g.time),first);g.mode='paused';const snapshot=JSON.stringify(g);tick(g,60);assert.equal(JSON.stringify(g),snapshot);g.mode='playing';for(let i=0;i<40&&!g.swallow;i++)tick(g,1);assert.ok(g.swallow);assert.equal(trapFrame(e,g.time),4,'mouth shut on its prey');
 });
 test('a Clickbait grab with two hearts or fewer consumes one life and cannot repeatedly damage a captured Uma',()=>{
- const g=isolated(5,3,665),e=enemy('clickbait',5,665,3,{active:true,noticed:true});g.enemies=[e];g.health=2;tick(g,45,{attack:false});assert.equal(g.mode,'respawning');assert.equal(g.lives,2);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.swallow,null);
+ const g=isolated(5,3,665),e=enemy('clickbait',5,665,3,{active:true,noticed:true});g.enemies=[e];g.health=2;tick(g,66,{attack:false});assert.equal(g.mode,'respawning');assert.equal(g.lives,2);waitRespawn(g);assert.equal(g.health,4);assert.equal(g.lives,2);assert.equal(g.swallow,null);
 });
 test('a dash escapes the immortal fish trap and never grants a fish reward',()=>{
  const g=isolated(5,3,665),e=enemy('clickbait',5,665,3,{active:true,noticed:true});g.enemies=[e];tick(g,1,{dash:true,right:true});tick(g,18,{right:true});assert.equal(g.swallow,null);assert.equal(g.health,4);assert.equal(g.fish,0);assert.equal(e.revealed,true);assert.equal(e.hp,e.maxHp);assert.equal(e.dead,false);

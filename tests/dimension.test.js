@@ -90,3 +90,12 @@ test('a full run with ordinary inputs crosses all four blocks without a fall and
  const g=ready();assert.equal(crossDimension(g),true);assert.equal(g.health,4);
  for(let i=0;i<200&&g.room===7&&g.mode!=='enteringArena';i++)tick(g,1,{right:true});assert.ok(g.mode==='enteringArena'||g.room===8);
 });
+test('a Помеха hovers over Uma, fires a column of static down that hurts and leaves a slippery glitch stripe, then overheats low enough to swat',()=>{
+ const mk=()=>{const g=ready(),e=enemy('static',7,150,0,{active:true,noticed:true,spawnTime:0,noticeTime:0,timer:0});g.enemies=[e];stand(g,0,120);return {g,e};};
+ let {g,e}=mk();g.player.inv=0;let fired=false;for(let i=0;i<300&&!fired;i++){tick(g,1);fired=e.state==='fire';}
+ assert.ok(fired);assert.ok(e.y+e.h<g.player.y,'it hovers above her head');assert.ok(g.events.some(v=>v.type==='staticWarning'),'warns first');
+ tick(g,3);assert.equal(g.health,3,'the column hurts');const stripe=g.inks.find(i=>i.glitch);assert.ok(stripe&&stripe.platformId==='7:0');
+ for(let i=0;i<60&&e.state!=='overheat';i++)tick(g,1);assert.equal(e.state,'overheat');tick(g,40);assert.ok(e.y+e.h>g.player.y-40,'sinks low');
+ ({g,e}=mk());for(let i=0;i<300&&e.state!=='charge';i++)tick(g,1);const ex=e.x;for(let i=0;i<40;i++)tick(g,1,{dash:i===0,right:true});assert.equal(g.health,4,'a dash out of the column is safe '+[e.state,ex,e.x,g.player.x,g.player.inv].join(' '));
+ ({g,e}=mk());e.state='overheat';e.timer=1;Object.assign(e,{x:g.player.x,y:g.player.y-30});e.inv=0;assert.equal(g.hitEnemy(e),true);
+});
