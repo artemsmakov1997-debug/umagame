@@ -19,15 +19,16 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    let k=0;while(n.tvs.some(t=>t.kind!=='huge'&&t.state!=='broken')&&k++<40){m.crackInfoshumScreen(g);for(const t of n.tvs)if(t.state==='crack')t.state='broken';}m.exposeInfoshum(g);g.player.x=n.tvs.at(-1).x+200;draw('giant');
    m.smashWall(g);for(let i=0;i<90;i++)real.call(g,1/60,{});out.assemble=n.stage;draw('assemble');
    for(let i=0;i<150;i++)real.call(g,1/60,{});out.colossus=n.stage;draw('colossus');
+   const mid=g.platforms.filter(s=>s.room===8&&s.debris&&!s.bossHidden&&s.y>170&&s.y<300).sort((x,y)=>y.y-x.y)[0],stand=()=>Object.assign(g.player,{x:mid.x+mid.w/2-17,y:mid.y-48,h:48,grounded:true,supportId:mid.id,vx:0,vy:0,inv:9});stand();
    n.ascent.sweep=0;n.ascent.eye=null;n.ascent.eyeT=99;real.call(g,1/60,{});draw('sweep-warning');
    n.ascent.beamTimer=0;real.call(g,1/60,{});draw('sweep');
-   n.ascent.beamMode=null;n.ascent.sweep=99;m.exposeInfoshum(g);draw('eye');
+   n.ascent.beamMode=null;n.ascent.sweep=99;stand();m.exposeInfoshum(g);out.eyeShown=!!n.ascent.eye;draw('eye');
    for(let e=0;e<3;e++){m.swatEye(g);for(let i=0;i<60;i++)real.call(g,1/60,{});}out.breakout=n.stage;draw('breakout');
    for(let i=0;i<160;i++)real.call(g,1/60,{});out.free=n.stage;n.noiseTime=20;m.exposeInfoshum(g);n.figures.filter(f=>!f.real).forEach(f=>f.state='hover');draw('noise');
-   out.distinct=new Set(Object.values(shots)).size;out.count=Object.keys(shots).length;return out;
+   out.distinct=new Set(Object.values(shots)).size;const seen={};out.same=[];for(const [k,v] of Object.entries(shots)){if(seen[v])out.same.push(seen[v]+'='+k);else seen[v]=k;}out.count=Object.keys(shots).length;return out;
   });
   assert.ok(r.sheets.every(([,ok])=>ok),'all Infoshum sheets decode: '+JSON.stringify(r.sheets));
-  assert.equal(r.assemble,'assemble');assert.equal(r.colossus,'colossus');assert.equal(r.breakout,'breakout');assert.equal(r.free,'noise');assert.equal(r.distinct,r.count,'every state looks different');
+  assert.equal(r.assemble,'assemble');assert.equal(r.colossus,'colossus');assert.equal(r.breakout,'breakout');assert.equal(r.free,'noise');assert.equal(r.eyeShown,true);assert.equal(r.distinct,r.count,'every state looks different: '+r.same.join(', '));
   await shot(page,'infoshum-noise-'+width);await page.close();
  }
  // Full-arena overview: the whole wall of monitors at once.
