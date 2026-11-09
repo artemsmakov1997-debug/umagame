@@ -8,6 +8,7 @@ export function stepAirEnemy(g,e,dt){
  const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+p.h/2-e.y-e.h/2,distance=Math.hypot(dx,dy)||1;
  if(e.type==='echo'){stepEchoDouble(g,e,dt);return;}
  e.timer-=dt;
+ if(e.type==='static'){stepJelly(g,e,dt);e.x=clamp(e.x,r.x+8,r.end-e.w-8);e.y=clamp(e.y,48,480-e.h-12);return;}
  {
   if(e.state==='patrol'){
    if(e.noticed){e.x+=dx/distance*e.speed*dt;e.y+=dy/distance*e.speed*.7*dt;}
@@ -17,6 +18,30 @@ export function stepAirEnemy(g,e,dt){
   else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.5;}
  }
  e.x=clamp(e.x,r.x+8,r.end-e.w-8);e.y=clamp(e.y,48,480-e.h-12);if(Math.abs(dx)>5)e.dir=dx<0?-1:1;
+}
+// Помеха: a jellyfish of static hovering above Uma's head. It catches the signal, charges, and fires a column of
+// static straight down: the column hurts and knocks Uma aside, and leaves a slippery glitch stripe on the floor.
+// Then it overheats and sinks lower — the moment to jump and swat it.
+export const JELLY_AI={hover:96,low:46,signal:.45,charge:.55,fire:.45,overheat:1.4,rest:.7,align:30,half:16,patch:84,patchTime:2.6};
+export function jellyBeamFloor(g,e){const x=e.x+e.w/2,top=e.y+e.h,s=solidSurfaces(g).filter(s=>s.room===e.room&&x>=s.x&&x<=s.x+s.w&&s.y>=top).sort((a,b)=>a.y-b.y)[0];return {y:s?s.y:480,surface:s};}
+function stepJelly(g,e,dt){
+ const p=g.player,tx=p.x+p.w/2-e.w/2,low=e.state==='overheat',ty=p.y-(low?JELLY_AI.low:JELLY_AI.hover)-e.h/2;e.beamFloor=undefined;
+ // While catching the signal it still drifts over her; once charged it is locked in place.
+ if(e.state==='signal')e.x+=clamp(tx-e.x,-e.speed*.8*dt,e.speed*.8*dt);
+ if(e.state==='patrol'||e.state==='overheat'){if(e.noticed||low){const s=e.speed*(low?.35:1);e.x+=clamp(tx-e.x,-s*dt,s*dt);e.y+=clamp(ty-e.y,-s*.8*dt,s*.8*dt);}}
+ if(Math.abs(tx-e.x)>5)e.dir=tx<e.x?-1:1;
+ if(e.state==='patrol'){if(e.noticed&&e.timer<=0&&Math.abs(tx-e.x)<JELLY_AI.align&&Math.abs(ty-e.y)<60){e.state='signal';e.timer=JELLY_AI.signal;g.emit('staticWarning',{x:e.x,y:e.y,enemyType:e.type});}}
+ else if(e.state==='signal'&&e.timer<=0){e.state='charge';e.timer=JELLY_AI.charge;}
+ else if(e.state==='charge'&&e.timer<=0){
+  e.state='fire';e.timer=JELLY_AI.fire;e.strikeHit=false;const floor=jellyBeamFloor(g,e);g.emit('staticStrike',{x:e.x,y:e.y,enemyType:e.type});
+  if(floor.surface){const s=floor.surface,w=Math.min(JELLY_AI.patch,s.w),localX=clamp(e.x+e.w/2-s.x-w/2,0,s.w-w);g.inks=g.inks.filter(i=>!(i.glitch&&i.platformId===s.id&&Math.abs(i.localX-localX)<40));g.inks.push({room:e.room,platformId:s.id,localX,w,time:JELLY_AI.patchTime,glitch:true,drift:0});}
+ }
+ else if(e.state==='fire'){
+  const floor=jellyBeamFloor(g,e);e.beamFloor=floor.y;const cx=e.x+e.w/2,column={x:cx-JELLY_AI.half,y:e.y+e.h,w:JELLY_AI.half*2,h:Math.max(0,floor.y-e.y-e.h)};
+  if(!e.strikeHit&&p.dash===0&&p.inv===0&&g.overlap(p,column)){e.strikeHit=true;const before=g.health;g.hurt(false,cx);if(g.mode==='playing'&&g.health<before){p.vx=(p.x+p.w/2>cx?1:-1)*240;p.vy=-160;p.knock=.22;p.grounded=false;g.emit('staticPush',{x:cx,y:p.y});}}
+  if(e.timer<=0){e.state='overheat';e.timer=JELLY_AI.overheat;}
+ }
+ else if(e.state==='overheat'&&e.timer<=0){e.state='patrol';e.timer=JELLY_AI.rest;}
 }
 function warpLanding(g){
  const p=g.player,r=rooms[g.room],surfaces=solidSurfaces(g).filter(s=>s.room===g.room&&s.w>=88);

@@ -30,6 +30,7 @@ import {drawShelter} from './spreader-art.js?v=0.21.5';
 import {drawTutorialSurface,drawTutorialProps} from './tutorial-art.js?v=0.21.5';
 import {drawStudioContainer} from './studio-container-art.js?v=0.21.5';
 import {drawLoadingScreen} from './loading-art.js?v=0.21.5';
+import {drawClickbaitTrap,drawStaticJelly} from './dimension-monsters-art.js?v=0.21.5';
 import {drawPaparazzi,drawBlind,drawSpotlighter,drawBoom} from './new-monsters-art.js?v=0.21.5';
 import {beamFloor,boomBox} from './studio-monsters.js?v=0.21.5';
 import {drawBossProjectile,drawAttackFxList} from './boss-attack-fx.js?v=0.21.5';
@@ -88,7 +89,7 @@ export class Renderer{
    for(const x of [ladder.x,ladder.x+ladder.w-3])rect(c,x,ladder.y+9,3,ladder.h-9,'#b6c8c9');
    for(let y=ladder.y+20;y<ladder.y+ladder.h;y+=19){rect(c,ladder.x+3,y,ladder.w-6,3,'#91bdcc');rect(c,ladder.x+3,y+3,ladder.w-6,2,'#415b6c');}
   }
-  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawRoofProps(c,a,g,t);drawStudioProps(c,a,g,t);drawDimensionProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawNotebookReceivers(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawTacticalTerrain(c,g,t);
+  drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawRoofProps(c,a,g,t);drawStudioProps(c,a,g,t);drawDimensionProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawNotebookReceivers(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawTacticalTerrain(c,g,t,a);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t);drawSensations(c,a,g,t);drawRoofWind(c,g,t,a);
   drawLifeCaches(c,g,t);
@@ -111,7 +112,7 @@ export class Renderer{
    if(e.type==='paparazzi')drawPaparazzi(c,a,e,t,drawMonster);
    if(e.type==='spotlight')drawSpotlighter(c,a,g,e,t,beamFloor(g,e));
    if(e.type==='boom')drawBoom(c,a,e,t,boomBox(g,e));
-   if(e.type==='static')drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
+   if(e.type==='static'&&!drawStaticJelly(c,a,g,e,t,e.beamFloor))drawMonster(c,a,e.type,e.x-17,e.y-24,74,66,t,e.dir<0,e);
    if(e.type==='echo'){if(e.flipped){c.save();c.translate(0,2*(e.y+e.h/2));c.scale(1,-1);}drawMonster(c,a,e.type,e.x+e.w/2-34,e.y+e.h-54,68,54,t,e.dir<0,{...e,chase:e.state==='chase',forming:e.state==='forming'});if(e.flipped)c.restore();}
    if(e.type==='fakenews'){const scale=e.pressureTime>0?1.25:1;drawMonster(c,a,e.type,e.x+24-38*scale,e.y+29-72*scale,76*scale,72*scale,t,e.dir<0,e);}
    if(e.type==='informant'){
@@ -120,7 +121,7 @@ export class Renderer{
    }
    if(e.type==='inflator'&&e.room===3)drawInflatorMachine(c,a,e,t);else if(e.type==='inflator')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0,e);
    if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,e.dir<0,e);
-   if(e.type==='clickbait')drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);
+   if(e.type==='clickbait'&&!drawClickbaitTrap(c,a,e,t))drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);
    c.restore();c.filter='none';c.globalAlpha=1;if(e.dead||e.spawnTime>0||e.phased)continue;
    drawEnemyDefense(c,e,t,a);
    if(e.guardian)text(c,'!',e.x+38,e.y-72,'#ffcf77');if(e.state==='windup')text(c,'!',e.x+19,e.y-(e.type==='inflator'&&e.room===3?62:78),'#ffcf79',2);
