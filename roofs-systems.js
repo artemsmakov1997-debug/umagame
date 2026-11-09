@@ -29,19 +29,19 @@ function stepWind(g,dt){
 // Birds keep a V (the leader lowest, at Uma's head; the wings above) and bob; they fly on to the right edge of the map and only then the next wait starts.
 function startFlock(q,g){
  const f=q.flock,p=g.player,view=g.viewWidth||768;f.serial++;
- f.birds=Array.from({length:FLOCK.count},(_,i)=>({i,x:g.camera-60-i*FLOCK.spacing,dy:[0,-12,-12,-24,-24][i]||0,phase:i*1.7,dead:false,hit:false,deathTime:0}));
+ f.birds=Array.from({length:FLOCK.count},(_,i)=>({i,x:g.camera+view+60+i*FLOCK.spacing,dy:[0,-12,-12,-24,-24][i]||0,phase:i*1.7,dead:false,hit:false,deathTime:0}));
 }
 export function birdBox(f,bird,t){return {x:bird.x-BIRD.w/2,y:f.lane+bird.dy+Math.sin(t*6+bird.phase)*FLOCK.wave-BIRD.h/2,w:BIRD.w,h:BIRD.h};}
 function stepFlock(g,dt,paw){
  const q=g.roofs,f=q.flock,p=g.player,r=rooms[ROOM];f.timer-=dt;
- if(f.phase==='wait'&&f.timer<=0){f.phase='warn';f.timer=FLOCK.warn;f.lane=Math.max(FLOCK.minY,Math.min(FLOCK.maxY,p.y+2));g.emit('sensationWarning',{x:g.camera+20,y:f.lane});if(!q.introduced){q.introduced=true;g.emit('enemyIntroduction',{enemyType:'sensation',x:g.camera+20,y:f.lane});}}
+ if(f.phase==='wait'&&f.timer<=0){f.phase='warn';f.timer=FLOCK.warn;f.lane=Math.max(FLOCK.minY,Math.min(FLOCK.maxY,p.y+2));g.emit('sensationWarning',{x:g.camera+(g.viewWidth||768)-20,y:f.lane});if(!q.introduced){q.introduced=true;g.emit('enemyIntroduction',{enemyType:'sensation',x:g.camera+(g.viewWidth||768)-20,y:f.lane});}}
  else if(f.phase==='warn'&&f.timer<=0){f.phase='fly';startFlock(q,g);}
  if(f.phase!=='fly')return;
- for(const bird of f.birds){bird.x+=FLOCK.speed*dt;bird.deathTime=Math.max(0,bird.deathTime-dt);if(bird.dead)continue;const box=birdBox(f,bird,g.time);
+ for(const bird of f.birds){bird.x-=FLOCK.speed*dt;bird.deathTime=Math.max(0,bird.deathTime-dt);if(bird.dead)continue;const box=birdBox(f,bird,g.time);
   if(p.attack>0&&overlap(paw,box)){bird.dead=true;bird.deathTime=.35;g.kills++;g.emit('enemyHit',{x:box.x+17,y:box.y,enemyType:'sensation'});continue;}
   if(!bird.hit&&p.dash===0&&p.inv===0&&overlap(p,box)){bird.hit=true;g.hurt(false,box.x+17);if(g.mode==='playing')g.push(1,box.x+17);g.emit('sensationHit',{x:box.x+17,y:box.y});}
  }
- if(f.birds.every(b=>b.x-FLOCK.count*FLOCK.spacing>r.end||b.dead&&b.deathTime<=0)){f.phase='wait';f.timer=FLOCK.period;f.birds=[];}
+ if(f.birds.every(b=>b.x+FLOCK.count*FLOCK.spacing<r.x||b.dead&&b.deathTime<=0)){f.phase='wait';f.timer=FLOCK.period;f.birds=[];}
 }
 
 // Buildings are solid below their roof line: walking or being blown into a taller wall stops Uma.

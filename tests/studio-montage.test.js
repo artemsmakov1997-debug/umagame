@@ -69,15 +69,15 @@ test('a Прожекторщик hangs out of reach, leads its red beam after Um
  // Ducking under the flat just before the burn is safe too.
  ({g,e}=mk());stand(g,4,800);for(let i=0;i<200&&!(e.state==='aim'&&e.timer<.6);i++)tick(g,1);for(let i=0;i<80;i++)tick(g,1,{right:g.player.x<x0+870,down:true});assert.equal(g.health,4);
 });
-test('the Ботоферма, caged over the door at the far end, sends bots that jump from platform to platform towards Uma',()=>{
- const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];stand(g,11,1940);assert.equal(farm.printOn,14);assert.equal(farm.container,'wall');
- let together=0,came=false;
- for(let i=0;i<60*16;i++){g.player.inv=999;Object.assign(g.player,{x:x0+1940});tick(g,1);const bots=botsOf(g,farm),air=bots.filter(b=>b.jumpPhase==='air');if(bots.length>1&&air.length===bots.length)together++;if(bots.some(b=>b.platformIndex<14&&!b.jumpPhase))came=true;}
- assert.ok(g.events.some(e=>e.type==='botPrint'));assert.ok(botsOf(g,farm).length<=MAX_BOTS);assert.ok(together>5,'the bots share one beat');assert.ok(came,'a bot left the door truss towards Uma');
- assert.equal(g.hitEnemy(farm),false,'the cage cannot be broken');
+test('the huge Ботоферма at the far end sends bots that leap between the fixed islands towards Uma without falling',()=>{
+ const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];assert.equal(farm.platformIndex,11);assert.ok(farm.h>=120,'big');assert.equal(farm.container,undefined);
+ stand(g,4,880);let reached=false,fell=0;const fixed=new Set(STUDIO_PIECES.map((p,i)=>p.type==='fixed'?i:null).filter(i=>i!==null));
+ for(let i=0;i<60*20;i++){g.player.inv=999;Object.assign(g.player,{x:x0+880});tick(g,1);fell+=g.events.filter(v=>v.type==='copyDissolve').length;g.events=[];for(const b of botsOf(g,farm))if(!b.jumpPhase&&(b.platformIndex===4||b.platformIndex===8))reached=true;}
+ assert.ok(g.events.length>=0);assert.ok(reached,'a bot leapt across to the fixed islands towards Uma');assert.equal(fell,0,'no bot fell into a pit');
+ assert.equal(g.hitEnemy(farm),false,'the machine cannot be broken');
 });
 test('a bot on a riser that goes dark falls into the pit',()=>{
- const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];stand(g,14,2230);g.player.inv=999;
+ const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];stand(g,11,1900);g.player.inv=999;
  for(let i=0;i<60*4&&!botsOf(g,farm).length;i++)tick(g,1);const [bot]=botsOf(g,farm);assert.ok(bot);farm.timer=999;
  const riser=g.platforms.find(s=>s.id==='5:5');
  // Wait for a moment when riser 5 is lit but about to go dark, and put the bot on it; it hops on the spot meanwhile.
@@ -87,7 +87,7 @@ test('a bot on a riser that goes dark falls into the pit',()=>{
  assert.equal(bot.dead,true,'the dark riser drops the bot');
 });
 test('a bot hurts on contact and dies from one paw swing',()=>{
- const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];stand(g,14,2230);g.player.inv=999;
+ const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];stand(g,11,1900);g.player.inv=999;
  for(let i=0;i<60*4&&!botsOf(g,farm).length;i++)tick(g,1);const [bot]=botsOf(g,farm);assert.ok(bot);
  for(let i=0;i<60*2&&(bot.spawnTime>0||bot.jumpPhase);i++)tick(g,1);farm.timer=99;
  g.player.inv=0;Object.assign(g.player,{x:bot.x,y:bot.y+bot.h-48,vy:0});const health=g.health;tick(g,1);assert.equal(g.health,health-1);

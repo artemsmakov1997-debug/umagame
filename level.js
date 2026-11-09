@@ -105,7 +105,8 @@ export function enemy(type,room,x,platformIndex,extra={}){
  dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,paparazzi:0,spotlight:0,boom:0,panicker:16,stamp:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105,botfarm:0,bot:78}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
  if(type==='echo'){actor.w=30;actor.h=40;actor.y=s.y-actor.h;actor.pose='stand';}
- if(type==='botfarm'){actor.w=40;actor.h=68;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
+ // The studio's Ботоферма is a huge machine at the end of the location.
+ if(type==='botfarm'){const big=room===5;actor.w=big?84:40;actor.h=big?140:68;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  if(type==='paparazzi'){actor.w=44;actor.h=52;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  if(type==='boom'){actor.w=40;actor.h=50;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  // The Прожекторщик hangs from the ceiling truss above its platform.
@@ -118,6 +119,8 @@ export function enemy(type,room,x,platformIndex,extra={}){
  if(actor.container){delete actor.source;actor.arrivalDuration=.05;}
  // Roof machines hang on brackets and the Папарацци simply stands on its roof: no arrival source next to them.
  if(room===3&&['inflator','paparazzi'].includes(type)||['boom','spotlight'].includes(type))delete actor.source;
+ // In the Dimension monsters simply appear — no televisions or torn-paper portals on the map.
+ if(room===7)delete actor.source;
  actor.arrivalDuration=actor.arrivalDuration||actor.spawnTime||(room===1?.8:.55);return actor;
 }
 // A studio monster sits behind the glass of its container: its box is centred on the window (see studio-container-art.js).
@@ -130,17 +133,17 @@ export function createEnemies(){const all=[
  enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,960,0),
  enemy('stamp',1,1580,0),enemy('fakenews',1,1900,0),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
  // Крыши: Нагнетатели sit on wall brackets high above the roofs, out of reach, and blow across the whole map.
- enemy('paparazzi',3,180,0,{trigger:100}),enemy('inflator',3,520,1,{dir:1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:1,mountY:112}),enemy('inflator',3,1680,10,{dir:-1,mountY:98}),enemy('paparazzi',3,2240,7),
+ enemy('paparazzi',3,575,1,{trigger:260}),enemy('inflator',3,520,1,{dir:1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:1,mountY:112}),enemy('inflator',3,1680,10,{dir:-1,mountY:98}),enemy('paparazzi',3,2240,7),
  // Студия: a Журавль on each long truss, a Прожекторщик over the dolly and over the takes, the Ботоферма caged
  // over the door at the far end, sending its bots towards Uma.
  enemy('boom',5,715,3,{dir:-1,trigger:430}),enemy('spotlight',5,860,4,{sweep:[790,985],trigger:600}),enemy('boom',5,1525,8,{dir:-1}),
- enemy('spotlight',5,1800,11,{sweep:[1600,2070]}),enemy('botfarm',5,2186,16,{range:1500,trigger:1250}),
+ enemy('spotlight',5,1800,11,{sweep:[1600,2070]}),enemy('botfarm',5,1925,11,{range:1500,trigger:1250}),
  // Измерение: Помеха over the feeds, Кликбейт only on moving messages (two rising copies, a sliding one), an Эхо by
  // each rift and one in «Пересылка».
  enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,430,4,{trigger:250,ride:true}),enemy('clickbait',7,580,8,{trigger:300,ride:true}),enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
  enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('clickbait',7,2140,24,{ride:true}),enemy('echo',7,2420,25,{trigger:2300}),enemy('static',7,2660,26,{y:200})
  ];
- const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[180,520,1150,1060,1680,2240],5:[715,860,1525,1800,2186],7:[330,430,580,760,1250,1700,1960,2140,2420,2660]};
+ const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[575,520,1150,1060,1680,2240],5:[715,860,1525,1800,1925],7:[330,430,580,760,1250,1700,1960,2140,2420,2660]};
  const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
@@ -160,17 +163,19 @@ export function legacyRelays(){return antennaPlaces.map(([room,index],i)=>{const
  return{id:'dish-'+i,room,platformIndex:index,x:s.x+s.w/2-20,y:s.y-72,w:40,h:72,hp:room===4?3:[2,6].includes(room)?0:1,maxHp:room===4?3:1,rewardWhenOverloaded:room===4,lastSwing:-1,breakTime:0,kind,ordinal,scripted:[2,4,6].includes(room)};});}
 export function createLifePickups(){return [[1,3],[1,6],[2,3],[3,13],[3,14],[4,4],[5,15],[5,11],[6,3],[7,10],[7,25],[8,9]].map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return{id:'life-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-24,taken:false};});}
 export function createNotebooks(){
+ // Yuri speaks once at the start of each location and once when a boss fight begins (no envelopes to find):
+ // a location's notebook opens as soon as Uma is in it; a boss one when the fight starts (readyAt is set then).
  const entries=[
  {id:'paw',room:1,index:0,x:70,scenes:['arrival1','fakenews','stamp','censor','press']},
-
- {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','paparazzi','inflator']},
- {id:'sensation',room:3,index:3,x:1110,scenes:['sensation']},
- {id:'agitator',room:3,index:7,x:2230,scenes:['agitator']},
- {id:'studio',room:5,index:0,x:95,scenes:['arrival3','boom','spotlight']},{id:'botfarm',room:5,index:11,x:1910,scenes:['botfarm']},
- {id:'manipulator',room:5,index:11,x:1925,scenes:['manipulator']},
- {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static']},{id:'echo',room:7,index:22,x:1660,scenes:['echo']},{id:'clickbait',room:7,index:10,x:735,scenes:['clickbait']},{id:'infoshum',room:7,index:28,x:2935,scenes:['infoshum']},
+ {id:'spreader',room:2,index:0,x:60,scenes:['spreader'],bossStart:true},
+ {id:'roofs',room:3,index:0,x:95,scenes:['arrival2','paparazzi','inflator','sensation']},
+ {id:'agitator',room:4,index:0,x:60,scenes:['agitator'],bossStart:true},
+ {id:'studio',room:5,index:0,x:95,scenes:['arrival3','boom','spotlight','botfarm']},
+ {id:'manipulator',room:6,index:0,x:60,scenes:['manipulator'],bossStart:true},
+ {id:'dimension',room:7,index:0,x:95,scenes:['arrival4','static','echo','clickbait']},
+ {id:'infoshum',room:8,index:0,x:60,scenes:['infoshum'],bossStart:true},
  ...[2,4,6].map((room,i)=>({id:'record'+(i+1),room,index:room===6?2:room===4?3:4,x:room===2?760:room===6?1300:1400,scenes:['chapter'+(i+1)],bossRecord:true}))
  ];
- return entries.map(n=>({...n,x:rooms[n.room].x+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.bossRecord?Infinity:0}));
+ return entries.map(n=>({...n,x:rooms[n.room].x+n.x,y:platforms.find(p=>p.room===n.room&&p.index===n.index).y-23,taken:false,readyAt:n.bossRecord||n.bossStart?Infinity:0}));
 }
 export function surfaceAt(x,list=platforms){const room=roomAt(x),covered=list.filter(p=>p.room===room&&x>=p.x&&x<=p.x+p.w);return covered.sort((a,b)=>a.y-b.y)[0]?.y??474;}

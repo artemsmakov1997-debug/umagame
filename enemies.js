@@ -122,7 +122,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
    // Sealed behind glass in the studio: touching the container never hurts.
   }else if(e.type==='botfarm'||e.frozen){
    // The rack only takes a stomp; hanging bots no longer hurt.
-   if(e.type==='botfarm'&&g.overlap(p,e)&&p.vy>0&&prevBottom<e.y+12){g.hitEnemy(e,true);p.vy=-330;}
+   if(e.type==='botfarm'&&e.room!==5&&g.overlap(p,e)&&p.vy>0&&prevBottom<e.y+12){g.hitEnemy(e,true);p.vy=-330;}
   }else if(g.overlap(p,e)&&!(e.type==='panicker'&&p.sneaking&&e.state!=='alarm')&&!(['fakenews','injection'].includes(e.type)&&e.state==='recover')){
    if(p.vy>0&&prevBottom<e.y+12){g.hitEnemy(e,true);p.vy=-330;}else g.hurt(false,e.x);
   }

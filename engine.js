@@ -67,7 +67,8 @@ export class Game {
  }
  checkNotebooks(){
   if(this.swallow)return false;
-  const p=this.player,n=this.notebooks.find(n=>!n.taken&&n.room===this.room&&n.readyAt<=this.time&&Math.abs(p.x+p.w/2-n.x)<32&&Math.abs(p.y+p.h/2-n.y)<38);
+  // Yuri's words open by themselves (the game waits): at the start of a location, when a boss fight begins, after a chapter.
+  const n=!this.loading&&!this.transition&&this.notebooks.find(n=>!n.taken&&n.room===this.room&&n.readyAt<=this.time);
   if(!n)return false;n.taken=true;if(n.unlock)this.abilities[n.unlock]=true;
   const pages=n.scenes.filter(id=>!this.seenScenes.has(id)).flatMap(id=>scenes[id]?.pages||[]);
   n.scenes.forEach(id=>this.seenScenes.add(id));this.emit('notebook',{id:n.id,unlock:n.unlock,x:n.x,y:n.y});
@@ -131,7 +132,7 @@ export class Game {
  hitEnemy(e,stomp=false,amount=null,{reflected=false,sourceX=this.player.x+this.player.w/2}={}){
   if(e.inv>0||e.dead||e.phased||e.frozen)return false;
   // A roof Нагнетатель hangs out of reach: nothing to show, nothing to block.
-  if(e.type==='inflator'&&e.room===3||e.type==='spotlight')return false;
+  if(e.type==='inflator'&&e.room===3||e.type==='spotlight'||e.type==='botfarm'&&e.room===5)return false;
   if(e.type==='clickbait'||e.container||e.type==='copier'&&!['printing','recover'].includes(e.state)){
    e.guardFlash=.24;this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
   }

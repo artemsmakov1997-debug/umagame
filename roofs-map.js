@@ -22,7 +22,7 @@ export const ROOF_PROPS=[
  {kind:'chimney',x:1860,w:34,y:182,base:230}                      // 14 C0 chimney (life)
 ];
 export const ROOF_LADDERS=[];
-// Сенсации: a flock of birds now and then sweeps across the whole map from left to right, at the height Uma's head
+// Сенсации: a flock of birds now and then sweeps across the whole map from right to left, at the height Uma's head
 // was at when the warning sounded (crouch, jump over or pop one with a paw). No launchers.
 // period: seconds from one flock to the next; first: delay of the first one; warn: the cry before they come in.
 export const FLOCK={period:7.5,first:3.5,warn:1.1,count:5,speed:250,spacing:38,wave:6,minY:90,maxY:430};
