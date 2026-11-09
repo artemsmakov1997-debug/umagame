@@ -30,21 +30,21 @@ test('a taller building\'s wall stops Uma below its roof line',()=>{
 test('the roofs are crossed with real trampoline bounces and jumps, waiting out the gusts',async()=>{
  const g=ready(),lib=await roofLib();assert.equal(climbRoofs(g,lib),true);assert.equal(g.lives,3);
 });
-test('a flock of Сенсации cries from the left, sweeps the whole map left to right at Uma\'s head height: it knocks a standing Uma, misses a crouched one and pops to a paw',async()=>{
+test('a flock of Сенсации cries from the right, sweeps the whole map right to left at Uma\'s head height: it knocks a standing Uma, misses a crouched one and pops to a paw',async()=>{
  const {BIRD}=await roofLib();
  const arm=g=>{g.roofs.flock.timer=0;};
  for(const pose of ['stand','crouch','dash']){const g=ready(),roof=g.platforms.find(s=>s.id==='3:2'),seen=[],emit=g.emit.bind(g);g.emit=(type,data)=>{seen.push({type,...data});return emit(type,data);};Object.assign(g.player,{x:roof.x+90,y:roof.y-48,grounded:true,supportId:roof.id,inv:0});g.updateCamera();
-  tick(g,1);arm(g);tick(g,1);assert.equal(g.roofs.flock.phase,'warn');assert.ok(seen.some(e=>e.type==='sensationWarning'&&e.x<g.player.x));assert.ok(seen.some(e=>e.type==='enemyIntroduction'&&e.enemyType==='sensation'));
+  tick(g,1);arm(g);tick(g,1);assert.equal(g.roofs.flock.phase,'warn');assert.ok(seen.some(e=>e.type==='sensationWarning'&&e.x>g.player.x));assert.ok(seen.some(e=>e.type==='enemyIntroduction'&&e.enemyType==='sensation'));
   const health=g.health;for(let i=0;i<200;i++){if(pose==='dash'){g.player.dash=.2;Object.assign(g.player,{x:roof.x+90,y:roof.y-48,vy:0,grounded:true,supportId:roof.id});}tick(g,1,pose==='crouch'?{down:true}:{});}
   if(pose==='stand'){assert.equal(g.health,health-1);assert.ok(seen.some(e=>e.type==='sensationHit'));assert.ok(seen.some(e=>e.type==='pushed'));}
   else{assert.equal(g.health,health,pose);assert.ok(!seen.some(e=>e.type==='sensationHit'),pose);}
  }
  // They fly on to the right edge of the map, then the next flock comes after a pause.
- const f=ready(true),r=rooms[3];Object.assign(f.player,{x:r.x+60});f.updateCamera();tick(f,1);arm(f);let maxX=0;for(let i=0;i<60*14&&f.roofs.flock.phase!=='wait'||i<5;i++){tick(f,1);for(const b of f.roofs.flock.birds)maxX=Math.max(maxX,b.x);}
- assert.ok(maxX>r.end,'the flock crosses the whole map');assert.equal(f.roofs.flock.phase,'wait');
+ const f=ready(true),r=rooms[3];Object.assign(f.player,{x:r.end-100});f.updateCamera();tick(f,1);arm(f);let minX=Infinity;for(let i=0;i<60*14&&f.roofs.flock.phase!=='wait'||i<5;i++){tick(f,1);for(const b of f.roofs.flock.birds)minX=Math.min(minX,b.x);}
+ assert.ok(minX<r.x,'the flock crosses the whole map');assert.equal(f.roofs.flock.phase,'wait');
  // A paw pops a bird.
- const g=ready(true),roof=g.platforms.find(s=>s.id==='3:2');Object.assign(g.player,{x:roof.x+90,y:roof.y-48,grounded:true,supportId:roof.id,dir:-1});g.updateCamera();tick(g,1);arm(g);
- for(let i=0;i<200&&!g.roofs.flock.birds.some(b=>b.x>g.player.x-70);i++)tick(g,1);g.player.cooldown=0;tick(g,1,{attack:true});tick(g,10);
+ const g=ready(true),roof=g.platforms.find(s=>s.id==='3:2');Object.assign(g.player,{x:roof.x+90,y:roof.y-48,grounded:true,supportId:roof.id,dir:1});g.updateCamera();tick(g,1);arm(g);
+ for(let i=0;i<200&&!g.roofs.flock.birds.some(b=>b.x<g.player.x+g.player.w+70);i++)tick(g,1);g.player.cooldown=0;tick(g,1,{attack:true});tick(g,10);
  assert.ok(g.roofs.flock.birds.some(b=>b.dead),'one bird popped');assert.ok(g.kills>0);
 });
 test('an echo field still transfers the protected cat but never consumes the last stock or reports a false lost life',()=>{const g=ready(true),e={kind:'echoOrb',type:'echo',id:'orb-test',room:3,w:40,h:38,ttl:99,state:'pulling',warpCooldown:0};g.lives=1;g.player.inv=0;g.echoImmunity=0;Object.assign(e,{x:g.player.x,y:g.player.y});handleFlyingContact(g,e);assert.equal(g.mode,'echoWarp');tick(g,50);assert.equal(g.lives,1);assert.equal(g.mode,'playing');assert.ok(g.events.some(e=>e.type==='testRescue'&&e.reason==='echo'));assert.ok(!g.events.some(e=>e.type==='lifeLost'||e.type==='lost'));});

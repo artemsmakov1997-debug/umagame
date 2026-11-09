@@ -95,7 +95,6 @@ export class Renderer{
   drawLifeCaches(c,g,t);
   for(const f of g.fishes)if(f.room===g.room&&!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const soup of g.soups)if(soup.room===g.room&&!soup.taken){drawSoup(c,a,soup.x,soup.y+Math.sin(t*2.6)*2,32);for(let i=0;i<3;i++)rect(c,soup.x-13+i*12,soup.y-20-Math.sin(t*3+i)*4,2,2,'#ffde8a');}
-  for(const note of g.notebooks)if(note.room===g.room&&!note.taken&&Number.isFinite(note.readyAt)&&note.readyAt<=g.time+.5&&note.x>cam-30&&note.x<cam+vw+30)drawNotebook(c,note,t);
   for(const e of g.enemies)if(e.active&&!e.dead&&e.room===g.room&&e.teleport)drawTeleportMarkers(c,e,t);
   for(const e of g.enemies)if(e.room===g.room&&e.active&&(!e.dead||e.deathTime>0)&&e.x>cam-140&&e.x<cam+vw+140){
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
@@ -107,7 +106,7 @@ export class Renderer{
    if(e.type==='servant')drawServant(c,a,e,t);
    if(e.container)drawStudioContainer(c,a,g,e,t,drawMonster);
    else if(['stamp','copier','cutter','splicer','injection'].includes(e.type))drawMonster(c,a,e.type,e.x-12,e.y-39,72,68,t,e.dir<0,e);
-   if(e.type==='botfarm'&&!e.container)drawMonster(c,a,e.type,e.x+e.w/2-46,e.y+e.h-82,92,82,t,false,e);
+   if(e.type==='botfarm'&&!e.container)drawMonster(c,a,e.type,e.x+e.w/2-e.w*1.15,e.y+e.h-e.h*1.2,e.w*2.3,e.h*1.2,t,false,e);
    if(e.type==='bot')drawMonster(c,a,e.type,e.x+e.w/2-20,e.y+e.h-38,40,38,t,false,e);
    if(e.type==='paparazzi')drawPaparazzi(c,a,e,t,drawMonster);
    if(e.type==='spotlight')drawSpotlighter(c,a,g,e,t,beamFloor(g,e));

@@ -21,19 +21,19 @@ test('paw, dash and stealth work in the initial quiet room with keyboard and joy
  const g=ready(false);assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});g.step(1/60,{attack:true,dash:true});assert.equal(g.player.swing,1);assert.ok(g.player.dash>0);tick(g,40);g.step(1/60,{down:true,axisX:.5});assert.equal(g.player.sneaking,true);assert.equal(g.player.h,26);
 });
 test('all abilities remain available when every optional notebook is skipped',()=>{
- const g=ready(false);for(const room of[0,1,3,5,7]){stand(g,room,0,160);tick(g,1);assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});}assert.equal(g.notebooks.find(n=>n.id==='paw').taken,false);
+ const g=ready(false);for(const room of[0,1,3,5,7]){stand(g,room,0,160);tick(g,1);if(g.dialogue)g.advanceDialogue(true);assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});}
 });
 test('new skills and read notebooks survive a lost life; restart keeps all actions available',()=>{
  const g=ready();stand(g,3,0,70);tick(g,1);assert.equal(g.dialogue.id,'notebook:roofs');assert.equal(g.abilities.sneak,true);g.advanceDialogue(true);g.unlockForRoom(5);g.loseLife();tick(g,70);assert.equal(g.abilities.sneak,true);assert.equal(g.notebooks.find(n=>n.id==='roofs').taken,true);g.start();assert.deepEqual(g.abilities,{attack:true,dash:true,sneak:true});assert.ok(g.notebooks.every(n=>!n.taken));
 });
-test('every intermediate Yuri comment waits for its notebook; entering a chapter stays silent',()=>{
- const g=ready();for(const room of [1,3,5,7]){stand(g,room,0,215);tick(g,1);assert.equal(g.dialogue,null);}assert.ok(!g.seenScenes.has('informant'));const note=g.notebooks.find(n=>n.id==='dimension');stand(g,7,0,85);tick(g,1);assert.equal(note.taken,true);assert.equal(g.dialogue.id,'notebook:dimension');const snapshot=JSON.stringify(g);tick(g,90,{right:true});assert.equal(JSON.stringify(g),snapshot);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);
+test('every location opens with Yuri\'s briefing the moment Uma enters it, once, and the game waits for it',()=>{
+ const g=ready();for(const [room,id] of [[1,'paw'],[3,'roofs'],[5,'studio']]){stand(g,room,0,215);tick(g,1);assert.equal(g.dialogue?.id,'notebook:'+id);g.advanceDialogue(true);tick(g,2);assert.equal(g.dialogue,null,'only once');}const note=g.notebooks.find(n=>n.id==='dimension');stand(g,7,0,215);tick(g,1);assert.equal(note.taken,true);assert.equal(g.dialogue.id,'notebook:dimension');const snapshot=JSON.stringify(g);tick(g,90,{right:true});assert.equal(JSON.stringify(g),snapshot);g.advanceDialogue(true);tick(g,1);assert.equal(g.dialogue,null);
 });
 test('boss records wait half a second, stay optional, and are collected exactly once',()=>{
  const g=ready();stand(g,2,4,760);g.completeChapter(2);assert.equal(g.dialogue,null);const note=g.notebooks.find(n=>n.id==='record1');assert.equal(note.readyAt,.5);g.soups=[{x:g.player.x+17,y:g.player.y+24,taken:false}];tick(g,10);assert.equal(g.dialogue,null);assert.equal(g.soups[0].taken,true);tick(g,25);assert.equal(g.dialogue.id,'notebook:record1');g.advanceDialogue(true);tick(g,50);assert.equal(g.dialogue,null);assert.equal(g.events.filter(e=>e.type==='notebook'&&e.id==='record1').length,1);
 });
 test('notebooks lie on real accessible platforms, and optional records cannot unlock before their boss is defeated',()=>{
- const notes=createNotebooks();assert.equal(notes.length,14);assert.equal(new Set(notes.map(n=>n.id)).size,notes.length);for(const n of notes){const s=platforms.find(s=>s.room===n.room&&s.index===n.index);assert.ok(n.x>=s.x&&n.x<=s.x+s.w);assert.equal(n.y,s.y-23);if(n.bossRecord)assert.equal(n.readyAt,Infinity);}
+ const notes=createNotebooks();assert.equal(notes.length,11);assert.equal(new Set(notes.map(n=>n.id)).size,notes.length);for(const n of notes){const s=platforms.find(s=>s.room===n.room&&s.index===n.index);assert.ok(n.x>=s.x&&n.x<=s.x+s.w);assert.equal(n.y,s.y-23);if(n.bossRecord)assert.equal(n.readyAt,Infinity);}
 });
 test('Fakenews actually jumps the gap onto another platform, then updates its patrol bounds',()=>{
  const g=ready(false);stand(g,1,1,300);const e=enemy('fakenews',1,135,0,{active:true,noticed:true,jumpCooldown:0,timer:99});g.enemies=[e];const target=chooseFakeLanding(g,e);assert.equal(target.platform.index,1);tick(g,1);assert.equal(e.jumpPhase,'prepare');tick(g,12);assert.equal(e.jumpPhase,'air');assert.ok(e.vy<0);const y=e.y;tick(g,15);assert.ok(e.y<y);for(let i=0;i<100&&e.jumpPhase!=='land';i++)tick(g,1);assert.equal(e.jumpPhase,'land');assert.equal(e.platformIndex,1);assert.equal(e.y+e.h,345);assert.equal(e.origin,campaignRooms[1].x+268);assert.equal(e.end,campaignRooms[1].x+324);assert.ok(e.x>=e.origin&&e.x<=e.end);assert.ok(g.events.some(e=>e.type==='fakeLand'));

@@ -48,7 +48,7 @@ test('a jump in the trail (burrow, respawn) makes the double re-form instead of 
  g.player.x+=600;tick(g,Math.round(ECHO_DELAY*60)+2);assert.equal(e.state,'forming');
 });
 
-test('the dimension doubles start dormant at their rifts with three hits each',()=>{
+test('the dimension doubles start dormant (no portal on the map) with three hits each',()=>{
  const own=createEnemies().filter(e=>e.type==='echo');assert.ok(own.length>=2);
- for(const e of own){assert.equal(e.room,7);assert.equal(e.active,false);assert.equal(e.source.kind,'rift');assert.equal(e.maxHp,3);}
+ for(const e of own){assert.equal(e.room,7);assert.equal(e.active,false);assert.equal(e.source,undefined);assert.equal(e.maxHp,3);}
 });

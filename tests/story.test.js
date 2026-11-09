@@ -45,18 +45,18 @@ test('no enemy activates during training; later enemies wait for their own trigg
 test('dialogues freeze physics, enemies, camera transitions and all game time',()=>{
  const g=new Game();g.start();g.finishWakeup();g.transition={from:0,to:1,time:.2,duration:.85};const before=JSON.stringify(g);tick(g,150,{right:true,jump:true,attack:true});assert.equal(JSON.stringify(g),before);g.advanceDialogue();assert.equal(g.dialogue.page,1);g.advanceDialogue(true);assert.equal(g.mode,'playing');
 });
-test('the newsroom opens with one Yuri briefing that never returns; other chapters stay silent until a notebook',()=>{
+test('the newsroom opens with one Yuri briefing that never returns; every other location opens with its own',()=>{
  const g=ready();at(g,1,0,45);const time=g.time;tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.equal(g.time,time);assert.ok(g.dialogue.pages.length>=4,'briefing covers the conveyor, Fakenews, Stamp, Censor and the press');g.advanceDialogue(true);
  for(let x=100;x<2250;x+=150){g.player.x=WIDTH+x;tick(g,2);assert.equal(g.dialogue,null,'no newsroom note at '+x);}
  assert.equal(g.notebooks.filter(n=>n.room===1&&!n.bossRecord).length,1);assert.equal(g.mode,'playing');
- const h=ready();at(h,3,0,45);tick(h,1);assert.equal(h.dialogue,null);
+ const h=ready();at(h,3,0,45);tick(h,1);assert.equal(h.dialogue?.id,'notebook:roofs');
 });
 test('a defeated miniboss yields one record and an optional notebook that survive life loss',()=>{
  const g=ready();g.enemies=[];at(g,2,4,760);g.checkpoint=2;g.completeChapter(2);assert.equal(g.dialogue,null);assert.equal(g.evidence[0].id,'autopublish');tick(g,40);assert.equal(g.dialogue.id,'notebook:record1');g.completeChapter(2);assert.equal(g.evidence.length,1);g.advanceDialogue(true);g.health=1;g.player.inv=0;g.hurt();tick(g,70);assert.equal(g.evidence.length,1);assert.ok(g.seenScenes.has('chapter1'));
 });
 
 test('printing belts and all other chapters are frozen until Uma enters them',()=>{
- const g=ready(),later=g.enemies.map(e=>[e.x,e.timer,e.active]);tick(g,120);assert.deepEqual(g.enemies.map(e=>[e.x,e.timer,e.active]),later);g.enemies=[];at(g,1,0,900);g.seenScenes.add('arrival1');const x=g.player.x;tick(g,30);assert.ok(g.player.x<x-21&&g.player.x>x-24,'the conveyor carries Uma back at 45 px/s');g.step(1/60,{jump:true});assert.ok(g.player.vy<0);
+ const g=ready(),later=g.enemies.map(e=>[e.x,e.timer,e.active]);tick(g,120);assert.deepEqual(g.enemies.map(e=>[e.x,e.timer,e.active]),later);g.enemies=[];g.notebooks.forEach(n=>n.taken=true);at(g,1,0,900);g.seenScenes.add('arrival1');const x=g.player.x;tick(g,30);assert.ok(g.player.x<x-21&&g.player.x>x-24,'the conveyor carries Uma back at 45 px/s');g.step(1/60,{jump:true});assert.ok(g.player.vy<0);
 });
 test('all monster archetypes use separate motion and damage states',()=>{
  for(const id of ['fakenews','informant']){assert.ok(motion[id]);assert.notEqual(monsterFrame(id,0,{moving:true,walkTime:0}),monsterFrame(id,0,{moving:true,walkTime:.2}));assert.equal(monsterFrame(id,0,{state:'windup'}),3);assert.equal(monsterFrame(id,0,{state:'casting'}),4);assert.equal(monsterFrame(id,0,{hurtTime:.2}),5);}
@@ -74,4 +74,9 @@ test('skipping every notebook never blocks the quiet-room tutorial exit',()=>{
 
 test('the rewind finale reveals the source of noise and ends in Yuri embracing Uma',async()=>{
  const {endingSlides}=await import('../finale.js');const {strikeInfoshum}=await import('../infoshum-combat.js');const g=ready();g.enemies=[];at(g,LAST_ROOM,2,640);g.relays.forEach(r=>r.hp=0);g.boss.active=true;g.boss.hp=4;g.boss.cooldown=0;const ic=await import('../infoshum-combat.js');g.boss.hp=2;g.boss.network.stage='noise';g.boss.network.figures=[{id:0,real:true,state:'stuck',x:g.player.x+20,y:g.player.y+g.player.h,ty:g.player.y+g.player.h,time:0}];g.player.attack=.18;g.player.swing++;strikeInfoshum(g,ic.figureBox(g.boss.network.figures[0]));assert.equal(g.mode,'bossDefeat');g.skipBossDefeat();assert.equal(g.mode,'ending');assert.equal(g.truthFound,true);assert.match(endingSlides[0].text,/Инфошум распадается/);assert.match(endingSlides.at(-1).text,/обнимает/);const time=g.time;tick(g,200);assert.equal(g.time,time);while(g.mode==='ending')g.advanceEnding();g.advanceConclusion(true);assert.equal(g.mode,'won');g.start();assert.equal(g.mode,'waking');assert.equal(g.evidence.length,0);assert.equal(g.tutorial.complete,false);
+});
+
+test('a boss fight starts with Yuri\'s advice and the game waits until it is read',async()=>{
+ const {activateRoom}=await import('../room-transitions.js');
+ for(const [room,id] of [[2,'spreader'],[4,'agitator'],[6,'manipulator'],[8,'infoshum']]){const g=ready();activateRoom(g,room);g.mode='playing';tick(g,1);assert.equal(g.dialogue?.id,'notebook:'+id,id);assert.equal(g.mode,'dialogue');const hp=g.boss.hp,t=g.time;tick(g,60);assert.equal(g.time,t,'paused');assert.equal(g.boss.hp,hp);g.advanceDialogue(true);tick(g,2);assert.equal(g.dialogue,null);}
 });

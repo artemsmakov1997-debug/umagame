@@ -31,6 +31,20 @@ export function stepBotfarm(g,e,dt,dx,dy){
  if(e.state==='recover'){if(e.timer<=0){e.state='patrol';e.timer=.9;}return;}
  if(e.timer<=0&&e.alarm&&botsOf(g,e).length<MAX_BOTS){e.state='printing';e.timer=PRINT_TIME;g.emit('botPrint',{x:e.x,y:e.y,enemyType:'botfarm'});}
 }
+// In the studio the bots only trust the fixed islands (trusses, dolly, cases): while Uma is past the edge of their
+// island they make a long ballistic leap to the next fixed island towards her; otherwise they hop along it.
+export const BOT_LEAP={vy:-600,maxReach:720};
+function leapStudio(g,e,surfaces){
+ const p=g.player,here=surfaces.find(s=>Math.abs(s.y-e.y-e.h)<3&&e.x+e.w>s.x+2&&e.x<s.x+s.w-2),cx=e.x+e.w/2,px=p.x+p.w/2,feet=e.y+e.h,G=BOT_JUMP.gravity;
+ const fixed=surfaces.filter(s=>s.studio?.type==='fixed'&&s.studio.kind!=='flat'&&s!==here);
+ let tx=null,ty=feet;
+ const beyond=here&&(e.dir<0?px<here.x:px>here.x+here.w);
+ if(beyond){const next=fixed.filter(s=>e.dir<0?s.x+s.w<cx:s.x>cx).sort((a,b)=>Math.abs(a.x+a.w/2-cx)-Math.abs(b.x+b.w/2-cx))[0];
+  if(next&&Math.abs(next.x+next.w/2-cx)<BOT_LEAP.maxReach){tx=next.x+next.w/2+(Math.random()-.5)*Math.max(0,next.w-60);ty=next.y;}}
+ if(tx===null&&here){tx=Math.max(here.x+e.w/2+4,Math.min(here.x+here.w-e.w/2-4,cx+Math.max(-60,Math.min(60,px-cx))));ty=here.y;}
+ const vy=tx!==null&&Math.abs(tx-cx)>80?BOT_LEAP.vy:BOT_JUMP.vy,disc=vy*vy+2*G*(ty-feet),T=disc>0?(-vy+Math.sqrt(disc))/G:2*-vy/G;
+ e.vx=tx===null?0:(tx-cx)/T;e.vy=vy;e.jumpPhase='air';e.hopPhase='air';
+}
 export function stepBot(g,e,dt,dx){
  const owner=g.enemies.find(o=>o.id===e.ownerId),s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex),base=s?s.y-e.h:e.y;
  if(!owner||owner.dead||owner.hp<=0){
@@ -50,6 +64,7 @@ export function stepBot(g,e,dt,dx){
  // Standing: if the floor under the bot vanished (a dark riser, a cut), it drops.
  if(!surfaces.some(s=>Math.abs(s.y-e.y-e.h)<3&&e.x+e.w>s.x+2&&e.x<s.x+s.w-2)){e.jumpPhase='air';e.vx=0;e.vy=40;return;}
  // On each beat every bot leaps towards Uma: across to the next platform when one is within reach, else on the spot.
+ if(hop.phase==='air'&&e.lastBeat!==beat&&e.room===5){e.lastBeat=beat;if(e.noticed)e.dir=dx<0?-1:1;leapStudio(g,e,surfaces);return;}
  if(hop.phase==='air'&&e.lastBeat!==beat){e.lastBeat=beat;if(e.noticed)e.dir=dx<0?-1:1;
   // The longest leap that still lands on something: across a gap if it can, else a shorter hop to its own edge.
   const T=2*-BOT_JUMP.vy/BOT_JUMP.gravity,feet=e.y+e.h,reach=k=>{const x=e.x+e.w/2+e.dir*BOT_JUMP.vx*T*k;return surfaces.find(s=>x>s.x+4&&x<s.x+s.w-4&&s.y>feet-60&&s.y<feet+140);};

@@ -20,15 +20,13 @@ export const STUDIO_PIECES=[
  {type:'fixed',kind:'truss',x:1420,w:150,y:300},        // 8 Журавль at its right end
  {type:'take',color:'red',x:1610,w:100,y:290},          // 9
  {type:'take',color:'blue',x:1750,w:100,y:270},         // 10
- {type:'fixed',kind:'case',x:1890,w:140,y:262},         // 11
+ {type:'fixed',kind:'case',x:1890,w:140,y:262},         // 11 the huge Ботоферма stands here
  {type:'take',color:'red',x:2050,w:100,y:244},          // 12
  {type:'take',color:'blue',x:2150,w:70,y:232},          // 13
  {type:'fixed',kind:'truss',x:2214,w:90,y:226},         // 14 the pavilion door
  // Containers (never solid, never on the route). x/w is the box, y its bottom edge.
  // A hanging set flat over the dolly: a low ceiling (crawl under it — or hop on top). It also blocks the red beam.
- {type:'fixed',kind:'flat',x:840,w:84,y:282,shelter:300},  // 15
- // The Ботоферма's cage on the wall over the door: it prints bots onto the door truss.
- {type:'container',kind:'wall',x:2186,w:110,y:166,print:14} // 16
+ {type:'fixed',kind:'flat',x:840,w:84,y:282,shelter:300}   // 15
 ];
 export const HOLO={warn:.7,gone:1.6,back:.35};
 // Spotlights hang from the ceiling truss; the lit spot sweeps along its risers' level (floor).

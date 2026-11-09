@@ -71,21 +71,34 @@ export function drawRoofWind(c,g,t,a){
 // The Нагнетатель machine (assets/inflator-machine.png, 8 cells of 192×155, feet at y=143.5, horn to the right):
 // 0–1 idle, 2 drawing breath, 3–5 blowing, 6 cooling down, 7 struck (unharmed).
 export function inflatorFrame(e,t){if(e.hurtTime>0||e.guardFlash>0)return 7;if(e.state==='windup')return 2;if(e.state==='blast')return 3+Math.floor(t*12)%3;if(e.state==='recover')return 6;return Math.floor(t*3)%2;}
+// assets/inflator-mast.png (optional, once drawn): 3 cells of 120×120 — platform, a mast segment (tiles vertically), base.
+function drawMastArt(c,img,fx,fy,base){const k=.8,w=120*k;c.drawImage(img,0,0,120,120,fx-w/2,fy-w*.18,w,w);for(let y=fy+w*.6;y<base-w*.6;y+=w*.8)c.drawImage(img,120,0,120,120,fx-w/2,y,w,w);c.drawImage(img,240,0,120,120,fx-w/2,base-w,w,w);}
 export function drawInflatorMachine(c,a,e,t,x=e.x+e.w/2,feet=e.y+e.h,width=96){
  const img=a.inflatorMachine;if(!img)return false;const k=width/163,shake=e.state==='blast'?Math.sin(t*50):0;
  // The wall bracket it is bolted to, high above the roofs.
- if(e.room===3&&e.mountY!==undefined){const fx=Math.round(x),fy=Math.round(feet);rect(c,fx-44,fy-2,88,6,'#2a2f3a');rect(c,fx-44,fy-2,88,2,'#5d6676');for(const s of[-1,1])for(let i=0;i<14;i++)rect(c,fx+s*(30-i*2)-2,fy+4+i*2,4,2,'#2a2f3a');}
+ // It stands on a lattice mast bolted to the roof below (a platform on top, guy wires down to the roof).
+ if(e.room===3&&e.mountY!==undefined){const fx=Math.round(x),fy=Math.round(feet),x0=rooms[3].x,roof=ROOF_BUILDINGS.find(b=>fx>=x0+b.x&&fx<=x0+b.x+b.w),base=roof?roof.y:HEIGHT;
+  if(a.inflatorMast)drawMastArt(c,a.inflatorMast,fx,fy,base);
+  else{const half=12,dark='#262b38',lit='#5d6676';
+   for(const s of[-1,1]){rect(c,fx+s*half-2,fy,4,base-fy,dark);rect(c,fx+s*half-2,fy,1,base-fy,lit);}
+   for(let y=fy+8;y<base-4;y+=22){for(let i=0;i<22&&y+i<base;i+=2){rect(c,fx-half+i*24/22,y+i,3,2,dark);rect(c,fx+half-i*24/22-3,y+i,3,2,dark);}rect(c,fx-half,y,half*2,2,lit);}
+   // guy wires and a base plate on the roof
+   c.save();c.strokeStyle='rgba(40,46,60,.9)';c.lineWidth=1;c.beginPath();c.moveTo(fx,fy+30);c.lineTo(fx-50,base);c.moveTo(fx,fy+30);c.lineTo(fx+50,base);c.stroke();c.restore();
+   rect(c,fx-22,base-5,44,5,dark);rect(c,fx-22,base-5,44,1,lit);
+   // platform with railing and a red lamp
+   rect(c,fx-46,fy-2,92,6,dark);rect(c,fx-46,fy-2,92,2,lit);for(const s of[-44,44])rect(c,fx+s-1,fy-18,2,16,dark);rect(c,fx-44,fy-18,88,2,lit);rect(c,fx+40,fy-24,5,5,Math.floor(t*2)%2?'#ff4a3a':'#7a1f1a');}
+ }
  c.save();c.translate(Math.round(x+shake),Math.round(feet));if(e.dir<0)c.scale(-1,1);c.drawImage(img,inflatorFrame(e,t)*192,0,192,155,-88*k,-143.5*k,192*k,155*k);c.restore();return true;
 }
 
 export function drawSensations(c,a,g,t){
  if(g.room!==ROOM||!a.sensation)return;const f=g.roofs?.flock;if(!f)return;
  // The cry before a flock: a «!» blinking at the left edge of the view, at the height they will fly.
- if(f.phase==='warn')drawAttackFx(c,a,'bang',Math.floor(t*8)%2?0:2,g.camera+26,f.lane,40,{alpha:.9});
+ if(f.phase==='warn')drawAttackFx(c,a,'bang',Math.floor(t*8)%2?0:2,g.camera+(g.viewWidth||768)-26,f.lane,40,{alpha:.9});
  if(f.phase!=='fly')return;
  for(const bird of f.birds){if(bird.dead&&bird.deathTime<=0)continue;
   const box=birdBox(f,bird,g.time),frame=bird.dead?7:bird.hit?5:Math.floor(t*12+bird.i)%4,row=frame>>2,col=frame%4,w=CELL_W*BIRD_SCALE,h=CELL_H*BIRD_SCALE;
-  c.save();c.globalAlpha=bird.dead?Math.max(0,bird.deathTime/.35):1;c.translate(Math.round(box.x+box.w/2),Math.round(box.y+box.h/2));
+  c.save();c.globalAlpha=bird.dead?Math.max(0,bird.deathTime/.35):1;c.translate(Math.round(box.x+box.w/2),Math.round(box.y+box.h/2));c.scale(-1,1);
   c.drawImage(a.sensation,col*CELL_W,row*CELL_H,CELL_W,CELL_H,-200*BIRD_SCALE,-(PIVOT_Y[row]-row*CELL_H)*BIRD_SCALE,w,h);c.restore();
  }
 }
