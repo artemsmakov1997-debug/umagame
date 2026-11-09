@@ -23,7 +23,9 @@ export function cleanCopies(g){
 export function stampInk(g,e,offset=0){
  const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);if(!s)return;
  const w=Math.min(96,s.w-8),localX=clamp(e.x+e.w/2+offset-s.x-w/2,4,s.w-w-4),old=g.inks.find(i=>i.platformId===s.id&&Math.abs(i.localX-localX)<35);
- if(old){old.localX=localX;old.time=9;}else g.inks.push({id:'ink-'+(++g.tacticalSerial),room:e.room,platformId:s.id,localX,w,time:9,drift:e.x+e.w/2>s.x+s.w/2?1:-1});
+ // A flung blot flies for a moment before it lands (and only then makes the floor slippery).
+ const fly=offset?.3:0,from={x:e.x+e.w/2,y:e.y+e.h*.35};
+ if(old){old.localX=localX;old.time=9;old.fly=fly;old.flyFrom=from;}else g.inks.push({id:'ink-'+(++g.tacticalSerial),room:e.room,platformId:s.id,localX,w,time:9,fly,flyFrom:from,drift:e.x+e.w/2>s.x+s.w/2?1:-1});
  const own=g.inks.filter(i=>i.room===e.room);if(own.length>8)g.inks.splice(g.inks.indexOf(own[0]),1);
  g.emit('inkStamp',{x:e.x+e.w/2,y:s.y,enemyType:e.type});
 }
