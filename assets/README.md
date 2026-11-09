@@ -250,3 +250,16 @@ The untouched generated originals are retained in `/workspace/generated_images`.
 ### Библиотека — полевой блокнот
 
 Нарисовано автором по макету: `library-book.png` (разворот блокнота, 1160×597), `library-page.png` и `library-paper.png` (страница и клетчатая бумага для телефонов), `library-cards.png` (6 полароидов: обычный, наведение, выбранный; то же для босса — окна выровнены), `library-tabs.png` (8 закладок глав: тусклая/яркая), `library-seals.png` (10 печатей способностей), `library-arrows.png`, `library-plate.png`, `library-strip.png`, `library-note.png`, `library-tag.png`, `library-stages.png` (4 стенда-фона по главам). Вёрстка — блок «Library: Uma's field notebook» в конце `style.css`, разметка и печати способностей — `screens.js`.
+
+### Финальный бой с Инфошумом и новые листы врагов
+
+Нарисовано автором по макетам, нарезано без изменения рисунка:
+- `infoshum-wall-tv.png` (6 кадров 190×168) и `infoshum-floor-tv.png` (6 кадров 136×97). Состояния экрана: выключен, помехи, лицо, заряд, трещины, разбит.
+- `infoshum-glass.png`: осколки, 3 кадра. `infoshum-tv-beam.png`: луч, 3 кадра; он же, повёрнутый, служит столбом ядра.
+- `infoshum-storm-core.png`: ядро в клетке из щупалец, 6 кадров. `infoshum-storm-platforms.png`: 3 вида островов. `infoshum-falling-tv.png`: падающий экран, 3 кадра.
+- `infoshum-storm.jpg`: фон бури. Нарисованная на нём кошка убрана, картинка чуть размыта и затемнена, чтобы не спорить с платформами.
+- `stamp-angry.png` (8 кадров 128×144) и `stamp-ink.png` (6 кадров: полёт кляксы и лужа).
+- `inflator-mast.png`: консоль с лампой, решётчатая секция и основание мачты Нагнетателя.
+- `botfarm.png`: 6 кадров новой Ботофермы.
+
+Код: `infoshum-combat.js`, `infoshum-art.js`, `monster-animation.js`, `tactical-art.js`, `roofs-art.js`, `botfarm-art.js`.
