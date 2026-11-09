@@ -69,7 +69,7 @@ test('the climb goes on with real jumps from debris to debris',()=>{
 test('the head sweeps Uma\'s tier after a warning; thrown monitors are warned on her debris and hurt on impact',()=>{
  const g=climb(false),n=g.boss.network,a=n.ascent;a.eyeT=999;a.throwT=999;a.sweep=0;tick(g,1);assert.equal(a.beamMode,'aim');const y=g.player.y+g.player.h/2;assert.ok(Math.abs(a.beamY-y)<3);
  g.player.inv=0;const h=g.health;assert.ok(until(g,()=>a.beamMode==='sweep',100));tick(g,2);assert.equal(g.health,h-1);assert.equal(sweepRect(a).w,1536);
- g.player.inv=3;tick(g,60);a.throwT=0;tick(g,1);const d=n.drops[0];assert.ok(d);assert.equal(d.state,'warn');d.localX=g.player.x+g.player.w/2-g.platforms.find(s=>s.id===d.platformId).x;
+ g.player.inv=3;tick(g,60);const mid=debrisPieces(g).filter(s=>s.y<330&&s.y>150).sort((x,y)=>y.y-x.y)[0];place(g,mid.id,mid.w/2-17);g.player.inv=3;a.throwT=0;tick(g,1);const d=n.drops[0];assert.ok(d);assert.equal(d.state,'warn');d.localX=g.player.x+g.player.w/2-g.platforms.find(s=>s.id===d.platformId).x;
  const s=g.platforms.find(s=>s.id===d.platformId);Object.assign(g.player,{supportId:s.id,y:s.y-48,grounded:true});g.player.inv=0;const h2=g.health;assert.ok(until(g,()=>['impact','wreck'].includes(d.state),120));assert.equal(g.health,h2-1);
 });
 test('an eye relay flies to the edge of Uma\'s debris, aims, fires along the tier and hangs stunned — only then a paw bursts it',()=>{
