@@ -8,7 +8,7 @@ import {advanceOpening} from './prologue.js?v=0.21.5';
 import {tryDrop} from './drop-through.js?v=0.21.5';
 import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.21.5';
 import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.21.5';
-import {strikeInfoshum} from './infoshum-combat.js?v=0.21.5';
+import {strikeInfoshum,infoshumFall} from './infoshum-combat.js?v=0.21.5';
 import {stepEnemies,stepPortals} from './enemies.js?v=0.21.5';
 import {cancelInformantTeleport} from './informant-teleport.js?v=0.21.5';
 import {applyRelayEffect} from './chapter-systems.js?v=0.21.5';
@@ -198,7 +198,7 @@ export class Game {
   if(p.vy>=0&&!p.climbing&&!p.flipped){const surface=solidSurfaces(this).filter(s=>!(p.dropTime>0&&s.id===p.dropId)&&p.x+p.w>s.x+1&&p.x<s.x+s.w-1&&prevBottom<=(s.id===carriedSupport?s.y:s.prevY)+1&&p.y+p.h>=s.y).sort((a,b)=>a.y-b.y)[0];if(surface){p.y=surface.y-p.h;p.vy=0;p.grounded=true;p.supportId=surface.id;}}
   applyLowCeilings(this,oldX);applyRoofWalls(this,oldX);
   if(dimensionFall(this))return;
-  if(p.y>HEIGHT+30){if(roofFall(this)||studioFall(this))return;this.hurt(true);return;}
+  if(p.y>HEIGHT+30){if(roofFall(this)||studioFall(this)||infoshumFall(this))return;this.hurt(true);return;}
   if(p.climbing)p.climbTime+=Math.abs(p.y-oldY)/18;if(p.sneaking)p.sneakTime+=Math.abs(p.x-oldX)/14;
   stepPlayerRest(this,input,dt);
   this.unlockForRoom(this.room);
