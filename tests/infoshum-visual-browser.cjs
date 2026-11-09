@@ -9,27 +9,28 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
   const r=await page.evaluate(async()=>{
    const {activateRoom}=await import('./room-transitions.js?v=0.21.5'),m=await import('./infoshum-combat.js?v=0.21.5');
    const g=testGame,real=Object.getPrototypeOf(g).step;g.hintsEnabled=false;document.getElementById('toast').classList.remove('visible');activateRoom(g,8);g.mode='playing';g.storyEnabled=false;g.enemies=[];g.fishes=[];g.soups=[];g.notebooks=[];g.lifePickups=[];g.boss.noticeTime=0;g.step=()=>{};
-   const a=testUI.assets,out={sheets:['infoshumScreens','infoshumCable','infoshumCore','infoshumPoses','infoshumSilence','infoshumBreakout','infoshumTransfer','sensation'].map(k=>[k,a[k]?.naturalWidth>0])},n=g.boss.network,shots={};
-   m.ensureMonitorPads(g);const docks=[6,7,8].map(i=>g.platforms.find(s=>s.room===8&&s.index===i));out.clearScreens=docks.every(p=>p.bossHidden)&&[0,1,2].every(i=>!!m.monitorPad(g,i));
+   const a=testUI.assets,out={sheets:['infoshumWallTv','infoshumFloorTv','infoshumGlass','infoshumTvBeam','infoshumStormCore','infoshumStormPlatforms','infoshumFallingTv','infoshumStorm','infoshumPoses','infoshumSilence','infoshumBreakout'].map(k=>[k,a[k]?.naturalWidth>0])},n=g.boss.network,shots={};
    const draw=(k,t=2)=>{g.updateCamera();testRenderer.draw(g,0,t);shots[k]=document.getElementById('game').toDataURL();};
-   n.activeIndex=1;draw('static');
-   n.mode='hop';n.transit={from:1,to:2,time:.4,duration:.6};draw('shuffle');
-   n.transit=null;m.exposeInfoshum(g);g.player.x=n.monitors[1].x;draw('reveal');
-   n.monitors[1].face=null;n.monitors[1].burst=.5;draw('fake');
-   n.round=3;n.mode='hit';n.timer=0;n.lastMonitorIndex=1;real.call(g,1/60,{});for(let i=0;i<70;i++)real.call(g,1/60,{});draw('rupture');
-   for(let i=0;i<120;i++)real.call(g,1/60,{});out.freed=n.stage;draw('free');
-   const s=g.platforms.find(s=>s.id==='8:2');Object.assign(g.player,{x:s.x+60,y:s.y-48,grounded:true,supportId:s.id});m.exposeInfoshum(g);draw('cable');
-   g.boss.hp=6;n.stage='noise';g.boss.phase=3;n.figures=[];n.noiseTime=20;m.exposeInfoshum(g);n.figures.filter(f=>!f.real).forEach(f=>f.state='hover');draw('noise');
+   draw('dark');
+   m.exposeInfoshum(g);const t=n.tvs.find(t=>t.state==='face');g.player.x=t.x-160;draw('face');
+   n.mode='face';n.timer=0;real.call(g,1/60,{});draw('charge');
+   n.timer=0;real.call(g,1/60,{});draw('fire');
+   m.crackInfoshumScreen(g);draw('smash');
+   for(let k=0;k<10&&n.stage==='network';k++){for(let i=0;i<25;i++)real.call(g,1/60,{});m.crackInfoshumScreen(g);}for(let i=0;i<60;i++)real.call(g,1/60,{});out.rupture=n.stage;draw('rupture');
+   for(let i=0;i<120;i++)real.call(g,1/60,{});out.ghosts=n.stage;n.noiseTime=20;m.exposeInfoshum(g);n.figures.filter(f=>!f.real).forEach(f=>f.state='hover');draw('noise');
+   m.stormInfoshum(g);for(let i=0;i<150;i++)real.call(g,1/60,{});out.storm=n.stage;draw('storm');
+   n.storm.mode='storm';n.storm.timer=0;for(let i=0;i<40;i++)real.call(g,1/60,{});draw('column');
+   m.exposeInfoshum(g);draw('spent');
    out.distinct=new Set(Object.values(shots)).size;out.count=Object.keys(shots).length;return out;
   });
   assert.ok(r.sheets.every(([,ok])=>ok),'all Infoshum sheets decode: '+JSON.stringify(r.sheets));
-  assert.equal(r.clearScreens,true,'the old monitor stands are gone and every monitor hovers on its pad');assert.equal(r.freed,'free');assert.equal(r.distinct,r.count,'every state looks different');
+  assert.equal(r.rupture,'rupture');assert.equal(r.ghosts,'noise');assert.equal(r.storm,'storm');assert.equal(r.distinct,r.count,'every state looks different');
   await shot(page,'infoshum-noise-'+width);await page.close();
  }
- // Full-arena overview: three screens and the cable map at once.
+ // Full-arena overview: all ten screens at once.
  const o=await browser.newPage({viewport:{width:3072,height:1000}});o.on('pageerror',e=>errors.push(e.message));await open(o,{story:false,testing:true});await begin(o);
  await o.evaluate(async()=>{const{activateRoom}=await import('./room-transitions.js?v=0.21.5'),m=await import('./infoshum-combat.js?v=0.21.5');const g=testGame;g.hintsEnabled=false;document.getElementById('toast').classList.remove('visible');activateRoom(g,8);g.step=()=>{};g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.boss.noticeTime=0;m.exposeInfoshum(g);testRenderer.draw(g,0,1);});
  await shot(o,'infoshum-full-reveal');await o.close();
  await browser.close();assert.deepEqual(errors,[]);
- console.log('PASS: Infoshum sheets decoded; shell game, decoys, reveal, fake burst, rupture, cable staircase and white-noise doubles drawn distinctly at 5 viewports and a full-arena reveal.');
+ console.log('PASS: Infoshum sheets decoded; dark screens, face, charge, beam, smash, rupture, doubles, storm, column and the spent core drawn distinctly at 5 viewports and a full-arena view.');
 })().catch(e=>{console.error(e);process.exit(1);});

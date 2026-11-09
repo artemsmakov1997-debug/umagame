@@ -88,11 +88,11 @@ async function boot(){
    if(event.type==='antennaHit')notify('Попадание '+event.hits+'/3. Чередуй антенны!',2800);
    if(event.type==='interferenceLost')notify(game.testingInvulnerable?'Тестовая защита: помехи достигли предела.':'Помехи заполнили эфир. Потеряна жизнь.',3000);
    if(event.type==='broadcastShieldBreak')notify('Щит разрушен! Догони Агитатора до заполнения помех.',3600);
-   if(event.type==='infoshumReveal'&&event.first)notify('Мониторы летают! Запрыгни сверху на тот, где показался Инфошум.',4200);
+   if(event.type==='infoshumReveal'&&event.first)notify('Бей лапой экран, где его лицо! Настенный луч — пригнись, напольный — перепрыгни.',4600);
    if(event.type==='infoshumFakeHit'&&!event.double)notify('Подделка! У настоящего экрана есть печать.',2600);
    if(event.type==='infoshumRupture')notify('Последний экран не выдерживает! Инфошум вырывается наружу.',3700);
-   if(event.type==='infoshumFreed')notify('Его кабель — лестница. Взбегай к ядру и бей!',4200);
-   if(event.type==='infoshumSplit')notify('Двойники с фиолетовыми глазами — фейки. Уклонись от настоящего и бей, пока он застрял!',4600);
+   if(event.type==='infoshumFreed')notify('Он рассыпался на двойников!',2600);
+   if(event.type==='infoshumSplit')notify('Двойники с фиолетовыми глазами — фейки. Уклонись от настоящего и бей, пока он застрял!',4600);if(event.type==='infoshumStorm')notify('Буря! Уворачивайся от падающих экранов и столба. Когда ядро опустится — прыгай на остров и бей!',5200);
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');
 
   if(event.type==='roofFall'){const place=game.room===5?'на площадку':'на крышу';notify(game.testingInvulnerable?'Тестовая защита: Ума возвращена '+place+'.':'Падение! −1 сердце. Ума вернулась '+place+'.',2600);}

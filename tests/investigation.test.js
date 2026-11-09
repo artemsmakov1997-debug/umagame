@@ -28,14 +28,14 @@ test('reading a notebook adds the room\'s next clue, with no premature answer',(
  Object.assign(g.player,{x:n.x-17,y:n.y-24,grounded:true,supportId:s.id});g.checkNotebooks();
  assert.equal(g.clues.length,1);assert.equal(g.clues[0].room,3);assert.ok(!/создаёте меня|Всё начинается с нас/i.test(g.clues[0].text));
 });
-test('Infoshum enters the cable phase after three real screens are cracked',()=>{
+test('Infoshum tears out into «Белый шум» after all ten screens are smashed',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;g.mode='playing';
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
- const n=g.boss.network;
- for(let k=0;k<3;k++){assert.equal(crackInfoshumScreen(g),true);for(let i=0;i<70&&n.stage==='network';i++)stepBoss(g,1/60);}
- assert.equal(n.stage,'rupture');assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
+ const n=g.boss.network;assert.equal(n.tvs.length,10);
+ for(let k=0;k<10;k++){assert.equal(crackInfoshumScreen(g),true,'screen '+k);for(let i=0;i<30&&n.stage==='network';i++)stepBoss(g,1/60);}
+ assert.equal(n.stage,'rupture');assert.equal(g.boss.hp,12);assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
  for(let i=0;i<150;i++)stepBoss(g,1/60);
- assert.equal(n.stage,'free');assert.equal(g.boss.phase,2);assert.equal(n.monitors.reduce((s,m)=>s+m.cracks,0),3);
+ assert.equal(n.stage,'noise');assert.equal(g.boss.phase,2);assert.equal(n.tvs.filter(t=>t.state==='broken').length,10);
 });
 
 test('projectile deflections reward an active counterattack',()=>{

@@ -1,114 +1,47 @@
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {drawCableBlob,drawBreakout,drawSmokingCase} from './infoshum-anim-art.js?v=0.21.5';
-import {monitorRect,glassRect,corePoint,headlineBoxes,figureBox,SPLIT,ARRIVE} from './infoshum-combat.js?v=0.21.5';
-// Rendered production assets for the two-stage Infoshum encounter.
-// Frame atlases are original pixel PNG assets, preloaded in assets.js and drawn with pixel smoothing off.
+import {drawBreakout} from './infoshum-anim-art.js?v=0.21.5';
+import {figureBox,SPLIT,ARRIVE,screenCenter,beamRect,WAVE,STORM,coreCenter} from './infoshum-combat.js?v=0.21.5';
+// Infoshum's three phases: the room of screens, the doubles, the storm around the core.
 import {rooms} from './level.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
-const cyan='#67ebff',magenta='#ff60da';
-const crtFrame=256,crtHeight=240,bodyFrame=320,bodyHeight=280,terminalFrame=80,terminalHeight=60;
-function atlas(c,image,index,sw,sh,x,y,w,h,a,kind){drawInfoshumSprite(c,a,kind,index,x,y,w,h);}
-function point(c,x,y,r,time,color=cyan){
- const phase=Math.sin(time*7);
- c.save();c.lineWidth=2;c.strokeStyle=color;c.globalAlpha=.7+.2*phase;
- for(let i=0;i<4;i++){const a=Math.PI/2*i+Math.PI/4;const start=r*.65;
-  c.beginPath();c.moveTo(x+Math.cos(a)*start,y+Math.sin(a)*start);c.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);c.stroke();}
- c.restore();
-}
-function thickCable(c,a,b,lit,time){const x1=a.x+a.w/2,y1=a.y+a.h-8,x2=b.x+b.w/2,y2=b.y+b.h-8;for(let i=0;i<=96;i++){const t=i/96,q=1-t,x=q*q*q*x1+3*q*q*t*(x1+95)+3*q*t*t*(x2-95)+t*t*t*x2,y=q*q*q*y1+3*q*q*t*(y1+118)+3*q*t*t*(y2+118)+t*t*t*y2;rect(c,Math.round(x)-6,Math.round(y)-6,12,12,'#07112b');rect(c,Math.round(x)-2,Math.round(y)-2,4,4,lit?'#4fcbe9':'#5e3b87');if(lit&&(i+Math.floor(time*12))%10===0)rect(c,x-2,y-3,4,5,'#dcfcff');}}
-// Cable path between neighbouring monitors (bottom to bottom), used by the lit cable and the pulses.
-function cablePoint(a,b,t){const x1=a.x+a.w/2,y1=a.y+a.h-8,x2=b.x+b.w/2,y2=b.y+b.h-8,q=1-t;return {x:q*q*q*x1+3*q*q*t*(x1+95)+3*q*t*t*(x2-95)+t*t*t*x2,y:q*q*q*y1+3*q*q*t*(y1+118)+3*q*t*t*(y2+118)+t*t*t*y2};}
-// A move 0↔2 runs through the middle monitor: two cable spans.
-function pathPoint(n,from,to,t){const ms=n.monitors;if(Math.abs(from-to)===1)return cablePoint(ms[from],ms[to],t);const mid=ms[1];return t<.5?cablePoint(ms[from],mid,t*2):cablePoint(mid,ms[to],t*2-1);}
-function cables(c,n,time){
- const ms=n.monitors,moving=[n.transit].filter(m=>m&&!m.done);
- const lit=(i,j)=>n.stage==='network'&&moving.some(m=>m.from===i||m.to===i||m.from===j||m.to===j);
- thickCable(c,ms[0],ms[1],lit(0,0),time);thickCable(c,ms[1],ms[2],lit(2,2),time);
-}
-const SCREEN_W=183,SCREEN_H=176;
-function screen(c,a,m,frame,alpha=1){const img=a.infoshumScreens;if(!img)return false;const r=monitorRect(m);c.save();c.globalAlpha*=alpha;c.drawImage(img,frame*SCREEN_W,0,SCREEN_W,SCREEN_H,Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.round(r.h));c.restore();return true;}
-function cracks(c,m,count){if(!count)return;const g=glassRect(m);c.save();c.strokeStyle='#bff8ff';c.globalAlpha=.75;c.lineWidth=2;for(let k=0;k<count;k++){const sx=g.x+g.w*(.25+.25*k),sy=g.y+g.h*(.3+.2*(k%2));c.beginPath();for(let i=0;i<5;i++){const ang=i*1.26+k;c.moveTo(sx,sy);c.lineTo(sx+Math.cos(ang)*28,sy+Math.sin(ang)*22);}c.stroke();}c.restore();}
-function monitorFrame(m,n,time){
- if(m.burst>0)return 5;
- if(n.mode==='hit'&&m.index===n.lastMonitorIndex)return 4;
- if(m.face!==null&&m.face!==undefined)return m.face;
- if(m.pulse)return m.pulse.kind==='real'?6:7;
- return 8;
-}
-function pulse(c,a,n,move,time,decoy){
- const t=Math.min(1,move.time/move.duration),p=pathPoint(n,move.from,move.to,t),q=pathPoint(n,move.from,move.to,Math.min(1,t+.03)),angle=Math.atan2(q.y-p.y,q.x-p.x||1e-6);
- for(let i=12;i>=1;i--){const r=Math.max(0,t-i/60),o=pathPoint(n,move.from,move.to,r);rect(c,o.x-2,o.y-2,4+i%3,3,decoy?(i%2?'#ff5ad8':'#8a2f86'):(i%2?'#3ecaff':'#b8f6ff'));}
- c.save();if(decoy){c.globalAlpha=.45+.35*Math.abs(Math.sin(time*18));c.filter='hue-rotate(70deg) saturate(1.5)';}
- drawCableBlob(c,a,p.x,p.y,angle,time);c.restore();
-}
-function drawShells(c,a,g,time){
- const n=g.boss.network;
- for(const m of n.monitors){
-  const frame=monitorFrame(m,n,time);if(!screen(c,a,m,frame))drawInfoshumSprite(c,a,'crt',0,m.x,m.y-35,m.w,m.w*271/319);
-  if(frame>=6||frame===8)cracks(c,m,m.cracks);
-  if(frame===8){c.save();c.globalAlpha=.14;rect(c,m.x+20,m.y+20+(time*24+m.index*25)%(m.h-35),m.w-40,2,'#94f5ff');c.restore();}
- }
- // The jump: he dissolves into glitch at one screen, runs down the cable and reassembles in the next.
- if(n.mode==='hop'&&n.transit){const k=Math.min(1,n.transit.time/n.transit.duration),from=n.monitors[n.transit.from],to=n.monitors[n.transit.to];
-  pulse(c,a,n,n.transit,time,false);
-  drawAttackFx(c,a,'glitch',Math.min(3,Math.floor(k*6)),from.x+from.w/2,from.y+from.h/2,120,{alpha:Math.max(0,1-k)});
-  if(k>.6)drawAttackFx(c,a,'glitch',k<.85?4:5,to.x+to.w/2,to.y+to.h/2,120,{alpha:(k-.6)/.4});}
- // The crack from above: a white-noise burst on the glass.
- if(n.mode==='hit'){const m=n.monitors[n.lastMonitorIndex],k=1-Math.max(0,n.timer)/.55;drawAttackFx(c,a,'burst',Math.min(3,Math.floor(k*4)),m.x+m.w/2,m.y+m.h*.45,110+k*60,{alpha:1-k*.5});}
- drawCableMap(c,g,time);
-
-}
-// A small cable map at the top of the view: all three screens and every pulse stay readable
-// even when two monitors are off-screen.
-function drawCableMap(c,g,time){
- const n=g.boss.network,x0=g.camera+22,y=12,xs=[0,46,92].map(v=>x0+v),ys=[y+6,y,y+6];
- c.save();c.globalAlpha=.88;rect(c,x0-8,y-6,132,34,"#0b0f26");rect(c,x0-8,y-6,132,2,"#5f3f96");
- for(const [i,j] of[[0,1],[1,2]])for(let k=0;k<=10;k++){const t=k/10;rect(c,xs[i]+12+(xs[j]-xs[i])*t,ys[i]+18+(ys[j]-ys[i])*t+Math.sin(t*Math.PI)*5,2,2,'#4a3f78');}
- for(const m of n.monitors){const i=m.index,lit=m.pulse?.kind==='real'?'#7ff4ff':m.pulse?.kind==='decoy'?'#ff6cda':m.face!==null?'#ffe08a':'#3a3d6a';rect(c,xs[i],ys[i],24,18,'#7a5bc4');rect(c,xs[i]+3,ys[i]+3,18,12,lit);for(let k=0;k<m.cracks;k++)rect(c,xs[i]+5+k*6,ys[i]+7,4,2,'#ffffff');}
- const dot=(move,decoy)=>{const t=Math.min(1,move.time/move.duration),seg=Math.abs(move.from-move.to)===1?null:t<.5?[move.from,1,t*2]:[1,move.to,t*2-1],[a,b,q]=seg||[move.from,move.to,t];const px=xs[a]+12+(xs[b]-xs[a])*q,py=ys[a]+18+(ys[b]-ys[a])*q+Math.sin(q*Math.PI)*5;
-  if(decoy){rect(c,px-3,py-3,6,2,'#ff6cda');rect(c,px-3,py+1,6,2,'#ff6cda');rect(c,px-3,py-3,2,6,'#ff6cda');rect(c,px+1,py-3,2,6,'#ff6cda');}else{rect(c,px-3,py-3,6,6,'#b8f6ff');rect(c,px-1,py-1,2,2,'#ffffff');}};
- if(n.mode==='hop'&&n.transit)dot(n.transit,false);
- c.restore();
-}
-// The screen Infoshum tears open: the one with the third crack.
-const ruptureMonitor=n=>n.monitors[n.lastMonitorIndex]||n.monitors[1];
-function screenExit(c,a,g,time){
- const n=g.boss.network,near=ruptureMonitor(n);if(!near)return;
- if(drawBreakout(c,a,near,n.transitionProgress,time))return;
-}
-// ——— Phase 2: core, headline ring and the cable staircase ———
-let g_boss=null;const CABLE_W=184,CABLE_H=180,CORE_W=184,CORE_H=192,POSE_W=190,POSE_H=204,SILENCE_W=172,SILENCE_H=192;
+const POSE_W=190,POSE_H=204,SILENCE_W=172,SILENCE_H=192;
 function cell(c,img,cw,ch,frame,cx,cy,w,{flip=false,rot=0,alpha=1}={}){if(!img)return;const h=w*ch/cw;c.save();c.globalAlpha*=alpha;c.translate(Math.round(cx),Math.round(cy));if(rot)c.rotate(rot);if(flip)c.scale(-1,1);c.drawImage(img,frame*cw,0,cw,ch,-w/2,-h/2,w,h);c.restore();}
-// The cable is tiled from the 30° segment (frame 1: axis (0,135)→(184,46), ribbed top 24 px above the axis),
-// so its thickness stays the same however far the slam reaches. The steps lie on the ribbed top.
-const SEG={cx:92,cy:90.5,angle:Math.atan2(46-135,184),len:204,top:24},CABLE_SCALE=.6;
-function drawCable(c,a,n,frame,time){
- const cab=n.cable,img=a.infoshumCable;if(!cab||!img)return;const dx=(cab.to.x-cab.from.x)*cab.dir,dy=cab.to.y-cab.from.y,len=Math.hypot(dx,dy),angle=Math.atan2(dy,dx),k=CABLE_SCALE,piece=SEG.len*k*.86;
- c.save();c.translate(cab.from.x,cab.from.y);if(cab.dir<0)c.scale(-1,1);c.rotate(angle);
- for(let d=-piece*.3;d<len+piece*.2;d+=piece){c.save();c.translate(d+piece/2,SEG.top*k);c.rotate(-SEG.angle);c.drawImage(img,CABLE_W,0,CABLE_W,CABLE_H,-SEG.cx*k,-SEG.cy*k,CABLE_W*k,CABLE_H*k);c.restore();}
- if(frame===5){c.globalAlpha=.6+.4*Math.abs(Math.sin(time*20));c.strokeStyle='#ff6cf0';c.lineWidth=2;c.beginPath();for(let d=0;d<=len;d+=14)c.lineTo(d,SEG.top*k+Math.sin(d*.31+time*30)*8);c.stroke();}
+// ——— Phase 1: the screens ———
+// assets/infoshum-wall-tv.png: 6 cells of 190×168 — off, static, his face, charging, cracked, smashed (frame at 37..181 × 13..142).
+// assets/infoshum-floor-tv.png: 6 cells of 136×97, the same states (body at 17..111 × 5..91).
+const TV_ART={wall:{img:'infoshumWallTv',cw:190,ch:168,bx:37,by:13,bw:144},floor:{img:'infoshumFloorTv',cw:136,ch:97,bx:17,by:5,bw:94}};
+const TV_FRAME={off:0,static:1,face:2,charge:3,fire:3,crack:4,broken:5};
+function drawScreen(c,a,t,time){
+ const art=TV_ART[t.kind],img=a[art.img];if(!img)return false;const k=t.w/art.bw;let f=TV_FRAME[t.state]??0;
+ if(t.state==='static'&&t.role==='decoy'&&Math.floor(time*12)%5===0)f=0;
+ if(t.state==='charge'&&Math.floor(time*14)%2)f=2;
+ const shake=t.state==='charge'?Math.sin(time*70)*1.5:0;
+ c.drawImage(img,f*art.cw,0,art.cw,art.ch,Math.round(t.x-art.bx*k+shake),Math.round(t.y-art.by*k),Math.round(art.cw*k),Math.round(art.ch*k));return true;
+}
+// assets/infoshum-tv-beam.png: 3 cells of 220×65 — the spark at the emitter, the beam half out, the full beam.
+function drawTvBeam(c,a,t,time,charge=false){
+ const img=a.infoshumTvBeam;if(!img)return;const r=beamRect(t),cy=r.y+r.h/2,x0=t.dir>0?r.x:r.x+r.w;
+ c.save();c.translate(Math.round(x0),Math.round(cy));if(t.dir<0)c.scale(-1,1);
+ if(charge){const k=.6+.4*Math.abs(Math.sin(time*16));c.globalAlpha=.85;c.drawImage(img,0,0,220,65,-6,-16*k,90*k,32*k);}
+ else{const f=1+Math.floor(time*16)%2,th=34+Math.sin(time*40)*3;c.drawImage(img,f*220,0,220,65,-6,-th/2,r.w+6,th);}
  c.restore();
- // The end that bites into the platform.
- cell(c,img,CABLE_W,CABLE_H,2,cab.from.x+cab.dir*6,cab.from.y-30,70,{flip:cab.dir<0,alpha:.95});
 }
-function drawWhip(c,a,n){const t=n.target;if(!t||!a.infoshumCable)return;const cp=corePoint(g_boss);cell(c,a.infoshumCable,CABLE_W,CABLE_H,6,(t.x+cp.x)/2,(t.y+cp.y)/2,150,{flip:cp.x<t.x,alpha:Math.max(0,n.timer/.35)});}
-function drawRing(c,a,n,b,time){const img=a.infoshumCore;if(!img)return;for(const h of headlineBoxes(n,b))cell(c,img,CORE_W,CORE_H,4+(h.i+Math.floor(n.ring/6.283))%4,h.x+20,h.y+15,58,{rot:Math.sin(time*3+h.i)*.15});}
-function drawFree(c,a,g,time){
- const b=g.boss,n=b.network,cp=corePoint(b),wob=Math.sin(time*2.7)*6;
- if(n.mode==='aim'&&n.target){cell(c,a.infoshumCable,CABLE_W,CABLE_H,7,n.target.x,n.target.y-14,96,{alpha:.6+.4*Math.abs(Math.sin(time*9))});}
- g_boss=b;if(n.cable)drawCable(c,a,n,n.mode==='retractWarn'?5:4,time);else if(n.mode==='retract')drawWhip(c,a,n);
- const exposed=['anchored','retractWarn','reel'].includes(n.mode);
- if(exposed&&a.infoshumCore){const frame=b.hurtTime>0?2:n.mode==='reel'?3:n.mode==='retractWarn'&&Math.floor(time*8)%2?1:0;cell(c,a.infoshumCore,CORE_W,CORE_H,frame,cp.x,cp.y-26+wob,300);}
- else if(a.infoshumPoses&&['aim','slam','retract'].includes(n.mode)){const frame=n.mode==='aim'?0:n.mode==='slam'?1:2;cell(c,a.infoshumPoses,POSE_W,POSE_H,frame,cp.x,cp.y-30+wob,320,{flip:n.target&&n.target.x<cp.x});}
- else{const frame=b.hurtTime>0?5:n.mode==='volley'?3:n.mode==='arrive'?1:0;
-  // Leaving the monitor: a glitch trail of fading copies follows him to the middle.
-  if(n.mode==='arrive'&&n.arriveFrom){for(let i=4;i>=1;i--){const k=i/5,x=b.x+(n.arriveFrom.x-b.x)*k*.5,y=b.y+(n.arriveFrom.y-b.y)*k*.5;c.save();c.globalAlpha=.16*(5-i)/4;c.filter=i%2?'hue-rotate(60deg)':'none';drawInfoshumSprite(c,a,'body',1,x+b.w/2-175+(i%2?-6:6),y-74,350,302);c.restore();}
-   // He dissolves into glitch at the monitor and reassembles on the way.
-   const k=Math.min(1,Math.max(0,1-(n.timer??0)/ARRIVE));drawAttackFx(c,a,'glitch',Math.min(3,Math.floor(k*8)),n.arriveFrom.x+b.w/2,n.arriveFrom.y+b.h/2,170,{alpha:Math.max(0,1-k*1.4)});drawAttackFx(c,a,'glitch',k<.7?3:k<.85?4:5,b.x+b.w/2,b.y+b.h/2,200,{alpha:.75});}
-  drawInfoshumSprite(c,a,'body',frame,b.x+b.w/2-175,b.y-74+(n.mode==='arrive'?0:wob),350,302);}
+// A dashed line where the beam will go, while the screen charges.
+function drawBeamWarning(c,t,time){const r=beamRect(t),cy=r.y+r.h/2;c.save();c.globalAlpha=.35+.25*Math.abs(Math.sin(time*10));for(let x=0;x<r.w;x+=18)rect(c,(t.dir>0?r.x+x:r.x+r.w-x-10),cy-1,10,2,'#ff7ae6');c.restore();}
+function drawShards(c,a,t){const img=a.infoshumGlass;if(!img||t.shards<=0)return;const k=1-t.shards/.45,f=Math.min(2,Math.floor(k*3)),p=screenCenter(t);cell(c,img,110,72,f,p.x,p.y+k*14,t.w*1.4*(1+k*.5),{alpha:1-k*.4});}
+// Ten screens at the top-left: grey — whole, pink — he is in it, crossed — smashed.
+function drawScreenMap(c,g){
+ const n=g.boss.network,x0=g.camera+22,y=14;c.save();c.globalAlpha=.9;rect(c,x0-8,y-6,10*15+10,26,'#0b0f26');rect(c,x0-8,y-6,10*15+10,2,'#5f3f96');
+ n.tvs.forEach((t,i)=>{const x=x0+i*15,lit=['face','charge','fire'].includes(t.state);rect(c,x,y,12,10,'#7a5bc4');rect(c,x+2,y+2,8,6,t.state==='broken'||t.state==='crack'?'#14102a':lit?'#ff6cda':t.state==='static'?'#8fd8ff':'#3a3d6a');if(t.state==='broken'){rect(c,x+3,y+3,2,2,'#fff');rect(c,x+7,y+5,2,2,'#fff');}});
+ c.restore();
 }
-// ——— Phase 3: the doubles ———
+function drawScreensForeground(c,a,g,time){
+ const n=g.boss.network;
+ for(const t of n.tvs){if(t.state==='charge'){drawBeamWarning(c,t,time);drawTvBeam(c,a,t,time,true);}else if(t.state==='fire')drawTvBeam(c,a,t,time);drawShards(c,a,t);}
+ drawScreenMap(c,g);
+}
+// ——— Phase 2: the doubles ———
 function drawNoise(c,a,g,time){
  const n=g.boss.network,img=a.infoshumPoses;
  // The split: the core bursts in a ring of white noise and the doubles fly out of it.
@@ -125,19 +58,59 @@ function drawNoise(c,a,g,time){
   else cell(c,img,POSE_W,POSE_H,6,f.x,f.y,300,{alpha:flicker});
  }
 }
+// ——— Phase 3: the storm ———
+// assets/infoshum-storm-core.png: 6 cells of 240×210 — the caged core ×2, charging (a swirl), hit, bursting, fading.
+// assets/infoshum-falling-tv.png: 3 cells of 200×160 — falling, the impact, the wreck.
+// assets/infoshum-storm-platforms.png: 3 cells of 290×120 — a slab, a cracked slab, a slab with a terminal (top at y 21).
+const PLAT=[[6,273],[27,241],[47,192]],PLAT_TOP=22;
+function drawStormIsland(c,a,p){
+ const img=a.infoshumStormPlatforms;if(!img)return false;const [sx,sw]=PLAT[p.storm]||PLAT[0],kx=(p.w+14)/sw,ky=Math.min(.78,Math.max(.5,kx));
+ c.drawImage(img,p.storm*290+sx,0,sw,120,Math.round(p.x-7),Math.round(p.y-PLAT_TOP*ky+2),Math.round(sw*kx),Math.round(120*ky));return true;
+}
+function coreFrame(s,b,time){if(s.mode==='burst')return s.timer>STORM.burst*.45?4:5;if(b.hurtTime>0||s.mode==='hit')return 3;if(s.mode==='charge'||s.mode==='beam')return 2;return Math.floor(time*3)%2;}
+function drawColumn(c,a,s,time,charge){
+ const x=s.beamX??s.x,top=s.y+40,len=520-top;
+ if(charge){c.save();c.globalAlpha=.18+.18*Math.abs(Math.sin(time*12));rect(c,x-STORM.beamHalf,top,STORM.beamHalf*2,len,'#ff5ae0');c.globalAlpha=.7;for(let y=top;y<480;y+=22)rect(c,x-2,y,4,10,'#ffd2fa');c.restore();return;}
+ const img=a.infoshumTvBeam;if(!img)return;const f=1+Math.floor(time*16)%2,th=STORM.beamHalf*2+14+Math.sin(time*40)*5;
+ c.save();c.translate(Math.round(x),Math.round(top-20));c.rotate(Math.PI/2);c.drawImage(img,f*220,0,220,65,0,-th/2,len+20,th);c.restore();
+}
+function drawDrop(c,a,d,time){
+ const img=a.infoshumFallingTv;if(!img)return;
+ if(d.state==='warn'){c.save();c.globalAlpha=.3+.35*Math.abs(Math.sin(time*12));rect(c,d.x-26,d.ty-3,52,4,'#ff6cda');for(let y=0;y<d.ty-20;y+=26)rect(c,d.x-1,y+((time*90)%26),2,12,'#ff9df0');c.restore();return;}
+ const f=d.state==='fall'?0:d.state==='impact'?1:2,k=.42,alpha=d.state==='wreck'?Math.min(1,(STORM.wreck-d.time)/.4):1;
+ c.save();c.globalAlpha=alpha;c.translate(Math.round(d.x),Math.round(d.y));if(d.state==='fall')c.rotate(Math.sin(time*9+d.x)*.25);c.drawImage(img,f*200,0,200,160,-100*k,-(f?152:125)*k,200*k,160*k);c.restore();
+}
+function drawStorm(c,a,g,time){
+ const b=g.boss,n=b.network,s=n.storm;if(!s)return;
+ for(const d of n.drops)drawDrop(c,a,d,time);
+ if(s.mode==='charge')drawColumn(c,a,s,time,true);
+ const p=coreCenter(n),img=a.infoshumStormCore,f=coreFrame(s,b,time),w=s.mode==='burst'?150+(1-s.timer/STORM.burst)*90:150,bob=['storm','rise'].includes(s.mode)?Math.sin(time*2.4)*4:0;
+ // While he is spent and low, a soft ring shows the opening.
+ if(['sink','spent'].includes(s.mode)){c.save();c.globalAlpha=.25+.2*Math.abs(Math.sin(time*6));c.strokeStyle='#8ff6ff';c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,58,0,Math.PI*2);c.stroke();c.restore();}
+ if(s.mode==='intro'){const k=1-Math.max(0,s.timer)/STORM.intro;drawAttackFx(c,a,'burst',Math.min(3,Math.floor(k*4)),p.x,p.y,180+k*120,{alpha:Math.max(0,1-k)});}
+ cell(c,img,240,210,f,p.x,p.y+bob,w*240/184,{alpha:s.mode==='burst'?Math.min(1,s.timer/.35+.2):s.mode==='intro'?Math.min(1,(STORM.intro-s.timer)/1.2):1});
+ if(s.mode==='beam')drawColumn(c,a,s,time,false);
+}
+// The storm itself: the painted sky with a little parallax, drifting debris and lightning.
+function drawStormSky(c,a,g,time){
+ const r=rooms[g.room],img=a.infoshumStorm,s=g.boss.network.storm;
+ if(img?.complete&&img.naturalWidth){const w=1240,h=698,span=Math.max(1,r.width-960),k=Math.max(0,Math.min(1,(g.camera-r.x)/span)),x=g.camera-k*(w-960);c.drawImage(img,Math.round(x),-150,w,h);}
+ else rect(c,r.x,0,r.width,512,'#1a0b33');
+ c.save();for(let i=0;i<26;i++){const x=r.x+((i*173+time*(40+i%5*18))%r.width),y=(i*97+Math.sin(time+i)*30)%430+20;c.globalAlpha=.35+.3*(i%3)/2;rect(c,x,y,3+i%4,3+i%3,i%2?'#b77cff':'#68e8ff');}c.restore();
+ if(s?.flash>0){c.save();c.globalAlpha=Math.min(.45,s.flash*1.5);rect(c,r.x,0,r.width,512,'#f5d6ff');c.restore();}
+}
 export function drawInfoshumBackdrop(c,a,g,time){
  const b=g.boss,n=b.network;if(g.room!==8||!n)return;
  const r=rooms[g.room];
+ if(n.stage==='storm'){drawStormSky(c,a,g,time);return;}
  const target=n.stage==='network'?a.infoshumArenaNetwork:a.infoshumArenaFree;
  if(target?.complete&&target.naturalWidth)c.drawImage(target,r.x,0,r.width,512);
- // Transitions: background and monitors are separate layers so platforms never slice through screens.
- cables(c,n,time);
- if(n.stage==='rupture'){
-  c.save();c.globalAlpha=.16+.14*Math.sin(time*14);
-  rect(c,r.x,0,r.width,512,'#e155fc');c.restore();
- }
+ // The screens are part of the room: drawn behind the platforms and Uma.
+ for(const t of n.tvs)drawScreen(c,a,t,time);
+ if(n.stage==='rupture'){c.save();c.globalAlpha=.16+.14*Math.sin(time*14);rect(c,r.x,0,r.width,512,'#e155fc');c.restore();}
 }
 export function drawInfoshumPlatform(c,a,p,time){
+ if(p.storm!==undefined&&drawStormIsland(c,a,p))return;
  if(!a.infoshumPlatform?.complete||p.infoshumStep)return;
  const image=a.infoshumPlatform,scale=30/177,cap=Math.min(140*scale,p.w/3),y=p.y-3;
  c.drawImage(image,22,299,140,177,p.x,y,cap,30);
@@ -146,15 +119,10 @@ export function drawInfoshumPlatform(c,a,p,time){
 }
 export function drawInfoshumForeground(c,a,g,time){
  const b=g.boss,n=b.network;if(g.room!==8||!n)return;
- if(b.hp<=0){if(n.stage!=='network')for(const m of n.monitors)drawInfoshumSprite(c,a,'crt',5,m.x+m.w/2-55,380,110,94);return;}
- if(n.stage==='network'){drawShells(c,a,g,time);return;}
- if(n.stage==='rupture'){
-  const torn=ruptureMonitor(n),k=n.transitionProgress;
-  for(const m of n.monitors)if(m!==torn||!a.infoshumBreakout)screen(c,a,m,k<.3?8:k<.5?9:k<.7?10:11);
-  screenExit(c,a,g,time);return;
- }
- for(const m of n.monitors)if(!(m===ruptureMonitor(n)&&drawSmokingCase(c,a,m)))drawInfoshumSprite(c,a,'crt',5,m.x+m.w/2-55,380,110,94);
- if(n.stage==='free')drawFree(c,a,g,time);else drawNoise(c,a,g,time);
+ if(n.stage==='network'){drawScreensForeground(c,a,g,time);return;}
+ if(n.stage==='rupture'){const t=n.tvs[n.lastMonitorIndex],p=screenCenter(t);drawBreakout(c,a,{x:p.x-75,y:p.y-52,w:150,h:105},n.transitionProgress,time);return;}
+ if(n.stage==='noise'){drawNoise(c,a,g,time);return;}
+ if(n.stage==='storm')drawStorm(c,a,g,time);
 }
 // «Тишина»: he shrinks into a line and a dot like an old TV switching off (boss-defeat-art.js).
 export function drawInfoshumDefeat(c,a,d){
