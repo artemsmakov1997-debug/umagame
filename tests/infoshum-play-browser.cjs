@@ -15,7 +15,12 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
  await p.waitForFunction(()=>testGame.boss.network.stage==='colossus',null,{timeout:8000});await p.waitForTimeout(1800);await shot(p,'infoshum-live-colossus');
  // Phase 2 «Колосс»: wait for an eye relay to hang stunned, stand on the edge of its debris and swat it — three eyes.
  for(let k=0;k<3;k++){
-  await p.waitForFunction(()=>testGame.boss.network.ascent?.eye?.state==='stunned',null,{timeout:30000});if(k===0)await shot(p,'infoshum-live-eye');
+  // Uma keeps riding a debris piece in the middle of the climb while she waits for the next eye (as a player would).
+  for(let w=0;w<60&&!await p.evaluate(()=>testGame.boss.network.ascent?.eye?.state==='stunned');w++){
+   await p.evaluate(()=>{const g=testGame,pl=g.player,cur=g.platforms.find(s=>s.id===pl.supportId&&s.debris);if(cur&&cur.y<380&&cur.y>140)return;const s=g.platforms.filter(s=>s.room===8&&s.debris&&!s.bossHidden&&s.y>160&&s.y<300).sort((a,b)=>Math.abs(a.y-240)-Math.abs(b.y-240))[0];if(s)Object.assign(pl,{x:s.x+s.w/2-pl.w/2,y:s.y-48,h:48,grounded:true,supportId:s.id,vx:0,vy:0});});
+   await p.waitForTimeout(500);
+  }
+  await p.waitForFunction(()=>testGame.boss.network.ascent?.eye?.state==='stunned',null,{timeout:5000});if(k===0)await shot(p,'infoshum-live-eye');
   const hp=await p.evaluate(()=>{const g=testGame,e=g.boss.network.ascent.eye,s=g.platforms.find(q=>q.id===e.platformId),pl=g.player;Object.assign(pl,{x:e.side>0?s.x+s.w-pl.w-2:s.x+2,y:s.y-48,h:48,grounded:true,supportId:s.id,vx:0,vy:0,dir:e.side,attack:0,cooldown:0,inv:2});return g.boss.hp;});
   await p.keyboard.press('Space');await p.waitForFunction(h=>testGame.boss.hp<h,hp,{timeout:3000});
  }

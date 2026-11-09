@@ -197,7 +197,9 @@ function stepDrops(g,dt){
 // An eye relay hovers just off the edge of Uma's debris, its head level with her, and rides the debris down.
 export function eyeHead(e){return {x:e.x-ASCENT.eyeHead/2,y:e.y-ASCENT.eyeHead/2,w:ASCENT.eyeHead,h:ASCENT.eyeHead};}
 function spawnEye(g){
- const n=g.boss.network,a=n.ascent,p=g.player,s=g.platforms.find(q=>q.id===p.supportId&&q.debris)||supportUnder(g,p.x+p.w/2);if(!s)return false;
+ const n=g.boss.network,a=n.ascent,p=g.player,own=g.platforms.find(q=>q.id===p.supportId&&q.debris)||supportUnder(g,p.x+p.w/2);
+ // Low debris would sink into the wave before the eye is spent: then it picks the nearest piece above Uma.
+ const s=own&&own.y<=320?own:debrisPieces(g).filter(q=>q.y>=130&&q.y<=320).sort((x,y)=>Math.abs(x.y-(own?.y??300))-Math.abs(y.y-(own?.y??300)))[0];if(!s)return false;
  const r=rooms[g.room],side=s.x+s.w+70<r.x+ASCENT.maxX+120&&(p.x+p.w/2>s.x+s.w/2||s.x-70<r.x+ASCENT.minX-120)?1:-1;
  const hx=side>0?s.x+s.w+30:s.x-30,hy=s.y-34;
  a.eye={platformId:s.id,dx:hx-s.x,dy:hy-s.y,side,x:side>0?g.camera+1000:g.camera-60,y:hy-80,fromX:side>0?g.camera+1000:g.camera-60,fromY:hy-80,state:'fly',timer:ASCENT.eyeFly,dir:-side,lastSwing:-1};
