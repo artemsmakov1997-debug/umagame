@@ -84,57 +84,115 @@ function drawHallFront(c,a,g,time){
  // The open junction box: an amber glow so the cat sees where Yuri waits.
  n.relays.forEach((q,i)=>{if(q.state==='open'){const r=relayRect(g,i);amberFrame(c,{x:r.x+r.w*.55,y:r.y+r.h*.52,w:r.w*.36,h:r.h*.28},time,2);}});
 }
-// ——— The assembly: the relays fly into the tower, the colossus rises around it ———
-const BODY_K=430/360,BASE=FLOOR+10;
-function bodyFrame(c,a,name,cx,{flip=false,alpha=1,shake=0,bob=0}={}){if(alpha<=0)return null;const p=AT.body[name];if(!p||!a.infoshumColBody)return null;const k=BODY_K,w=p.r[2]*k,h=p.r[3]*k,hx=p.hx[0]*k,x=flip?cx-(w-hx):cx-hx,y=BASE-p.gy[0]*k+bob;piece(c,a.infoshumColBody,p,x+shake,y,w,h,{flip,alpha});return {x,y,w,h,k,p,flip};}
-function bodyPoint(f,pt){const x=f.flip?f.x+f.w-pt[0]*f.k:f.x+pt[0]*f.k;return {x,y:f.y+pt[1]*f.k};}
+// ——— Phase 2: the colossus, a cut-out rig (assets/infoshum-colossus-rig.png) ———
+// Torso on its junk heap, the head monitor on the neck, and two arms of upper arm + forearm + fist (or open hand)
+// on shoulder, elbow and wrist hubs. Every pose is computed from the fight state, so the giant moves in one piece:
+// the arms are solved with two-bone IK towards the fist or palm, the left arm is mirrored for the right one.
+const RIG=AT.rig,BASE=FLOOR+10,WRIST_UP=RIG.fist0.r[3]-RIG.fist0.w[1]-8,HAND_K=.8;
+const ease=t=>t<=0?0:t>=1?1:t*t*(3-2*t),lerp=(a,b,t)=>a+(b-a)*t,lerpP=(p,q,t)=>({x:lerp(p.x,q.x,t),y:lerp(p.y,q.y,t)});
+const segLen=p=>Math.hypot(p.b[0]-p.a[0],p.b[1]-p.a[1]),segAng=p=>Math.atan2(p.b[1]-p.a[1],p.b[0]-p.a[0]);
+const L1=segLen(RIG.upper),L2=segLen(RIG.fore);
+// A rig piece drawn so its axis point `at` lands on (x, y), turned by `rot` and stretched along its own axis.
+function rigPiece(c,img,p,at,x,y,rot,{stretch=1,axis=0,alpha=1,scale=1}={}){if(!p)return;c.save();c.globalAlpha*=alpha;c.translate(Math.round(x),Math.round(y));c.rotate(rot+axis);if(stretch!==1)c.scale(stretch,1);c.rotate(-axis);if(scale!==1)c.scale(scale,scale);c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],-at[0],-at[1],p.r[2],p.r[3]);c.restore();}
+// Two-bone IK: the elbow bends away from the body (towards smaller x in the left arm's space).
+function solveArm(S,W){let d=Math.hypot(W.x-S.x,W.y-S.y);const k=Math.min(1.45,Math.max(1,d/(L1+L2))),l1=L1*k,l2=L2*k;d=Math.min(Math.max(d,Math.abs(l1-l2)+1),l1+l2-.01);
+ const phi=Math.atan2(W.y-S.y,W.x-S.x),al=Math.acos(Math.max(-1,Math.min(1,(l1*l1+d*d-l2*l2)/(2*l1*d)))),e1={x:S.x+Math.cos(phi+al)*l1,y:S.y+Math.sin(phi+al)*l1},e2={x:S.x+Math.cos(phi-al)*l1,y:S.y+Math.sin(phi-al)*l1},E=e1.x<e2.x?e1:e2;
+ const wr={x:E.x+(W.x-E.x)/Math.hypot(W.x-E.x,W.y-E.y)*l2,y:E.y+(W.y-E.y)/Math.hypot(W.x-E.x,W.y-E.y)*l2};return {S,E,W:wr,k};}
+// The pose of the whole giant for this moment (positions in world pixels; the right arm in mirrored space).
+// Render-only memory (smoothed wrists, the per-frame cache) lives beside the fight state, never inside it.
+const RIG_MEMORY=new WeakMap(),rigMemory=a=>{let m=RIG_MEMORY.get(a);if(!m)RIG_MEMORY.set(a,m={});return m;};
+function colossusRig(g,time,assembly=null){
+ const n=g.boss.network,a=n.col||{},b=g.boss,m=rigMemory(a);if(!assembly&&m.cache?.time===time)return m.cache.rig;const rig=buildRig(g,n,a,b,time,assembly);if(!assembly)m.cache={time,rig};return rig;
+}
+function buildRig(g,n,a,b,time,assembly){
+ const cx=rooms[g.room].x+TOWER.cx,R=RIG,mir=x=>2*cx-x;
+ const breakout=n.stage==='breakout',fallK=breakout?1:a.mode==='collapse'?ease(a.clock/COL.fallTime):a.mode==='rise'?1-ease(a.clock/COL.rise):0;
+ const shake=(b.hurtTime>0||a.hurt>.8?Math.sin(time*60)*3:0)+(a.fist?.state==='lock'?Math.sin(time*80)*1.5:0),bob=fallK?0:Math.round(Math.sin(time*2.2)*2);
+ const rise=assembly?assembly.torso:0,tx=cx-R.torso.neck[0]+shake,ty=BASE-R.torso.gy[0]+bob+rise,dx=cx-R.down.neck[0]+shake,dy=BASE-R.down.gy[0];
+ const sock=(key)=>lerpP({x:tx+R.torso[key][0],y:ty+R.torso[key][1]},{x:dx+R.down[key][0],y:dy+R.down[key][1]},fallK);
+ const SL=sock('sL'),SRw=sock('sR'),SR={x:mir(SRw.x),y:SRw.y},neck={x:tx+R.torso.neck[0],y:ty+R.torso.neck[1]};
+ // The head: on the neck, or falling in an arc onto the floor where its screen becomes the weak spot.
+ const hb=headBox(g),sc=[(R.head.scr[0]+R.head.scr[2])/2,(R.head.scr[1]+R.head.scr[3])/2],up={x:neck.x,y:neck.y+8-R.head.neck[1]+sc[1]},down={x:hb.x+hb.w/2+shake,y:hb.y+hb.h/2};
+ let head={x:lerp(up.x,down.x,fallK),y:lerp(up.y,down.y,fallK)-Math.sin(fallK*Math.PI)*60,rot:-Math.sin(fallK*Math.PI)*.35-fallK*.06,scale:1};
+ if(assembly?.head){const t=assembly.head;head={x:lerp(t.x,head.x,t.k),y:lerp(t.y,head.y,t.k),rot:0,scale:lerp(t.scale,1,t.k)};}
+ // Where each wrist rests: on the floor beside the heap; lying wide when he collapses.
+ const restY=FLOOR+8-WRIST_UP,rest={x:cx-255,y:restY+bob},lie={x:cx-335,y:restY+6},calm=lerpP(rest,lie,fallK);
+ const arm={L:{W:{...calm},tool:'fist'},R:{W:{...calm},tool:'fist'}};
+ const roar=a.mode==='intro'||a.roar>0||a.mode==='rise'&&a.clock>COL.rise*.7;
+ if(roar&&!fallK)for(const s of ['L','R'])arm[s].W={x:cx-250+Math.sin(time*9+(s==='L'?0:1))*6,y:150+Math.sin(time*7)*8};
+ if(a.hurt>0&&!fallK){const s=a.hurtSide||'L';arm[s].W={x:cx-215+Math.sin(time*23)*14,y:300+Math.sin(time*17)*10};}
+ const f=a.fist;if(f&&!fallK){const side=f.side,fx=side==='L'?f.x:mir(f.x),stuckW={x:fx,y:restY},A=arm[side];
+  const high={x:fx-70,y:restY-175};if(f.state==='aim'){const k=ease(f.age/COL.windup);A.W=lerpP(rest,{x:high.x+Math.sin(time*5)*4,y:high.y-Math.sin(Math.min(1,f.age/COL.windup)*Math.PI)*30},k);}
+  else if(f.state==='lock')A.W={...high};else if(f.state==='fall'){const q=1+f.y/240;A.W={x:lerp(high.x,fx,q),y:lerp(high.y,restY,q*q)};}
+  if(['fall','stuck','broken'].includes(f.state))A.snap=true;
+  if(f.state==='stuck'||f.state==='broken')A.W={x:fx+(f.state==='broken'?Math.sin(time*40)*3:0),y:restY};
+  else if(f.state==='lift'){const q=1-Math.max(0,f.timer)/COL.lift,p=lerpP(stuckW,rest,ease(q));A.W={x:p.x,y:p.y-Math.sin(q*Math.PI)*120};}
+  A.state=f.state==='stuck'&&f.weak?'weak':f.state==='broken'?'broken':null;}
+ const sw=a.sweep;if(sw&&!fallK){const side=sw.dir>0?'L':'R',A=arm[side],S=side==='L'?SL:SR,toL=x=>side==='L'?x:mir(x),hy=sw.low?FLOOR-70:FLOOR-118;
+  const reach=(RIG.hand.w[1]-100)*HAND_K;if(sw.state==='warn'){A.W={x:toL(cx-sw.dir*300)+Math.sin(time*12)*5,y:FLOOR-120};A.handRot=-.2;}
+  else{A.W={x:toL(sw.x)-reach,y:hy};A.handRot=sw.low?Math.PI/2+.15:Math.PI/2;A.snap=true;}A.tool='hand';}
+ for(const s of ['L','R'])if(a.hands&&!a.hands[s]&&!arm[s].state)arm[s].state='broken';
+ if(assembly?.arms!==undefined){const o=assembly.arms;for(const s of ['L','R']){arm[s].fly={x:-(1-o)*520,y:-(1-o)*260,rot:(1-o)*(s==='L'?-2:2)};}}
+ // Wrists glide towards their targets (the slam and the sweep stay exact), so poses never snap into each other.
+ const mem=rigMemory(a),st=mem.smooth||(mem.smooth={t:time}),dt=Math.min(.1,Math.max(0,time-st.t));st.t=time;
+ for(const s of ['L','R']){const A=arm[s];if(!st[s]||A.snap||assembly||fallK>0||dt===0&&!st[s])st[s]={...A.W};else st[s]=lerpP(st[s],A.W,1-Math.exp(-dt*12));if(!assembly)A.W={...st[s]};}
+ for(const s of ['L','R'])Object.assign(arm[s],solveArm(s==='L'?SL:SR,arm[s].W));
+ // Faces: the screen reacts to what the giant is doing; idle moods come from the emotions sheet.
+ let face=a.emo?a.emo.name:null;
+ if(roar)face='roar';if(f&&!fallK)face=f.state==='aim'||f.state==='lock'?'glare':f.state==='broken'?'scream':f.weak?'sneer':'grin';
+ if(sw&&!fallK)face='roar';if(a.beam)face=a.beam.state==='charge'?'glare':'scream';if(a.hurt>0)face='scream';if(fallK>.3)face='glitch';
+ const cracked=b.hurtTime>0&&fallK===1||breakout&&breakoutFrame(n.transitionProgress)>=2;
+ return {cx,fallK,falling:a.mode==='collapse'&&!breakout,torso:{x:tx,y:ty},down:{x:dx,y:dy},SL,SR,arm,head,face,cracked,mir,assembly,emoAlpha:a.emo&&face===a.emo.name?emoAlpha(a.emo):1};
+}
+// The calm face between moods: the squid-eyed screen of the tower (assets/infoshum-tower.png, «face»).
+function drawCalmFace(c,a,box){const img=a.infoshumTower,f=AT.mon.face.r;if(!img)return;c.save();c.beginPath();c.rect(box.x,box.y,box.w,box.h);c.clip();c.drawImage(img,f[0]+48,f[1]+28,122,94,Math.round(box.x-2),Math.round(box.y-2),Math.round(box.w+4),Math.round(box.h+4));c.restore();}
+function drawRigArm(c,a,r,side,time){
+ const img=a.infoshumColossusRig,A=r.arm[side],R=RIG;c.save();
+ if(side==='R'){c.translate(2*r.cx,0);c.scale(-1,1);}
+ if(A.fly){const p=A.S;c.translate(A.fly.x,A.fly.y);c.translate(p.x,p.y);c.rotate(A.fly.rot);c.translate(-p.x,-p.y);}
+ const up=Math.atan2(A.E.y-A.S.y,A.E.x-A.S.x),fo=Math.atan2(A.W.y-A.E.y,A.W.x-A.E.x);
+ rigPiece(c,img,R.upper,R.upper.a,A.S.x,A.S.y,up-segAng(R.upper),{stretch:A.k,axis:segAng(R.upper)});
+ rigPiece(c,img,R.fore,R.fore.a,A.E.x,A.E.y,fo-segAng(R.fore),{stretch:A.k,axis:segAng(R.fore)});
+ if(A.tool==='hand')rigPiece(c,img,R.hand,R.hand.w,A.W.x,A.W.y,A.handRot??fo+Math.PI/2,{scale:HAND_K});
+ else{const p=R[A.state==='weak'?'fist1':A.state==='broken'?'fist2':'fist0'],tilt=(fo-Math.PI/2)*.35;rigPiece(c,img,p,p.w,A.W.x,A.W.y,tilt);
+  if(A.state==='weak'){c.save();c.globalCompositeOperation='lighter';c.globalAlpha=.25+.2*Math.sin(time*10);rigPiece(c,img,p,p.w,A.W.x,A.W.y,tilt);c.restore();}}
+ c.restore();
+}
+function headScreen(r){const h=r.head,R=RIG.head,s=R.scr,k=h.scale,cx=(s[0]+s[2])/2,cy=(s[1]+s[3])/2;return {x:h.x+(s[0]-cx)*k,y:h.y+(s[1]-cy)*k,w:(s[2]-s[0])*k,h:(s[3]-s[1])*k};}
+function drawRigHead(c,a,r,time){
+ const img=a.infoshumColossusRig,p=RIG[r.cracked?'headX':'head'],h=r.head,s=p.scr,sc=[(s[0]+s[2])/2,(s[1]+s[3])/2];
+ rigPiece(c,img,p,sc,h.x,h.y,h.rot,{scale:h.scale});if(r.cracked)return;
+ c.save();c.translate(h.x,h.y);c.rotate(h.rot);c.translate(-h.x,-h.y);const box=inset(headScreen(r),.03,.04);
+ drawCalmFace(c,a,box);if(r.face)drawEmotion(c,a,r.face,box,r.emoAlpha,time);c.restore();
+}
+function drawRigDebris(c,a,r){if(!r.falling||r.fallK<=0||r.fallK>=1)return;const img=a.infoshumColossusRig;for(let i=0;i<9;i++){const p=RIG['deb'+i],t=r.fallK,dir=i%2?1:-1,x=r.cx+dir*(40+i*28)*t,y=200+i*6-Math.sin(t*Math.PI)*(90+i*12)+t*t*220;rigPiece(c,img,p,[p.r[2]/2,p.r[3]/2],x,Math.min(FLOOR-8,y),t*6*dir,{scale:.8,alpha:1-t*.4});}}
+function drawColossus(c,a,g,time,assembly=null){
+ const img=a.infoshumColossusRig;if(!img)return null;const r=colossusRig(g,time,assembly),R=RIG;
+ c.save();if(assembly){c.beginPath();c.rect(r.cx-600,0,1200,BASE+4);c.clip();}
+ const tA=1-ease((r.fallK-.25)/.5),dA=ease((r.fallK-.15)/.5);
+ if(dA>0)rigPiece(c,img,R.down,[0,0],r.down.x,r.down.y,0,{alpha:dA});if(tA>0)rigPiece(c,img,R.torso,[0,0],r.torso.x,r.torso.y,0,{alpha:tA});
+ c.restore();
+ const lying=r.fallK>.5;if(!lying)drawRigHead(c,a,r,time);
+ drawRigArm(c,a,r,'L',time);drawRigArm(c,a,r,'R',time);
+ if(lying)drawRigHead(c,a,r,time);drawRigDebris(c,a,r);
+ return r;
+}
+// ——— The assembly: the relays fly into the tower, then the giant rises out of the floor around its new head ———
 function drawAssembly(c,a,g,time){
  const n=g.boss.network,k=n.transitionProgress,r=rooms[g.room],cx=r.x+TOWER.cx;
  const fly=Math.min(1,k/.32);
- if(k<.42){n.relays.forEach((q,i)=>{const rr=relayRect(g,i),e=fly*fly,x=rr.x+rr.w/2+(cx-rr.x-rr.w/2)*e,y=rr.y+rr.h/2+(TOWER.base-TOWER.h*.5-rr.y-rr.h/2)*e-Math.sin(fly*Math.PI)*80;
+ if(k<.44){n.relays.forEach((q,i)=>{const rr=relayRect(g,i),e=fly*fly,x=rr.x+rr.w/2+(cx-rr.x-rr.w/2)*e,y=rr.y+rr.h/2+(TOWER.base-TOWER.h*.5-rr.y-rr.h/2)*e-Math.sin(fly*Math.PI)*80;
    if(fly<1){c.save();c.translate(x,y);c.rotate(fly*5*(i%2?1:-1));const p=AT.relay.r4,w=rr.w*(1-fly*.6),h=w*p.r[3]/p.r[2];piece(c,a.infoshumRelays,p,-w/2,-h/2,w,h);c.restore();}});
   drawTowerAt(c,a,k<.2?'crack3':'roar',cx,TOWER.base,1,time,{shake:Math.sin(time*60)*k*10});}
- if(k>.28&&k<.5){const f=Math.min(3,Math.floor((k-.28)/.22*4)),as=AT.colossus['as'+f],w=200+(k-.28)*900;piece(c,a.infoshumColossus,as,cx-w/2,BASE-w*as.r[3]/as.r[2],w,w*as.r[3]/as.r[2]);}
- if(k>=.46){const f=Math.min(5,Math.floor((k-.46)/.44*6)),fr=bodyFrame(c,a,'rise'+f,cx);
-  if(fr&&f>=4&&fr.p.scr){const s=fr.p.scr,x0=fr.x+s[0]*fr.k,y0=fr.y+s[1]*fr.k,pic=AT.screens[f===4?'s1':'s2'];piece(c,a.infoshumScreenStates,pic,x0,y0,(s[2]-s[0])*fr.k,(s[3]-s[1])*fr.k,{alpha:.95});}}
+ if(k>=.4){const q=(k-.4)/.5,sc=towerScreen(g),scale=sc.w/((RIG.head.scr[2]-RIG.head.scr[0]));
+  drawColossus(c,a,g,time,{torso:(1-ease(q/.6))*330,head:{x:sc.x+sc.w/2,y:sc.y+sc.h/2,scale,k:ease((q-.15)/.6)},arms:ease((q-.35)/.5)});}
  flash(c,g,k>.38&&k<.48?.5*(1-Math.abs(k-.43)/.05):0);flash(c,g,k>.9?(k-.9)/.1*.6:0);
-}
-// ——— Phase 2: the colossus ———
-// assets/infoshum-colossus-body.png: whole-body frames — idle ×3, roar ×2, hurt ×2, charging; the fall ×4, lying ×2,
-// getting up ×2; a ground slam ×7 (the fist lands on the left; mirrored for the right); low and high sweeps ×3 each;
-// rising out of the heap ×6. The faces are painted into every frame.
-function colossusPose(g,time){
- const a=g.boss.network.col;if(!a)return ['idle0'];
- if(a.mode==='intro')return ['idle'+(3+Math.floor(time*4)%2)];
- if(a.mode==='collapse'){if(a.clock<COL.fallTime)return ['fall'+Math.min(3,Math.floor(a.clock/COL.fallTime*4))];return ['fall'+(4+Math.floor(time*2)%2)];}
- if(a.mode==='rise')return [a.clock<COL.rise*.5?'fall6':a.clock<COL.rise?'fall7':'idle3'];
- const f=a.fist;if(f){const flip=f.side==='R';
-  if(f.state==='aim')return [f.age<COL.windup?'slam0':'slam1',flip];if(f.state==='lock')return ['slam1',flip,Math.sin(time*80)*2];if(f.state==='fall')return ['slam2',flip];
-  if(f.state==='stuck')return [f.timer>COL.stuck[0]-.18?'slam3':'slam4',flip];if(f.state==='broken')return ['slam5',flip];return ['slam6',flip];}
- const s=a.sweep;if(s){const o=s.low?0:3,flip=s.dir<0;if(s.state==='warn')return ['sweep'+o,flip];return ['sweep'+(o+(s.travel<COL.sweepSpan*.45?1:2)),flip];}
- if(a.beam)return ['idle7'];
- if(a.hurt>0)return ['idle'+(5+Math.floor(time*6)%2)];
- if(a.roar>0)return ['idle'+(3+Math.floor(time*5)%2)];
- if(a.emo)return ['idle0'];
- return ['idle0'];
 }
 function drawShaft(c,a,g,time){
  const img=a.infoshumAscent,vw=VW(g);
  if(img?.complete&&img.naturalWidth){const w=vw+40,h=img.naturalHeight*w/img.naturalWidth,off=(time*14)%h,x=g.camera-20;for(let y=off-h;y<512;y+=h-1)c.drawImage(img,Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
  else rect(c,g.camera,0,vw,512,'#1a0b33');
  c.save();c.globalAlpha=.35;rect(c,g.camera,0,vw,512,'#0a0418');c.restore();
-}
-// A short crossfade between two poses keeps the giant from snapping from frame to frame.
-const FADE=.1;
-function drawColossus(c,a,g,time){
- const col=g.boss.network.col||{},[name,flip=false,shake=0]=colossusPose(g,time),hurt=g.boss.hurtTime>0?Math.sin(time*60)*3:0,key=name+(flip?'~':''),cx=rooms[g.room].x+TOWER.cx;
- const fade=col.fade||(col.fade={key,prev:null,at:-9});if(fade.key!==key){fade.prev=fade.key;fade.at=time;fade.key=key;}
- const k=Math.min(1,Math.max(0,(time-fade.at)/FADE));
- // The new pose is drawn solid and the old one melts away on top of it, so the giant never turns see-through.
- const bob=name==='idle0'?Math.round(Math.sin(time*2.2)*2):0,fr=bodyFrame(c,a,name,cx,{flip,shake:shake+hurt,bob});
- if(fade.prev&&k<1){const [pn,pf]=[fade.prev.replace('~',''),fade.prev.endsWith('~')];bodyFrame(c,a,pn,cx,{flip:pf,alpha:(1-k)*.85,shake:hurt});}
- if(fr&&col.emo&&name==='idle0'){const s=AT.body.idle0.scr;drawEmotion(c,a,col.emo.name,inset({x:fr.x+s[0]*fr.k+hurt,y:fr.y+s[1]*fr.k,w:(s[2]-s[0])*fr.k,h:(s[3]-s[1])*fr.k},.13,.17),emoAlpha(col.emo)*Math.max(.35,k),time);}
- return fr;
 }
 // The breakout (assets/infoshum-breakout.png): bulging glass, tentacles through it, the burst, he tears out, the roar.
 const BREAK=[[37,144,310,269],[394,140,373,273],[732,80,372,335],[1117,112,410,295],[8,552,386,383],[403,580,353,355],[780,548,320,373],[1141,589,380,309]];
@@ -150,13 +208,13 @@ function drawBreakout(c,a,g,progress,time){
 // ——— The broadcast cannon (assets/infoshum-cannon.png) ———
 // It rises out of the colossus's head (mount ×3), the barrel charges (×4) and fires (×1); the beam is a tiled
 // segment (×3) with a muzzle flare (×3) and an impact on the floor (×4). Mount and barrel turn towards Uma's side.
-const CAN_K=.64,LAMP={idle0:57,idle7:60},BEAM_TH=COL.beamHalf*2.5;
+const CAN_K=.64,BEAM_TH=COL.beamHalf*2.5;
 function drawCannon(c,a,g,time){
  const col=g.boss.network.col,m=col.beam,img=a.infoshumCannon,C=AT.cannon;if(!img||!C)return;
- const pose=colossusPose(g,time)[0],lamp=LAMP[pose];
+ const rig=colossusRig(g,time);if(rig.fallK>0)return;
  if(m)col.cannon={x:m.x,until:time+.3};const fold=!m&&col.cannon&&time<col.cannon.until?(col.cannon.until-time)/.3:0;
- if(lamp===undefined||!m&&!fold)return;
- const cx=rooms[g.room].x+TOWER.cx,tx=m?m.x:col.cannon.x,left=tx<cx,yb=BASE-(AT.body[pose].gy[0]-lamp)*BODY_K;
+ if(!m&&!fold)return;
+ const cx=rig.head.x,tx=m?m.x:col.cannon.x,left=tx<cx,yb=rig.head.y+RIG.head.top[1]-(RIG.head.scr[1]+RIG.head.scr[3])/2+8;
  const q=m?(m.state==='charge'?1-Math.max(0,m.timer)/COL.beamCharge:1):fold,mf=q<.12?0:q<.25?1:2,mp=C['m'+mf],mw=mp.r[2]*CAN_K,mh=mp.r[3]*CAN_K,mx=cx-(left?mw-mp.b[0]*CAN_K:mp.b[0]*CAN_K);
  piece(c,img,mp,mx,yb-mh,mw,mh,{flip:left});if(mf<2)return;
  const pv={x:left?mx+mw-mp.p[0]*CAN_K:mx+mp.p[0]*CAN_K,y:yb-mh+mp.p[1]*CAN_K},ang=Math.atan2(FLOOR-pv.y,tx-pv.x);

@@ -229,7 +229,7 @@ function stepColossus(g,dt){
 function strikeColossus(g,paw){
  const b=g.boss,n=b.network,a=n.col,p=g.player,f=a.fist;if(a.lastSwing===p.swing)return false;
  if(f&&f.state==='stuck'&&f.weak&&overlap(paw,fistBox(f))){
-  a.lastSwing=p.swing;a.hands[f.side]=false;f.weak=false;f.state='broken';f.timer=.5;a.hurt=1.1;b.hurtTime=.35;a.head=3;a.headTime=.7;a.flash=.2;
+  a.lastSwing=p.swing;a.hands[f.side]=false;a.hurtSide=f.side;f.weak=false;f.state='broken';f.timer=.5;a.hurt=1.1;b.hurtTime=.35;a.head=3;a.headTime=.7;a.flash=.2;
   g.emit('bossHit',{boss:'infoshum',x:f.x,y:FLOOR-40});g.emit('infoshumHandBroken',{side:f.side,x:f.x,y:FLOOR-40});return true;}
  if(a.mode==='collapse'&&a.clock>COL.fallTime&&overlap(paw,headBox(g))){
   a.lastSwing=p.swing;const h=headBox(g);b.hp=Math.max(PHASE_HP,b.hp-HIT_DAMAGE);b.hurtTime=.35;b.cooldown=.24;a.round++;
