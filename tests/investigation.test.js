@@ -28,14 +28,14 @@ test('reading a notebook adds the room\'s next clue, with no premature answer',(
  Object.assign(g.player,{x:n.x-17,y:n.y-24,grounded:true,supportId:s.id});g.checkNotebooks();
  assert.equal(g.clues.length,1);assert.equal(g.clues[0].room,3);assert.ok(!/создаёте меня|Всё начинается с нас/i.test(g.clues[0].text));
 });
-test('Infoshum gathers the smashed wall into the colossus after every screen is broken',()=>{
+test('Infoshum gathers the smashed wall into the colossus after nine real screens and the huge wall',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;g.mode='playing';
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
- const n=g.boss.network;assert.equal(n.tvs.length,13);let k=0;
+ const n=g.boss.network;assert.equal(n.tvs.length,21);let k=0;
  while(n.stage==='network'&&k++<40){assert.equal(crackInfoshumScreen(g),true,'paw '+k);for(let i=0;i<25&&n.stage==='network';i++)stepBoss(g,1/60);}
- assert.equal(k,17,'twelve screens, a large one twice, the wall three times');assert.equal(n.stage,'assemble');assert.equal(g.boss.hp,12);assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
+ assert.equal(k,12,'nine real screens, then the huge wall three times');assert.equal(n.stage,'assemble');assert.equal(g.boss.hp,12);assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
  for(let i=0;i<220;i++)stepBoss(g,1/60);
- assert.equal(n.stage,'colossus');assert.equal(g.boss.phase,2);assert.equal(n.tvs.filter(t=>t.state==='broken').length,13);
+ assert.equal(n.stage,'colossus');assert.equal(g.boss.phase,2);
 });
 
 test('projectile deflections reward an active counterattack',()=>{
