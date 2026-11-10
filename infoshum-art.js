@@ -12,6 +12,18 @@ function cell(c,img,cw,ch,frame,cx,cy,w,{flip=false,rot=0,alpha=1}={}){if(!img)r
 function piece(c,img,p,x,y,w,h,{flip=false,alpha=1}={}){if(!img||!p)return;const [sx,sy,sw,sh]=p.r;c.save();c.globalAlpha*=alpha;if(flip){c.translate(Math.round(x+w),Math.round(y));c.scale(-1,1);c.drawImage(img,sx,sy,sw,sh,0,0,Math.round(w),Math.round(h));}else c.drawImage(img,sx,sy,sw,sh,Math.round(x),Math.round(y),Math.round(w),Math.round(h));c.restore();}
 // A piece anchored by its bottom centre.
 function stand(c,img,p,cx,base,w,opts){if(!p)return null;const h=w*p.r[3]/p.r[2];piece(c,img,p,cx-w/2,base-h,w,h,opts);return {x:cx-w/2,y:base-h,w,h};}
+// assets/infoshum-emotions.png: eight menacing faces painted as screen contents (grin, laugh, roar, sneer, glare,
+// scream, tongue, glitch). They are laid over a monitor's glass, clipped to its rounded corners.
+function drawEmotion(c,a,name,box,alpha,time){const p=AT.emo?.[name],img=a.infoshumEmotions;if(!p||!img||alpha<=0)return;
+ const j=name==='glitch'||name==='scream'?Math.round(Math.sin(time*47)*2):0,r=Math.min(box.w,box.h)*.12;
+ c.save();c.globalAlpha*=alpha;c.beginPath();c.roundRect?c.roundRect(box.x,box.y,box.w,box.h,r):c.rect(box.x,box.y,box.w,box.h);c.clip();
+ c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(box.x-box.w*.04+j),Math.round(box.y-box.h*.04),Math.round(box.w*1.08),Math.round(box.h*1.08));
+ if(name==='glitch'&&Math.floor(time*12)%3===0){c.globalAlpha*=.5;c.fillStyle='#ff4fd8';c.fillRect(box.x,box.y+box.h*((time*3)%1),box.w,3);}
+ c.restore();}
+const inset=(b,ix,iy)=>({x:b.x+b.w*ix,y:b.y+b.h*iy,w:b.w*(1-2*ix),h:b.h*(1-2*iy)});
+const emoAlpha=e=>e?Math.min(1,(e.max-e.t)/.12,e.t/.12):0;
+function crackLines(c,box,n){c.save();c.strokeStyle='rgba(150,240,255,.85)';c.lineWidth=1.5;c.beginPath();
+ const L=[[.05,.9,.95,.35],[.6,.05,.35,.6],[.2,.15,.75,.95]];for(let i=0;i<Math.min(n,3);i++){const q=L[i];c.moveTo(box.x+q[0]*box.w,box.y+q[1]*box.h);c.lineTo(box.x+(q[0]+q[2])/2*box.w+6,box.y+(q[1]+q[3])/2*box.h-4);c.lineTo(box.x+q[2]*box.w,box.y+q[3]*box.h);}c.stroke();c.restore();}
 const flash=(c,g,alpha,color='#f5d6ff')=>{if(alpha<=0)return;c.save();c.globalAlpha=Math.min(.6,alpha);rect(c,g.camera,0,VW(g),512,color);c.restore();};
 function drawLineWarning(c,a,x,y,w,time){
  const img=a.infoshumFx1,p=AT.fx1['warn'+Math.floor(time*10)%4];c.save();c.globalAlpha=.55+.35*Math.abs(Math.sin(time*10));
@@ -31,7 +43,7 @@ function amberFrame(c,r,time,pad=0){c.save();c.strokeStyle='#ffc45e';c.shadowCol
 // frames, Yuri bursting in, half Yuri / half Infoshum, three crack levels. assets/infoshum-relays.png: a relay tower
 // (idle, Yuri points, junction box open, hit, exploded, rebooting) and cable pieces (three pulse frames, two snapped ends).
 // assets/infoshum-fx1.png: the scanning beam, a warning line, the cable whip, a thrown TV and its puddle of noise.
-const TOWER_K=TOWER.w/AT.mon.face.r[2];
+const TOWER_K=TOWER.w/AT.mon.face.r[2],EMO_BOX=[0,0,0,0];
 function drawTowerAt(c,a,face,cx,base,k=1,time=0,{alpha=1,shake=0}={}){const p=AT.mon[face]||AT.mon.face,w=p.r[2]*TOWER_K*k;return stand(c,a.infoshumTower,p,cx+shake,base,w,{alpha});}
 const RELAY_FRAME={live:'r0',yuri:'r1',open:'r2',hit:'r3',dead:'r4',reboot:'r5'};
 function cablePath(g,i,k=1){const r=relayRect(g,i),R=RELAYS[i],tx=rooms[g.room].x+TOWER.cx,side=R.cx<TOWER.cx?-1:1,ty=TOWER.base-TOWER.h*.62;
@@ -54,6 +66,7 @@ function drawHallBack(c,a,g,time){
  const shake=n.face==='roar'?Math.sin(time*50)*2:n.face==='charge'?Math.sin(time*70)*1.2:0,fade=n.faceFade||(n.faceFade={face:n.face,prev:null,at:-9});
  if(fade.face!==n.face){fade.prev=fade.face;fade.face=n.face;fade.at=time;}const fk=Math.min(1,Math.max(0,(time-fade.at)/.12));
  if(fade.prev&&fk<1)drawTowerAt(c,a,fade.prev,r.x+TOWER.cx,TOWER.base,1,time,{alpha:1-fk});drawTowerAt(c,a,n.face,r.x+TOWER.cx,TOWER.base,1,time,{shake,alpha:fade.prev&&fk<1?Math.max(.4,fk):1});
+ if(n.emo&&['face','crack1','crack2'].includes(n.face)&&n.take?.show!=='yuri'){const sc=towerScreen(g),box={x:sc.x+EMO_BOX[0],y:sc.y+EMO_BOX[1],w:sc.w+EMO_BOX[2],h:sc.h+EMO_BOX[3]};drawEmotion(c,a,n.emo.name,box,emoAlpha(n.emo),time);if(n.cracks)crackLines(c,box,n.cracks);}
  if(n.shield&&n.mode!=='opening')drawShield(c,g,time);
  if(n.take?.show==='yuri')amberFrame(c,towerScreen(g),time,4);
 }
@@ -73,7 +86,7 @@ function drawHallFront(c,a,g,time){
 }
 // ——— The assembly: the relays fly into the tower, the colossus rises around it ———
 const BODY_K=430/360,BASE=FLOOR+10;
-function bodyFrame(c,a,name,cx,{flip=false,alpha=1,shake=0}={}){if(alpha<=0)return null;const p=AT.body[name];if(!p||!a.infoshumBody)return null;const k=BODY_K,w=p.r[2]*k,h=p.r[3]*k,hx=p.hx[0]*k,x=flip?cx-(w-hx):cx-hx,y=BASE-p.gy[0]*k;piece(c,a.infoshumBody,p,x+shake,y,w,h,{flip,alpha});return {x,y,w,h,k,p,flip};}
+function bodyFrame(c,a,name,cx,{flip=false,alpha=1,shake=0}={}){if(alpha<=0)return null;const p=AT.body[name];if(!p||!a.infoshumColBody)return null;const k=BODY_K,w=p.r[2]*k,h=p.r[3]*k,hx=p.hx[0]*k,x=flip?cx-(w-hx):cx-hx,y=BASE-p.gy[0]*k;piece(c,a.infoshumColBody,p,x+shake,y,w,h,{flip,alpha});return {x,y,w,h,k,p,flip};}
 function bodyPoint(f,pt){const x=f.flip?f.x+f.w-pt[0]*f.k:f.x+pt[0]*f.k;return {x,y:f.y+pt[1]*f.k};}
 function drawAssembly(c,a,g,time){
  const n=g.boss.network,k=n.transitionProgress,r=rooms[g.room],cx=r.x+TOWER.cx;
@@ -102,6 +115,7 @@ function colossusPose(g,time){
  if(a.beam)return ['idle7'];
  if(a.hurt>0)return ['idle'+(5+Math.floor(time*6)%2)];
  if(a.roar>0)return ['idle'+(3+Math.floor(time*5)%2)];
+ if(a.emo)return ['idle0'];
  return ['idle'+[0,1,2,1][Math.floor(time*3)%4]];
 }
 function drawShaft(c,a,g,time){
@@ -117,7 +131,9 @@ function drawColossus(c,a,g,time){
  const fade=col.fade||(col.fade={key,prev:null,at:-9});if(fade.key!==key){fade.prev=fade.key;fade.at=time;fade.key=key;}
  const k=Math.min(1,Math.max(0,(time-fade.at)/FADE));
  if(fade.prev&&k<1){const [pn,pf]=[fade.prev.replace('~',''),fade.prev.endsWith('~')];bodyFrame(c,a,pn,cx,{flip:pf,alpha:1-k,shake:hurt});}
- return bodyFrame(c,a,name,cx,{flip,shake:shake+hurt,alpha:fade.prev?Math.max(.35,k):1});
+ const fr=bodyFrame(c,a,name,cx,{flip,shake:shake+hurt,alpha:fade.prev?Math.max(.35,k):1});
+ if(fr&&col.emo&&name==='idle0'){const s=AT.body.idle0.scr;drawEmotion(c,a,col.emo.name,inset({x:fr.x+s[0]*fr.k+hurt,y:fr.y+s[1]*fr.k,w:(s[2]-s[0])*fr.k,h:(s[3]-s[1])*fr.k},.13,.17),emoAlpha(col.emo)*Math.max(.35,k),time);}
+ return fr;
 }
 // The breakout (assets/infoshum-breakout.png): bulging glass, tentacles through it, the burst, he tears out, the roar.
 const BREAK=[[37,144,310,269],[394,140,373,273],[732,80,372,335],[1117,112,410,295],[8,552,386,383],[403,580,353,355],[780,548,320,373],[1141,589,380,309]];

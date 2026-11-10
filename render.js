@@ -11,7 +11,7 @@ import {drawProjectile,drawCombatEffects} from './projectile-art.js?v=0.21.5';
 import {drawBossDefeat} from './boss-defeat-art.js?v=0.21.5';
 import {drawYuriSignal,drawNotebookReceivers} from './signal-art.js?v=0.21.5';
 import {drawPassages} from './passage-art.js?v=0.21.5';
-import {drawNewsroomScenery,drawNewsroomConveyor} from './newsroom-art.js?v=0.21.5';
+import {drawNewsroomScenery,drawNewsroomConveyor,drawNewsroomPlatform} from './newsroom-art.js?v=0.21.5';
 import {drawMapProps} from './chapter-route-art.js?v=0.21.5';
 import {drawExitArrow} from './navigation-art.js?v=0.21.5';
 import {drawEnemySources,drawEchoVortex,drawBeltEmergence} from './enemy-arrival-art.js?v=0.21.5';
@@ -79,7 +79,7 @@ export class Renderer{
    if(platform.room!==g.room||platform.collapseTime>0)continue;
    if(platform.x+platform.w<cam||platform.x>cam+vw)continue;
    drawPlatformShadow(c,g,platform);
-   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(g.room===3&&drawRoofSurface(c,a,g,platform)){}else if(g.room===5&&drawStudioSurface(c,a,g,platform)){}else if(g.room===7&&drawDimensionSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t,g);else drawSurface(c,a,platform,t);
+   if(platform.id==='1:0')drawNewsroomConveyor(c,a,g,t);else if((g.room===1||g.room===2)&&drawNewsroomPlatform(c,a,platform)){}else if(g.room===0&&drawTutorialSurface(c,a,g,platform)){}else if(g.room===3&&drawRoofSurface(c,a,g,platform)){}else if(g.room===5&&drawStudioSurface(c,a,g,platform)){}else if(g.room===7&&drawDimensionSurface(c,a,g,platform)){}else if(platform.shelter&&g.room===2&&drawShelter(c,a,g,platform)){}else if(g.room===4)drawAgitatorPlatform(c,a,platform,t);else if(g.room===8)drawInfoshumPlatform(c,a,platform,t);else if(g.room===6)drawStudioPlatform(c,a,platform,t,g);else drawSurface(c,a,platform,t);
    drawPlatformRim(c,g,platform,t);
   }
   for(const ladder of ladders){
