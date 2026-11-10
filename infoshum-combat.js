@@ -1,16 +1,14 @@
 // «Найди источник»: the final fight, three phases of six health each.
-// 1 «Море экранов»: a hall of monitors. In waves his face shows on many screens at once, but only one is real.
-//   Yuri fights from inside: his amber face appears on nearby screens and points at the real one (the marker shows then).
-//   A paw on the real screen smashes it; a paw on a fake brings data rain. The real one charges and fires a beam along
-//   its tier. Every third wave Yuri holds him in the screen — no beam. After nine screens they fight over the huge
-//   wall: Yuri's face and his alternate, the paw counts only while he is on it (three paws).
-// 2 «Колосс»: he pulls the broken monitors into a colossus and fights with his hands. A fist follows Uma as a shadow
-//   and slams down: a shockwave runs along the floor (jump), and the fist sticks — the monitor on its knuckles is the
-//   weak spot. An arm sweeps low (jump) or high (crouch); the head's beam crawls after Uma. With both hands broken
-//   he collapses and the head screen lies on the floor: a paw there takes two health. Three collapses.
-// 3 «На свободе»: he bursts out of the head screen into the storm. Tentacles break out of the ground under Uma,
-//   shards of headlines fly at her, and he rams along her island. Dodge the ram and he crashes, dizzy — a paw tears
-//   a tentacle off. For the last blow Yuri holds him from a surviving screen.
+// 1 «Прямой эфир»: a huge square monitor stands in the middle of the hall behind a dome of static, fed by four relays.
+//   It scans the floor with a vertical beam (hide under a ledge), whips a cable across Uma's ledge (jump) and spits small
+//   TVs that leave puddles of noise. Yuri breaks into the relays one by one and opens a junction box — a paw smashes it.
+//   With both relays of the round dead the dome falls and Yuri bursts into the big screen: he and Infoshum alternate,
+//   and a paw counts while Infoshum is on it. Three cracks — the colossus gathers around the monitor, its new head.
+// 2 «Колосс»: a fist slams the floor beside the body (a shockwave runs along the floor — jump) and sticks: the monitor
+//   on its knuckles is the weak spot. An arm sweeps low (jump) or high (crouch); the head's beam crawls after Uma.
+//   With both hands broken he collapses and the head screen lies on the floor: a paw there takes two health.
+// 3 «На свободе»: he bursts out of the head screen into the storm. Tentacles break out of the ground, shards of
+//   headlines fly at Uma, he rams along her island; dodge the ram and he crashes, dizzy — a paw tears a tentacle off.
 import {rooms} from './level.js?v=0.21.5';
 import {originalsFound} from './dimension-systems.js?v=0.21.5';
 import {pitFall} from './pit-falls.js?v=0.21.5';
@@ -23,141 +21,129 @@ export const revealHint=g=>Math.min(2.4,SOURCE_HINT*originalsFound(g));
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const STAGE_ROOM=8;
 export const FLOOR=474;
-// ——— Phase 1: the sea of screens ———
-// The heap (room-local x, y, w, look): tops of lying monitors; every other platform of the room hides.
-export const WALL_ARENA={0:[0,474,1536,'floor'],1:[40,404,220,'lying'],6:[130,326,180,'side'],9:[340,256,150,'lying'],4:[400,430,130,'side'],16:[490,345,90,'side'],2:[560,390,416,'lying'],
- 7:[600,300,336,'lying'],17:[956,345,90,'side'],5:[1006,430,130,'side'],10:[1046,256,150,'lying'],8:[1226,326,180,'side'],3:[1276,404,220,'lying']};
-export const SCREEN_KINDS={tiny:{casing:'tiny1',w:56,hits:1},small:{casing:'small',w:80,hits:1},med:{casing:'med1',w:108,hits:1},large:{casing:'large1',w:140,hits:1},huge:{casing:'huge',w:600,hits:3}};
-const CASING_H={tiny1:77/93,small:108/122,med1:146/178,large1:180/228,huge:209/674};
-// The screens: size, the tier it stands on, the centre x; and the huge wall over the middle.
-export const SCREEN_LAYOUT=[
- {kind:'tiny',on:1,cx:80},{kind:'tiny',on:1,cx:200},{kind:'small',on:6,cx:190},{kind:'tiny',on:6,cx:270},{kind:'med',on:9,cx:400},{kind:'large',on:0,cx:330},{kind:'small',on:4,cx:440},
- {kind:'small',on:16,cx:535},{kind:'tiny',on:2,cx:700},{kind:'tiny',on:2,cx:836},{kind:'tiny',on:7,cx:650},{kind:'tiny',on:7,cx:886},{kind:'small',on:17,cx:1001},{kind:'small',on:5,cx:1096},
- {kind:'med',on:10,cx:1136},{kind:'large',on:0,cx:1206},{kind:'tiny',on:8,cx:1260},{kind:'small',on:8,cx:1346},{kind:'tiny',on:3,cx:1320},{kind:'med',on:3,cx:1440},
- {kind:'huge',cx:768,top:76}
-];
-export const REAL_SCREENS=9,WALL_UNITS=REAL_SCREENS+3;
-export const WAVE={opening:1.3,warn:.7,face:[1.7,1.5,1.3],charge:.9,fire:.7,rest:.8,early:.45,beam:520,yuri:[.25,.45,.65],hold:2.4,holdEvery:3,fakes:[4,5,6],giantWarn:1.1,giantFace:1.6,giantCharge:1.1,giantFire:.8,giantRest:1.3,giantHalf:18};
-export const ARRIVE=1.6,ASSEMBLE=3.2,BREAKOUT=3;
-// ——— Phase 2: the colossus ———
-export const COL={intro:1.6,gap:[1.1,.85,.6],aim:[1.1,.95,.8],lock:.35,fall:.12,stuck:[2.8,2.6,2.4],lift:.45,fistHalf:58,track:340,shockSpeed:430,shockRange:520,
- sweepWarn:.85,sweepSpeed:640,sweepSpan:1300,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:3.8,rise:1.2,plan:['slam','sweep','slam','beam']};
-// ——— Phase 3: free in the storm ———
+// ——— Phase 1: the broadcast tower ———
+// The hall (room-local x, y, w): the floor and ledges between the relays; every other platform of the room hides.
+export const HALL={0:[0,474,1536],1:[130,392,190],6:[250,300,240],4:[560,410,110],2:[620,330,296],9:[690,262,156],5:[866,410,110],3:[1216,392,190],8:[1046,300,240]};
+// The huge square monitor in the middle (the future head) and the four relays that feed it.
+export const TOWER={cx:768,base:474,w:340,h:392};
+export const RELAYS=[{cx:105,base:474,w:150},{cx:330,base:300,w:170},{cx:1206,base:300,w:170},{cx:1431,base:474,w:150}];
+export const RELAY_H=246/174;
+export const ROUND_PAIRS=[[0,3],[1,2],[0,2]];
+export const WAVE={opening:1.4,gap:[1.05,.9,.75],plan:['scan','whip','volley','whip'],scanWarn:.75,scanSpeed:390,scanSpan:860,scanHalf:22,whipWarn:.85,whipHit:.35,whipHalf:220,volley:3,volleyGap:.28,flight:.8,puddle:3,puddleHalf:34,
+ yuriDelay:1.1,yuriPoint:.9,hitFlash:.3,reboot:.8,takeover:12,yuriFace:1.05,face:1.1,flip:.22,relayUnit:.5,screenUnit:1};
+export const ARRIVE=1.6,ASSEMBLE=3.6,BREAKOUT=3;
+export const COL={reach:110,windup:.55,intro:2,gap:[1.1,.85,.6],aim:[1.1,.95,.8],lock:.35,fall:.12,stuck:[2.8,2.6,2.4],lift:.45,fistHalf:58,track:340,shockSpeed:430,shockRange:520,
+ sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,plan:['slam','sweep','slam','beam']};
 export const FREE={enter:1.2,gap:[1,.8,.6],hoverY:120,tentWarn:.75,tentUp:.5,tentGap:.7,tentHalf:30,volleyMove:.7,volleyGap:.42,shardSpeed:420,ramPrep:.95,ramSpeed:780,crash:.35,dizzy:2.8,dizzyYuri:4.2,hit:.7,bounce:.7,plan:['tentacle','volley','ram']};
 export const STORM_ISLANDS={0:[0,474,460,0],11:[520,474,530,0],12:[1110,474,426,0],1:[92,366,296,1],3:[1131,366,296,1],4:[411,413,165,0],5:[965,413,165,0],2:[617,332,300,1],9:[464,272,145,2],10:[961,272,145,2]};
-function screenSize(kind){const k=SCREEN_KINDS[kind];return {w:k.w,h:Math.round(k.w*CASING_H[k.casing])};}
-export function createScreens(room=STAGE_ROOM){
- const base=rooms[room].x;
- return SCREEN_LAYOUT.map((t,i)=>{const {w,h}=screenSize(t.kind),y=t.kind==='huge'?t.top:(WALL_ARENA[t.on]?.[1]??474)-h;
-  return {index:i,kind:t.kind,on:t.on,x:base+t.cx-w/2,y,w,h,hp:SCREEN_KINDS[t.kind].hits,state:'off',timer:0,dir:1,point:1,shards:0,pop:0,role:null,cracked:false};});
-}
+export const towerTop=()=>TOWER.base-TOWER.h;
+export function towerScreen(g){const x=rooms[g.room].x+TOWER.cx;return {x:x-102,y:towerTop()+51,w:204,h:146};}
+export function relayRect(g,i){const r=RELAYS[i],h=r.w*RELAY_H,x=rooms[g.room].x+r.cx;return {x:x-r.w/2,y:r.base-h,w:r.w,h};}
+// The part of a relay a paw can reach: its lower half, where Yuri opens the junction box.
+export function relayHit(g,i){const r=relayRect(g,i);return {x:r.x+r.w*.05,y:r.y+r.h*.45,w:r.w*.9,h:r.h*.55};}
 export function createInfoshumNetwork(room=STAGE_ROOM){
- const tvs=createScreens(room);
- return {stage:'network',mode:'opening',timer:WAVE.opening,wave:0,broken:0,units:0,tvs,monitors:tvs,lastMonitorIndex:tvs.length-1,real:null,yuri:[],yuriOn:false,yuriTimer:0,hold:false,faces:[],built:false,
-  transitionProgress:0,lastSwing:-1,noise:0,noiseTime:0,col:null,free:null,giantY:null};
+ return {stage:'network',mode:'opening',timer:WAVE.opening,round:0,cracks:0,units:0,built:false,
+  relays:RELAYS.map((r,i)=>({index:i,state:'live',timer:0})),shield:true,face:'dark',faceTime:0,attack:null,step:0,scans:[],whips:[],tvs:[],puddles:[],
+  take:null,yuriQueue:[],yuriTimer:0,transitionProgress:0,lastSwing:-1,noise:0,noiseTime:0,col:null,free:null,
+  monitors:RELAYS.map(r=>({x:rooms[room].x+r.cx-r.w/2,y:r.base-r.w*RELAY_H,w:r.w,h:r.w*RELAY_H}))};
 }
-export const screenUnits=()=>WALL_UNITS;
 export const screenCenter=t=>({x:t.x+t.w/2,y:t.y+t.h/2});
-const beamHalf=t=>Math.max(7,Math.round(t.h*.16));
-// The beam of the real screen runs along its tier towards Uma; the huge wall's beam sweeps a whole tier of the room.
-export function beamRect(t,n=null){
- if(t.kind==='huge'){const r=rooms[STAGE_ROOM],y=n?.giantY??300;return {x:r.x,y:y-WAVE.giantHalf,w:r.width,h:WAVE.giantHalf*2};}
- const c=screenCenter(t),h=beamHalf(t),x0=t.dir>0?t.x+t.w-4:t.x+4;return {x:t.dir>0?x0:x0-WAVE.beam,y:c.y-h,w:WAVE.beam,h:h*2};
-}
-export function monitorRect(m){return {x:m.x,y:m.y,w:m.w,h:m.h};}
-export function glassRect(m){return {x:m.x+m.w*.2,y:m.y+m.h*.2,w:m.w*.6,h:m.h*.55};}
-const LIVE=['face','charge','fire','held'],RANK={tiny:0,small:1,med:2,large:3};
-const isOut=t=>t.state==='broken'||t.state==='crack';
-export const realScreen=n=>{const t=n.tvs[n.real];return t&&t.role==='real'&&LIVE.includes(t.state)?t:null;};
+export const realScreen=n=>n.take&&n.take.show==='face'?n:null;
+function setFace(n,face,time=0){n.face=face;n.faceTime=time;}
 // The room is rearranged per phase: shapes of [x, y, w, look]; every other platform of the room hides.
 function reshape(g,shapes,key){
  const r=rooms[g.room];
  for(const p of g.platforms)if(p.room===g.room){
   const shape=shapes[p.index];p.bossHidden=!shape;p.infoshumStep=false;p.storm=undefined;p.heap=undefined;
-  if(shape){p.x=r.x+shape[0];p.y=shape[1];p.w=shape[2];p.baseX=p.x;p.baseY=p.y;p.prevX=p.x;p.prevY=p.y;p.motion=null;p.dx=0;p.dy=0;if(key)p[key]=shape[3];}
+  if(shape){p.x=r.x+shape[0];p.y=shape[1];p.w=shape[2];p.baseX=p.x;p.baseY=p.y;p.prevX=p.x;p.prevY=p.y;p.motion=null;p.dx=0;p.dy=0;if(key&&shape[3]!==undefined)p[key]=shape[3];}
  }
 }
-export function buildWall(g){const n=g.boss.network;if(n.built)return;n.built=true;reshape(g,WALL_ARENA,'heap');}
-function endWave(n){for(const t of n.tvs)if(!isOut(t)){t.state='off';t.role=null;}n.yuriOn=false;n.yuri=[];}
-function startWave(g){
- const n=g.boss.network,p=g.player,regular=n.tvs.filter(t=>t.kind!=='huge'&&!isOut(t)),huge=n.tvs.find(t=>t.kind==='huge');
- endWave(n);n.hold=false;let giant=false;
- if(n.broken>=REAL_SCREENS||!regular.length){if(isOut(huge))return;giant=true;huge.role='real';huge.state='yuri';n.real=huge.index;n.giantY=null;}
- else{
-  const px=p.x+p.w/2,dist=(a,x)=>Math.abs(screenCenter(a).x-x),near=[...regular].sort((a,b)=>dist(a,px)-dist(b,px)),real=near[Math.floor(Math.random()*Math.min(4,near.length))];
-  // The screens around the real one light up: Yuri takes the two biggest of them, his fakes take the rest.
-  const count=WAVE.fakes[Math.min(2,Math.floor(n.broken/3))],rx=screenCenter(real).x,pool=regular.filter(t=>t!==real).sort((a,b)=>dist(a,rx)-dist(b,rx)).slice(0,count+2);
-  const helpers=[...pool].sort((a,b)=>RANK[b.kind]-RANK[a.kind]||dist(a,rx)-dist(b,rx)).slice(0,2),fakes=pool.filter(t=>!helpers.includes(t));
-  real.role='real';real.state='static';for(const t of fakes){t.role='fake';t.state='static';}
-  for(const t of helpers){t.role='yuri';t.point=rx>=screenCenter(t).x?1:-1;}
-  n.real=real.index;n.yuri=helpers.map(t=>t.index);n.hold=n.wave%WAVE.holdEvery===WAVE.holdEvery-1;
- }
- n.mode='warn';n.timer=giant?WAVE.giantWarn:WAVE.warn;n.wave++;n.faces=[n.real];
- g.emit('infoshumWave',{wave:n.wave,giant});
+export function buildWall(g){const n=g.boss.network;if(n.built)return;n.built=true;reshape(g,HALL);}
+const surfaces=g=>g.platforms.filter(s=>s.room===g.room&&!s.bossHidden);
+// The first surface a beam from above meets at x (the floor if nothing else).
+export function beamFloor(g,x){let y=FLOOR;for(const s of surfaces(g))if(x>=s.x&&x<=s.x+s.w&&s.y<y)y=s.y;return y;}
+function supportOf(g){const p=g.player,own=surfaces(g).find(s=>s.id===p.supportId);if(own)return own;const x=p.x+p.w/2;return surfaces(g).filter(s=>x>=s.x&&x<=s.x+s.w&&s.y>=p.y+p.h-6).sort((a,b)=>a.y-b.y)[0]||surfaces(g).find(s=>s.index===0);}
+const hurtable=p=>p.inv<=0&&p.dash===0;
+// ——— Yuri and the relays ———
+function startRound(g){
+ const n=g.boss.network,pair=ROUND_PAIRS[n.round];n.shield=true;n.take=null;
+ for(const i of pair)if(n.relays[i].state==='dead'){n.relays[i].state='reboot';n.relays[i].timer=WAVE.reboot;}
+ const p=g.player,px=p.x+p.w/2,dist=i=>Math.abs(relayRect(g,i).x+relayRect(g,i).w/2-px);
+ n.yuriQueue=[...pair].sort((a,b)=>dist(a)-dist(b));n.yuriTimer=WAVE.yuriDelay;
+ g.emit('infoshumWave',{round:n.round});
 }
-// His face is on the screens; Yuri needs a moment to find the real one.
-function showFaces(g,instant=false){
- const n=g.boss.network,real=n.tvs[n.real],giant=real.kind==='huge',r=Math.min(2,Math.floor(n.broken/3));
- for(const t of n.tvs)if(!isOut(t)&&(t.role==='real'||t.role==='fake'))t.state='face';
- n.mode='face';n.timer=giant?WAVE.giantFace:WAVE.face[r]+revealHint(g)*.3;n.yuriOn=false;n.yuriTimer=giant||instant?0:Math.max(.1,WAVE.yuri[r]-revealHint(g)*.1);
- for(const i of n.yuri){const t=n.tvs[i];if(!isOut(t))t.state='glitch';}
- g.emit('infoshumReveal',{index:n.real,first:n.wave===1,giant});
- if(n.yuriTimer<=0)yuriFinds(g);
+function stepRelays(g,dt){
+ const n=g.boss.network;
+ for(const r of n.relays){r.timer=Math.max(0,r.timer-dt);
+  if(r.state==='reboot'&&r.timer<=0)r.state='live';
+  else if(r.state==='yuri'&&r.timer<=0){r.state='open';const h=relayHit(g,r.index);g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
+  else if(r.state==='hit'&&r.timer<=0)r.state='dead';}
+ if(!n.shield)return;
+ const busy=n.relays.some(r=>['yuri','open','hit','reboot'].includes(r.state));
+ if(!busy&&n.yuriQueue.length){n.yuriTimer-=dt;if(n.yuriTimer<=0){const i=n.yuriQueue.shift(),r=n.relays[i];r.state='yuri';r.timer=WAVE.yuriPoint;const h=relayRect(g,i);g.emit('yuriHint',{x:h.x+h.w/2,y:h.y});n.yuriTimer=.8;}}
+ const pair=ROUND_PAIRS[n.round];
+ if(pair.every(i=>n.relays[i].state==='dead'))dropShield(g);
 }
-function yuriFinds(g){const n=g.boss.network;n.yuriOn=true;for(const i of n.yuri){const t=n.tvs[i];if(!isOut(t)&&t.role==='yuri')t.state='yuri';}const real=n.tvs[n.real],c=screenCenter(real);g.emit('yuriHint',{x:c.x,y:c.y});}
-function beamHits(g){
- const n=g.boss.network,p=g.player;if(p.inv>0||p.dash>0)return;
- for(const t of n.tvs)if(t.state==='fire'&&overlap(p,beamRect(t,n))){g.hurt(false,screenCenter(t).x);return;}
+function dropShield(g){const n=g.boss.network;n.shield=false;n.attack=null;n.take={show:'yuri',timer:WAVE.yuriFace,left:WAVE.takeover,flip:0};setFace(n,'yuri');const sc=towerScreen(g);g.emit('yuriHold',{x:sc.x+sc.w/2,y:sc.y});g.emit('infoshumReveal',{first:n.round===0,takeover:true});}
+// Yuri and Infoshum fight for the big screen: the paw counts only while his face is on it.
+function stepTakeover(g,dt){
+ const n=g.boss.network,t=n.take;t.timer-=dt;t.left-=dt;
+ if(t.left<=0){startRound(g);n.mode='rest';n.timer=WAVE.gap[n.round];setFace(n,'roar',.8);g.emit('infoshumWarning',{attack:'shield'});return;}
+ if(t.timer>0)return;
+ if(t.show==='half'){t.show=t.next;t.timer=t.show==='face'?WAVE.face:WAVE.yuriFace;setFace(n,t.show==='face'?faceFor(n):'yuri');}
+ else{t.next=t.show==='face'?'yuri':'face';t.show='half';t.timer=WAVE.flip;setFace(n,'half');}
 }
-function createRain(g){
- const p=g.player,x=p.x+p.w/2,s=g.platforms.find(s=>s.id===p.supportId),y=s?.y??474;
- for(const dx of[-38,-12,14,40])g.bolts.push({room:g.room,kind:'dataRain',infoshumAttack:'rain',visual:'infoshum',x:x+dx-6,y:Math.max(12,y-190),w:12,h:34,vx:0,vy:320,ttl:1.5,stopY:y+4});
- g.emit('bossCast',{boss:'infoshum',ability:'rain',x,y});
+const faceFor=n=>['face','crack1','crack2','crack3'][Math.min(3,n.cracks)];
+// ——— The tower's attacks ———
+function towerAttack(g){
+ const n=g.boss.network,p=g.player,px=p.x+p.w/2,r=rooms[g.room],kind=WAVE.plan[n.step++%WAVE.plan.length];
+ if(kind==='scan'){const dir=px<r.x+768?1:-1,x=clamp(px-dir*WAVE.scanSpan/2,r.x+20,r.end-20);n.scans.push({x,dir,state:'warn',timer:WAVE.scanWarn,travel:0});setFace(n,'charge',WAVE.scanWarn);g.emit('infoshumWarning',{attack:'scan',x});}
+ else if(kind==='whip'){const s=supportOf(g),x0=Math.max(s.x,px-WAVE.whipHalf),x1=Math.min(s.x+s.w,px+WAVE.whipHalf);n.whips.push({x0,x1,y:s.y,platformId:s.id,from:px<r.x+768?-1:1,state:'warn',timer:WAVE.whipWarn});g.emit('infoshumWarning',{attack:'whip',x:px,y:s.y});}
+ else{setFace(n,'roar',1.1);const sc=towerScreen(g);for(let i=0;i<WAVE.volley;i++){const tx=clamp(px+(i-1)*130,r.x+30,r.end-30);n.tvs.push({fx:sc.x+sc.w/2,fy:sc.y+sc.h/2,tx,ty:beamFloor(g,tx),t:-i*WAVE.volleyGap,state:'fly'});}g.emit('bossCast',{boss:'infoshum',ability:'volley',x:sc.x+sc.w/2,y:sc.y});}
+ n.attack=kind;
 }
+function stepAttacks(g,dt){
+ const n=g.boss.network,p=g.player,px=p.x+p.w/2;
+ for(const s of n.scans){s.timer-=dt;if(s.state==='warn'){if(s.timer<=0){s.state='go';g.emit('bossCast',{boss:'infoshum',ability:'scan',x:s.x,y:0});}continue;}
+  const v=WAVE.scanSpeed*dt;s.x+=s.dir*v;s.travel+=v;s.bottom=beamFloor(g,s.x);
+  if(hurtable(p)&&Math.abs(px-s.x)<WAVE.scanHalf+p.w/2-6&&p.y+p.h<=s.bottom+4)g.hurt(false,s.x);}
+ n.scans=n.scans.filter(s=>s.travel<WAVE.scanSpan);
+ for(const w of n.whips){w.timer-=dt;if(w.state==='warn'){if(w.timer<=0){w.state='hit';w.timer=WAVE.whipHit;g.emit('bossCast',{boss:'infoshum',ability:'whip',x:(w.x0+w.x1)/2,y:w.y});}continue;}
+  if(hurtable(p)&&p.grounded&&p.supportId===w.platformId&&px>w.x0-8&&px<w.x1+8)g.hurt(false,px);}
+ n.whips=n.whips.filter(w=>!(w.state==='hit'&&w.timer<=-.35));
+ for(const t of n.tvs){t.t+=dt;if(t.state==='fly'&&t.t>=WAVE.flight){t.state='hit';t.t=0;g.emit('boltImpact',{x:t.tx,y:t.ty,kind:'screen'});
+   if(hurtable(p)&&Math.abs(px-t.tx)<38&&p.y+p.h>t.ty-60&&p.y<t.ty+4)g.hurt(false,t.tx);n.puddles.push({x:t.tx,y:t.ty,time:0});}}
+ n.tvs=n.tvs.filter(t=>!(t.state==='hit'&&t.t>.3));
+ for(const q of n.puddles){q.time+=dt;if(q.time>.2&&q.time<WAVE.puddle-.3&&hurtable(p)&&p.grounded&&Math.abs(px-q.x)<WAVE.puddleHalf&&Math.abs(p.y+p.h-q.y)<4)g.hurt(false,q.x);}
+ n.puddles=n.puddles.filter(q=>q.time<WAVE.puddle);
+}
+const attacksBusy=n=>n.scans.length||n.whips.length||n.tvs.length;
 function stepScreens(g,dt){
- const b=g.boss,n=b.network,p=g.player;buildWall(g);b.state=['face','charge','held'].includes(n.mode)?'recover':'network';
- for(const t of n.tvs){t.shards=Math.max(0,t.shards-dt);t.pop=Math.max(0,t.pop-dt);if(t.state==='crack'){t.timer-=dt;if(t.timer<=0)t.state='broken';}}
- beamHits(g);const shown=n.tvs[n.real]||n.tvs[n.lastMonitorIndex],sc=screenCenter(shown);b.x=sc.x-b.w/2;b.y=sc.y-b.h/2;b.dir=1;
- if(n.mode==='face'&&!n.yuriOn){n.yuriTimer-=dt;if(n.yuriTimer<=0)yuriFinds(g);}
- n.timer-=dt;
- const huge=n.tvs.at(-1);
- // The real screen smashed (or he was driven off the wall): a short breath, then the next wave.
- if(LIVE.includes(n.mode)&&!realScreen(n)){const giant=n.broken>=REAL_SCREENS;endWave(n);n.mode='rest';n.timer=Math.min(n.timer,WAVE.early);if(giant&&!isOut(huge))huge.state='yuri';}
- if(n.timer>0)return;
- const real=n.tvs[n.real],giant=real?.kind==='huge';
- if(n.mode==='opening'||n.mode==='rest')startWave(g);
- else if(n.mode==='warn')showFaces(g);
- else if(n.mode==='face'){
-  if(n.hold&&!giant){n.mode='held';n.timer=WAVE.hold;real.state='held';for(const t of n.tvs)if(t.role==='fake'&&!isOut(t)){t.state='off';t.role=null;t.pop=.3;}for(const i of n.yuri)if(!isOut(n.tvs[i]))n.tvs[i].state='hold';g.emit('yuriHold',{x:sc.x,y:sc.y});}
-  else{n.mode='charge';n.timer=giant?WAVE.giantCharge:WAVE.charge;for(const t of n.tvs)if(!isOut(t)&&(t.role==='real'||t.role==='fake'))t.state='charge';if(giant)n.giantY=p.y+p.h/2;g.emit('infoshumWarning',{attack:giant?'giantBeam':'tvBeam'});}
- }
- else if(n.mode==='charge'){n.mode='fire';n.timer=giant?WAVE.giantFire:WAVE.fire;for(const t of n.tvs)if(t.role==='fake'&&!isOut(t)){t.state='off';t.role=null;t.pop=.3;}
-  real.state='fire';real.dir=p.x+p.w/2>=sc.x?1:-1;g.emit('bossCast',{boss:'infoshum',ability:giant?'giantBeam':'tvBeam',x:sc.x,y:sc.y,kind:real.kind});}
- else{endWave(n);n.mode='rest';n.timer=giant?WAVE.giantRest:WAVE.rest;if(giant&&!isOut(huge))huge.state='yuri';}
+ const b=g.boss,n=b.network;buildWall(g);n.faceTime=Math.max(0,n.faceTime-dt);
+ const sc=towerScreen(g);b.x=sc.x+sc.w/2-b.w/2;b.y=sc.y+sc.h/2-b.h/2;b.dir=1;
+ stepRelays(g,dt);stepAttacks(g,dt);
+ if(n.mode==='opening'){n.timer-=dt;b.state='network';if(n.timer<1.0&&n.face==='dark')setFace(n,'static');if(n.timer<=0){setFace(n,'face');startRound(g);n.mode='rest';n.timer=.4;}return;}
+ if(!n.shield){b.state='recover';stepTakeover(g,dt);return;}
+ b.state=n.faceTime>0&&n.face==='charge'?'casting':'windup';
+ if(n.faceTime<=0&&!['face','crack1','crack2'].includes(n.face))setFace(n,faceFor(n));
+ if(attacksBusy(n))return;n.timer-=dt;if(n.timer<=0){towerAttack(g);n.timer=WAVE.gap[n.round];}
 }
-// A paw on the real screen smashes it for good (the huge wall takes three, one per wave); a paw on a fake brings rain.
-function hitScreen(g,t){
- const b=g.boss,n=b.network,c=screenCenter(t);t.hp--;n.units++;n.lastMonitorIndex=t.index;
- b.hp=Math.max(INFOSHUM_HP-PHASE_HP,+(INFOSHUM_HP-PHASE_HP*n.units/WALL_UNITS).toFixed(3));b.hurtTime=.35;t.shards=.45;
- g.emit('bossHit',{boss:'infoshum',x:c.x,y:c.y});
- if(t.hp>0){t.cracked=true;t.state='yuri';t.role=null;g.emit('infoshumScreenCrack',{index:t.index,cracked:true,x:c.x,y:c.y});return true;}
- t.state='crack';t.timer=.3;t.role=null;n.broken++;g.emit('infoshumScreenCrack',{index:t.index,broken:n.broken,x:c.x,y:c.y});
- if(t.kind==='huge')beginAssembly(g);
- return true;
-}
+function addUnits(g,u,x,y){const b=g.boss,n=b.network;n.units+=u;b.hp=Math.max(INFOSHUM_HP-PHASE_HP,+(INFOSHUM_HP-n.units).toFixed(3));b.hurtTime=.35;g.emit('bossHit',{boss:'infoshum',x,y});}
 function strikeScreens(g,paw){
  const n=g.boss.network,p=g.player;if(n.lastSwing===p.swing)return false;
- const real=realScreen(n);if(real&&overlap(paw,real)){n.lastSwing=p.swing;return hitScreen(g,real);}
- const fake=n.tvs.find(t=>t.role==='fake'&&['face','charge'].includes(t.state)&&overlap(paw,t));if(!fake)return false;
- n.lastSwing=p.swing;fake.state='off';fake.role=null;fake.pop=.35;const c=screenCenter(fake);createRain(g);g.emit('infoshumFakeHit',{x:c.x,y:c.y});return true;
+ if(n.shield){const r=n.relays.find(r=>r.state==='open'&&overlap(paw,relayHit(g,r.index)));if(!r)return false;
+  n.lastSwing=p.swing;r.state='hit';r.timer=WAVE.hitFlash;const h=relayHit(g,r.index);addUnits(g,WAVE.relayUnit,h.x+h.w/2,h.y);g.emit('infoshumScreenCrack',{relay:r.index,x:h.x+h.w/2,y:h.y});return true;}
+ const sc=towerScreen(g);if(n.take?.show!=='face'||!overlap(paw,sc))return false;
+ n.lastSwing=p.swing;n.cracks++;addUnits(g,WAVE.screenUnit,sc.x+sc.w/2,sc.y+sc.h/2);g.emit('infoshumScreenCrack',{cracks:n.cracks,x:sc.x+sc.w/2,y:sc.y+sc.h/2});
+ if(n.cracks>=3){setFace(n,'crack3');beginAssembly(g);return true;}
+ n.round++;n.scans=[];n.whips=[];n.tvs=[];startRound(g);setFace(n,'roar',1);n.mode='rest';n.timer=WAVE.gap[n.round]+.6;return true;
 }
 // ——— The assembly: every monitor flies to the middle and snaps into the colossus ———
 function beginAssembly(g){
  const b=g.boss,n=b.network;
- n.stage='assemble';n.mode='assemble';n.timer=ASSEMBLE;n.transitionProgress=0;
+ n.stage='assemble';n.mode='assemble';n.timer=ASSEMBLE;n.transitionProgress=0;n.scans=[];n.whips=[];n.tvs=[];n.puddles=[];n.take=null;
  b.phase=2;b.phaseName='Колосс';b.state='phaseChange';b.hp=INFOSHUM_HP-PHASE_HP;
  g.bolts=[];g.cuts=[];g.inks=[];g.enemies=g.enemies.filter(e=>e.bossOwnerId!=='infoshum');
- for(const t of n.tvs){t.state='broken';t.role=null;}
  g.player.inv=Math.max(g.player.inv,ASSEMBLE+1);
  g.emit('bossPhase',{boss:'infoshum',phase:2,name:'Колосс'});g.emit('infoshumAssemble',{x:rooms[g.room].x+768,y:200});
 }
@@ -172,29 +158,30 @@ function beginColossus(g){
  const b=g.boss,n=b.network;
  reshape(g,{0:[0,FLOOR,1536,'floor']},'heap');
  for(const key of ['fishes','soups','lifePickups'])if(Array.isArray(g[key]))g[key]=g[key].filter(o=>o.room!==g.room);
- n.stage='colossus';n.col={mode:'intro',timer:COL.intro,round:0,hands:{L:true,R:true},side:'R',step:0,fist:null,sweep:null,beam:null,shocks:[],dust:null,head:1,headTime:1.3,flash:0,lastSwing:-1};
+ n.stage='colossus';n.col={clock:0,hurt:0,mode:'intro',timer:COL.intro,round:0,hands:{L:true,R:true},side:'R',step:0,fist:null,sweep:null,beam:null,shocks:[],dust:null,head:1,headTime:1.3,flash:0,lastSwing:-1};
  b.state='phaseChange';landSafely(g,0,440);g.emit('infoshumColossus',{x:centre(g),y:120});
 }
 const roundOf=a=>Math.min(2,a.round);
-export function fistBox(f){return {x:f.x-36,y:FLOOR-70,w:72,h:56};}
-export function headBox(g){const x=centre(g)+45;return {x:x-70,y:FLOOR-150,w:140,h:112};}
+export function fistBox(f){return {x:f.x-48,y:FLOOR-122,w:96,h:112};}
+export function headBox(g){const x=centre(g)-30;return {x:x-75,y:FLOOR-110,w:150,h:104};}
 export function sweepBox(s){return {x:s.x-80,y:s.low?FLOOR-38:FLOOR-84,w:160,h:s.low?38:44};}
 function idle(a){a.mode='idle';a.timer=COL.gap[roundOf(a)];}
-function collapse(g){const a=g.boss.network.col;a.mode='collapse';a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
-function rise(a){a.mode='rise';a.timer=COL.rise;a.hands={L:true,R:true};a.head=1;a.headTime=COL.rise;a.flash=.3;}
+function collapse(g){const a=g.boss.network.col;a.mode='collapse';a.clock=0;a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
+function rise(a){a.mode='rise';a.clock=0;a.timer=COL.rise;a.hands={L:true,R:true};a.head=1;a.headTime=COL.rise;a.flash=.3;}
 function nextAttack(g){
  const n=g.boss.network,a=n.col,p=g.player,px=p.x+p.w/2,kind=COL.plan[a.step++%COL.plan.length];a.mode='attack';
- if(kind==='slam'){let side=a.side;if(!a.hands[side])side=side==='R'?'L':'R';a.side=side==='R'?'L':'R';a.fist={side,x:px,y:-240,state:'aim',timer:COL.aim[roundOf(a)],weak:false,lastSwing:-1};g.emit('infoshumWarning',{attack:'slam',x:px,y:FLOOR});}
- else if(kind==='sweep'){const dir=Math.random()<.5?1:-1;a.sweep={dir,low:Math.random()<.5,x:px-dir*COL.sweepSpan/2,state:'warn',timer:COL.sweepWarn,travel:0};g.emit('infoshumWarning',{attack:'sweep'});}
+ // A fist lands at a fixed spot beside the body, on Uma's side (the other hand if that one is broken).
+ if(kind==='slam'){let side=px<centre(g)?'L':'R';if(!a.hands[side])side=side==='R'?'L':'R';const x=centre(g)+(side==='L'?-1:1)*COL.reach;a.fist={side,x,y:-240,state:'aim',timer:COL.aim[roundOf(a)]+COL.windup,weak:false,lastSwing:-1,age:0};g.emit('infoshumWarning',{attack:'slam',x,y:FLOOR});}
+ else if(kind==='sweep'){const dir=px<centre(g)?-1:1;a.sweep={dir,low:Math.random()<.5,x:centre(g)-dir*COL.sweepSpan/2,state:'warn',timer:COL.sweepWarn,travel:0,age:0};g.emit('infoshumWarning',{attack:'sweep'});}
  else{a.beam={state:'charge',timer:COL.beamCharge,x:px};a.head=2;a.headTime=9;g.emit('infoshumWarning',{attack:'beam'});}
 }
 function stepFist(g,dt){
- const b=g.boss,a=b.network.col,f=a.fist,p=g.player,r=rooms[g.room],px=p.x+p.w/2;f.timer-=dt;
- if(f.state==='aim'){f.x=clamp(f.x+clamp(px-f.x,-COL.track*dt,COL.track*dt),r.x+70,r.end-70);if(f.timer<=0){f.state='lock';f.timer=COL.lock;}}
+ const b=g.boss,a=b.network.col,f=a.fist,p=g.player,px=p.x+p.w/2;f.timer-=dt;f.age+=dt;
+ if(f.state==='aim'){if(f.timer<=0){f.state='lock';f.timer=COL.lock;}}
  else if(f.state==='lock'){if(f.timer<=0){f.state='fall';f.timer=COL.fall;}}
  else if(f.state==='fall'){f.y=-240*Math.max(0,f.timer)/COL.fall;if(f.timer<=0){
   f.y=0;f.state='stuck';f.timer=COL.stuck[roundOf(a)];f.weak=a.hands[f.side];a.dust={x:f.x,time:0};a.flash=.12;
-  if(p.inv<=0&&p.dash===0&&Math.abs(px-f.x)<COL.fistHalf+p.w/2-8&&p.y+p.h>FLOOR-170)g.hurt(false,f.x);
+  if(hurtable(p)&&Math.abs(px-f.x)<COL.fistHalf+p.w/2-8&&p.y+p.h>FLOOR-170)g.hurt(false,f.x);
   a.shocks.push({x:f.x-44,dir:-1,travel:0},{x:f.x+44,dir:1,travel:0});
   g.emit('boltImpact',{x:f.x,y:FLOOR,kind:'fist'});g.emit('bossCast',{boss:'infoshum',ability:'slam',x:f.x,y:FLOOR});if(f.weak)g.emit('infoshumWeak',{x:f.x,y:FLOOR-40});}}
  else if(f.state==='stuck'||f.state==='broken'){b.state='recover';if(f.timer<=0){f.state='lift';f.timer=COL.lift;}}
@@ -214,7 +201,7 @@ function stepBeam(g,dt){
  if(m.timer<=0){a.beam=null;a.head=0;idle(a);}
 }
 function stepColossus(g,dt){
- const b=g.boss,n=b.network,a=n.col,p=g.player;
+ const b=g.boss,n=b.network,a=n.col,p=g.player;a.clock=(a.clock||0)+dt;if(a.hurt>0)a.hurt-=dt;
  a.flash=Math.max(0,a.flash-dt);a.headTime=Math.max(0,a.headTime-dt);if(a.headTime<=0&&a.mode!=='collapse')a.head=0;
  if(a.dust){a.dust.time+=dt;if(a.dust.time>.45)a.dust=null;}
  b.x=centre(g)-b.w/2;b.y=120;
@@ -231,9 +218,9 @@ function stepColossus(g,dt){
 function strikeColossus(g,paw){
  const b=g.boss,n=b.network,a=n.col,p=g.player,f=a.fist;if(a.lastSwing===p.swing)return false;
  if(f&&f.state==='stuck'&&f.weak&&overlap(paw,fistBox(f))){
-  a.lastSwing=p.swing;a.hands[f.side]=false;f.weak=false;f.state='broken';f.timer=.5;b.hurtTime=.35;a.head=3;a.headTime=.7;a.flash=.2;
+  a.lastSwing=p.swing;a.hands[f.side]=false;f.weak=false;f.state='broken';f.timer=.5;a.hurt=1.1;b.hurtTime=.35;a.head=3;a.headTime=.7;a.flash=.2;
   g.emit('bossHit',{boss:'infoshum',x:f.x,y:FLOOR-40});g.emit('infoshumHandBroken',{side:f.side,x:f.x,y:FLOOR-40});return true;}
- if(a.mode==='collapse'&&overlap(paw,headBox(g))){
+ if(a.mode==='collapse'&&a.clock>COL.fallTime&&overlap(paw,headBox(g))){
   a.lastSwing=p.swing;const h=headBox(g);b.hp=Math.max(PHASE_HP,b.hp-HIT_DAMAGE);b.hurtTime=.35;b.cooldown=.24;a.round++;
   g.emit('bossHit',{boss:'infoshum',x:h.x+h.w/2,y:h.y+h.h/2});g.emit('infoshumCoreHit',{x:h.x+h.w/2,y:h.y+h.h/2});
   if(b.hp<=PHASE_HP)beginBreakout(g);else rise(a);return true;}
@@ -327,34 +314,37 @@ export function strikeInfoshum(g,paw){
 }
 export function infoshumTargets(g){
  const b=g.boss,n=b.network;if(!n||b.hp<=0)return [];
- if(n.stage==='network'){const t=realScreen(n);return t&&n.yuriOn?[{id:'screen'+t.index,x:t.x,y:t.y,w:t.w,h:t.h}]:[];}
- if(n.stage==='colossus'){const a=n.col;if(a.fist?.state==='stuck'&&a.fist.weak)return [{id:'fist',...fistBox(a.fist)}];if(a.mode==='collapse')return [{id:'head',...headBox(g)}];}
+ if(n.stage==='network'){if(n.shield)return n.relays.filter(r=>r.state==='open').map(r=>({id:'relay'+r.index,...relayHit(g,r.index)}));return n.take?.show==='face'?[{id:'screen',...towerScreen(g)}]:[];}
+ if(n.stage==='colossus'){const a=n.col;if(a.fist?.state==='stuck'&&a.fist.weak)return [{id:'fist',...fistBox(a.fist)}];if(a.mode==='collapse'&&a.clock>COL.fallTime)return [{id:'head',...headBox(g)}];}
  if(n.stage==='free'&&n.free?.mode==='dizzy')return [{id:'core',...freeCoreBox(n.free)}];
  return [];
 }
 // ——— Test and debugging helpers ———
 const paws=g=>{const p=g.player;p.attack=.18;p.swing++;};
 export function exposeInfoshum(g){const b=g.boss,n=b.network,p=g.player;b.cooldown=0;
- if(n.stage==='network'){buildWall(g);if(!realScreen(n)){startWave(g);showFaces(g,true);}else if(!n.yuriOn)yuriFinds(g);n.mode='face';n.timer=9;}
- else if(n.stage==='colossus'){const a=n.col;if(a.mode==='collapse')return;a.sweep=null;a.beam=null;a.shocks=[];if(!a.hands.L&&!a.hands.R){collapse(g);return;}
-  a.mode='attack';a.fist={side:a.hands.R?'R':'L',x:clamp(p.x+p.w/2+70,rooms[g.room].x+120,rooms[g.room].end-120),y:0,state:'stuck',timer:COL.stuck[0],weak:true,lastSwing:-1};}
+ if(n.stage==='network'){buildWall(g);if(n.mode==='opening'){setFace(n,'face');startRound(g);n.mode='rest';n.timer=9;}
+  if(n.shield){const pair=ROUND_PAIRS[n.round];if(!n.relays.some(r=>r.state==='open')){const i=pair.find(i=>n.relays[i].state!=='dead');if(i===undefined){dropShield(g);}else{n.relays[i].state='open';n.yuriQueue=n.yuriQueue.filter(q=>q!==i);}}}
+  if(!n.shield){n.take.show='face';n.take.timer=9;n.take.left=20;setFace(n,faceFor(n));}}
+ else if(n.stage==='colossus'){const a=n.col;if(a.mode==='collapse'){a.clock=COL.fallTime+.1;return;}a.sweep=null;a.beam=null;a.shocks=[];if(!a.hands.L&&!a.hands.R){collapse(g);a.clock=COL.fallTime+.1;return;}
+  const side=a.hands.R?'R':'L';a.mode='attack';a.fist={side,x:centre(g)+(side==='L'?-1:1)*COL.reach,y:0,state:'stuck',timer:COL.stuck[0],weak:true,lastSwing:-1,age:1};}
  else if(n.stage==='free'){const f=n.free,t=targetSurface(g);Object.assign(f,{mode:'dizzy',timer:FREE.dizzy,x:t.x,gy:t.y,y:t.y-34,yuri:b.hp<=HIT_DAMAGE});f.tentacles=[];f.shards=[];}
 }
-// Smash the real screen through the real mechanics (Uma beside it on its tier, one paw strike).
+// One paw through the real mechanics: the open relay while the shield is up, the big screen while his face is on it.
 export function crackInfoshumScreen(g){
- const b=g.boss,n=b.network;if(n.stage!=='network')return false;exposeInfoshum(g);const t=realScreen(n);if(!t)return false;
- const p=g.player,s=g.platforms.find(s=>s.room===g.room&&s.index===(t.kind==='huge'?9:t.on));
- Object.assign(p,{x:t.kind==='huge'?s.x+s.w-p.w-2:t.x+t.w/2-p.w-4,y:s.y-48,h:48,vy:0,vx:0,grounded:true,supportId:s.id,dir:1});
+ const b=g.boss,n=b.network;if(n.stage!=='network')return false;exposeInfoshum(g);const p=g.player;
+ let box,s;if(n.shield){const r=n.relays.find(r=>r.state==='open');box=relayHit(g,r.index);s=surfaces(g).filter(q=>q.y>=box.y+box.h-4&&box.x+box.w/2>=q.x&&box.x+box.w/2<=q.x+q.w).sort((a,c)=>a.y-c.y)[0];}
+ else{box=towerScreen(g);s=surfaces(g).find(q=>q.index===9);}
+ Object.assign(p,{x:clamp(box.x+box.w/2-p.w-4,s.x,s.x+s.w-p.w),y:s.y-48,h:48,vy:0,vx:0,grounded:true,supportId:s.id,dir:1});
  paws(g);return strikeInfoshum(g,{x:p.x+16,y:p.y-2,w:54,h:p.h+6});
 }
 // Smash the whole wall (nine real screens, then the huge one) — the colossus starts assembling.
-export function smashWall(g){const n=g.boss.network;let k=0;while(n.stage==='network'&&k++<60){crackInfoshumScreen(g);for(const t of n.tvs)if(t.state==='crack')t.state='broken';}return n.stage;}
+export function smashWall(g){const n=g.boss.network;let k=0;while(n.stage==='network'&&k++<60){crackInfoshumScreen(g);for(const r of n.relays)if(r.state==='hit')r.state='dead';}return n.stage;}
 export function colossusInfoshum(g){const n=g.boss.network;if(n.stage==='network')smashWall(g);if(n.stage==='assemble'){n.timer=0;stepInfoshum(g,0);}if(n.stage==='colossus'&&n.col.mode==='intro')idle(n.col);return n.stage;}
 // Break one hand: a stuck fist beside Uma, one paw on its knuckles.
 export function breakHand(g){const n=g.boss.network;if(n.stage!=='colossus'||n.col.mode==='collapse')return false;exposeInfoshum(g);const a=n.col,f=a.fist;if(!f)return false;
  Object.assign(g.player,{x:f.x-70,y:FLOOR-48,h:48,vx:0,vy:0,grounded:true,dir:1});paws(g);const ok=strikeInfoshum(g,fistBox(f));a.fist=null;if(!a.hands.L&&!a.hands.R)collapse(g);else idle(a);return ok;}
 // One whole round: both hands, the collapse, a paw on the head screen.
-export function dropColossus(g){const n=g.boss.network;if(n.stage!=='colossus')return false;if(n.col.mode==='rise')idle(n.col);breakHand(g);breakHand(g);if(n.col.mode!=='collapse')return false;paws(g);return strikeInfoshum(g,headBox(g));}
+export function dropColossus(g){const n=g.boss.network;if(n.stage!=='colossus')return false;if(n.col.mode==='rise')idle(n.col);breakHand(g);breakHand(g);if(n.col.mode!=='collapse')return false;n.col.clock=COL.fallTime+.1;paws(g);return strikeInfoshum(g,headBox(g));}
 // Drive the fight to the last phase.
 export function freeInfoshum(g){const n=g.boss.network;colossusInfoshum(g);for(let k=0;k<3&&n.stage==='colossus';k++)dropColossus(g);if(n.stage==='breakout'){n.timer=0;stepInfoshum(g,0);}if(n.stage==='free'&&n.free.mode==='enter')hover(n.free,FREE.gap[0]);return n.stage;}
 // The final blow through the real mechanics (he lies dizzy on Uma's island, one paw strike).
