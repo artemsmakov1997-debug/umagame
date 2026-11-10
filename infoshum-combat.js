@@ -166,6 +166,7 @@ function beginColossus(g){
  const b=g.boss,n=b.network;
  reshape(g,{0:[0,FLOOR,1536,'floor']},'heap');
  for(const key of ['fishes','soups','lifePickups'])if(Array.isArray(g[key]))g[key]=g[key].filter(o=>o.room!==g.room);
+ {const p=g.player;Object.assign(p,{y:FLOOR-p.h,vx:0,vy:0,grounded:true,supportId:g.room+':0'});portalOut(g);}
  n.stage='colossus';n.col={clock:0,hurt:0,mode:'intro',timer:COL.intro,round:0,hands:{L:true,R:true},side:'R',step:0,fist:null,sweep:null,beam:null,shocks:[],dust:null,head:1,headTime:1.3,flash:0,lastSwing:-1};
  b.state='phaseChange';landSafely(g,0,440);g.emit('infoshumColossus',{x:centre(g),y:120});
 }
@@ -246,7 +247,7 @@ function beginBreakout(g){
 // ——— Phase 3 «На свободе» ———
 function beginFree(g){
  const b=g.boss,n=b.network,r=rooms[g.room];
- reshape(g,STORM_ISLANDS,'storm');landSafely(g,2,100);
+ reshape(g,STORM_ISLANDS,'storm');landSafely(g,2,100);portalOut(g);
  n.stage='free';n.free={mode:'enter',timer:FREE.enter,x:r.x+768,y:210,gy:FLOOR,hits:0,step:0,count:0,sub:0,tentacles:[],shards:[],yuri:false,flash:0,dir:1,rammed:false,lastSwing:-1};
  b.state='phaseChange';g.bolts=[];g.emit('infoshumFreed',{x:r.x+768,y:150});
 }
@@ -307,13 +308,25 @@ export function coreBox(b){const c=corePoint(b);return {x:c.x-34,y:c.y-34,w:68,h
 export function headlineBoxes(){return [];}
 // A fall between the storm islands returns Uma to the last island she stood on (and costs a heart).
 export function infoshumFall(g){const n=g.boss?.network;if(g.room!==STAGE_ROOM||n?.stage!=='free')return false;return pitFall(g,STAGE_ROOM,s=>!s.bossHidden);}
+// ——— The portal between phases (drawn from assets/infoshum-portal.png) ———
+// Near the end of each transition a portal opens behind Uma and pulls her in; the next phase begins with her
+// tumbling out of a closing portal. Positions are driven here so physics cannot fight the pull.
+export const PORTAL={pull:.62,out:.9};
+function portalIn(g,k){
+ const n=g.boss.network,p=g.player;if(k<PORTAL.pull)return;
+ if(!n.portal||n.portal.mode!=='in'){n.portal={mode:'in',x:p.x+p.w/2,y:p.y+p.h/2-8,fx:p.x,fy:p.y,q:0};g.emit('infoshumPortal',{x:p.x+p.w/2,y:p.y});}
+ const o=n.portal,q=(k-PORTAL.pull)/(1-PORTAL.pull),e=Math.min(1,Math.max(0,(q-.2)/.55))**2;o.q=q;
+ Object.assign(p,{vx:0,vy:0,attack:0,dash:0,x:o.fx+(o.x-p.w/2-o.fx)*e,y:o.fy+(o.y-p.h/2-o.fy)*e});p.warpScale=Math.max(0,1-e);
+}
+function portalOut(g){const p=g.player;g.boss.network.portal={mode:'out',x:p.x+p.w/2,y:p.y+p.h/2-8,t:0};p.warpScale=0;}
+function stepPortalOut(g,dt){const n=g.boss.network,o=n.portal,p=g.player;if(o?.mode!=='out')return;o.t+=dt;o.x=p.x+p.w/2;o.y=p.y+p.h/2-8;p.warpScale=Math.min(1,o.t/.55);if(o.t>=PORTAL.out){n.portal=null;delete p.warpScale;}}
 export function stepInfoshum(g,dt,paw=null){
  const b=g.boss,n=b.network;if(!n||b.hp<=0)return;
- if(n.stage==='network'){stepScreens(g,dt);return;}
- if(n.stage==='assemble'){n.timer=Math.max(0,n.timer-dt);n.transitionProgress=1-n.timer/ASSEMBLE;if(n.timer===0)beginColossus(g);return;}
- if(n.stage==='colossus'){stepColossus(g,dt);return;}
- if(n.stage==='breakout'){n.timer=Math.max(0,n.timer-dt);n.transitionProgress=1-n.timer/BREAKOUT;n.col.flash=Math.max(0,n.col.flash-dt);if(n.timer===0)beginFree(g);return;}
- if(n.stage==='free')stepFree(g,dt);
+ if(n.stage==='network'){if(g.player.warpScale!==undefined&&!g.arenaEntry)delete g.player.warpScale;stepScreens(g,dt);return;}
+ if(n.stage==='assemble'){n.timer=Math.max(0,n.timer-dt);n.transitionProgress=1-n.timer/ASSEMBLE;portalIn(g,n.transitionProgress);if(n.timer===0)beginColossus(g);return;}
+ if(n.stage==='colossus'){stepPortalOut(g,dt);stepColossus(g,dt);return;}
+ if(n.stage==='breakout'){n.timer=Math.max(0,n.timer-dt);n.transitionProgress=1-n.timer/BREAKOUT;n.col.flash=Math.max(0,n.col.flash-dt);portalIn(g,n.transitionProgress);if(n.timer===0)beginFree(g);return;}
+ if(n.stage==='free'){stepPortalOut(g,dt);stepFree(g,dt);}
 }
 export function strikeInfoshum(g,paw){
  const b=g.boss,n=b.network,p=g.player;if(!b.active||!n||p.attack<=0||b.hp<=0||g.mode!=='playing')return false;

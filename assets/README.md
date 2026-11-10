@@ -271,6 +271,9 @@ The untouched generated originals are retained in `/workspace/generated_images`.
 - `inflator-mast.png`: консоль с лампой, решётчатая секция и основание мачты Нагнетателя.
 - `botfarm.png`: 6 кадров новой Ботофермы.
 - `infoshum-emotions.png`: 8 пугающих лиц Инфошума (оскал, хохот, рык, ухмылка, взгляд, крик, язык, глитч) — содержимое экрана башни и головы колосса.
+- `infoshum-cannon.png`: пушка колосса — подставка (3 положения), ствол (заряд ×4, выстрел), сегмент луча ×3, вспышка ×3, удар о пол ×4.
+- `infoshum-portal.png`: портал между фазами — открытие ×6, вращение ×4, закрытие ×4.
+- `result-victory.jpg`: Ума на побеждённом Инфошуме (экран итогов).
 - `newsroom-platforms.png`: платформы Редакции — стол, мостик, пачки газет, полка (левый край, середина, правый край) и лампа, книги, ящик.
 
 Код: `infoshum-combat.js`, `infoshum-art.js`, `newsroom-art.js`, `target-highlight.js`, `monster-animation.js`, `tactical-art.js`, `roofs-art.js`, `botfarm-art.js`.

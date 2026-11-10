@@ -748,7 +748,7 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
 /* Victory: a picture on top, the score in four equal tiles, «Главное меню» on the left and «Поделиться» on the right. */
 #overlay[data-result="won"]{padding:12px;background:radial-gradient(ellipse at 50% 20%,#1b2f5af0,#03091cf5 70%)}
 #overlay[data-result="won"] .result-panel{position:relative;display:flex;flex-direction:column;align-items:stretch;width:min(560px,96%);max-width:none;max-height:calc(100dvh - 24px);padding:0 0 18px;gap:10px;overflow:auto;background:#06162cf8;text-align:center}
-#overlay[data-result="won"] .result-art{display:block;width:100%;aspect-ratio:3/2;max-height:36dvh;object-fit:cover;object-position:50% 45%;border-bottom:2px solid #2489a5;image-rendering:pixelated}
+#overlay[data-result="won"] .result-art{display:block;width:100%;aspect-ratio:16/9;max-height:36dvh;object-fit:cover;object-position:50% 60%;border-bottom:2px solid #2489a5;image-rendering:pixelated}
 #overlay[data-result="won"] #result-title{font:clamp(26px,3vw,36px)/1.1 UmaDisplay,monospace;color:#ffe3b2;margin:4px 18px 0;text-shadow:2px 3px #422339}
 #overlay[data-result="won"] #result-text{font:22px/1.2 UmaText,monospace;color:#e6f1f2;margin:0 18px}
 #overlay[data-result="won"] .result-panel #result-score{display:block;margin:0 18px;padding:10px 12px 12px;border:2px solid #2489a5;background:#081e35}
