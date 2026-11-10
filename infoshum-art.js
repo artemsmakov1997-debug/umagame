@@ -1,8 +1,8 @@
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {figureBox,SPLIT,screenCenter,beamRect,WAVE,ASCENT,ASSEMBLE,eyeBeamRect,sweepRect,debrisPieces} from './infoshum-combat.js?v=0.21.5';
+import {screenCenter,beamRect,realScreen,WAVE,COL,FREE,FLOOR,headBox} from './infoshum-combat.js?v=0.21.5';
 import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.5';
-// Infoshum's three phases: the wall of monitors, the colossus climb, the doubles in the storm.
+// Infoshum's three phases: the sea of screens with Yuri, the colossus and his hands, the free creature in the storm.
 import {rooms,WIDTH} from './level.js?v=0.21.5';
 import {rect} from './pixel.js?v=0.21.5';
 const VW=g=>g.viewWidth||WIDTH;
@@ -10,21 +10,39 @@ const POSE_W=190,POSE_H=204,SILENCE_W=172,SILENCE_H=192;
 function cell(c,img,cw,ch,frame,cx,cy,w,{flip=false,rot=0,alpha=1}={}){if(!img)return;const h=w*ch/cw;c.save();c.globalAlpha*=alpha;c.translate(Math.round(cx),Math.round(cy));if(rot)c.rotate(rot);if(flip)c.scale(-1,1);c.drawImage(img,frame*cw,0,cw,ch,-w/2,-h/2,w,h);c.restore();}
 // One atlas piece into a rectangle (optionally mirrored).
 function piece(c,img,p,x,y,w,h,{flip=false,alpha=1}={}){if(!img||!p)return;const [sx,sy,sw,sh]=p.r;c.save();c.globalAlpha*=alpha;if(flip){c.translate(Math.round(x+w),Math.round(y));c.scale(-1,1);c.drawImage(img,sx,sy,sw,sh,0,0,Math.round(w),Math.round(h));}else c.drawImage(img,sx,sy,sw,sh,Math.round(x),Math.round(y),Math.round(w),Math.round(h));c.restore();}
-const screenState=(t,time)=>t.state==='static'?(t.role==='decoy'&&Math.floor(time*12)%5===0?0:1):t.state==='face'?(t.cracked?4:2):t.state==='charge'?(Math.floor(time*14)%2?2:3):t.state==='fire'?3:t.state==='crack'||t.state==='broken'?5:0;
-// ——— Phase 1: the wall of monitors ———
+// ——— Phase 1: the sea of screens ———
+// What a screen shows: his face (assets/infoshum-screen-states.png) or Yuri (assets/infoshum-yuri.png: calm, points right,
+// points left, holds him back, smiles, worried, breaking up, amber noise).
+const scr=(a,i)=>[a.infoshumScreenStates,AT.screens['s'+i]],yur=(a,i)=>[a.infoshumYuri,AT.yuri['y'+i]];
+function screenPic(a,t,time){
+ if(t.pop>0)return scr(a,1);
+ switch(t.state){
+  case 'static':return scr(a,Math.floor(time*12+t.index)%6===0?0:1);
+  case 'face':case 'held':return scr(a,2);
+  case 'charge':return scr(a,Math.floor(time*14)%2?2:3);
+  case 'fire':return scr(a,3);
+  case 'glitch':return yur(a,Math.floor(time*10)%2?6:7);
+  case 'yuri':return yur(a,t.kind==='huge'?3:t.point>0?1:2);
+  case 'hold':return yur(a,3);
+  case 'crack':case 'broken':return scr(a,5);
+  default:return scr(a,0);
+ }
+}
 // A casing with its screen: the picture goes into the casing's opening first, then the casing over it.
-function drawCasing(c,a,name,x,y,w,content,{flip=false,alpha=1,shake=0}={}){
- const cs=AT.casings[name],img=a.infoshumCasings;if(!cs||!img)return;const k=w/cs.r[2],h=cs.r[3]*k;
- if(content!==null&&content!==undefined&&a.infoshumScreenStates){const s=cs.s||cs.holes?.[0];if(s){const sx=flip?cs.r[2]-s[0]-s[2]:s[0];piece(c,a.infoshumScreenStates,AT.screens['s'+content],x+sx*k-1+shake,y+s[1]*k-1,s[2]*k+2,s[3]*k+2,{alpha});}}
- for(const s of (content===null?[]:cs.holes||[]).slice(cs.s?0:1)){const sx=flip?cs.r[2]-s[0]-s[2]:s[0];piece(c,a.infoshumScreenStates,AT.screens.s0,x+sx*k,y+s[1]*k,s[2]*k,s[3]*k,{alpha});}
+function drawCasing(c,a,name,x,y,w,pic,{flip=false,alpha=1,shake=0}={}){
+ const cs=AT.casings[name],img=a.infoshumCasings;if(!cs||!img)return;const k=w/cs.r[2],h=cs.r[3]*k,holes=cs.s?[cs.s]:cs.holes||[];
+ holes.forEach((s,i)=>{const q=i===0&&pic?pic:scr(a,0);if(!q[0]||!q[1])return;const sx=flip?cs.r[2]-s[0]-s[2]:s[0];piece(c,q[0],q[1],x+sx*k-1+shake,y+s[1]*k-1,s[2]*k+2,s[3]*k+2,{alpha});});
  piece(c,img,cs,x+shake,y,w,h,{flip,alpha});
 }
 const KIND_CASING={tiny:'tiny1',small:'small',med:'med1',large:'large1',huge:'huge'};
+function amberFrame(c,t,time,pad=0){c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=14;c.lineWidth=pad?3:2;c.globalAlpha=.65+.3*Math.sin(time*8);c.strokeRect(t.x-pad+1,t.y-pad+1,t.w+pad*2-2,t.h+pad*2-2);c.restore();}
+function amberPath(c,x0,y0,x1,y1,time){c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=10;c.lineWidth=3;c.globalAlpha=.55+.25*Math.sin(time*8);c.setLineDash?.([10,8]);c.lineDashOffset=-time*60;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.restore();}
 function drawScreen(c,a,t,time){
  const shake=t.state==='charge'?Math.sin(time*70)*(t.kind==='huge'?3:1.5):0;
- drawCasing(c,a,KIND_CASING[t.kind],t.x,t.y,t.w,screenState(t,time),{shake});
- // A large screen that took one paw keeps its cracks.
- if(t.cracked&&t.state==='off'){const cs=AT.casings[KIND_CASING[t.kind]],k=t.w/cs.r[2],s=cs.s;c.save();c.strokeStyle='#bff8ff';c.globalAlpha=.7;c.lineWidth=1.5;const cx=t.x+(s[0]+s[2]*.45)*k,cy=t.y+(s[1]+s[3]*.4)*k;c.beginPath();for(let i=0;i<6;i++){const ang=i*1.05+.3;c.moveTo(cx,cy);c.lineTo(cx+Math.cos(ang)*s[2]*k*.42,cy+Math.sin(ang)*s[3]*k*.5);}c.stroke();c.restore();}
+ drawCasing(c,a,KIND_CASING[t.kind],t.x,t.y,t.w,screenPic(a,t,time),{shake});
+ // The huge wall keeps the cracks of the paws it took.
+ if(t.cracked&&!['crack','broken'].includes(t.state)){const cs=AT.casings.huge,k=t.w/cs.r[2],s=cs.s;c.save();c.strokeStyle='#bff8ff';c.globalAlpha=.7;c.lineWidth=1.5;const n=3-t.hp;for(let j=0;j<n;j++){const cx=t.x+(s[0]+s[2]*(.3+.35*j))*k,cy=t.y+(s[1]+s[3]*.45)*k;c.beginPath();for(let i=0;i<6;i++){const ang=i*1.05+.3+j;c.moveTo(cx,cy);c.lineTo(cx+Math.cos(ang)*s[3]*k*.6,cy+Math.sin(ang)*s[3]*k*.48);}c.stroke();}c.restore();}
+ if(['yuri','hold'].includes(t.state))amberFrame(c,t,time);
 }
 // The heap under each tier: stacked monitors down to the floor, cables slung between the tiers.
 const HEAP_THICK={lying:40,side:38,floor:30};
@@ -34,11 +52,11 @@ function drawHeapSupports(c,a,g,time){
  for(const [i,j] of [[6,9],[9,16],[17,10],[10,8],[1,4],[5,3]]){const s1=byIndex(i),s2=byIndex(j);if(!s1||!s2)continue;const L=s1.x<s2.x?s1:s2,R=L===s1?s2:s1,x0=L.x+L.w-10,x1=R.x+10,y0=L.y+12,y1=R.y+12;
   const cs=AT.casings.cableHang;c.save();c.globalAlpha=.9;c.translate(x0,y0);c.rotate(Math.atan2(y1-y0,x1-x0));const len=Math.hypot(x1-x0,y1-y0);c.drawImage(img,cs.r[0],cs.r[1],cs.r[2],cs.r[3],-4,-6,len+8,Math.min(60,len*.38));c.restore();}
  for(const s of tiers){const w=Math.min(120,Math.max(70,s.w*.42)),cs=AT.casings.stack,h=w*cs.r[3]/cs.r[2],x=s.x+s.w/2-w/2+((s.index*37)%30-15);
-  for(let y=s.y+HEAP_THICK[s.heap]-14,k=0;y<474;y+=h-8,k++){drawCasing(c,a,'stack',x+(k%2?6:-4),y,w,0,{flip:(s.index+k)%2===1});}}
+  for(let y=s.y+HEAP_THICK[s.heap]-14,k=0;y<474;y+=h-8,k++)drawCasing(c,a,'stack',x+(k%2?6:-4),y,w,scr(a,(s.index+k)%3===0?2:0),{flip:(s.index+k)%2===1});}
 }
 function drawHeapTier(c,a,p,time){
  const name=p.heap==='side'?'lyingSide':'lying',cs=AT.casings[name],th=HEAP_THICK[p.heap],k=th/cs.r[3]*(p.heap==='floor'?1.05:1),tw=cs.r[2]*k,n=Math.max(1,Math.round(p.w/tw)),w=p.w/n;
- for(let i=0;i<n;i++){const cols=p.heap==='floor'?1:0;drawCasing(c,a,name,p.x+i*w-2,p.y-4,w+4,(p.index*3+i)%7===3&&Math.floor(time*1.7+i)%3===0?1:0,{flip:(p.index+i)%2===1});}
+ for(let i=0;i<n;i++)drawCasing(c,a,name,p.x+i*w-2,p.y-4,w+4,scr(a,(p.index*3+i)%7===3&&Math.floor(time*1.7+i)%3===0?1:0),{flip:(p.index+i)%2===1});
  return true;
 }
 // assets/infoshum-tv-beam.png: 3 cells of 220×65 — a screen's beam along its tier.
@@ -49,7 +67,7 @@ function drawTvBeam(c,a,t,time,charge=false){
  else{const f=1+Math.floor(time*16)%2;c.drawImage(img,f*220,0,220,65,-6,-th/2,r.w+6,th+Math.sin(time*40)*3);}
  c.restore();
 }
-// The huge beams (the wall, the colossus head, the eyes): infoshum-giant-beam.png, tiled along the line.
+// The big beams (the wall, the colossus head): infoshum-giant-beam.png, tiled along the line.
 function drawGiantBeam(c,a,x,y,w,half,time,{dir=1}={}){
  const img=a.infoshumGiantBeam;if(!img)return;const p=AT.giantBeam['b'+(Math.floor(time*14)%3)],th=half*2.6,tw=p.r[2]*th/p.r[3];
  c.save();c.beginPath();c.rect(x,y-th/2-2,w,th+4);c.clip();for(let xx=dir>0?x:x+w-tw;dir>0?xx<x+w:xx>x-tw;xx+=dir*(tw-2))c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(xx),Math.round(y-th/2+Math.sin(time*40)*2),Math.round(tw),Math.round(th));c.restore();
@@ -59,99 +77,100 @@ function drawLineWarning(c,a,x,y,w,time){
  if(img){const tw=p.r[2]*.7,th=p.r[3]*.7;for(let xx=x;xx<x+w;xx+=tw)c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(xx),Math.round(y-th/2),Math.round(tw),Math.round(th));}
  else for(let xx=x;xx<x+w;xx+=18)rect(c,xx,y-1,10,2,'#ff7ae6');c.restore();
 }
+// A ray from a point to a point (the colossus head's beam): a dashed line while it charges.
+function drawRay(c,a,x0,y0,x1,y1,half,time,warn){const len=Math.hypot(x1-x0,y1-y0);c.save();c.translate(x0,y0);c.rotate(Math.atan2(y1-y0,x1-x0));if(warn)drawLineWarning(c,a,0,0,len,time);else drawGiantBeam(c,a,0,0,len,half,time);c.restore();}
 function drawShards(c,a,t){const img=a.infoshumGlass;if(!img||t.shards<=0)return;const k=1-t.shards/.45,f=Math.min(2,Math.floor(k*3)),p=screenCenter(t);cell(c,img,110,72,f,p.x,p.y+k*14,Math.min(160,t.w*1.4)*(1+k*.5),{alpha:1-k*.4});}
-function drawScreenMap(c,g){
- const n=g.boss.network,x0=g.camera+22,y=14,count=n.tvs.length;c.save();c.globalAlpha=.9;rect(c,x0-8,y-6,count*15+10,26,'#0b0f26');rect(c,x0-8,y-6,count*15+10,2,'#5f3f96');
- n.tvs.forEach((t,i)=>{const x=x0+i*15,lit=t.role==='face'&&['face','charge','fire'].includes(t.state),big=t.kind==='huge';rect(c,x,y-(big?2:0),12,big?14:10,big?'#c08cff':'#7a5bc4');rect(c,x+2,y+2-(big?2:0),8,big?10:6,t.state==='broken'||t.state==='crack'?'#14102a':lit?'#ff6cda':t.state==='static'?'#8fd8ff':'#3a3d6a');if(t.state==='broken'){rect(c,x+3,y+3,2,2,'#fff');rect(c,x+7,y+5,2,2,'#fff');}else if(t.hp<SCREEN_HITS(t))rect(c,x+4,y+4,4,1,'#fff');});
- c.restore();
-}
-const SCREEN_HITS=t=>({tiny:1,small:1,med:1,large:2,huge:3})[t.kind];
-function drawWallForeground(c,a,g,time){
- const n=g.boss.network;
+function drawSeaForeground(c,a,g,time){
+ const n=g.boss.network,real=realScreen(n);
  for(const t of n.tvs){
   if(t.kind==='huge'){const r=beamRect(t,n);if(t.state==='charge'&&n.giantY!==null)drawLineWarning(c,a,r.x,r.y+r.h/2,r.w,time);else if(t.state==='fire')drawGiantBeam(c,a,r.x,r.y+r.h/2,r.w,WAVE.giantHalf,time);}
-  else if(t.state==='charge'){const r=beamRect(t);drawLineWarning(c,a,r.x,r.y+r.h/2,r.w,time);drawTvBeam(c,a,t,time,true);}else if(t.state==='fire')drawTvBeam(c,a,t,time);
+  else if(t.state==='charge'&&t.role==='real'){const r=beamRect(t);drawLineWarning(c,a,r.x,r.y+r.h/2,r.w,time);drawTvBeam(c,a,t,time,true);}else if(t.state==='fire')drawTvBeam(c,a,t,time);
   drawShards(c,a,t);
  }
- drawScreenMap(c,g);
+ // Yuri's light: an amber path from his screens to the real one; while he holds him, the screen is framed in amber.
+ if(real&&n.yuriOn){const rc=screenCenter(real);for(const i of n.yuri){const t=n.tvs[i];if(!['yuri','hold'].includes(t.state))continue;const p=screenCenter(t);amberPath(c,p.x,p.y,rc.x,rc.y,time);}
+  if(real.state==='held')amberFrame(c,real,time,5);}
 }
 // ——— The assembly ———
 function drawAssembly(c,a,g,time){
  const n=g.boss.network,k=n.transitionProgress,r=rooms[g.room],cx=r.x+768,cy=200;
- n.tvs.forEach((t,i)=>{if(t.kind==='huge')return;const q=Math.min(1,Math.max(0,(k-.05*(i%6))/.6)),e=q*q,c0=screenCenter(t),x=c0.x+(cx-c0.x)*e,y=c0.y+(cy-c0.y)*e-Math.sin(q*Math.PI)*90;
-  if(q<1){c.save();c.translate(x,y);c.rotate(q*6*(i%2?1:-1));drawCasing(c,a,KIND_CASING[t.kind],-t.w*(1-q*.5)/2,-t.h*(1-q*.5)/2,t.w*(1-q*.5),5);c.restore();}});
- const huge=n.tvs.find(t=>t.kind==='huge');if(huge&&k<.55)drawCasing(c,a,'huge',huge.x,huge.y+k*30,huge.w,5,{shake:Math.sin(time*60)*k*6,alpha:1-k*1.2});
- const f=Math.min(3,Math.floor(k*4.5)),as=AT.colossus['as'+f],img=a.infoshumColossus;if(img&&as){const w=(120+k*260)*(as.r[2]/180);piece(c,img,as,cx-w/2,cy-w*as.r[3]/as.r[2]/2,w,w*as.r[3]/as.r[2]);}
- if(k>.7)drawColossusBody(c,a,g,time,(k-.7)/.3);
- if(k>.85){c.save();c.globalAlpha=(k-.85)/.15*.6;rect(c,g.camera,0,VW(g),512,'#f0d4ff');c.restore();}
+ n.tvs.forEach((t,i)=>{if(t.kind==='huge')return;const q=Math.min(1,Math.max(0,(k-.04*(i%8))/.6)),e=q*q,c0=screenCenter(t),x=c0.x+(cx-c0.x)*e,y=c0.y+(cy-c0.y)*e-Math.sin(q*Math.PI)*90;
+  if(q<1){c.save();c.translate(x,y);c.rotate(q*6*(i%2?1:-1));drawCasing(c,a,KIND_CASING[t.kind],-t.w*(1-q*.5)/2,-t.h*(1-q*.5)/2,t.w*(1-q*.5),scr(a,5));c.restore();}});
+ const huge=n.tvs.find(t=>t.kind==='huge');if(huge&&k<.55)drawCasing(c,a,'huge',huge.x,huge.y+k*30,huge.w,scr(a,5),{shake:Math.sin(time*60)*k*6,alpha:Math.max(0,1-k*1.8)});
+ const f=Math.min(3,Math.floor(k*4.5)),as=AT.colossus['as'+f],img=a.infoshumColossus;if(img&&as&&k<.8){const w=(120+k*260)*(as.r[2]/180);piece(c,img,as,cx-w/2,cy-w*as.r[3]/as.r[2]/2,w,w*as.r[3]/as.r[2]);}
+ if(k>.65)drawTorso(c,a,g,time,Math.min(1,(k-.65)/.3));
+ if(k>.88){c.save();c.globalAlpha=(k-.88)/.12*.6;rect(c,g.camera,0,VW(g),512,'#f0d4ff');c.restore();}
 }
-// ——— Phase 2: the colossus climb ———
-// assets/infoshum-colossus.png: the body, five head screens (calm, roar, charge, hurt, breaking open), four assembly frames.
-const HEAD={x:376,y:128,w:186};
-function colossusPlace(g,time){const k=1.28,body=AT.colossus.body,w=body.r[2]*k,h=body.r[3]*k,x=g.camera+VW(g)/2-w/2+(rooms[g.room].x+768-(g.camera+VW(g)/2))*.25,y=6+Math.sin(time*.9)*6;return {x,y,w,h,k};}
-function drawColossusBody(c,a,g,time,alpha=1){
- const img=a.infoshumColossus;if(!img)return;const n=g.boss.network,pl=colossusPlace(g,time),asc=n.ascent;
- c.save();c.filter='brightness(.6) saturate(.85)';piece(c,img,AT.colossus.body,pl.x,pl.y+(1-alpha)*200,pl.w,pl.h,{alpha});c.restore();
- const head=asc?.head??0,hd=AT.colossus['h'+head],hw=HEAD.w*pl.k,hh=hw*hd.r[3]/hd.r[2],shake=head===1||head===4?Math.sin(time*50)*3:0;
- c.save();c.filter='brightness(.85)';piece(c,img,hd,pl.x+HEAD.x*pl.k-hw/2+shake,pl.y+(1-alpha)*200+HEAD.y*pl.k-hh/2,hw,hh,{alpha});c.restore();
+// ——— Phase 2: the colossus ———
+// assets/infoshum-colossus-parts.png (packed at 0.75): the torso with the head, a raised and a stuck fist for each hand,
+// a sweeping arm, a smashed knuckle monitor, the collapsed colossus, three shockwave frames, dust, a fist's shadow.
+// The other head screens (roar, charge, hurt) come from assets/infoshum-colossus.png.
+const PK=1.4;
+function part(c,a,name,cx,by,{k=PK,flip=false,alpha=1}={}){const p=AT.parts[name],img=a.infoshumParts;if(!p||!img)return null;const w=p.r[2]*k,h=p.r[3]*k;piece(c,img,p,cx-w/2,by-h,w,h,{flip,alpha});return {x:cx-w/2,y:by-h,w,h};}
+function torsoPlace(g,time){const p=AT.parts.torso,w=p.r[2]*PK,h=p.r[3]*PK,x=rooms[g.room].x+768-w/2,y=FLOOR-h+14+Math.sin(time*.9)*5;return {x,y,w,h,hx:x+w*270/515,hy:y+h*137/422,hw:w*205/515,sl:{x:x+w*.2,y:y+h*.55},sr:{x:x+w*.8,y:y+h*.55}};}
+function drawTorso(c,a,g,time,alpha=1){
+ const img=a.infoshumParts;if(!img)return;const col=g.boss.network.col,pl=torsoPlace(g,time),dy=(1-alpha)*220;
+ piece(c,img,AT.parts.torso,pl.x,pl.y+dy,pl.w,pl.h,{alpha});
+ const head=col?.head||0;if(head&&a.infoshumColossus){const hd=AT.colossus['h'+head],hh=pl.hw*hd.r[3]/hd.r[2],shake=head===1?Math.sin(time*50)*3:0;piece(c,a.infoshumColossus,hd,pl.hx-pl.hw/2+shake,pl.hy+dy-hh/2,pl.hw,hh,{alpha});}
 }
-function drawAscentSky(c,a,g,time){
- const img=a.infoshumAscent,n=g.boss.network,climbed=n.ascent?.climbed||0;
- if(img?.complete&&img.naturalWidth){const w=VW(g)+40,h=img.naturalHeight*w/img.naturalWidth,off=(climbed*.35)%h,x=g.camera-20;for(let y=off-h;y<512;y+=h-1)c.drawImage(img,Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
- else rect(c,g.camera,0,VW(g),512,'#1a0b33');
- c.save();for(let i=0;i<22;i++){const x=g.camera+((i*173)%VW(g)),y=((i*97+climbed*(1.2+i%4*.3)+time*40)%540)-30;c.globalAlpha=.3+.25*(i%3)/2;rect(c,x,y,2+i%3,6+i%5,i%2?'#b77cff':'#68e8ff');}c.restore();
+function drawCollapsed(c,a,g,time){const p=AT.parts.collapsed,w=814,h=w*p.r[3]/p.r[2],x=rooms[g.room].x+768-w/2;piece(c,a.infoshumParts,p,x+(g.boss.hurtTime>0?Math.sin(time*60)*3:0),FLOOR-h*237/256+2,w,h);}
+function cable(c,x0,y0,x1,y1,wid=18){c.save();c.lineCap='round';c.beginPath();c.moveTo(x0,y0);c.quadraticCurveTo(x1+(x0-x1)*.25,Math.min(y0,y1)-50,x1,y1);c.strokeStyle='#1c1030';c.lineWidth=wid+6;c.stroke();c.strokeStyle='#4a2878';c.lineWidth=wid;c.stroke();c.strokeStyle='#9a3bd0';c.lineWidth=3;c.stroke();c.restore();}
+function drawFist(c,a,g,time){
+ const f=g.boss.network.col.fist;if(!f)return;const pl=torsoPlace(g,time),sh=f.x<pl.x+pl.w/2?pl.sl:pl.sr;
+ if(f.state==='aim'||f.state==='lock'){const shake=f.state==='lock'?Math.sin(time*80)*3:0;cable(c,sh.x,sh.y,f.x,-10);part(c,a,'raise'+f.side,f.x+shake,150);return;}
+ const p=AT.parts['stuck'+f.side],h=p.r[3]*PK,by=FLOOR+f.y+h*.143;cable(c,sh.x,sh.y,f.x,by-h+24);part(c,a,'stuck'+f.side,f.x,by);
+ if(!f.weak&&f.state!=='fall')part(c,a,'knuckle',f.x,FLOOR+f.y-6,{k:.55});
 }
-function drawDebris(c,a,p,time){
- const img=a.infoshumDebris;if(!img)return false;let name=p.debris;if(p.y>ASCENT.waveTop-60)name='crumble'+(1+Math.min(2,Math.floor((p.y-(ASCENT.waveTop-60))/22)));
- const d=AT.debris[name]||AT.debris.medium,k=(p.w+10)/d.r[2],ky=Math.min(k,1.15);piece(c,img,d,p.x-5,p.y-d.top[0]*ky+2,d.r[2]*k,d.r[3]*ky);return true;
+function drawSweep(c,a,g,time){const s=g.boss.network.col.sweep;if(!s||s.state==='warn')return;const yc=s.low?FLOOR-24:FLOOR-64,p=AT.parts.sweep,w=210,h=w*p.r[3]/p.r[2];
+ cable(c,s.x-s.dir*70,yc,s.x-s.dir*900,yc-60,26);piece(c,a.infoshumParts,p,s.x-w/2,yc-h/2,w,h,{flip:s.dir<0});}
+function drawShaft(c,a,g,time){
+ const img=a.infoshumAscent,vw=VW(g);
+ if(img?.complete&&img.naturalWidth){const w=vw+40,h=img.naturalHeight*w/img.naturalWidth,off=(time*14)%h,x=g.camera-20;for(let y=off-h;y<512;y+=h-1)c.drawImage(img,Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
+ else rect(c,g.camera,0,vw,512,'#1a0b33');
+ c.save();c.globalAlpha=.35;rect(c,g.camera,0,vw,512,'#0a0418');c.restore();
 }
-function drawWave(c,a,g,time){
- const img=a.infoshumNoiseWave;const top=ASCENT.waveTop-8+Math.sin(time*2)*3;
- if(!img){rect(c,g.camera,top,VW(g),80,'#2a2c9a');return;}
- const p=AT.wave['w'+Math.floor(time*8)%3],k=1.6,tw=p.r[2]*k,th=p.r[3]*k,off=(time*40)%tw;
- for(let x=g.camera-off-tw;x<g.camera+VW(g)+tw;x+=tw-2)c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(x),Math.round(top-12),Math.round(tw),Math.round(th));
- rect(c,g.camera,top-12+th-4,VW(g),80,'#090624');
-}
-function drawDrop(c,a,d,time){
- const img=a.infoshumFallingTv;if(!img)return;
- if(d.state==='warn'){c.save();c.globalAlpha=.3+.35*Math.abs(Math.sin(time*12));rect(c,d.x-26,d.ty-3,52,4,'#ff6cda');for(let y=0;y<d.ty-20;y+=26)rect(c,d.x-1,y+((time*90)%26),2,12,'#ff9df0');c.restore();return;}
- const f=d.state==='fall'?0:d.state==='impact'?1:2,k=.42,alpha=d.state==='wreck'?Math.min(1,(ASCENT.wreck-d.time)/.4):1;
- c.save();c.globalAlpha=alpha;c.translate(Math.round(d.x),Math.round(d.y));if(d.state==='fall')c.rotate(Math.sin(time*9+d.x)*.25);c.drawImage(img,f*200,0,200,160,-100*k,-(f?152:125)*k,200*k,160*k);c.restore();
-}
-// assets/infoshum-eye-relay.png: closed, aiming, firing, stunned (the weak moment), cracked, bursting. Head centre at (70,58) of 118×210.
-function drawEye(c,a,e,time){
- const img=a.infoshumEyeRelay;if(!img)return;const f={fly:0,leave:0,aim:1,fire:2,stunned:3,cracked:4,boom:5}[e.state]??0,p=AT.eye['e'+f],k=ASCENT.eyeHead/92;
- const bob=['fly','aim','stunned'].includes(e.state)?Math.sin(time*5)*2:0,flip=e.side<0;
- const w=p.r[2]*k,h=p.r[3]*k,ox=(flip?p.r[2]-70:70)*k;piece(c,img,p,e.x-ox,e.y-58*k+bob,w,h,{flip});
+// The breakout (assets/infoshum-breakout.png): bulging glass, tentacles through it, the burst, he tears out, the roar.
+const BREAK=[[37,144,310,269],[394,140,373,273],[732,80,372,335],[1117,112,410,295],[8,552,386,383],[403,580,353,355],[780,548,320,373],[1141,589,380,309]];
+export function breakoutFrame(progress){return progress<.2?0:progress<.38?1:progress<.5?2:progress<.64?3:progress<.84?4:5;}
+function drawBreakout(c,a,g,progress,time){
+ const img=a.infoshumBreakout;if(!img)return;const f=breakoutFrame(progress),box=BREAK[f],h=headBox(g),cx=h.x+h.w/2,cy=h.y+h.h/2-30-(f>=4?(progress-.64)/.36*70:0);
+ const base=.95,k=base*(f>=4?1.25+.15*(f-4):1),shake=f===2?Math.sin(time*90)*4:f<2?Math.sin(time*60)*progress*6:0;
+ c.drawImage(img,box[0],box[1],box[2],box[3],Math.round(cx-box[2]*k/2+shake),Math.round(cy-box[3]*k/2),Math.round(box[2]*k),Math.round(box[3]*k));
+ if(f>=2&&f<=4){const s=BREAK[7],spread=Math.min(1,(progress-.38)/.4),sk=base*(.8+spread*.9);c.save();c.globalAlpha=1-spread*.7;c.drawImage(img,s[0],s[1],s[2],s[3],Math.round(cx-s[2]*sk/2),Math.round(cy-s[3]*sk/2),Math.round(s[2]*sk),Math.round(s[3]*sk));c.restore();}
+ if(f===2){c.save();c.globalAlpha=.6*(1-(progress-.38)/.12);rect(c,g.camera,0,VW(g),512,'#ffe4fb');c.restore();}
+ if(progress>.9){c.save();c.globalAlpha=(progress-.9)/.1*.8;rect(c,g.camera,0,VW(g),512,'#f5d6ff');c.restore();}
 }
 function drawColossusForeground(c,a,g,time){
- const n=g.boss.network,s=n.ascent;if(!s)return;
- for(const d of n.drops)drawDrop(c,a,d,time);
- const e=s.eye;if(e){if(e.state==='aim'){const r=eyeBeamRect(e);drawLineWarning(c,a,r.x,r.y+r.h/2,r.w,time);}drawEye(c,a,e,time);if(e.state==='fire'){const r=eyeBeamRect(e);drawGiantBeam(c,a,r.x,r.y+r.h/2,r.w,ASCENT.eyeHalf,time,{dir:e.dir});}}
- if(s.beamMode==='aim'){const r=sweepRect(s);drawLineWarning(c,a,g.camera,r.y+r.h/2,VW(g),time);}
- else if(s.beamMode==='sweep'){const r=sweepRect(s);drawGiantBeam(c,a,g.camera-10,r.y+r.h/2,VW(g)+20,ASCENT.sweepHalf,time);}
- drawWave(c,a,g,time);
- if(s.flash>0){c.save();c.globalAlpha=Math.min(.4,s.flash*1.4);rect(c,g.camera,0,VW(g),512,'#f5d6ff');c.restore();}
- if(n.stage==='breakout'){const k=n.transitionProgress,pl=colossusPlace(g,time),hx=pl.x+HEAD.x*pl.k,hy=pl.y+HEAD.y*pl.k;if(k>.45)drawAttackFx(c,a,'burst',Math.min(3,Math.floor((k-.45)*8)),hx,hy,200+k*300,{alpha:Math.max(0,1.2-k)});if(k>.8){c.save();c.globalAlpha=(k-.8)/.2*.7;rect(c,g.camera,0,VW(g),512,'#f5d6ff');c.restore();}}
+ const n=g.boss.network,col=n.col;if(!col)return;const img=a.infoshumParts,f=col.fist;
+ if(f&&(f.state==='aim'||f.state==='lock')){const lock=f.state==='lock',p=AT.parts.shadow,w=lock?170:120+50*Math.abs(Math.sin(time*6)),h=w*p.r[3]/p.r[2];piece(c,img,p,f.x-w/2,FLOOR-h/2+4,w,h,{alpha:lock?.95:.55});if(lock)drawLineWarning(c,a,f.x-70,FLOOR-6,140,time);}
+ for(const s of col.shocks){const p=AT.parts['shock'+Math.min(2,Math.floor(s.travel/50))],w=84,h=w*p.r[3]/p.r[2];piece(c,img,p,s.x-w/2,FLOOR-h+12,w,h,{alpha:Math.max(.25,1-s.travel/COL.shockRange)});}
+ if(col.dust){const p=AT.parts.dust,k=col.dust.time/.45,w=180*(1+k*.5),h=w*p.r[3]/p.r[2];piece(c,img,p,col.dust.x-w/2,FLOOR-h+14,w,h,{alpha:1-k});}
+ const s=col.sweep;if(s&&s.state==='warn'){const y=s.low?FLOOR-22:FLOOR-62;drawLineWarning(c,a,g.camera,y,VW(g),time);}
+ const m=col.beam;if(m&&n.stage==='colossus'){const pl=torsoPlace(g,time);drawRay(c,a,pl.hx,pl.hy,m.x,FLOOR,COL.beamHalf,time,m.state==='charge');}
+ if(col.flash>0){c.save();c.globalAlpha=Math.min(.4,col.flash*1.4);rect(c,g.camera,0,VW(g),512,'#f5d6ff');c.restore();}
+ if(n.stage==='breakout')drawBreakout(c,a,g,n.transitionProgress,time);
 }
-// ——— Phase 3: the doubles in the storm ———
-function drawNoise(c,a,g,time){
- const n=g.boss.network,img=a.infoshumPoses;
- // The split: the core bursts in a ring of white noise and the doubles fly out of it.
- if(n.mode==='split'&&n.splitFrom){const f=n.figures[0],k=Math.min(1,(f?.time||0)/.9);drawAttackFx(c,a,'burst',Math.min(3,Math.floor(k*4)),n.splitFrom.x,n.splitFrom.y,220+k*160,{alpha:k>.75?(1-k)/.25:1});}
- for(const f of n.figures){
-  // Before a dive: a trail of glitch ghosts points at the landing, where a noise ripple already stirs.
-  if(f.state==='warn'){for(let i=1;i<=3;i++){const q=i/4;drawAttackFx(c,a,'glitch',3,f.x+(f.tx-f.x)*q,f.y+(f.ty-20-f.y)*q,60,{alpha:(.45-.1*i)*(.7+.3*Math.sin(time*14+i))});}colorWarning(c,a,{x:f.tx,y:f.ty},time,'wave');}
-  const flicker=f.real?1:.62+.25*Math.sin(time*23+f.id);
-  if(f.state==='split')cell(c,img,POSE_W,POSE_H,5,f.x,f.y,330);
-  else if(f.state==='dive'){const ang=Math.atan2(f.ty-f.y,f.tx-f.x),flip=f.tx<f.x;cell(c,img,POSE_W,POSE_H,3,f.x,f.y,300,{flip,rot:flip?ang-Math.PI+.6:ang-.6,alpha:flicker});}
-  else if(f.state==='stuck')cell(c,img,POSE_W,POSE_H,4,f.x,f.ty-40,280);
-  else if(f.state==='burst')cell(c,img,POSE_W,POSE_H,7,f.x,f.y,300,{alpha:Math.max(0,1-f.time/.45)});
-  else if(f.real){const bob=Math.sin(time*2.7)*6;drawInfoshumSprite(c,a,'body',f.state==='warn'?1:0,f.x-150,f.y-130+bob,300,260);}
-  else cell(c,img,POSE_W,POSE_H,6,f.x,f.y,300,{alpha:flicker});
- }
+// ——— Phase 3: free in the storm ———
+// assets/infoshum-free.png (packed at 0.6): hover ×2, roar, ram wind-up, ram, crashed, dizzy ×2, hurt, three bodies with
+// fewer tentacles, a crack in the ground, a tentacle bursting out, three frames of headline shards.
+const FS=1.35;
+function freePiece(c,a,name,cx,cy,{flip=false,alpha=1,ay=.5,k=FS}={}){const p=AT.free[name],img=a.infoshumFree;if(!p||!img)return;const w=p.r[2]*k,h=p.r[3]*k;piece(c,img,p,cx-w/2,cy-h*ay,w,h,{flip,alpha});}
+function drawFree(c,a,g,time){
+ const b=g.boss,f=b.network.free;if(!f)return;
+ for(const t of f.tentacles){if(t.state==='warn')freePiece(c,a,'crack',t.x,t.y+2,{k:.5,alpha:.6+.4*Math.abs(Math.sin(time*12))});
+  else{const k=Math.min(1,t.time/.1)*(t.time>FREE.tentUp-.15?Math.max(0,(FREE.tentUp-t.time)/.15):1),p=AT.free.tent,w=p.r[2]*.62,h=p.r[3]*.62*k;piece(c,a.infoshumFree,p,t.x-w/2,t.y+10-h,w,h);}}
+ for(const s of f.shards)freePiece(c,a,'sh'+Math.floor(time*12)%3,s.x,s.y,{k:.42,flip:s.vx<0});
+ if(f.mode==='ramPrep'){const x0=Math.min(f.tx,f.ex),x1=Math.max(f.tx,f.ex);drawLineWarning(c,a,x0,f.ty,x1-x0,time);}
+ // For the last blow Yuri holds him from a surviving screen.
+ if(f.mode==='dizzy'&&f.yuri){const w=124,y=f.gy-262+Math.sin(time*3)*3;amberPath(c,f.x,y+70,f.x,f.gy-56,time);drawCasing(c,a,'med1',f.x-w/2,y,w,yur(a,3));amberFrame(c,{x:f.x-w/2,y,w,h:w*.82},time);}
+ const idle=f.hits>=2?'t1':f.hits===1?'t2':'i'+Math.floor(time*3)%2;let name=idle,ay=.5,flip=false,y=f.y;
+ if(f.mode==='enter')name='roar';else if(f.mode==='ramPrep'){name='prep';flip=f.dir<0;}else if(f.mode==='ram'){name='ram';flip=f.dir<0;}
+ else if(f.mode==='crash'){name='crash';ay=1;y=f.gy+8;}else if(f.mode==='dizzy'){name='d'+Math.floor(time*4)%2;ay=1;y=f.gy+6;}else if(f.mode==='hit'||b.hurtTime>0)name='hurt';
+ else if(f.mode==='tentacle'&&!f.hits)name='roar';
+ freePiece(c,a,name,f.x,y,{flip,ay});
+ if(f.flash>0){c.save();c.globalAlpha=Math.min(.4,f.flash*1.4);rect(c,g.camera,0,VW(g),512,'#f5d6ff');c.restore();}
 }
-// ——— Phase 3: the storm (assets/infoshum-storm.jpg, infoshum-storm-platforms.png: slab, cracked slab, slab with a terminal) ———
+// The storm (assets/infoshum-storm.jpg, infoshum-storm-platforms.png: slab, cracked slab, slab with a terminal).
 const PLAT=[[6,273],[27,241],[47,192]],PLAT_TOP=22;
 function drawStormIsland(c,a,p){
  const img=a.infoshumStormPlatforms;if(!img)return false;const [sx,sw]=PLAT[p.storm]||PLAT[0],kx=(p.w+14)/sw,ky=Math.min(.78,Math.max(.5,kx));
@@ -166,16 +185,15 @@ function drawStormSky(c,a,g,time){
 export function drawInfoshumBackdrop(c,a,g,time){
  const b=g.boss,n=b.network;if(g.room!==8||!n)return;
  const r=rooms[g.room];
- if(n.stage==='noise'){drawStormSky(c,a,g,time);return;}
- if(n.stage==='colossus'||n.stage==='breakout'){drawAscentSky(c,a,g,time);drawColossusBody(c,a,g,time);return;}
- const bg=a.infoshumWallBg;if(bg?.complete&&bg.naturalWidth)c.drawImage(bg,r.x,0,r.width,512);else rect(c,r.x,0,r.width,512,'#120a2a');
+ if(n.stage==='free'){drawStormSky(c,a,g,time);return;}
+ if(n.stage==='colossus'||n.stage==='breakout'){drawShaft(c,a,g,time);if(n.col.mode==='collapse')drawCollapsed(c,a,g,time);else{drawTorso(c,a,g,time);drawFist(c,a,g,time);drawSweep(c,a,g,time);}return;}
+ const bg=a.infoshumSea;if(bg?.complete&&bg.naturalWidth)c.drawImage(bg,r.x,0,r.width,512);else rect(c,r.x,0,r.width,512,'#120a2a');
  if(n.stage==='assemble'){c.save();c.globalAlpha=Math.max(0,1-n.transitionProgress*1.6);drawHeapSupports(c,a,g,time);c.restore();c.save();c.globalAlpha=Math.min(.6,n.transitionProgress);rect(c,r.x,0,r.width,512,'#05020f');c.restore();drawAssembly(c,a,g,time);return;}
  drawHeapSupports(c,a,g,time);
  for(const t of n.tvs)drawScreen(c,a,t,time);
 }
 export function drawInfoshumPlatform(c,a,p,time){
  if(p.heap&&drawHeapTier(c,a,p,time))return;
- if(p.debris&&drawDebris(c,a,p,time))return;
  if(p.storm!==undefined&&drawStormIsland(c,a,p))return;
  if(!a.infoshumPlatform?.complete||p.infoshumStep)return;
  const image=a.infoshumPlatform,scale=30/177,cap=Math.min(140*scale,p.w/3),y=p.y-3;
@@ -185,9 +203,9 @@ export function drawInfoshumPlatform(c,a,p,time){
 }
 export function drawInfoshumForeground(c,a,g,time){
  const b=g.boss,n=b.network;if(g.room!==8||!n)return;
- if(n.stage==='network'){drawWallForeground(c,a,g,time);return;}
+ if(n.stage==='network'){drawSeaForeground(c,a,g,time);return;}
  if(n.stage==='colossus'||n.stage==='breakout'){drawColossusForeground(c,a,g,time);return;}
- if(n.stage==='noise'){drawNoise(c,a,g,time);return;}
+ if(n.stage==='free')drawFree(c,a,g,time);
 }
 // «Тишина»: he shrinks into a line and a dot like an old TV switching off (boss-defeat-art.js).
 export function drawInfoshumDefeat(c,a,d){
