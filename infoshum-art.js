@@ -44,7 +44,9 @@ function amberFrame(c,r,time,pad=0){c.save();c.strokeStyle='#ffc45e';c.shadowCol
 // (idle, Yuri points, junction box open, hit, exploded, rebooting) and cable pieces (three pulse frames, two snapped ends).
 // assets/infoshum-fx1.png: the scanning beam, a warning line, the cable whip, a thrown TV and its puddle of noise.
 const TOWER_K=TOWER.w/AT.mon.face.r[2],EMO_BOX=[0,0,0,0];
-function drawTowerAt(c,a,face,cx,base,k=1,time=0,{alpha=1,shake=0}={}){const p=AT.mon[face]||AT.mon.face,w=p.r[2]*TOWER_K*k;return stand(c,a.infoshumTower,p,cx+shake,base,w,{alpha});}
+// Every state of the tower was painted at its own size; k = [scale, dx, dy] registers each frame onto «face», so the
+// monitor keeps one size and place whether it shows Infoshum, Yuri, cracks or the dome.
+function drawTowerAt(c,a,face,cx,base,k=1,time=0,{alpha=1,shake=0}={}){const p=AT.mon[face]||AT.mon.face,f=AT.mon.face,u=TOWER_K*k,[s,dx,dy]=p.k||[1,0,0],x=cx+shake-f.r[2]*u/2-dx*u,y=base-f.r[3]*u-dy*u,w=p.r[2]*s*u,h=p.r[3]*s*u;piece(c,a.infoshumTower,p,x,y,w,h,{alpha});return {x,y,w,h};}
 const RELAY_FRAME={live:'r0',yuri:'r1',open:'r2',hit:'r3',dead:'r4',reboot:'r5'};
 function cablePath(g,i,k=1){const r=relayRect(g,i),R=RELAYS[i],tx=rooms[g.room].x+TOWER.cx,side=R.cx<TOWER.cx?-1:1,ty=TOWER.base-TOWER.h*.62;
  const x0=tx+side*TOWER.w*.46,y0=ty,x1=r.x+r.w/2-side*r.w*.38,y1=r.y+r.h*.32;return t=>{t*=k;const mx=(x0+x1)/2,my=Math.max(y0,y1)+60;const u=1-t;return {x:u*u*x0+2*u*t*mx+t*t*x1,y:u*u*y0+2*u*t*my+t*t*y1};};}
