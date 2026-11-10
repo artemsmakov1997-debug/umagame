@@ -11,6 +11,24 @@ const ROD_COLORS=['#0a0e26','#3b4d85','#796a84','#edd5ae','#0d1129'];
 const visible=(g,x,w,margin=40)=>x+w>g.camera-margin&&x<g.camera+(g.viewWidth||768)+margin;
 function part(c,image,box,x,y,scale=1){c.drawImage(image,box[0],box[1],box[2],box[3],Math.round(x),Math.round(y),box[2]*scale,box[3]*scale);}
 
+// Desks, catwalks, newspaper piles and the small hanging pieces (assets/newsroom-platforms.png). Strips are three
+// pieces — left cap, repeatable middle, right cap; t = the walkable top line inside the piece.
+const NP={"deskL":{"r":[0,0,221,101],"t":[23.0]},"deskM":{"r":[223,0,274,96],"t":[18.0]},"deskR":{"r":[499,0,220,114],"t":[37.0]},"walkL":{"r":[721,0,216,95],"t":[35.5]},"walkM":{"r":[0,116,269,87],"t":[35.5]},"walkR":{"r":[271,116,214,95],"t":[35.5]},"pileL":{"r":[487,116,217,76],"t":[24.0]},"pileM":{"r":[706,116,268,54],"t":[6.5]},"pileR":{"r":[0,213,214,76],"t":[25.5]},"shelfL":{"r":[216,213,230,94],"t":[42.0]},"shelfM":{"r":[448,213,276,76],"t":[41.0]},"shelfR":{"r":[726,213,229,94],"t":[42.0]},"lamp":{"r":[0,309,148,68],"t":[2.5]},"books":{"r":[150,309,158,81],"t":[3.0]},"crate":{"r":[310,309,152,88],"t":[23.5]}};
+const NEWS_KIND={'1:1':'desk','1:2':'pile','1:3':'walk','1:4':'desk','1:5':'books','1:6':'lamp','2:3':'walk','2:4':'walk'};
+const NEWS_K={desk:.42,walk:.4,pile:.42,shelf:.4};
+function cut(c,img,p,sx,sw,x,y,k){if(sw<=0)return;c.drawImage(img,p.r[0]+sx,p.r[1],sw,p.r[3],Math.round(x),Math.round(y-p.t[0]*k),Math.ceil(sw*k),Math.round(p.r[3]*k));}
+export function newsroomPlatformKind(p){return NEWS_KIND[p.id]||null;}
+export function drawNewsroomPlatform(c,a,p){
+ const kind=NEWS_KIND[p.id],img=a.newsroomPlatforms;if(!kind||!img?.complete||!img.naturalWidth)return false;
+ const x=Math.round(p.x),y=Math.round(p.y),w=Math.round(p.w);
+ if(NP[kind]){const q=NP[kind],k=w*1.08/q.r[2];cut(c,img,q,0,q.r[2],x-w*.04,y,k);return true;}
+ const L=NP[kind+'L'],M=NP[kind+'M'],R=NP[kind+'R'],k=NEWS_K[kind],lw=L.r[2]*k,rw=R.r[2]*k;
+ if(w<lw+rw){const half=w/2/k;cut(c,img,L,0,half,x,y,k);cut(c,img,R,R.r[2]-half,half,x+w/2,y,k);return true;}
+ cut(c,img,L,0,L.r[2],x,y,k);cut(c,img,R,0,R.r[2],x+w-rw,y,k);
+ for(let xx=x+lw;xx<x+w-rw;xx+=M.r[2]*k){const left=Math.min(M.r[2],(x+w-rw-xx)/k);cut(c,img,M,0,left,xx,y,k);}
+ return true;
+}
+
 // The conveyor itself, drawn in place of the generic surface of platform 1:0.
 export function drawNewsroomConveyor(c,a,g,t){
  const image=a.newsroomConveyor,r=rooms[1];if(!image)return;
