@@ -1,9 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {Game} from '../engine.js';import {activateRoom} from '../room-transitions.js';
-import {strikeInfoshum,exposeInfoshum,crackInfoshumScreen,smashWall,colossusInfoshum,breakHand,dropColossus,freeInfoshum,beamRect,screenCenter,realScreen,fistBox,headBox,sweepBox,ramBox,freeCoreBox,infoshumTargets,
- WAVE,COL,FREE,FLOOR,INFOSHUM_HP,REAL_SCREENS,WALL_ARENA,revealHint} from '../infoshum-combat.js';
+import {strikeInfoshum,exposeInfoshum,crackInfoshumScreen,smashWall,colossusInfoshum,breakHand,dropColossus,freeInfoshum,fistBox,headBox,sweepBox,ramBox,freeCoreBox,infoshumTargets,
+ relayHit,relayRect,towerScreen,beamFloor,buildWall,WAVE,COL,FREE,FLOOR,INFOSHUM_HP,HALL,ROUND_PAIRS} from '../infoshum-combat.js';
 import {jumpTo} from './navigation.js';
-function game(testing=true){const g=new Game({story:false,cinematic:true,testingInvulnerable:testing});g.start();activateRoom(g,8);g.enemies=[];g.notebooks=[];g.fishes=[];g.lifePickups=[];g.soups=[];g.boss.noticeTime=0;g.mode='playing';g.abilities={attack:true,dash:true,sneak:true};return g;}
+function game(testing=true){const g=new Game({story:false,cinematic:true,testingInvulnerable:testing});g.start();activateRoom(g,8);g.enemies=[];g.notebooks=[];g.fishes=[];g.lifePickups=[];g.soups=[];g.boss.noticeTime=0;g.mode='playing';g.abilities={attack:true,dash:true,sneak:true};buildWall(g);return g;}
 function tick(g,n,input={}){for(let i=0;i<n;i++)g.step(1/60,input);}
 function until(g,cond,max=1200,input={}){for(let i=0;i<max&&!cond();i++)g.step(1/60,input);return cond();}
 function swing(g,box){const p=g.player;p.attack=.18;p.swing++;return strikeInfoshum(g,box);}
@@ -11,69 +11,63 @@ function place(g,id,dx=40){const s=g.platforms.find(s=>s.id===id);Object.assign(
 function colossus(testing=true){const g=game(testing);colossusInfoshum(g);assert.equal(g.boss.network.stage,'colossus');place(g,'8:0',400);return g;}
 function free(testing=true){const g=game(testing);freeInfoshum(g);assert.equal(g.boss.network.stage,'free');return g;}
 const attack=(g,i)=>{const a=g.boss.network.col;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.mode='idle';a.timer=0;a.step=i;tick(g,1);return a;};
-test('«Море экранов»: twenty screens of four sizes stand on the tiers of the heap, the huge wall hangs over the middle',()=>{
- const g=game(),n=g.boss.network;tick(g,1);assert.equal(g.boss.hp,INFOSHUM_HP);assert.equal(n.tvs.length,21);
- const kinds=n.tvs.map(t=>t.kind);for(const k of ['tiny','small','med','large','huge'])assert.ok(kinds.includes(k),k);assert.equal(kinds.filter(k=>k==='huge').length,1);
- assert.deepEqual(g.platforms.filter(s=>s.room===8&&!s.bossHidden).map(s=>s.index).sort((a,b)=>a-b),Object.keys(WALL_ARENA).map(Number).sort((a,b)=>a-b));
- const regular=n.tvs.filter(t=>t.kind!=='huge');for(const t of regular){const s=g.platforms.find(s=>s.room===8&&s.index===t.on);assert.equal(t.y+t.h,s.y,'stands on its tier');assert.ok(t.x>=s.x-2&&t.x+t.w<=s.x+s.w+2,'within its tier '+t.index);}
- for(const a of regular)for(const b of regular)if(a.index<b.index&&a.on===b.on)assert.ok(a.x+a.w<=b.x||b.x+b.w<=a.x,'no two screens overlap');
+const tower=(g,i)=>{const n=g.boss.network;n.scans=[];n.whips=[];n.tvs=[];n.puddles=[];n.attack=null;n.step=i;n.mode='rest';n.timer=0;tick(g,1);return n;};
+test('«Прямой эфир»: the hall of ledges, the big square monitor in the middle behind a dome of static, four relays around it',()=>{
+ const g=game(),n=g.boss.network;tick(g,1);assert.equal(g.boss.hp,INFOSHUM_HP);assert.equal(n.relays.length,4);assert.equal(n.shield,true);
+ assert.deepEqual(g.platforms.filter(s=>s.room===8&&!s.bossHidden).map(s=>s.index).sort((a,b)=>a-b),Object.keys(HALL).map(Number).sort((a,b)=>a-b));
+ const sc=towerScreen(g),top=g.platforms.find(s=>s.id==='8:9');assert.ok(top.y-50<sc.y+sc.h&&top.x<sc.x+sc.w&&top.x+top.w>sc.x,'a paw from the top ledge reaches the big screen');
+ for(let i=0;i<4;i++){const h=relayHit(g,i),s=g.platforms.filter(q=>q.room===8&&!q.bossHidden&&h.x+h.w/2>=q.x&&h.x+h.w/2<=q.x+q.w&&q.y>=h.y+h.h-4).sort((a,b)=>a.y-b.y)[0];assert.ok(s&&s.y-50<h.y+h.h,'relay '+i+' is reached from a ledge');}
 });
-test('every tier of the heap is reached with real jumps from the floor',()=>{
- const g=game();tick(g,1);place(g,'8:0',60);for(const i of [1,6,9])assert.ok(jumpTo(g,8,i,600),'left tier '+i);
- place(g,'8:0',460);for(const i of [4,2,16,7])assert.ok(jumpTo(g,8,i,600),'middle tier '+i);
- place(g,'8:0',1470);for(const i of [3,8,10])assert.ok(jumpTo(g,8,i,600),'right tier '+i);
+test('every ledge of the hall is reached with real jumps from the floor',()=>{
+ const g=game();tick(g,1);place(g,'8:0',60);for(const i of [1,6])assert.ok(jumpTo(g,8,i,600),'left '+i);
+ place(g,'8:0',520);for(const i of [4,2,9])assert.ok(jumpTo(g,8,i,600),'middle '+i);
+ place(g,'8:0',1470);for(const i of [3,8])assert.ok(jumpTo(g,8,i,600),'right '+i);
 });
-test('a wave: the same face on many screens, one of them real; Yuri appears a moment later, points at it and only then it is marked',()=>{
- const g=game(),n=g.boss.network;place(g,'8:1',20);assert.ok(until(g,()=>n.mode==='warn',200));assert.ok(n.tvs.filter(t=>t.state==='static').length>=5);
- assert.ok(until(g,()=>n.mode==='face',60));const faces=n.tvs.filter(t=>t.state==='face');assert.ok(faces.length>=5);assert.equal(faces.filter(t=>t.role==='real').length,1);
- assert.equal(n.yuriOn,false);assert.equal(infoshumTargets(g).length,0,'nothing tells the real one yet');assert.ok(n.yuri.every(i=>n.tvs[i].state==='glitch'));
- assert.ok(until(g,()=>n.yuriOn,60));const real=realScreen(n);assert.equal(infoshumTargets(g)[0].id,'screen'+real.index);
- for(const i of n.yuri){const t=n.tvs[i];assert.equal(t.state,'yuri');assert.equal(t.point,screenCenter(real).x>=screenCenter(t).x?1:-1,'he points at the real screen');}
- assert.equal(n.yuri.length,2);assert.ok(g.events.some(e=>e.type==='yuriHint'));
+test('Yuri opens the relays of the round one by one; a paw on the open junction box smashes it; two dead relays drop the dome',()=>{
+ const g=game(),n=g.boss.network;assert.ok(until(g,()=>n.relays.some(r=>r.state==='yuri'),400));const r=n.relays.find(r=>r.state==='yuri');assert.ok(ROUND_PAIRS[0].includes(r.index));assert.equal(infoshumTargets(g).length,0,'not before the box is open');
+ assert.equal(swing(g,relayHit(g,r.index)),false);assert.ok(until(g,()=>r.state==='open',80));assert.equal(infoshumTargets(g)[0].id,'relay'+r.index);
+ assert.ok(swing(g,relayHit(g,r.index)));assert.equal(r.state,'hit');assert.ok(Math.abs(g.boss.hp-(INFOSHUM_HP-.5))<1e-6);tick(g,25);assert.equal(r.state,'dead');assert.equal(n.shield,true);
+ const other=n.relays[ROUND_PAIRS[0].find(i=>i!==r.index)];assert.ok(until(g,()=>other.state==='open',300));assert.ok(swing(g,relayHit(g,other.index)));tick(g,25);assert.equal(n.shield,false);assert.ok(n.take);
 });
-test('a paw on a fake brings data rain and costs nothing; a paw on the real screen smashes it for good',()=>{
- const g=game(),n=g.boss.network;exposeInfoshum(g);const fake=n.tvs.find(t=>t.role==='fake'),real=realScreen(n);g.bolts=[];
- assert.ok(swing(g,fake));assert.equal(fake.role,null);assert.ok(g.bolts.length>=3);assert.equal(g.boss.hp,INFOSHUM_HP);assert.ok(g.events.some(e=>e.type==='infoshumFakeHit'));
- assert.ok(swing(g,real));assert.equal(real.state,'crack');assert.equal(n.broken,1);assert.ok(Math.abs(g.boss.hp-(INFOSHUM_HP-.5))<1e-6);
- tick(g,30);assert.equal(real.state,'broken');assert.equal(n.mode==='rest'||n.mode==='warn',true);assert.ok(until(g,()=>n.mode==='face',200));assert.notEqual(n.real,real.index,'he never returns to a smashed screen');
+test('with the dome down Yuri and Infoshum alternate on the big screen; the paw counts only on his face and cracks it; the next round reboots another pair',()=>{
+ const g=game(),n=g.boss.network;crackInfoshumScreen(g);tick(g,25);crackInfoshumScreen(g);tick(g,25);assert.equal(n.shield,false);assert.equal(n.take.show,'yuri');
+ const sc=towerScreen(g);assert.equal(swing(g,sc),false,'a paw on Yuri does nothing');assert.ok(until(g,()=>n.take?.show==='face',200));assert.ok(swing(g,sc));assert.equal(n.cracks,1);assert.equal(g.boss.hp,INFOSHUM_HP-2);
+ assert.equal(n.round,1);assert.equal(n.shield,true);assert.ok(ROUND_PAIRS[1].every(i=>['live','reboot'].includes(n.relays[i].state)));
+ const q=game(),m=q.boss.network;crackInfoshumScreen(q);tick(q,25);crackInfoshumScreen(q);tick(q,25);tick(q,Math.round(60*WAVE.takeover)+5);assert.equal(m.shield,true,'missed the screen: the dome is back');assert.equal(m.round,0);
 });
-test('the real screen charges and fires a beam along its tier towards Uma; the fakes only flicker and go out',()=>{
- const g=game(false),n=g.boss.network;exposeInfoshum(g);const real=realScreen(n),s=g.platforms.find(s=>s.room===8&&s.index===real.on);
- Object.assign(g.player,{x:real.x+real.w+30,y:s.y-48,grounded:true,supportId:s.id,inv:0,vx:0,vy:0});n.hold=false;n.timer=0;tick(g,1);assert.equal(n.mode,'charge');assert.ok(n.tvs.filter(t=>t.state==='charge').length>=4);
- const h=g.health;n.timer=0;tick(g,3);assert.equal(real.state,'fire');assert.equal(real.dir,1);assert.equal(n.tvs.filter(t=>t.role==='fake').length,0);assert.equal(g.health,h-1,'standing in the beam hurts');
- const r=beamRect(real);assert.ok(r.y>=real.y&&r.y+r.h<=real.y+real.h);assert.ok(s.y-48-96+48<r.y,'a jump clears it');
+test('the scan beam sweeps the hall from above: it burns a cat on the open floor and passes over one hiding under a ledge',()=>{
+ const g=game(false),n=g.boss.network;place(g,'8:0',520);g.player.inv=0;const t=tower(g,0),s=t.scans[0];assert.ok(s);assert.equal(s.state,'warn');const h=g.health;
+ for(let i=0;i<400&&t.scans.length;i++)g.step(1/60,{});assert.equal(g.health,h-1,'hit on the open floor');
+ const q=game(false),m=q.boss.network,low=q.platforms.find(s=>s.id==='8:1');place(q,'8:0',0);Object.assign(q.player,{x:low.x+low.w/2-17,y:FLOOR-48});q.player.inv=0;tower(q,0);const h2=q.health;
+ assert.ok(beamFloor(q,low.x+low.w/2)===low.y);for(let i=0;i<400&&m.scans.length;i++)q.step(1/60,{});assert.equal(q.health,h2,'safe under the ledge');
 });
-test('every third wave Yuri holds him in the screen: no beam, the fakes vanish and the real one stays open to the paw',()=>{
- const g=game(false),n=g.boss.network;place(g,'8:0',700);for(let w=0;w<2;w++){assert.ok(until(g,()=>n.mode==='fire',900));assert.ok(until(g,()=>n.mode==='rest',200));}
- assert.ok(until(g,()=>n.mode==='held',600));const real=realScreen(n);assert.equal(real.state,'held');assert.equal(n.tvs.filter(t=>t.role==='fake').length,0);assert.ok(n.yuri.every(i=>n.tvs[i].state==='hold'));
- const h=g.health;tick(g,Math.round(60*WAVE.hold)-5);assert.equal(n.tvs.filter(t=>t.state==='fire').length,0);assert.equal(g.health,h);assert.ok(swing(g,real));assert.equal(n.broken,1);
+test('the cable whip warns along Uma\'s ledge and slams it: a jump clears it; a tiny TV leaves a puddle of noise where it lands',()=>{
+ for(const jump of[false,true]){const g=game(false),n=g.boss.network;place(g,'8:2',140);g.player.inv=0;const t=tower(g,1),w=t.whips[0];assert.equal(w.state,'warn');assert.equal(w.platformId,'8:2');const h=g.health;
+  for(let i=0;i<120&&t.whips.length;i++)g.step(1/60,jump&&w.timer<.25&&w.state==='warn'&&g.player.grounded?{jump:true}:{});assert.equal(g.health,jump?h:h-1,jump?'jumped':'hit');}
+ const g=game(false),n=g.boss.network;place(g,'8:0',300);g.player.inv=9;tower(g,2);assert.equal(n.tvs.length,3);assert.ok(until(g,()=>n.puddles.length===3,200));const q=n.puddles[1];
+ Object.assign(g.player,{x:q.x-17,y:q.y-48,grounded:true,supportId:'8:0',vx:0,vy:0});g.player.inv=0;const h=g.health;tick(g,10);assert.equal(g.health,h-1,'the puddle hurts');tick(g,Math.round(60*WAVE.puddle));assert.equal(n.puddles.length,0);
 });
-test('after nine screens Yuri and he fight over the huge wall: the paw counts only while his face is on it; three paws start the assembly',()=>{
- const g=game(false),n=g.boss.network;let k=0;while(n.broken<REAL_SCREENS&&k++<30){crackInfoshumScreen(g);for(const t of n.tvs)if(t.state==='crack')t.state='broken';}assert.equal(n.broken,9);
- const huge=n.tvs.at(-1);n.mode='rest';n.timer=0;tick(g,1);assert.equal(n.real,huge.index);assert.equal(huge.state,'yuri','Yuri holds the wall first');assert.equal(swing(g,huge),false,'a paw on Yuri does nothing');
- place(g,'8:7',60);assert.ok(until(g,()=>n.mode==='charge',300));assert.ok(Math.abs(n.giantY-(g.player.y+24))<2);assert.equal(beamRect(huge,n).w,1536,'the whole tier');
- g.player.inv=0;const h=g.health;assert.ok(until(g,()=>n.mode==='fire',120));tick(g,3);assert.equal(g.health,h-1);assert.ok(until(g,()=>n.mode==='rest',120));assert.equal(huge.state,'yuri');
- for(let i=0;i<3;i++)assert.ok(crackInfoshumScreen(g),'paw '+i);assert.equal(n.stage,'assemble');assert.equal(g.boss.hp,12);assert.equal(g.boss.phase,2);assert.ok(until(g,()=>n.stage==='colossus',260));
+test('three cracks: the relays fly into the tower and the colossus rises around it',()=>{
+ const g=game(),n=g.boss.network;assert.equal(smashWall(g),'assemble');assert.equal(n.cracks,3);assert.equal(g.boss.hp,12);assert.equal(g.boss.phase,2);assert.ok(until(g,()=>n.stage==='colossus',300));assert.equal(n.col.mode,'intro');
 });
-test('each first-source from the Dimension keeps his face in the screens longer',()=>{const g=game(),n=g.boss.network;assert.equal(revealHint(g),0);g.originals=[{taken:true},{taken:true}];assert.ok(Math.abs(revealHint(g)-1.6)<1e-9);assert.ok(until(g,()=>n.mode==='face',300));assert.ok(n.timer>WAVE.face[0]+.4);});
-test('«Колосс»: a fist follows Uma as a shadow, slams where she stood, sends a shockwave along the floor and sticks',()=>{
+test('«Колосс»: a fist winds up and slams the floor beside the body on Uma\'s side, sends a shockwave along the floor and sticks',()=>{
  const g=colossus(false),n=g.boss.network,a=attack(g,0),f=a.fist;assert.equal(f.state,'aim');assert.deepEqual(g.platforms.filter(s=>s.room===8&&!s.bossHidden).map(s=>s.index),[0]);
- tick(g,30,{right:true});const px=g.player.x+17;assert.ok(Math.abs(f.x-px)<40,'the shadow follows');assert.ok(until(g,()=>f.state==='lock',120));const x=f.x;g.player.inv=0;const h=g.health;
- assert.ok(until(g,()=>f.state==='stuck',60));assert.equal(f.x,x,'locked');assert.equal(g.health,h-1,'under the fist');assert.equal(a.shocks.length,2);assert.deepEqual(infoshumTargets(g).map(t=>t.id),['fist']);
- const q=colossus(false),b=attack(q,0);assert.ok(until(q,()=>b.fist.state==='lock',200));q.player.x=b.fist.x+150;q.player.inv=0;const h2=q.health;assert.ok(until(q,()=>b.fist.state==='stuck',60));assert.equal(q.health,h2,'stepped aside');
+ const cx=16128+768;assert.equal(f.side,g.player.x+17<cx?'L':'R');assert.equal(Math.abs(f.x-cx),COL.reach);
+ Object.assign(g.player,{x:f.x-17});g.player.inv=0;const h=g.health;assert.ok(until(g,()=>f.state==='stuck',200));assert.equal(g.health,h-1,'under the fist');assert.equal(a.shocks.length,2);assert.deepEqual(infoshumTargets(g).map(t=>t.id),['fist']);
+ const q=colossus(false),b=attack(q,0);q.player.x=b.fist.x+(b.fist.side==='L'?-260:260);q.player.inv=0;const h2=q.health;assert.ok(until(q,()=>b.fist.state==='stuck',200));assert.equal(q.health,h2,'stepped aside');
  tick(q,40);assert.equal(q.health,h2-1,'the shockwave reaches a cat on the floor');
 });
 test('a paw on the knuckles of the stuck fist breaks that hand; with both broken he collapses and the head screen takes the paw',()=>{
  const g=colossus(),b=g.boss,n=b.network,a=n.col;assert.equal(swing(g,headBox(g)),false,'the head is out of reach while he stands');
  exposeInfoshum(g);const f=a.fist;assert.equal(swing(g,{x:f.x-200,y:FLOOR-50,w:40,h:50}),false);assert.ok(swing(g,fistBox(f)));assert.equal(a.hands[f.side],false);assert.equal(b.hp,12,'a hand is not his health');
  assert.ok(until(g,()=>!a.fist,120));assert.notEqual(a.mode,'collapse');const other=attack(g,0).fist;assert.notEqual(other.side,f.side,'the other hand slams next');
- assert.ok(until(g,()=>other.state==='stuck',200));assert.ok(swing(g,fistBox(other)));assert.ok(until(g,()=>a.mode==='collapse',120));assert.deepEqual(infoshumTargets(g).map(t=>t.id),['head']);
+ assert.ok(until(g,()=>other.state==='stuck',200));assert.ok(swing(g,fistBox(other)));assert.ok(until(g,()=>a.mode==='collapse',120));assert.equal(swing(g,headBox(g)),false,'not while he is still falling');assert.ok(until(g,()=>a.clock>COL.fallTime,80));assert.deepEqual(infoshumTargets(g).map(t=>t.id),['head']);
  assert.ok(swing(g,headBox(g)));assert.equal(b.hp,10);assert.equal(a.mode,'rise');assert.deepEqual(a.hands,{L:true,R:true});assert.equal(a.round,1);
  const q=colossus(),c=q.boss.network.col;breakHand(q);breakHand(q);assert.equal(c.mode,'collapse');tick(q,Math.round(60*COL.collapse)+5);assert.equal(c.mode,'rise');assert.equal(q.boss.hp,12,'missed: he just gets up');assert.deepEqual(c.hands,{L:true,R:true});
 });
 test('an arm sweeps low (a jump clears it) or high (a crouch passes under it); the head beam crawls after a cat that stands still',()=>{
  for(const low of[true,false])for(const dodge of[false,true]){const g=colossus(false),a=attack(g,1),s=a.sweep;s.low=low;assert.equal(s.state,'warn');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>s.state==='go',120));
-  const px=()=>g.player.x+17;for(let i=0;i<200&&a.sweep;i++){const near=Math.abs(s.x-px())<170;g.step(1/60,dodge&&near?(low?{jump:true}:{down:true}):{});}
+  for(let i=0;i<200&&a.sweep;i++){const now=s.state==='go'||s.timer<.1;g.step(1/60,dodge&&now?(low?{jump:g.player.grounded&&s.travel<COL.sweepSpan*.6}:{down:true}):{});}
   assert.equal(g.health,dodge?h:h-1,(low?'low':'high')+(dodge?' dodged':' hit'));}
  const b=sweepBox({x:0,low:true}),t=sweepBox({x:0,low:false});assert.ok(b.y+b.h===FLOOR&&t.y+t.h<FLOOR-30);
  const g=colossus(false),a=attack(g,3),m=a.beam;assert.equal(m.state,'charge');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>m.state==='fire',120));tick(g,30);assert.equal(g.health,h-1);
@@ -108,8 +102,8 @@ test('a fall between the storm islands returns Uma to the last island and costs 
  const g=free(false),n=g.boss.network;place(g,'8:0',300);g.player.inv=0;n.free.timer=99;tick(g,2);const h=g.health;Object.assign(g.player,{x:g.platforms.find(s=>s.id==='8:0').x+470,y:520,grounded:false,supportId:null,vy:200});
  tick(g,2);assert.equal(g.health,h-1);assert.equal(g.player.supportId,'8:0');assert.equal(n.stage,'free');
 });
-test('pause freezes the colossus; retry rebuilds the sea of screens',()=>{
+test('pause freezes the colossus; retry rebuilds the hall',()=>{
  const g=colossus(),n=g.boss.network;attack(g,0);g.mode='paused';const before=JSON.stringify(n);tick(g,90);assert.equal(JSON.stringify(n),before);g.mode='playing';
  g.retryLocation();assert.equal(g.boss.network.stage,'network');assert.equal(g.boss.hp,INFOSHUM_HP);assert.ok(g.platforms.filter(s=>s.room===8).every(s=>!s.bossHidden));
- g.boss.active=true;g.mode='playing';g.notebooks=[];assert.ok(until(g,()=>g.platforms.some(s=>s.id==='8:7'&&s.y===300&&s.heap==='lying'),240),'the heap is built again');
+ g.boss.active=true;g.mode='playing';g.notebooks=[];assert.ok(until(g,()=>g.platforms.some(s=>s.id==='8:9'&&s.y===262)&&g.platforms.find(s=>s.id==='8:7').bossHidden,240),'the hall is built again');
 });

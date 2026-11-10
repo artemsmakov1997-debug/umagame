@@ -5,7 +5,7 @@ import {layouts,rooms} from '../level.js';
 import {scenes,relayClues} from '../story.js';
 import {endingSlides} from '../finale.js';
 import {createBoss,stepBoss,stepProjectiles} from '../boss.js';
-import {strikeInfoshum,exposeInfoshum,glassRect,crackInfoshumScreen} from '../infoshum-combat.js';
+import {strikeInfoshum,exposeInfoshum,crackInfoshumScreen} from '../infoshum-combat.js';
 
 test('monster origins remain a mystery until the full chain is shown in the epilogue',()=>{
  for(const id of ['intro','chapter1','chapter2','chapter3']){
@@ -28,13 +28,13 @@ test('reading a notebook adds the room\'s next clue, with no premature answer',(
  Object.assign(g.player,{x:n.x-17,y:n.y-24,grounded:true,supportId:s.id});g.checkNotebooks();
  assert.equal(g.clues.length,1);assert.equal(g.clues[0].room,3);assert.ok(!/создаёте меня|Всё начинается с нас/i.test(g.clues[0].text));
 });
-test('Infoshum gathers the smashed wall into the colossus after nine real screens and the huge wall',()=>{
+test('Infoshum gathers the colossus around the tower after six relays and three cracks in the big screen',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;g.mode='playing';
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
- const n=g.boss.network;assert.equal(n.tvs.length,21);let k=0;
+ const n=g.boss.network;assert.equal(n.relays.length,4);let k=0;
  while(n.stage==='network'&&k++<40){assert.equal(crackInfoshumScreen(g),true,'paw '+k);for(let i=0;i<25&&n.stage==='network';i++)stepBoss(g,1/60);}
- assert.equal(k,12,'nine real screens, then the huge wall three times');assert.equal(n.stage,'assemble');assert.equal(g.boss.hp,12);assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
- for(let i=0;i<220;i++)stepBoss(g,1/60);
+ assert.equal(k,9,'two relays and a crack, three times');assert.equal(n.stage,'assemble');assert.equal(g.boss.hp,12);assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
+ for(let i=0;i<240;i++)stepBoss(g,1/60);
  assert.equal(n.stage,'colossus');assert.equal(g.boss.phase,2);
 });
 
