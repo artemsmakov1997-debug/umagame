@@ -36,8 +36,6 @@ function drawGiantBeam(c,a,x,y,w,half,time){
  const img=a.infoshumGiantBeam;if(!img)return;const t=time*10,f=Math.floor(t)%3,k=t-Math.floor(t),th=half*2.6*(1+Math.sin(time*18)*.06);
  c.save();for(const [i,al] of [[f,1-k],[(f+1)%3,k]]){const p=AT.giantBeam['b'+i];c.globalAlpha=al;c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],x,y-th/2,w,th);}c.restore();
 }
-const BEAM_EYE=125;// the glowing screen of the charging pose (idle7), in frame pixels from the top
-function beamOrb(c,x,y,time,charge){const r=(charge?14:24)+Math.sin(time*30)*3,g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'#ffffff');g.addColorStop(.35,'#ff8af0e0');g.addColorStop(1,'#ff3ad800');c.save();c.globalCompositeOperation='lighter';c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.restore();}
 function drawRay(c,a,x0,y0,x1,y1,half,time,warn){const len=Math.hypot(x1-x0,y1-y0);c.save();c.translate(x0,y0);c.rotate(Math.atan2(y1-y0,x1-x0));if(warn)drawLineWarning(c,a,0,0,len,time);else drawGiantBeam(c,a,0,0,len,half,time);c.restore();}
 function amberFrame(c,r,time,pad=0){c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=16;c.lineWidth=3;c.globalAlpha=.65+.3*Math.sin(time*8);c.strokeRect(r.x-pad,r.y-pad,r.w+pad*2,r.h+pad*2);c.restore();}
 // ——— Phase 1: the broadcast tower ———
@@ -149,13 +147,38 @@ function drawBreakout(c,a,g,progress,time){
  if(f===2)flash(c,g,.6*(1-(progress-.38)/.12),'#ffe4fb');
  if(progress>.9)flash(c,g,(progress-.9)/.1*.8);
 }
+// ——— The broadcast cannon (assets/infoshum-cannon.png) ———
+// It rises out of the colossus's head (mount ×3), the barrel charges (×4) and fires (×1); the beam is a tiled
+// segment (×3) with a muzzle flare (×3) and an impact on the floor (×4). Mount and barrel turn towards Uma's side.
+const CAN_K=.64,LAMP={idle0:57,idle7:60},BEAM_TH=COL.beamHalf*2.5;
+function drawCannon(c,a,g,time){
+ const col=g.boss.network.col,m=col.beam,img=a.infoshumCannon,C=AT.cannon;if(!img||!C)return;
+ const pose=colossusPose(g,time)[0],lamp=LAMP[pose];
+ if(m)col.cannon={x:m.x,until:time+.3};const fold=!m&&col.cannon&&time<col.cannon.until?(col.cannon.until-time)/.3:0;
+ if(lamp===undefined||!m&&!fold)return;
+ const cx=rooms[g.room].x+TOWER.cx,tx=m?m.x:col.cannon.x,left=tx<cx,yb=BASE-(AT.body[pose].gy[0]-lamp)*BODY_K;
+ const q=m?(m.state==='charge'?1-Math.max(0,m.timer)/COL.beamCharge:1):fold,mf=q<.12?0:q<.25?1:2,mp=C['m'+mf],mw=mp.r[2]*CAN_K,mh=mp.r[3]*CAN_K,mx=cx-(left?mw-mp.b[0]*CAN_K:mp.b[0]*CAN_K);
+ piece(c,img,mp,mx,yb-mh,mw,mh,{flip:left});if(mf<2)return;
+ const pv={x:left?mx+mw-mp.p[0]*CAN_K:mx+mp.p[0]*CAN_K,y:yb-mh+mp.p[1]*CAN_K},ang=Math.atan2(FLOOR-pv.y,tx-pv.x);
+ const firing=m&&m.state==='fire',bf=!m?0:firing?(Math.floor(time*16)%3?4:3):q<.5?1:q<.78?2:3,bp=C['b'+bf],k=CAN_K;
+ c.save();c.translate(Math.round(pv.x),Math.round(pv.y));c.rotate(ang);if(left)c.scale(1,-1);c.drawImage(img,bp.r[0],bp.r[1],bp.r[2],bp.r[3],Math.round(-bp.p[0]*k),Math.round(-bp.p[1]*k),Math.round(bp.r[2]*k),Math.round(bp.r[3]*k));c.restore();
+ const mz={x:pv.x+Math.cos(ang)*(bp.mz[0]-bp.p[0])*k,y:pv.y+Math.sin(ang)*(bp.mz[0]-bp.p[0])*k};
+ if(m&&m.state==='charge'){if(q>.3)drawRay(c,a,mz.x,mz.y,tx,FLOOR,COL.beamHalf,time,true);return;}
+ if(!firing)return;
+ // The beam: one frame for the whole length, scrolling outwards so it reads as a stream, never as torn pieces.
+ const len=Math.hypot(tx-mz.x,FLOOR-mz.y),tp=C['beam'+Math.floor(time*14)%3],th=BEAM_TH*(1+Math.sin(time*24)*.05),tw=tp.r[2]*th/tp.r[3],off=(time*520)%tw;
+ c.save();c.translate(mz.x,mz.y);c.rotate(ang);c.beginPath();c.rect(0,-th,len,th*2);c.clip();
+ for(let x=-off;x<len;x+=tw-1)c.drawImage(img,tp.r[0],tp.r[1],tp.r[2],tp.r[3],Math.floor(x),Math.round(-th/2),Math.ceil(tw),Math.round(th));c.restore();
+ const ip=C['imp'+Math.floor(time*12)%3],iw=210,ih=iw*ip.r[3]/ip.r[2];piece(c,img,ip,tx-iw/2,FLOOR+10-ih,iw,ih);
+ const fp=C['fl'+Math.floor(time*12)%3],fs=th*1.9;c.save();c.globalCompositeOperation='lighter';piece(c,img,fp,mz.x-fs/2,mz.y-fs/2,fs,fs);c.restore();
+}
 function drawColossusForeground(c,a,g,time){
  const n=g.boss.network,col=n.col;if(!col)return;const img=a.infoshumParts,f=col.fist;
  if(f&&(f.state==='aim'||f.state==='lock')){const lock=f.state==='lock',p=AT.parts.shadow,w=lock?170:110+60*Math.min(1,f.age/1.2),h=w*p.r[3]/p.r[2];piece(c,img,p,f.x-w/2,FLOOR-h/2+4,w,h,{alpha:lock?.95:.6});if(lock)drawLineWarning(c,a,f.x-70,FLOOR-6,140,time);}
  for(const s of col.shocks){const p=AT.parts['shock'+Math.min(2,Math.floor(s.travel/50))],w=84,h=w*p.r[3]/p.r[2];piece(c,img,p,s.x-w/2,FLOOR-h+12,w,h,{alpha:Math.max(.25,1-s.travel/COL.shockRange)});}
  if(col.dust){const p=AT.parts.dust,k=col.dust.time/.45,w=180*(1+k*.5),h=w*p.r[3]/p.r[2];piece(c,img,p,col.dust.x-w/2,FLOOR-h+14,w,h,{alpha:1-k});}
  const s=col.sweep;if(s&&s.state==='warn'){const y=s.low?FLOOR-22:FLOOR-62;drawLineWarning(c,a,rooms[g.room].x+TOWER.cx-COL.sweepSpan/2,y,COL.sweepSpan,time);}
- const m=col.beam;if(m&&n.stage==='colossus'){const p7=AT.body.idle7,x0=rooms[g.room].x+TOWER.cx,y0=BASE-(p7.gy[0]-BEAM_EYE)*BODY_K;drawRay(c,a,x0,y0,m.x,FLOOR,COL.beamHalf,time,m.state==='charge');beamOrb(c,x0,y0,time,m.state==='charge');}
+ if(n.stage==='colossus')drawCannon(c,a,g,time);
  flash(c,g,Math.min(.4,col.flash*1.4));
  if(n.stage==='breakout')drawBreakout(c,a,g,n.transitionProgress,time);
 }
@@ -202,11 +225,19 @@ function drawStormSky(c,a,g,time){
  else rect(c,r.x,0,r.width,512,'#1a0b33');
  c.save();for(let i=0;i<26;i++){const x=r.x+((i*173+time*(40+i%5*18))%r.width),y=(i*97+Math.sin(time+i)*30)%430+20;c.globalAlpha=.35+.3*(i%3)/2;rect(c,x,y,3+i%4,3+i%3,i%2?'#b77cff':'#68e8ff');}c.restore();
 }
+// The portal that carries Uma between phases (assets/infoshum-portal.png: opening ×6, spinning ×4, closing ×4).
+function drawPortal(c,a,g,time){
+ const o=g.boss.network.portal,img=a.infoshumPortal,P=AT.portal;if(!o||!img||!P)return;let name;
+ if(o.mode==='in')name=o.q<.18?'o'+Math.min(5,Math.floor(o.q/.18*6)):o.q<.86?'l'+Math.floor(time*12)%4:'c'+Math.min(3,Math.floor((o.q-.86)/.14*4));
+ else name=o.t<.5?'l'+Math.floor(time*12)%4:'c'+Math.min(3,Math.floor((o.t-.5)/.4*4));
+ const p=P[name],s=240*(o.mode==='in'?Math.min(1,.6+o.q*2):1),gl=c.createRadialGradient(o.x,o.y,0,o.x,o.y,s*.75);gl.addColorStop(0,'#ff6af055');gl.addColorStop(1,'#ff6af000');
+ c.save();c.fillStyle=gl;c.fillRect(o.x-s,o.y-s,s*2,s*2);c.translate(o.x,o.y);c.rotate(time*1.5);piece(c,img,p,-s/2,-s/2,s,s);c.restore();
+}
 export function drawInfoshumBackdrop(c,a,g,time){
  const b=g.boss,n=b.network;if(g.room!==8||!n)return;
- if(n.stage==='free'){drawStormSky(c,a,g,time);return;}
- if(n.stage==='colossus'||n.stage==='breakout'){drawShaft(c,a,g,time);drawColossus(c,a,g,time);return;}
- if(n.stage==='assemble'){const r=rooms[g.room],bg=a.infoshumHall;if(bg?.complete&&bg.naturalWidth)c.drawImage(bg,r.x,0,r.width,512);c.save();c.globalAlpha=Math.min(.7,n.transitionProgress*1.4);rect(c,r.x,0,r.width,512,'#05020f');c.restore();drawAssembly(c,a,g,time);return;}
+ if(n.stage==='free'){drawStormSky(c,a,g,time);drawPortal(c,a,g,time);return;}
+ if(n.stage==='colossus'||n.stage==='breakout'){drawShaft(c,a,g,time);drawColossus(c,a,g,time);drawPortal(c,a,g,time);return;}
+ if(n.stage==='assemble'){const r=rooms[g.room],bg=a.infoshumHall;if(bg?.complete&&bg.naturalWidth)c.drawImage(bg,r.x,0,r.width,512);c.save();c.globalAlpha=Math.min(.7,n.transitionProgress*1.4);rect(c,r.x,0,r.width,512,'#05020f');c.restore();drawAssembly(c,a,g,time);drawPortal(c,a,g,time);return;}
  drawHallBack(c,a,g,time);
 }
 export function drawInfoshumPlatform(c,a,p,time){
