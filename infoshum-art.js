@@ -20,8 +20,9 @@ function drawLineWarning(c,a,x,y,w,time){
 }
 // The big beams (the colossus head): infoshum-giant-beam.png, tiled along the line.
 function drawGiantBeam(c,a,x,y,w,half,time){
- const img=a.infoshumGiantBeam;if(!img)return;const p=AT.giantBeam['b'+(Math.floor(time*14)%3)],th=half*2.6,tw=p.r[2]*th/p.r[3];
- c.save();c.beginPath();c.rect(x,y-th/2-2,w,th+4);c.clip();for(let xx=x;xx<x+w;xx+=tw-2)c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(xx),Math.round(y-th/2+Math.sin(time*40)*2),Math.round(tw),Math.round(th));c.restore();
+ // One stretched piece (tiles left seams); two frames blend so the beam shimmers instead of flickering.
+ const img=a.infoshumGiantBeam;if(!img)return;const t=time*10,f=Math.floor(t)%3,k=t-Math.floor(t),th=half*2.6*(1+Math.sin(time*18)*.06);
+ c.save();for(const [i,al] of [[f,1-k],[(f+1)%3,k]]){const p=AT.giantBeam['b'+i];c.globalAlpha=al;c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],x,y-th/2,w,th);}c.restore();
 }
 function drawRay(c,a,x0,y0,x1,y1,half,time,warn){const len=Math.hypot(x1-x0,y1-y0);c.save();c.translate(x0,y0);c.rotate(Math.atan2(y1-y0,x1-x0));if(warn)drawLineWarning(c,a,0,0,len,time);else drawGiantBeam(c,a,0,0,len,half,time);c.restore();}
 function amberFrame(c,r,time,pad=0){c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=16;c.lineWidth=3;c.globalAlpha=.65+.3*Math.sin(time*8);c.strokeRect(r.x-pad,r.y-pad,r.w+pad*2,r.h+pad*2);c.restore();}
@@ -50,7 +51,9 @@ function drawHallBack(c,a,g,time){
  const pair=ROUND_PAIRS[n.round]||[];
  n.relays.forEach((q,i)=>drawCable(c,a,g,i,time,q.state==='dead'||q.state==='hit'));
  n.relays.forEach((q,i)=>drawRelay(c,a,g,i,q.state,time));
- const shake=n.face==='roar'?Math.sin(time*50)*2:n.face==='charge'?Math.sin(time*70)*1.2:0;drawTowerAt(c,a,n.face,r.x+TOWER.cx,TOWER.base,1,time,{shake});
+ const shake=n.face==='roar'?Math.sin(time*50)*2:n.face==='charge'?Math.sin(time*70)*1.2:0,fade=n.faceFade||(n.faceFade={face:n.face,prev:null,at:-9});
+ if(fade.face!==n.face){fade.prev=fade.face;fade.face=n.face;fade.at=time;}const fk=Math.min(1,Math.max(0,(time-fade.at)/.12));
+ if(fade.prev&&fk<1)drawTowerAt(c,a,fade.prev,r.x+TOWER.cx,TOWER.base,1,time,{alpha:1-fk});drawTowerAt(c,a,n.face,r.x+TOWER.cx,TOWER.base,1,time,{shake,alpha:fade.prev&&fk<1?Math.max(.4,fk):1});
  if(n.shield&&n.mode!=='opening')drawShield(c,g,time);
  if(n.take?.show==='yuri')amberFrame(c,towerScreen(g),time,4);
 }
@@ -70,7 +73,7 @@ function drawHallFront(c,a,g,time){
 }
 // ——— The assembly: the relays fly into the tower, the colossus rises around it ———
 const BODY_K=430/360,BASE=FLOOR+10;
-function bodyFrame(c,a,name,cx,{flip=false,alpha=1,shake=0}={}){const p=AT.body[name];if(!p||!a.infoshumBody)return null;const k=BODY_K,w=p.r[2]*k,h=p.r[3]*k,hx=p.hx[0]*k,x=flip?cx-(w-hx):cx-hx,y=BASE-p.gy[0]*k;piece(c,a.infoshumBody,p,x+shake,y,w,h,{flip,alpha});return {x,y,w,h,k,p,flip};}
+function bodyFrame(c,a,name,cx,{flip=false,alpha=1,shake=0}={}){if(alpha<=0)return null;const p=AT.body[name];if(!p||!a.infoshumBody)return null;const k=BODY_K,w=p.r[2]*k,h=p.r[3]*k,hx=p.hx[0]*k,x=flip?cx-(w-hx):cx-hx,y=BASE-p.gy[0]*k;piece(c,a.infoshumBody,p,x+shake,y,w,h,{flip,alpha});return {x,y,w,h,k,p,flip};}
 function bodyPoint(f,pt){const x=f.flip?f.x+f.w-pt[0]*f.k:f.x+pt[0]*f.k;return {x,y:f.y+pt[1]*f.k};}
 function drawAssembly(c,a,g,time){
  const n=g.boss.network,k=n.transitionProgress,r=rooms[g.room],cx=r.x+TOWER.cx;
@@ -98,6 +101,7 @@ function colossusPose(g,time){
  const s=a.sweep;if(s){const o=s.low?0:3,flip=s.dir<0;if(s.state==='warn')return ['sweep'+o,flip];return ['sweep'+(o+(s.travel<COL.sweepSpan*.45?1:2)),flip];}
  if(a.beam)return ['idle7'];
  if(a.hurt>0)return ['idle'+(5+Math.floor(time*6)%2)];
+ if(a.roar>0)return ['idle'+(3+Math.floor(time*5)%2)];
  return ['idle'+[0,1,2,1][Math.floor(time*3)%4]];
 }
 function drawShaft(c,a,g,time){
@@ -106,15 +110,23 @@ function drawShaft(c,a,g,time){
  else rect(c,g.camera,0,vw,512,'#1a0b33');
  c.save();c.globalAlpha=.35;rect(c,g.camera,0,vw,512,'#0a0418');c.restore();
 }
-function drawColossus(c,a,g,time){const [name,flip=false,shake=0]=colossusPose(g,time),hurt=g.boss.hurtTime>0?Math.sin(time*60)*3:0;return bodyFrame(c,a,name,rooms[g.room].x+TOWER.cx,{flip,shake:shake+hurt});}
+// A short crossfade between two poses keeps the giant from snapping from frame to frame.
+const FADE=.14;
+function drawColossus(c,a,g,time){
+ const col=g.boss.network.col||{},[name,flip=false,shake=0]=colossusPose(g,time),hurt=g.boss.hurtTime>0?Math.sin(time*60)*3:0,key=name+(flip?'~':''),cx=rooms[g.room].x+TOWER.cx;
+ const fade=col.fade||(col.fade={key,prev:null,at:-9});if(fade.key!==key){fade.prev=fade.key;fade.at=time;fade.key=key;}
+ const k=Math.min(1,Math.max(0,(time-fade.at)/FADE));
+ if(fade.prev&&k<1){const [pn,pf]=[fade.prev.replace('~',''),fade.prev.endsWith('~')];bodyFrame(c,a,pn,cx,{flip:pf,alpha:1-k,shake:hurt});}
+ return bodyFrame(c,a,name,cx,{flip,shake:shake+hurt,alpha:fade.prev?Math.max(.35,k):1});
+}
 // The breakout (assets/infoshum-breakout.png): bulging glass, tentacles through it, the burst, he tears out, the roar.
 const BREAK=[[37,144,310,269],[394,140,373,273],[732,80,372,335],[1117,112,410,295],[8,552,386,383],[403,580,353,355],[780,548,320,373],[1141,589,380,309]];
 export function breakoutFrame(progress){return progress<.2?0:progress<.38?1:progress<.5?2:progress<.64?3:progress<.84?4:5;}
 function drawBreakout(c,a,g,progress,time){
  const img=a.infoshumBreakout;if(!img)return;const f=breakoutFrame(progress),box=BREAK[f],h=headBox(g),cx=h.x+h.w/2,cy=h.y+h.h/2-70-(f>=4?(progress-.64)/.36*70:0);
- const base=.95,k=base*(f>=4?1.25+.15*(f-4):1),shake=f===2?Math.sin(time*90)*4:f<2?Math.sin(time*60)*progress*6:0;
+ const base=.72,k=f>=4?.46+.05*(f-4):base,shake=f===2?Math.sin(time*90)*4:f<2?Math.sin(time*60)*progress*6:0;
  c.drawImage(img,box[0],box[1],box[2],box[3],Math.round(cx-box[2]*k/2+shake),Math.round(cy-box[3]*k/2),Math.round(box[2]*k),Math.round(box[3]*k));
- if(f>=2&&f<=4){const s=BREAK[7],spread=Math.min(1,(progress-.38)/.4),sk=base*(.8+spread*.9);c.save();c.globalAlpha=1-spread*.7;c.drawImage(img,s[0],s[1],s[2],s[3],Math.round(cx-s[2]*sk/2),Math.round(cy-s[3]*sk/2),Math.round(s[2]*sk),Math.round(s[3]*sk));c.restore();}
+ if(f>=2&&f<=4){const s=BREAK[7],spread=Math.min(1,(progress-.38)/.4),sk=base*(.8+spread*.7);c.save();c.globalAlpha=1-spread*.7;c.drawImage(img,s[0],s[1],s[2],s[3],Math.round(cx-s[2]*sk/2),Math.round(cy-s[3]*sk/2),Math.round(s[2]*sk),Math.round(s[3]*sk));c.restore();}
  if(f===2)flash(c,g,.6*(1-(progress-.38)/.12),'#ffe4fb');
  if(progress>.9)flash(c,g,(progress-.9)/.1*.8);
 }

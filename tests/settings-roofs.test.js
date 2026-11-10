@@ -48,14 +48,13 @@ test('a flock of Сенсации cries from the right, sweeps the whole map rig
  assert.ok(g.roofs.flock.birds.some(b=>b.dead),'one bird popped');assert.ok(g.kills>0);
 });
 test('an echo field still transfers the protected cat but never consumes the last stock or reports a false lost life',()=>{const g=ready(true),e={kind:'echoOrb',type:'echo',id:'orb-test',room:3,w:40,h:38,ttl:99,state:'pulling',warpCooldown:0};g.lives=1;g.player.inv=0;g.echoImmunity=0;Object.assign(e,{x:g.player.x,y:g.player.y});handleFlyingContact(g,e);assert.equal(g.mode,'echoWarp');tick(g,50);assert.equal(g.lives,1);assert.equal(g.mode,'playing');assert.ok(g.events.some(e=>e.type==='testRescue'&&e.reason==='echo'));assert.ok(!g.events.some(e=>e.type==='lifeLost'||e.type==='lost'));});
-test('a Папарацци aims, charges and flashes: looking at it blinds Uma, turning away or a chimney between them does not; two hits break it',()=>{
+test('a Папарацци aims, charges and flashes: the flash always blinds Uma within reach; two hits break it',()=>{
  const setup=(face,{roof='3:2',ex=830,ux=720}={})=>{const g=ready(),s=g.platforms.find(p=>p.id===roof),e=enemy('paparazzi',3,ex,+roof.slice(2),{active:true,noticed:true,timer:0});g.enemies=[e];Object.assign(g.player,{x:rooms[3].x+ux,y:s.y-48,grounded:true,supportId:s.id,dir:face,inv:0});g.updateCamera();return {g,e};};
  const flash=(g,e,input={})=>{for(let i=0;i<120&&e.state!=='flash';i++)g.step(1/60,input);return g.events.find(v=>v.type==='cameraFlash');};
  let {g,e}=setup(1);const shot=flash(g,e);assert.ok(g.events.some(v=>v.type==='flashWarning'),'the lamp warns first');assert.equal(shot.seen,true);assert.ok(g.player.blindTime>0);
  const x=g.player.x;for(let i=0;i<20;i++)g.step(1/60,{right:true,jump:true});assert.equal(g.player.x,x,'blinded Uma freezes');assert.equal(g.player.grounded,true);
- ({g,e}=setup(-1));assert.equal(flash(g,e).seen,false,'turned away');assert.ok(!(g.player.blindTime>0));
- // The chimney on A1 stands between the camera and Uma's eyes.
- ({g,e}=setup(-1,{roof:'3:1',ex:430,ux:540}));assert.equal(flash(g,e,{down:true}).seen,false,'hidden behind the chimney');
+ ({g,e}=setup(-1));assert.equal(flash(g,e).seen,true,'turning away no longer helps');assert.ok(g.player.blindTime>0);
+ ({g,e}=setup(-1,{roof:'3:1',ex:430,ux:540}));assert.equal(flash(g,e,{down:true}).seen,true,'nor does a chimney');
  ({g,e}=setup(1,{ex:760,ux:715}));for(let k=0;k<2;k++){e.inv=0;g.hitEnemy(e);}assert.equal(e.dead,true);
 });
 test('every Нагнетатель on the roofs faces Uma (right to left) and its gust pushes her to the left',()=>{

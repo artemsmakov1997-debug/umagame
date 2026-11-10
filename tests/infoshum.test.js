@@ -102,8 +102,8 @@ test('a fall between the storm islands returns Uma to the last island and costs 
  const g=free(false),n=g.boss.network;place(g,'8:0',300);g.player.inv=0;n.free.timer=99;tick(g,2);const h=g.health;Object.assign(g.player,{x:g.platforms.find(s=>s.id==='8:0').x+470,y:520,grounded:false,supportId:null,vy:200});
  tick(g,2);assert.equal(g.health,h-1);assert.equal(g.player.supportId,'8:0');assert.equal(n.stage,'free');
 });
-test('pause freezes the colossus; retry rebuilds the hall',()=>{
+test('pause freezes the colossus; retry rebuilds the hall at once',()=>{
  const g=colossus(),n=g.boss.network;attack(g,0);g.mode='paused';const before=JSON.stringify(n);tick(g,90);assert.equal(JSON.stringify(n),before);g.mode='playing';
- g.retryLocation();assert.equal(g.boss.network.stage,'network');assert.equal(g.boss.hp,INFOSHUM_HP);assert.ok(g.platforms.filter(s=>s.room===8).every(s=>!s.bossHidden));
+ g.retryLocation();assert.equal(g.boss.network.stage,'network');assert.equal(g.boss.hp,INFOSHUM_HP);assert.ok(g.platforms.some(s=>s.id==='8:9'&&s.y===262)&&g.platforms.find(s=>s.id==='8:7').bossHidden,'the hall is ready at once — no stray platforms flash at the start');
  g.boss.active=true;g.mode='playing';g.notebooks=[];assert.ok(until(g,()=>g.platforms.some(s=>s.id==='8:9'&&s.y===262)&&g.platforms.find(s=>s.id==='8:7').bossHidden,240),'the hall is built again');
 });

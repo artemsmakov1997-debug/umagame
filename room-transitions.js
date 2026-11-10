@@ -1,4 +1,5 @@
 import {signalProfile} from './signal.js?v=0.21.5';
+import {buildWall} from './infoshum-combat.js?v=0.21.5';
 import {rooms,spawns,platforms,MAX_HEALTH,LAST_ROOM} from './level.js?v=0.21.5';
 import {createBoss} from './boss.js?v=0.21.5';
 import {syncAgitatorPlatforms} from './agitator-combat.js?v=0.21.5';
@@ -22,7 +23,7 @@ export function activateRoom(g,index,{heal=true}={}){
  g.visitedPlatforms=new Set([index+':0']);g.safeTrail=[{platformId:index+':0',x:p.x,y:p.y}];g.echoImmunity=1.5;
  if(heal)g.health=r.arena?MAX_HEALTH:Math.min(MAX_HEALTH,g.health+1);
  if(index===2||index===6)for(const d of g.relays)if(d.room===index)d.hp=0;
- g.boss=createBoss(index);if(r.arena){if(g.bossesDefeated.has(r.boss)){g.boss.hp=0;g.boss.active=false;if(g.boss.broadcast){g.boss.broadcast.stage='done';g.boss.broadcast.mast='bent';}}else{g.boss.active=true;g.boss.state='recover';g.boss.timer=2;g.boss.noticeTime=.35;g.emit('bossStart',{boss:r.boss});for(const n of g.notebooks||[])if(n.bossStart&&n.room===index&&!n.taken)n.readyAt=g.time;}}
+ g.boss=createBoss(index);if(g.boss.network&&!g.bossesDefeated.has(r.boss))buildWall(g);if(r.arena){if(g.bossesDefeated.has(r.boss)){g.boss.hp=0;g.boss.active=false;if(g.boss.broadcast){g.boss.broadcast.stage='done';g.boss.broadcast.mast='bent';}}else{g.boss.active=true;g.boss.state='recover';g.boss.timer=2;g.boss.noticeTime=.35;g.emit('bossStart',{boss:r.boss});for(const n of g.notebooks||[])if(n.bossStart&&n.room===index&&!n.taken)n.readyAt=g.time;}}
  if(index===4)syncAgitatorPlatforms(g);
  if(index===3)g.roofs=createRoofs();
  if(index===5){g.studio=createStudio();updateStudioPlatforms(g);}

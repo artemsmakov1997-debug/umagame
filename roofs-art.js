@@ -89,8 +89,10 @@ export function drawInflatorMachine(c,a,e,t,x=e.x+e.w/2,feet=e.y+e.h,width=96){
  const img=a.inflatorMachine;if(!img)return false;const k=width/163,shake=e.state==='blast'?Math.sin(t*50):0;
  // The wall bracket it is bolted to, high above the roofs.
  // It stands on a lattice mast bolted to the roof below (a platform on top, guy wires down to the roof).
- if(e.room===3&&e.mountY!==undefined){const fx=Math.round(x),fy=Math.round(feet),x0=rooms[3].x,roof=ROOF_BUILDINGS.find(b=>fx>=x0+b.x&&fx<=x0+b.x+b.w),base=roof?roof.y:HEIGHT;
-  if(a.inflatorMast)drawMastArt(c,a.inflatorMast,fx,fy,base);
+ if(e.room===3&&e.mountY!==undefined){const fx=Math.round(x),fy=Math.round(feet),x0=rooms[3].x,roofAt=px=>ROOF_BUILDINGS.filter(b=>px>=x0+b.x+6&&px<=x0+b.x+b.w-6).sort((p,q)=>p.y-q.y)[0],off=(MAST.deckMid-MAST.post)/2;
+  // The lattice post must stand on a roof: if there is none under the usual side, the deck is mirrored.
+  const left=roofAt(fx-off),right=roofAt(fx+off),flip=!left&&!!right,roof=flip?right:left||roofAt(fx),base=roof?roof.y:HEIGHT;
+  if(a.inflatorMast){if(flip){c.save();c.translate(fx,0);c.scale(-1,1);c.translate(-fx,0);}drawMastArt(c,a.inflatorMast,fx,fy,base);if(flip)c.restore();}
   else{const half=12,dark='#262b38',lit='#5d6676';
    for(const s of[-1,1]){rect(c,fx+s*half-2,fy,4,base-fy,dark);rect(c,fx+s*half-2,fy,1,base-fy,lit);}
    for(let y=fy+8;y<base-4;y+=22){for(let i=0;i<22&&y+i<base;i+=2){rect(c,fx-half+i*24/22,y+i,3,2,dark);rect(c,fx+half-i*24/22-3,y+i,3,2,dark);}rect(c,fx-half,y,half*2,2,lit);}
