@@ -720,13 +720,55 @@ body.playing-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavi
 /* Loading the game: a tiny Infoshum hauls the loading bar (assets/loading-walk.png, 4 cells of 225×102). */
 #loading.loading{display:flex;flex-direction:column;align-items:center;gap:10px;top:50%;bottom:auto;transform:translateY(-50%);left:0;width:100%;font:16px/1.3 UmaText,monospace;color:#c9b7ff;text-shadow:0 2px #050816}
 #loading[hidden]{display:none}
+/* While the art loads only the loading strip is shown; the menu appears once everything is ready. */
+html.booting #menu-screen>:not(#loading),html.booting #menu-hint{visibility:hidden}
+html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-reveal .45s ease-out both}
+@keyframes menu-reveal{from{opacity:0}to{opacity:1}}
 #loading .shum-walk{width:158px;height:72px;background:url(assets/loading-walk.png) 0 0/632px 72px no-repeat;animation:shum-walk .45s steps(4) infinite;image-rendering:pixelated}
 #loading .shum-bar{display:block;width:min(360px,70vw);height:26px;background:url(assets/loading-shum-bar.png) center/100% 100% no-repeat;position:relative}
 #loading .shum-bar i{position:absolute;left:5%;top:30%;height:40%;width:0;max-width:90%;background:linear-gradient(#9ff4ff,#2fb6ff 55%,#7b4dff);box-shadow:0 0 10px #4fd2ff;border-radius:6px;transition:width .2s}
 @keyframes shum-walk{to{background-position:-632px 0}}
 /* Messages from Yuri: the riveted panel (assets/hint-panel.png as a 9-slice frame) with his face in a little CRT. */
 #app .status{background:none;box-shadow:none;border-style:solid;border-color:transparent;border-width:24px 23px 30px 23px;border-image:url(assets/hint-panel.png) 48 46 60 46 fill / 24px 23px 30px 23px stretch;padding:4px 14px 2px 78px;min-height:60px;color:#ffe7b3;text-shadow:1px 2px #0a0420;display:flex;align-items:center;text-align:left}
-#app .status::before{content:'';position:absolute;left:-6px;top:50%;width:76px;height:82px;margin-top:-41px;background:url(assets/hint-portrait.png) 0 0/152px 82px no-repeat;animation:yuri-talk .5s steps(2) infinite;image-rendering:pixelated}
+#app .status::before{content:'';position:absolute;left:-6px;top:50%;width:76px;height:82px;margin-top:-41px;background:url(assets/hint-portrait.png?v=fb6) 0 0/152px 82px no-repeat;animation:yuri-talk .5s steps(2) infinite;image-rendering:pixelated}
 @keyframes yuri-talk{to{background-position:-152px 0}}
 @media(max-width:600px){#app .status{border-width:16px 15px 20px 15px;border-image-width:16px 15px 20px 15px;padding:2px 8px 2px 54px;min-height:44px}#app .status::before{width:52px;height:56px;margin-top:-28px;left:-4px;background-size:104px 56px;animation-name:yuri-talk-small}}
 @keyframes yuri-talk-small{to{background-position:-104px 0}}
+/* Phones held upright: a compact dialogue — a small framed portrait beside the name, the text across the full width. */
+@media(max-width:700px) and (orientation:portrait){
+ #app .dialogue-panel{height:268px;display:grid;grid-template-columns:76px minmax(0,1fr);grid-template-rows:88px minmax(0,1fr) 40px;gap:8px 12px;padding:12px;align-items:stretch}
+ #app #narrator-portrait{grid-column:1;grid-row:1;width:76px;height:88px;margin:0;align-self:start;object-fit:cover;object-position:50% 15%;object-view-box:inset(3% 16% 30% 16%);border:2px solid #1683a4;box-sizing:border-box}
+ #app .dialogue-content{display:contents}
+ #app .dialogue-heading{grid-column:2;grid-row:1;align-self:center;padding:0}#app .dialogue-heading h2{font-size:25px}#app .narrator-role{font-size:17px;margin-top:4px}
+ #app #dialogue-text{grid-column:1/-1;grid-row:2;font-size:20px;line-height:1.17;margin:0;min-height:0}
+ #app .dialogue-actions{grid-column:1/-1;grid-row:3;display:flex;gap:8px}
+ #app .dialogue-actions .gold-button,#app .dialogue-actions .dialogue-secondary{font-size:18px;min-height:40px;padding:6px 14px}
+}
+@media(max-width:360px) and (orientation:portrait){#app #dialogue-text{font-size:18px}#app .dialogue-panel{height:292px}}
+/* Victory: a picture on top, the score in four equal tiles, «Главное меню» on the left and «Поделиться» on the right. */
+#overlay[data-result="won"]{padding:12px;background:radial-gradient(ellipse at 50% 20%,#1b2f5af0,#03091cf5 70%)}
+#overlay[data-result="won"] .result-panel{position:relative;display:flex;flex-direction:column;align-items:stretch;width:min(560px,96%);max-width:none;max-height:calc(100dvh - 24px);padding:0 0 18px;gap:10px;overflow:auto;background:#06162cf8;text-align:center}
+#overlay[data-result="won"] .result-art{display:block;width:100%;aspect-ratio:3/2;max-height:36dvh;object-fit:cover;object-position:50% 45%;border-bottom:2px solid #2489a5;image-rendering:pixelated}
+#overlay[data-result="won"] #result-title{font:clamp(26px,3vw,36px)/1.1 UmaDisplay,monospace;color:#ffe3b2;margin:4px 18px 0;text-shadow:2px 3px #422339}
+#overlay[data-result="won"] #result-text{font:22px/1.2 UmaText,monospace;color:#e6f1f2;margin:0 18px}
+#overlay[data-result="won"] .result-panel #result-score{display:block;margin:0 18px;padding:10px 12px 12px;border:2px solid #2489a5;background:#081e35}
+#overlay[data-result="won"] .result-score>span{font:19px/1 UmaText,monospace;color:#8dd8e5}
+#overlay[data-result="won"] .result-score strong{font:40px/1.1 UmaDisplay,monospace;color:#ffdb82;margin:6px 0 10px}
+.result-tiles{list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0;padding:0}
+.result-tiles li{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:58px;padding:6px 4px;border:1px solid #1d5f7a;background:#0b2744}
+.result-tiles b{font:26px/1 UmaDisplay,monospace;color:#fff0d2}.result-tiles span{font:16px/1 UmaText,monospace;color:#9fc3d0}
+#overlay[data-result="won"] #result-purpose{font:18px/1.25 UmaText,monospace;color:#b9cfd6;margin:0 18px}
+#overlay[data-result="won"] #result-media{display:inline;font:inherit;color:#ffdb82;text-decoration:none;white-space:nowrap}#overlay[data-result="won"] #result-media .media-blue{color:#5fd1ff}
+#overlay[data-result="won"] .result-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:auto;margin:4px 18px 0}
+#overlay[data-result="won"] .result-actions button{width:100%;min-height:48px;margin:0;font:24px/1 UmaText,monospace;padding:10px}
+.share-menu{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 18px;padding:8px;background:#0a1d36;border:2px solid #5fd1ff}
+.share-menu[hidden]{display:none}
+.share-menu a,.share-menu button{display:block;font:19px/1 UmaText,monospace;color:#fff0d2;background:#123459;border:1px solid #2d6c94;padding:10px 8px;text-decoration:none;text-align:center;cursor:pointer}
+.share-menu a:hover,.share-menu button:hover,.share-menu a:focus-visible,.share-menu button:focus-visible{background:#1d4d7c;outline:2px solid #ffdb82}
+@media(max-width:700px){#overlay[data-result="won"] .result-art{max-height:30dvh}#overlay[data-result="won"] #result-text{font-size:20px}.result-tiles{gap:5px}.result-tiles b{font-size:22px}.result-tiles span{font-size:14px}#overlay[data-result="won"] #result-purpose{font-size:16px}#overlay[data-result="won"] .result-actions button{font-size:21px}}
+@media(max-width:420px){#overlay[data-result="won"] .result-actions button{font-size:19px;white-space:nowrap;padding:10px 6px}.share-menu a,.share-menu button{font-size:16px}}
+@media(max-height:550px) and (orientation:landscape){#overlay[data-result="won"] .result-panel{display:grid;grid-template-columns:40% minmax(0,1fr);width:min(860px,96%);padding:0;gap:6px 14px;align-content:start}
+ #overlay[data-result="won"] .result-art{grid-column:1;grid-row:1/8;height:100%;max-height:none;aspect-ratio:auto;border-bottom:0;border-right:2px solid #2489a5}
+ #overlay[data-result="won"] .result-panel>:not(.result-art){grid-column:2;grid-row:auto;align-self:start;margin-left:0;margin-right:14px}
+ #overlay[data-result="won"] #result-title{margin-top:10px;font-size:26px}#overlay[data-result="won"] #result-text{font-size:19px}#overlay[data-result="won"] #result-purpose{font-size:15px}
+ #overlay[data-result="won"] .result-panel #result-score{padding:6px 8px 8px}#overlay[data-result="won"] .result-score strong{font-size:28px;margin:2px 0 6px}.result-tiles li{min-height:42px}#overlay[data-result="won"] .result-actions{margin-bottom:10px}}

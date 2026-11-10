@@ -36,6 +36,8 @@ function drawGiantBeam(c,a,x,y,w,half,time){
  const img=a.infoshumGiantBeam;if(!img)return;const t=time*10,f=Math.floor(t)%3,k=t-Math.floor(t),th=half*2.6*(1+Math.sin(time*18)*.06);
  c.save();for(const [i,al] of [[f,1-k],[(f+1)%3,k]]){const p=AT.giantBeam['b'+i];c.globalAlpha=al;c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],x,y-th/2,w,th);}c.restore();
 }
+const BEAM_EYE=125;// the glowing screen of the charging pose (idle7), in frame pixels from the top
+function beamOrb(c,x,y,time,charge){const r=(charge?14:24)+Math.sin(time*30)*3,g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'#ffffff');g.addColorStop(.35,'#ff8af0e0');g.addColorStop(1,'#ff3ad800');c.save();c.globalCompositeOperation='lighter';c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.restore();}
 function drawRay(c,a,x0,y0,x1,y1,half,time,warn){const len=Math.hypot(x1-x0,y1-y0);c.save();c.translate(x0,y0);c.rotate(Math.atan2(y1-y0,x1-x0));if(warn)drawLineWarning(c,a,0,0,len,time);else drawGiantBeam(c,a,0,0,len,half,time);c.restore();}
 function amberFrame(c,r,time,pad=0){c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=16;c.lineWidth=3;c.globalAlpha=.65+.3*Math.sin(time*8);c.strokeRect(r.x-pad,r.y-pad,r.w+pad*2,r.h+pad*2);c.restore();}
 // ——— Phase 1: the broadcast tower ———
@@ -86,7 +88,7 @@ function drawHallFront(c,a,g,time){
 }
 // ——— The assembly: the relays fly into the tower, the colossus rises around it ———
 const BODY_K=430/360,BASE=FLOOR+10;
-function bodyFrame(c,a,name,cx,{flip=false,alpha=1,shake=0}={}){if(alpha<=0)return null;const p=AT.body[name];if(!p||!a.infoshumColBody)return null;const k=BODY_K,w=p.r[2]*k,h=p.r[3]*k,hx=p.hx[0]*k,x=flip?cx-(w-hx):cx-hx,y=BASE-p.gy[0]*k;piece(c,a.infoshumColBody,p,x+shake,y,w,h,{flip,alpha});return {x,y,w,h,k,p,flip};}
+function bodyFrame(c,a,name,cx,{flip=false,alpha=1,shake=0,bob=0}={}){if(alpha<=0)return null;const p=AT.body[name];if(!p||!a.infoshumColBody)return null;const k=BODY_K,w=p.r[2]*k,h=p.r[3]*k,hx=p.hx[0]*k,x=flip?cx-(w-hx):cx-hx,y=BASE-p.gy[0]*k+bob;piece(c,a.infoshumColBody,p,x+shake,y,w,h,{flip,alpha});return {x,y,w,h,k,p,flip};}
 function bodyPoint(f,pt){const x=f.flip?f.x+f.w-pt[0]*f.k:f.x+pt[0]*f.k;return {x,y:f.y+pt[1]*f.k};}
 function drawAssembly(c,a,g,time){
  const n=g.boss.network,k=n.transitionProgress,r=rooms[g.room],cx=r.x+TOWER.cx;
@@ -116,7 +118,7 @@ function colossusPose(g,time){
  if(a.hurt>0)return ['idle'+(5+Math.floor(time*6)%2)];
  if(a.roar>0)return ['idle'+(3+Math.floor(time*5)%2)];
  if(a.emo)return ['idle0'];
- return ['idle'+[0,1,2,1][Math.floor(time*3)%4]];
+ return ['idle0'];
 }
 function drawShaft(c,a,g,time){
  const img=a.infoshumAscent,vw=VW(g);
@@ -125,13 +127,14 @@ function drawShaft(c,a,g,time){
  c.save();c.globalAlpha=.35;rect(c,g.camera,0,vw,512,'#0a0418');c.restore();
 }
 // A short crossfade between two poses keeps the giant from snapping from frame to frame.
-const FADE=.14;
+const FADE=.1;
 function drawColossus(c,a,g,time){
  const col=g.boss.network.col||{},[name,flip=false,shake=0]=colossusPose(g,time),hurt=g.boss.hurtTime>0?Math.sin(time*60)*3:0,key=name+(flip?'~':''),cx=rooms[g.room].x+TOWER.cx;
  const fade=col.fade||(col.fade={key,prev:null,at:-9});if(fade.key!==key){fade.prev=fade.key;fade.at=time;fade.key=key;}
  const k=Math.min(1,Math.max(0,(time-fade.at)/FADE));
- if(fade.prev&&k<1){const [pn,pf]=[fade.prev.replace('~',''),fade.prev.endsWith('~')];bodyFrame(c,a,pn,cx,{flip:pf,alpha:1-k,shake:hurt});}
- const fr=bodyFrame(c,a,name,cx,{flip,shake:shake+hurt,alpha:fade.prev?Math.max(.35,k):1});
+ // The new pose is drawn solid and the old one melts away on top of it, so the giant never turns see-through.
+ const bob=name==='idle0'?Math.round(Math.sin(time*2.2)*2):0,fr=bodyFrame(c,a,name,cx,{flip,shake:shake+hurt,bob});
+ if(fade.prev&&k<1){const [pn,pf]=[fade.prev.replace('~',''),fade.prev.endsWith('~')];bodyFrame(c,a,pn,cx,{flip:pf,alpha:(1-k)*.85,shake:hurt});}
  if(fr&&col.emo&&name==='idle0'){const s=AT.body.idle0.scr;drawEmotion(c,a,col.emo.name,inset({x:fr.x+s[0]*fr.k+hurt,y:fr.y+s[1]*fr.k,w:(s[2]-s[0])*fr.k,h:(s[3]-s[1])*fr.k},.13,.17),emoAlpha(col.emo)*Math.max(.35,k),time);}
  return fr;
 }
@@ -152,7 +155,7 @@ function drawColossusForeground(c,a,g,time){
  for(const s of col.shocks){const p=AT.parts['shock'+Math.min(2,Math.floor(s.travel/50))],w=84,h=w*p.r[3]/p.r[2];piece(c,img,p,s.x-w/2,FLOOR-h+12,w,h,{alpha:Math.max(.25,1-s.travel/COL.shockRange)});}
  if(col.dust){const p=AT.parts.dust,k=col.dust.time/.45,w=180*(1+k*.5),h=w*p.r[3]/p.r[2];piece(c,img,p,col.dust.x-w/2,FLOOR-h+14,w,h,{alpha:1-k});}
  const s=col.sweep;if(s&&s.state==='warn'){const y=s.low?FLOOR-22:FLOOR-62;drawLineWarning(c,a,rooms[g.room].x+TOWER.cx-COL.sweepSpan/2,y,COL.sweepSpan,time);}
- const m=col.beam;if(m&&n.stage==='colossus'){const e=AT.body.idle0.eyes,x0=rooms[g.room].x+TOWER.cx+(e[0]-AT.body.idle0.hx[0])*BODY_K,y0=BASE-(AT.body.idle0.gy[0]-e[1])*BODY_K;drawRay(c,a,x0,y0,m.x,FLOOR,COL.beamHalf,time,m.state==='charge');}
+ const m=col.beam;if(m&&n.stage==='colossus'){const p7=AT.body.idle7,x0=rooms[g.room].x+TOWER.cx,y0=BASE-(p7.gy[0]-BEAM_EYE)*BODY_K;drawRay(c,a,x0,y0,m.x,FLOOR,COL.beamHalf,time,m.state==='charge');beamOrb(c,x0,y0,time,m.state==='charge');}
  flash(c,g,Math.min(.4,col.flash*1.4));
  if(n.stage==='breakout')drawBreakout(c,a,g,n.transitionProgress,time);
 }
