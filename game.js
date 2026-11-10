@@ -21,7 +21,7 @@ async function boot(){
  const game=new Game({cinematic:true});game.testingInvulnerable=true;game.touchEnabled=document.documentElement.classList.contains('has-touch');
  const assets=await loadAssets((done,total)=>{$('loading-text').textContent=`Готовлю редакцию: ${done}/${total}`;$('loading-fill').style.width=Math.round(done/total*100)+'%';}).catch(()=>null);
  if(!assets){$('loading').textContent='Не удалось загрузить рисунки. ';const retry=document.createElement('button');retry.textContent='Повторить загрузку';retry.className='back-button';retry.addEventListener('click',()=>location.reload());$('loading').append(retry);return;}
- $('loading').hidden=true;
+ $('loading').hidden=true;document.documentElement.classList.remove('booting');document.documentElement.classList.add('booted');
  const renderer=new Renderer($('game'),assets),keys=new Set();let jump=false,dash=false,attack=false,last=0,clock=0,accumulator=0,toastTimer,touch;
  const audio=new GameAudio({onChange:()=>updateSound()});
  window.addEventListener('pointerdown',()=>audio.unlock(),{capture:true});window.addEventListener('keydown',()=>audio.unlock(),{capture:true});
@@ -47,15 +47,22 @@ async function boot(){
  function updateControls(){const signature=Object.values(game.abilities).join();if(signature===lastAbilities)return;lastAbilities=signature;for(const el of document.querySelectorAll('[data-ability]'))el.hidden=!game.abilities[el.dataset.ability];}
  function notify(message,duration=5200){if(!game.hintsEnabled)return;$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),duration);}
  function showResult(kind){
-  $('overlay').hidden=false;clearInput();const won=kind==='won';$('retry-location').hidden=won;$('result-library').hidden=won;
+  $('overlay').hidden=false;clearInput();const won=kind==='won';$('retry-location').hidden=won;$('result-library').hidden=won;$('play').hidden=won;$('result-share').hidden=!won;$('share-menu').hidden=true;$('result-art').hidden=!won;
   $('overlay').dataset.result=won?'won':'lost';$('defeat-art').hidden=won;$('result-text').hidden=!won;
-  $('result-title').textContent=won?'ШУМ ОСТАНОВЛЕН':'Инфошум победил';$('return-menu').textContent=won?'В главное меню':'Главное меню';
-  $('result-text').textContent=won?`Ума остановила Инфошум и раскрыла причину его появления. Рыбок: ${game.fish}.`:`Жизни закончились. Рыбок: ${game.fish}.`;
+  $('result-title').textContent=won?'СПАСИБО ЗА ИГРУ':'Инфошум победил';$('return-menu').textContent='Главное меню';
+  $('result-text').textContent=won?'Ума вернулась домой. Держи ухо востро!':`Жизни закончились. Рыбок: ${game.fish}.`;
   $('play').textContent='Начать заново';$('result-media').hidden=!won;$('result-purpose').hidden=!won;$('result-score').hidden=!won;
-  $('result-purpose').textContent=projectPurpose;const score=game.finalScore||scoreBreakdown(game);$('result-points').textContent=score.total.toLocaleString('ru-RU');$('result-breakdown').textContent=score.items.map(i=>`${i.label==='Побеждённые враги'?'Враги':i.label}: ${i.count}`).join(' · ');
-  if(won){$('result-title').textContent='СПАСИБО ЗА ИГРУ';$('result-text').textContent='Ума вернулась домой. Держи ухо востро!';}
-  $('accessible-state').textContent=$('result-title').textContent+'. '+$('result-text').textContent;$(won?'play':'retry-location').focus({preventScroll:true});
+  $('result-purpose-text').textContent=projectPurpose;const score=game.finalScore||scoreBreakdown(game);$('result-points').textContent=score.total.toLocaleString('ru-RU');
+  $('result-breakdown').replaceChildren(...score.items.map(i=>{const li=document.createElement('li'),b=document.createElement('b'),s=document.createElement('span');b.textContent=i.count;s.textContent=i.label==='Побеждённые враги'?'Враги':i.label;li.append(b,s);return li;}));
+  if(won)prepareShare(score.total);
+  $('accessible-state').textContent=$('result-title').textContent+'. '+$('result-text').textContent;$(won?'result-share':'retry-location').focus({preventScroll:true});
  }
+ // Sharing the final score: the system share sheet where there is one, otherwise VK, Telegram, OK or a copied link.
+ let shareText='',shareUrl=location.origin+location.pathname;
+ function prepareShare(total){shareText=`Мой счёт в игре «Ума против Инфошума» — ${total.toLocaleString('ru-RU')}! Сможешь больше?`;const u=encodeURIComponent(shareUrl),t=encodeURIComponent(shareText);
+  $('share-vk').href=`https://vk.com/share.php?url=${u}&title=${t}`;$('share-tg').href=`https://t.me/share/url?url=${u}&text=${t}`;$('share-ok').href=`https://connect.ok.ru/offer?url=${u}&title=${t}`;$('share-copy').textContent='Скопировать ссылку';}
+ $('result-share').addEventListener('click',async()=>{if(navigator.share&&game.touchEnabled){try{await navigator.share({title:'Ума против Инфошума',text:shareText,url:shareUrl});return;}catch(e){if(e?.name==='AbortError')return;}}$('share-menu').hidden=!$('share-menu').hidden;});
+ $('share-copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(shareText+' '+shareUrl);$('share-copy').textContent='Ссылка скопирована';}catch{$('share-copy').textContent=shareUrl;}});
  $('pause').addEventListener('click',()=>pauseMenu.open());
  $('play').addEventListener('click',begin);
  $('retry-location').addEventListener('click',()=>{game.retryLocation();clearEffects();clearInput();$('overlay').hidden=true;$('game').focus({preventScroll:true});});
