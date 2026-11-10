@@ -3,7 +3,7 @@ import {rooms} from './level.js?v=0.21.5';
 // Папарацци (Крыши): a camera on a tripod that stays on its roof. It turns to Uma, aims, charges the lamp and flashes.
 // If Uma is looking at it at that moment and nothing (a chimney, a tank, a taller house) stands between them,
 // the flash blinds her: she freezes for a moment. Turning away or hiding behind cover beats it; two paw hits break it.
-export const PAPARAZZI={reach:400,height:220,aim:.55,charge:.85,flash:.3,rest:2.1,blind:.9};
+export const PAPARAZZI={reach:400,height:220,aim:.4,charge:.7,flash:.3,rest:1.1,blind:1};
 const segmentHitsRect=(x1,y1,x2,y2,r)=>{
  // Sampled test is plenty at these sizes (the line is at most a screen long).
  for(let i=1;i<24;i++){const t=i/24,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(x>r.x&&x<r.x+r.w&&y>r.y&&y<r.y+r.h)return true;}return false;
@@ -22,7 +22,8 @@ export function stepPaparazzi(g,e,dt,dx,dy){
  else if(e.state==='aim'&&e.timer<=0){e.state='charge';e.timer=PAPARAZZI.charge;g.emit('flashWarning',{x:e.x,y:e.y,enemyType:e.type});}
  else if(e.state==='charge'&&e.timer<=0){
   e.state='flash';e.timer=PAPARAZZI.flash;e.attackFlash=PAPARAZZI.flash;
-  const seen=near&&lookingAt(p,e)&&!flashCovered(g,e)&&p.inv===0&&p.dash===0;
+  // The flash always blinds a cat within reach (a dash through it is the only way past).
+  const seen=near&&p.inv===0&&p.dash===0;
   if(seen){p.blindTime=PAPARAZZI.blind;p.vx=0;g.emit('flashBlind',{x:p.x,y:p.y});}
   g.emit('cameraFlash',{x:e.x+e.w/2,y:e.y,seen,enemyType:e.type});
  }

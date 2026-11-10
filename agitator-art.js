@@ -67,7 +67,8 @@ export function drawAgitatorPlatform(c,a,p,t){
   return;
  }
  const ci=AGI.chimneys.indexOf(i);
- if(ci>=0){const ch=CHIMNEYS[ci],box=ch.tall?PROPS.chimneyTall:PROPS.chimneyLow,k=p.w/box[2]*1.08,w=box[2]*k,h=box[3]*k,potRise=ch.tall?28*k:22*k;if(a.agitatorProps)blit(c,a.agitatorProps,box,p.x+p.w/2-w/2,p.y-potRise,w,h);return;}
+ if(ci>=0){const ch=CHIMNEYS[ci],box=ch.tall?PROPS.chimneyTall:PROPS.chimneyLow,k=p.w/box[2]*1.08,w=box[2]*k,potRise=ch.tall?28*k:22*k,h=ch.h+potRise+3;// stretched down so the stack stands on the roof
+  if(a.agitatorProps)blit(c,a.agitatorProps,[box[0],box[1],box[2],box[3]-4],p.x+p.w/2-w/2,p.y-potRise,w,h);return;}
 }
 // Hatches lie on the roof in front of the floor tiles.
 export function drawAgitatorEquipment(c,a,g,t){

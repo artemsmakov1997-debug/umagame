@@ -118,6 +118,7 @@ function stepAttacks(g,dt){
  n.puddles=n.puddles.filter(q=>q.time<WAVE.puddle);
 }
 const attacksBusy=n=>n.scans.length||n.whips.length||n.tvs.length;
+const MOODS=[['roar',.55],['static',.25],['roar',.4],['charge',.3]];
 function stepScreens(g,dt){
  const b=g.boss,n=b.network;buildWall(g);n.faceTime=Math.max(0,n.faceTime-dt);
  const sc=towerScreen(g);b.x=sc.x+sc.w/2-b.w/2;b.y=sc.y+sc.h/2-b.h/2;b.dir=1;
@@ -126,6 +127,8 @@ function stepScreens(g,dt){
  if(!n.shield){b.state='recover';stepTakeover(g,dt);return;}
  b.state=n.faceTime>0&&n.face==='charge'?'casting':'windup';
  if(n.faceTime<=0&&!['face','crack1','crack2'].includes(n.face))setFace(n,faceFor(n));
+ // Between attacks his face is never still: he snarls, glitches with static, glares with a charging glow.
+ n.mood=(n.mood??2.2)-dt;if(n.mood<=0&&n.faceTime<=0&&!attacksBusy(n)){const m=MOODS[Math.floor(Math.random()*MOODS.length)];setFace(n,m[0],m[1]);n.mood=1.6+Math.random()*1.6;}
  if(attacksBusy(n))return;n.timer-=dt;if(n.timer<=0){towerAttack(g);n.timer=WAVE.gap[n.round];}
 }
 function addUnits(g,u,x,y){const b=g.boss,n=b.network;n.units+=u;b.hp=Math.max(INFOSHUM_HP-PHASE_HP,+(INFOSHUM_HP-n.units).toFixed(3));b.hurtTime=.35;g.emit('bossHit',{boss:'infoshum',x,y});}
@@ -201,7 +204,8 @@ function stepBeam(g,dt){
  if(m.timer<=0){a.beam=null;a.head=0;idle(a);}
 }
 function stepColossus(g,dt){
- const b=g.boss,n=b.network,a=n.col,p=g.player;a.clock=(a.clock||0)+dt;if(a.hurt>0)a.hurt-=dt;
+ const b=g.boss,n=b.network,a=n.col,p=g.player;a.clock=(a.clock||0)+dt;if(a.hurt>0)a.hurt-=dt;if(a.roar>0)a.roar-=dt;
+ if(a.mode==='idle'){a.moodT=(a.moodT??1.5)-dt;if(a.moodT<=0){a.roar=.7;a.moodT=2.4+Math.random()*1.8;}}
  a.flash=Math.max(0,a.flash-dt);a.headTime=Math.max(0,a.headTime-dt);if(a.headTime<=0&&a.mode!=='collapse')a.head=0;
  if(a.dust){a.dust.time+=dt;if(a.dust.time>.45)a.dust=null;}
  b.x=centre(g)-b.w/2;b.y=120;
