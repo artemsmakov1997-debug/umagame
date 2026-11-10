@@ -133,7 +133,7 @@ export function createEnemies(){const all=[
  enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,960,0),
  enemy('stamp',1,1580,0),enemy('fakenews',1,1900,0),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
  // Крыши: Нагнетатели sit on wall brackets high above the roofs, out of reach, and blow across the whole map.
- enemy('paparazzi',3,575,1,{trigger:260}),enemy('inflator',3,520,1,{dir:1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:1,mountY:112}),enemy('inflator',3,1680,10,{dir:-1,mountY:98}),enemy('paparazzi',3,2240,7),
+ enemy('paparazzi',3,575,1,{trigger:260}),enemy('inflator',3,520,1,{dir:-1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:-1,mountY:112}),enemy('inflator',3,1680,10,{dir:-1,mountY:98}),enemy('paparazzi',3,2240,7),
  // Студия: a Журавль on each long truss, a Прожекторщик over the dolly and over the takes, the Ботоферма caged
  // over the door at the far end, sending its bots towards Uma.
  enemy('boom',5,715,3,{dir:-1,trigger:430}),enemy('spotlight',5,860,4,{sweep:[790,985],trigger:600}),enemy('boom',5,1525,8,{dir:-1}),

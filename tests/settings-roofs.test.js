@@ -58,3 +58,9 @@ test('a Папарацци aims, charges and flashes: looking at it blinds Uma, 
  ({g,e}=setup(-1,{roof:'3:1',ex:430,ux:540}));assert.equal(flash(g,e,{down:true}).seen,false,'hidden behind the chimney');
  ({g,e}=setup(1,{ex:760,ux:715}));for(let k=0;k<2;k++){e.inv=0;g.hitEnemy(e);}assert.equal(e.dead,true);
 });
+test('every Нагнетатель on the roofs faces Uma (right to left) and its gust pushes her to the left',()=>{
+ const g=new Game({story:false});g.start();activateRoom(g,3);const machines=g.enemies.filter(e=>e.room===3&&e.type==='inflator');assert.equal(machines.length,3);
+ for(const e of machines)assert.equal(e.dir,-1);
+ g.mode='playing';g.notebooks=[];g.enemies=machines;const s=g.platforms.find(s=>s.room===3&&s.index===1);Object.assign(g.player,{x:s.x+s.w/2,y:s.y-48,grounded:true,supportId:s.id,vx:0,vy:0});
+ g.roofs.wind={phase:'gust',timer:1,source:machines[0].id,dir:machines[0].dir};g.roofs.gust=true;const x=g.player.x;for(let i=0;i<20;i++)g.step(1/60,{});assert.ok(g.player.x<x-4,'blown left');
+});
