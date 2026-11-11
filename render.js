@@ -160,7 +160,7 @@ export class Renderer{
   }else{
    if(p.inv>0&&Math.floor(t*12)%2!==0&&!g.swallow)c.globalAlpha=.6;
    this.wakeupStart=null;
-   const pose=p.attack>0?4:!p.grounded&&!p.climbing?3:Math.abs(p.vx)>0?RUN_CYCLE[Math.floor(t*12)%4]:0;
+   const pose=p.attack>0?4:!p.grounded&&!p.climbing?3:Math.abs(p.vx)>0?RUN_CYCLE[Math.floor(t*10)%RUN_CYCLE.length]:0;
    const {box,anchor,sheet}=cats[pose],progress=g.swallow?1-Math.pow(g.swallow.timer/g.swallow.total,3):0,scale=(g.swallow?Math.max(0,1-progress*1.18):1)*(p.warpScale??1);
    const w=Math.round(box[2]*.195*scale),h=Math.round(box[3]*.195*scale);
    const center=g.swallow?(g.swallow.x+17)*(1-progress)+(g.swallow.targetX+12)*progress:p.x+p.w/2;

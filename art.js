@@ -59,7 +59,22 @@ export function menuTextBottom(canvas,height){
  if(typeof document==='undefined')return 0;const items=[...document.querySelectorAll('#menu-screen [data-menu]')].filter(e=>e.getClientRects().length);if(!items.length)return 0;
  const box=canvas.getBoundingClientRect();if(!box.height)return 0;return Math.max(...items.map(e=>e.getBoundingClientRect().bottom-box.top))*height/box.height;
 }
+// The menu canvas is only 768 px wide and stretched to the screen, so Uma drawn into it was shrunk with
+// nearest-neighbour sampling and then blown up again — jagged and blurry. She is painted instead on an overlay
+// canvas at the screen's real pixel density, scaled smoothly from her full-size sheet.
+export function drawMenuCat(c,a,pose){
+ const o=typeof document!=='undefined'&&document.getElementById('menu-cat'),canvas=c.canvas;
+ if(!o||!canvas.getBoundingClientRect){sprite(c,a.idle,pose.box,pose.x,pose.y,pose.w,pose.h);return;}
+ const r=canvas.getBoundingClientRect(),dpr=Math.min(3,globalThis.devicePixelRatio||1),W=Math.max(1,Math.round(r.width*dpr)),H=Math.max(1,Math.round(r.height*dpr));
+ if(o.width!==W)o.width=W;if(o.height!==H)o.height=H;
+ const st=o.style,left=canvas.offsetLeft+'px',top=canvas.offsetTop+'px',w=r.width+'px',h=r.height+'px';
+ if(st.left!==left)st.left=left;if(st.top!==top)st.top=top;if(st.width!==w)st.width=w;if(st.height!==h)st.height=h;
+ const g=o.getContext('2d'),kx=W/canvas.width,ky=H/canvas.height;g.clearRect(0,0,W,H);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ const b=pose.box;g.drawImage(a.idle,b[0],b[1],b[2],b[3],pose.x*kx,pose.y*ky,pose.w*kx,pose.h*ky);
+}
+export function clearMenuCat(){const o=typeof document!=='undefined'&&document.getElementById('menu-cat');if(o&&o.width)o.getContext('2d').clearRect(0,0,o.width,o.height);}
 export function drawMenuScene(c,a,time,cat=true){
+ if(!cat)clearMenuCat();
  const height=c.canvas.height,width=c.canvas.width;
  if(cat&&a.menuPortrait&&c.canvas.getBoundingClientRect().width<=700&&width/height<.75){
   const bg=a.menuPortrait,scale=height/bg.height,w=bg.width*scale,x=(width-w)/2;
@@ -68,11 +83,11 @@ export function drawMenuScene(c,a,time,cat=true){
   if(x>0){c.save();c.translate(x,0);c.scale(-1,1);c.drawImage(bg,0,0,x/scale,bg.height,0,0,x,height);c.restore();c.save();c.translate(width,0);c.scale(-1,1);c.drawImage(bg,bg.width-x/scale,0,x/scale,bg.height,0,0,x,height);c.restore();}
   // A larger Uma on phones, but her ears always stay below the last menu entry.
   const ground=height*.795,textBottom=menuTextBottom(c.canvas,height),catHeight=Math.max(height*.08,Math.min(height*.17,ground-textBottom-height*.025));
-  const pose=idlePlacement(time,height,{x:x+bg.width*.62*scale,y:ground,height:catHeight});sprite(c,a.idle,pose.box,pose.x,pose.y,pose.w,pose.h);return;
+  const pose=idlePlacement(time,height,{x:x+bg.width*.62*scale,y:ground,height:catHeight});drawMenuCat(c,a,pose);return;
  }
  const tall=height>700,scale=Math.max(width/a.menu.width,height/a.menu.height),x=tall?width*.82-1260*scale:(width-a.menu.width*scale)/2,y=height-a.menu.height*scale+(tall?0:Math.max(0,Math.min(30,(440-height)*.5)));
  c.imageSmoothingEnabled=false;c.clearRect(0,0,width,height);c.drawImage(a.menu,x,y,a.menu.width*scale,a.menu.height*scale);
- if(cat){const pose=idlePlacement(time,height,{x:x+1260*scale,y:y+765*scale,height:tall?260:Math.min(160,height*.47)});sprite(c,a.idle,pose.box,pose.x,pose.y,pose.w,pose.h);}
+ if(cat){const pose=idlePlacement(time,height,{x:x+1260*scale,y:y+765*scale,height:tall?260:Math.min(160,height*.47)});drawMenuCat(c,a,pose);}
 }
 
 export function drawPortrait(canvas,a,id,time=0){

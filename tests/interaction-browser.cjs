@@ -7,7 +7,7 @@ const {open,begin,skip,at,fixture,shot,artifacts}=require('./browser-helpers.cjs
  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||undefined,args:['--no-sandbox']});
  const errors=[],p=await browser.newPage({viewport:{width:1280,height:960}});p.on('pageerror',e=>errors.push(e.message));await open(p);
  const monitor=[];
- for(const t of [0,1.3,3.07]){await p.evaluate(t=>window.testTime=t,t);await p.waitForTimeout(60);monitor.push(await p.locator('#game').evaluate(c=>Array.from(c.getContext('2d').getImageData(430,100,290,350).data).join()));}
+ for(const t of [0,1.3,3.07]){await p.evaluate(t=>window.testTime=t,t);await p.waitForTimeout(60);monitor.push(await p.locator('#menu-cat').evaluate(c=>c.toDataURL()));}
  assert.equal(new Set(monitor).size,3,'Uma has separate idle, licking and blinking poses on the monster pile');await shot(p,'menu-infoshum-eyes');
  await begin(p);assert.deepEqual(await p.evaluate(()=>testGame.abilities),{attack:true,dash:true,sneak:true});assert.equal(await p.locator('.control-chip:visible').count(),0);assert.equal(await p.locator('#pause').isVisible(),false);assert.equal(await p.locator('footer,#sound,#footer-hint').count(),0);
  await p.keyboard.press('Space');await p.waitForFunction(()=>testGame.player.swing>0);await p.keyboard.press('Shift');await p.waitForFunction(()=>testGame.player.dashCooldown>0);await p.waitForTimeout(400);await p.keyboard.down('ArrowDown');await p.waitForFunction(()=>testGame.player.sneaking);await p.keyboard.up('ArrowDown');
