@@ -89,12 +89,16 @@ export function drawMood(c,assets,frame,center,feet,flip=false,s=.18){
  c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);
  sprite(c,assets.moods,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
 }
-// assets/uma-run8.png, 4×2 cells of 444×264: an eight-frame gallop (stretched contact, gather, rear legs forward,
-// collected, push-off, flight, landing, contact). Cells share one ground line; the pivot is under the body.
-export const RUN_CELL=[444,264],RUN_PIVOT=[294,258],RUN_FPS=14;
-export function runFrame(time){return Math.floor(time*RUN_FPS)%8;}
+// assets/uma-run8.png, 4×2 cells of 444×264 on one ground line. The cycle is a rotary gallop: front paws plant under
+// the chest, rear legs swing forward, gathered flight, rear push-off, stretched flight, front landing. Cells 0 and 7
+// (all four paws planted wide apart) are left out — they made Uma stall in a stretch. Each cell is registered on
+// the eye so the head glides forward instead of rocking back and forth, and the rate keeps planted paws from
+// skating: at 155 px/s a paw has to travel back ~16 px per frame, which is what the art gives at 10 fps.
+export const RUN_CELL=[444,264],RUN_ORDER=[1,2,3,4,5,6],RUN_FPS=10;
+const RUN_EYE=[351,338,334,342,344,348,343,346],RUN_FEET=258,EYE_AHEAD=49;
+export function runFrame(time){return RUN_ORDER[Math.floor(time*RUN_FPS)%RUN_ORDER.length];}
 export function drawRun(c,assets,frame,center,feet,flip=false,scale=1){
- const [w,h]=RUN_CELL,box=[(frame%4)*w,Math.floor(frame/4)*h,w,h],s=.272*scale;
+ const [w,h]=RUN_CELL,box=[(frame%4)*w,Math.floor(frame/4)*h,w,h],s=.272*scale,px=RUN_EYE[frame]-EYE_AHEAD;
  c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);
- sprite(c,assets.umaRun8,box,-RUN_PIVOT[0]*s,-RUN_PIVOT[1]*s,w*s,h*s);c.restore();
+ sprite(c,assets.umaRun8,box,-px*s,-RUN_FEET*s,w*s,h*s);c.restore();
 }
