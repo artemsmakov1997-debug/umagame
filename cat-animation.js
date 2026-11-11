@@ -89,3 +89,12 @@ export function drawMood(c,assets,frame,center,feet,flip=false,s=.18){
  c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);
  sprite(c,assets.moods,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
 }
+// assets/uma-run8.png, 4×2 cells of 444×264: an eight-frame gallop (stretched contact, gather, rear legs forward,
+// collected, push-off, flight, landing, contact). Cells share one ground line; the pivot is under the body.
+export const RUN_CELL=[444,264],RUN_PIVOT=[294,258],RUN_FPS=14;
+export function runFrame(time){return Math.floor(time*RUN_FPS)%8;}
+export function drawRun(c,assets,frame,center,feet,flip=false,scale=1){
+ const [w,h]=RUN_CELL,box=[(frame%4)*w,Math.floor(frame/4)*h,w,h],s=.272*scale;
+ c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);
+ sprite(c,assets.umaRun8,box,-RUN_PIVOT[0]*s,-RUN_PIVOT[1]*s,w*s,h*s);c.restore();
+}
