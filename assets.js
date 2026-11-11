@@ -8,7 +8,7 @@ export const cats=[
  {box:[14,14,467,375],anchor:.70},{box:[495,14,468,327],anchor:.67},{box:[977,14,495,315],anchor:.68},
  {box:[14,403,490,336],anchor:.65},{box:[518,403,456,372],anchor:.58},{box:[988,403,323,363],anchor:.53}
 ];
-export const idleCats=[[87,24,415,474],[569,24,413,474],[1065,24,402,474],[113,529,392,467],[568,523,421,473],[1055,520,421,476]];
+export const idleCats=[[12,12,391,467],[415,13,389,466],[816,12,396,467],[12,493,397,465],[421,493,402,465],[835,492,404,466]];
 export const creatures={crawler:[55,295,590,305],flyer:[677,118,565,486],boss:[15,641,798,567],fish:[898,910,325,200]};
 export const newCreatures={clickbait:[28,18,591,581],inflator:[637,61,586,538],panicker:[54,648,542,545],soup:[771,639,340,530]};
 export function sprite(c,image,box,x,y,w,h,flip=false){c.save();c.translate(Math.round(x),Math.round(y));if(flip){c.translate(w,0);c.scale(-1,1);}c.drawImage(image,...box,0,0,w,h);c.restore();}
