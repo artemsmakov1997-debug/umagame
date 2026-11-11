@@ -772,3 +772,5 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
  #overlay[data-result="won"] .result-panel>:not(.result-art){grid-column:2;grid-row:auto;align-self:start;margin-left:0;margin-right:14px}
  #overlay[data-result="won"] #result-title{margin-top:10px;font-size:26px}#overlay[data-result="won"] #result-text{font-size:19px}#overlay[data-result="won"] #result-purpose{font-size:15px}
  #overlay[data-result="won"] .result-panel #result-score{padding:6px 8px 8px}#overlay[data-result="won"] .result-score strong{font-size:28px;margin:2px 0 6px}.result-tiles li{min-height:42px}#overlay[data-result="won"] .result-actions{margin-bottom:10px}}
+
+#menu-cat{position:absolute;left:0;top:0;pointer-events:none;display:none;image-rendering:auto}#app[data-screen="menu"] #menu-cat{display:block}
