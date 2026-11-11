@@ -14,5 +14,5 @@ export function drawPassages(c,a,g){
  }
  // The chapter exit keeps its existing unlock rules, presented as a substantial gate.
  if(g.room!==7&&g.room!==8)gateway(c,a,room.end+6,theme,canLeaveRoom(g),370);
- if(room.arena)gateway(c,a,room.x-88,theme,false,370,true);
+ // Arenas are sealed: no gate of the previous location peeks in at their left edge.
 }

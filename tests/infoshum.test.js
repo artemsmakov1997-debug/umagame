@@ -47,8 +47,8 @@ test('the cable whip warns along Uma\'s ledge and slams it: a jump clears it; a 
  const g=game(false),n=g.boss.network;place(g,'8:0',300);g.player.inv=9;tower(g,2);assert.equal(n.tvs.length,3);assert.ok(until(g,()=>n.puddles.length===3,200));const q=n.puddles[1];
  Object.assign(g.player,{x:q.x-17,y:q.y-48,grounded:true,supportId:'8:0',vx:0,vy:0});g.player.inv=0;const h=g.health;tick(g,10);assert.equal(g.health,h-1,'the puddle hurts');tick(g,Math.round(60*WAVE.puddle));assert.equal(n.puddles.length,0);
 });
-test('three cracks: the relays fly into the tower and the colossus rises around it',()=>{
- const g=game(),n=g.boss.network;assert.equal(smashWall(g),'assemble');assert.equal(n.cracks,3);assert.equal(g.boss.hp,12);assert.equal(g.boss.phase,2);assert.ok(until(g,()=>n.stage==='colossus',300));assert.equal(n.col.mode,'intro');
+test('two cracks: the relays fly into the tower and the colossus rises around it',()=>{
+ const g=game(),n=g.boss.network;assert.equal(smashWall(g),'assemble');assert.equal(n.cracks,2);assert.equal(g.boss.hp,8);assert.equal(g.boss.phase,2);assert.ok(until(g,()=>n.stage==='colossus',300));assert.equal(n.col.mode,'intro');
 });
 test('«Колосс»: a fist winds up and slams the floor beside the body on Uma\'s side, sends a shockwave along the floor and sticks',()=>{
  const g=colossus(false),n=g.boss.network,a=attack(g,0),f=a.fist;assert.equal(f.state,'aim');assert.deepEqual(g.platforms.filter(s=>s.room===8&&!s.bossHidden).map(s=>s.index),[0]);
@@ -59,11 +59,11 @@ test('«Колосс»: a fist winds up and slams the floor beside the body on U
 });
 test('a paw on the knuckles of the stuck fist breaks that hand; with both broken he collapses and the head screen takes the paw',()=>{
  const g=colossus(),b=g.boss,n=b.network,a=n.col;assert.equal(swing(g,headBox(g)),false,'the head is out of reach while he stands');
- exposeInfoshum(g);const f=a.fist;assert.equal(swing(g,{x:f.x-200,y:FLOOR-50,w:40,h:50}),false);assert.ok(swing(g,fistBox(f)));assert.equal(a.hands[f.side],false);assert.equal(b.hp,12,'a hand is not his health');
+ exposeInfoshum(g);const f=a.fist;assert.equal(swing(g,{x:f.x-200,y:FLOOR-50,w:40,h:50}),false);assert.ok(swing(g,fistBox(f)));assert.equal(a.hands[f.side],false);assert.equal(b.hp,8,'a hand is not his health');
  assert.ok(until(g,()=>!a.fist,120));assert.notEqual(a.mode,'collapse');const other=attack(g,0).fist;assert.notEqual(other.side,f.side,'the other hand slams next');
  assert.ok(until(g,()=>other.state==='stuck',200));assert.ok(swing(g,fistBox(other)));assert.ok(until(g,()=>a.mode==='collapse',120));assert.equal(swing(g,headBox(g)),false,'not while he is still falling');assert.ok(until(g,()=>a.clock>COL.fallTime,80));assert.deepEqual(infoshumTargets(g).map(t=>t.id),['head']);
- assert.ok(swing(g,headBox(g)));assert.equal(b.hp,10);assert.equal(a.mode,'rise');assert.deepEqual(a.hands,{L:true,R:true});assert.equal(a.round,1);
- const q=colossus(),c=q.boss.network.col;breakHand(q);breakHand(q);assert.equal(c.mode,'collapse');tick(q,Math.round(60*COL.collapse)+5);assert.equal(c.mode,'rise');assert.equal(q.boss.hp,12,'missed: he just gets up');assert.deepEqual(c.hands,{L:true,R:true});
+ assert.ok(swing(g,headBox(g)));assert.equal(b.hp,6);assert.equal(a.mode,'rise');assert.deepEqual(a.hands,{L:true,R:true});assert.equal(a.round,1);
+ const q=colossus(),c=q.boss.network.col;breakHand(q);breakHand(q);assert.equal(c.mode,'collapse');tick(q,Math.round(60*COL.collapse)+5);assert.equal(c.mode,'rise');assert.equal(q.boss.hp,8,'missed: he just gets up');assert.deepEqual(c.hands,{L:true,R:true});
 });
 test('an arm sweeps low (a jump clears it) or high (a crouch passes under it); the head beam crawls after a cat that stands still',()=>{
  for(const low of[true,false])for(const dodge of[false,true]){const g=colossus(false),a=attack(g,1),s=a.sweep;s.low=low;assert.equal(s.state,'warn');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>s.state==='go',120));
@@ -73,8 +73,8 @@ test('an arm sweeps low (a jump clears it) or high (a crouch passes under it); t
  const g=colossus(false),a=attack(g,3),m=a.beam;assert.equal(m.state,'charge');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>m.state==='fire',120));tick(g,30);assert.equal(g.health,h-1);
  const q=colossus(false),c=attack(q,3);q.player.inv=0;const h2=q.health;for(let i=0;i<400&&c.beam;i++)q.step(1/60,{right:true});assert.equal(q.health,h2,'a running cat outruns the beam');
 });
-test('the third fall cracks the head: he bursts out of it into the storm («На свободе»)',()=>{
- const g=colossus(),n=g.boss.network;for(let k=0;k<3;k++)assert.ok(dropColossus(g),'fall '+k);assert.equal(n.stage,'breakout');assert.equal(g.boss.hp,6);assert.equal(g.boss.phase,3);
+test('the second fall cracks the head: he bursts out of it into the storm («На свободе»)',()=>{
+ const g=colossus(),n=g.boss.network;for(let k=0;k<2;k++)assert.ok(dropColossus(g),'fall '+k);assert.equal(n.stage,'breakout');assert.equal(g.boss.hp,4);assert.equal(g.boss.phase,3);
  assert.ok(until(g,()=>n.stage==='free',260));assert.ok(g.platforms.filter(s=>s.room===8&&!s.bossHidden).every(s=>s.storm!==undefined));assert.equal(n.free.mode,'enter');
 });
 const freeAttack=(g,i)=>{const f=g.boss.network.free;f.tentacles=[];f.shards=[];f.mode='hover';f.timer=0;f.step=i;tick(g,1);return f;};
@@ -90,7 +90,7 @@ test('the ram: if it hits Uma he flies on; if she dodges it he crashes at the en
  const q=free(false),c=q.boss,e=freeAttack(q,2),isl=place(q,'8:2',200);assert.ok(until(q,()=>e.mode==='ram',120));const h2=q.health;
  for(let i=0;i<120&&e.mode==='ram';i++){Object.assign(q.player,{y:isl.y-48-130,vy:0,grounded:false});q.step(1/60,{});}assert.equal(q.health,h2);assert.equal(e.mode,'crash');
  assert.ok(until(q,()=>e.mode==='dizzy',60));assert.ok(e.x>isl.x&&e.x<isl.x+isl.w,'he lies on her island');assert.deepEqual(infoshumTargets(q).map(t=>t.id),['core']);assert.equal(e.yuri,false);
- assert.ok(ramBox(e).w>0);assert.ok(swing(q,freeCoreBox(e)));assert.equal(c.hp,4);assert.equal(e.hits,1);assert.equal(e.mode,'hit');assert.equal(swing(q,freeCoreBox(e)),false,'only while dizzy');
+ assert.ok(ramBox(e).w>0);assert.ok(swing(q,freeCoreBox(e)));assert.equal(c.hp,2);assert.equal(e.hits,1);assert.equal(e.mode,'hit');assert.equal(swing(q,freeCoreBox(e)),false,'only while dizzy');
 });
 test('for the last blow Yuri holds him longer; the paw ends the fight in the finale',()=>{
  const g=free(),b=g.boss,f=b.network.free;b.hp=2;const e=freeAttack(g,2),isl=place(g,'8:2',200);assert.ok(until(g,()=>e.mode==='ram',120));
