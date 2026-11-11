@@ -20,7 +20,7 @@ import {solidSurfaces} from './terrain.js?v=0.21.5';
 import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.21.5';
 import {WIDTH,HEIGHT,rooms,platforms,ladders,FINAL_X,LAST_ROOM} from './engine.js?v=0.21.5';
 import {rect,text} from './pixel.js?v=0.21.5';
-import {cats,creatures,sprite} from './assets.js?v=0.21.5';
+import {cats,RUN_CYCLE,creatures,sprite} from './assets.js?v=0.21.5';
 import {drawMonster,drawLure,drawSoup} from './art.js?v=0.21.5';
 import {drawHud} from './hud.js?v=0.21.5';
 import {drawNotebook} from './notebook-art.js?v=0.21.5';
@@ -160,12 +160,12 @@ export class Renderer{
   }else{
    if(p.inv>0&&Math.floor(t*12)%2!==0&&!g.swallow)c.globalAlpha=.6;
    this.wakeupStart=null;
-   const pose=p.attack>0?4:!p.grounded&&!p.climbing?3:Math.abs(p.vx)>0?1+Math.floor(t*10)%2:0;
-   const {box,anchor}=cats[pose],progress=g.swallow?1-Math.pow(g.swallow.timer/g.swallow.total,3):0,scale=(g.swallow?Math.max(0,1-progress*1.18):1)*(p.warpScale??1);
+   const pose=p.attack>0?4:!p.grounded&&!p.climbing?3:Math.abs(p.vx)>0?RUN_CYCLE[Math.floor(t*12)%4]:0;
+   const {box,anchor,sheet}=cats[pose],progress=g.swallow?1-Math.pow(g.swallow.timer/g.swallow.total,3):0,scale=(g.swallow?Math.max(0,1-progress*1.18):1)*(p.warpScale??1);
    const w=Math.round(box[2]*.195*scale),h=Math.round(box[3]*.195*scale);
    const center=g.swallow?(g.swallow.x+17)*(1-progress)+(g.swallow.targetX+12)*progress:p.x+p.w/2;
    const feet=g.swallow?(g.swallow.y+48)*(1-progress)+(g.swallow.targetY+24)*progress:p.y+p.h;
-   if(w>0&&h>0){c.save();if(p.dash>0){c.shadowColor='#7deaf5';c.shadowBlur=8;}sprite(c,a.uma,box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);c.restore();}
+   if(w>0&&h>0){c.save();if(p.dash>0){c.shadowColor='#7deaf5';c.shadowBlur=8;}sprite(c,a[sheet||'uma'],box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);c.restore();}
    if(p.powerTime>0)for(let i=0;i<5;i++)rect(c,p.x-13+i*14,p.y-10+Math.sin(t*5+i)*5,2,2,'#ffe6a0');
    c.globalAlpha=1;
   }
