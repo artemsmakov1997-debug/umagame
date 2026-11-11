@@ -10,7 +10,7 @@ import {castInherited,summonPlaces,clearBossHelpers} from './boss-abilities.js?v
 import {releaseTether,handleFlyingContact} from './campaign-enemies.js?v=0.21.5';
 import {stepEcho} from './echo-pull.js?v=0.21.5';
 export {bossTroops} from './boss-abilities.js?v=0.21.5';
-export const BOSS_HEALTH=18;
+export const BOSS_HEALTH=12;
 export const abilities=['volley','wave','rain','summon','echoPulse','staticRush','lure'];
 export const bossPatterns={spreader:['summon','rain','scatter'],agitator:['slogan','ura','gust'],manipulator:['rewrite','beam'],infoshum:abilities};
 export const phaseTwoPatterns=Object.fromEntries(Object.entries(phasePlans).map(([id,p])=>[id,p[1][1]]));

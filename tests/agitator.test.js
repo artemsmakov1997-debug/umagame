@@ -47,12 +47,12 @@ test('a letter batted back with the paw flies into the robot and stuns him',()=>
 test('a flying letter hurts on contact; Shift passes through it',()=>{
  for(const dash of[0,.25]){const g=ready(false),n=g.boss.broadcast;n.mode='volley';n.timer=0;n.fired=0;n.side='left';g.step(1/60,{});const l=n.letters[0];Object.assign(g.player,{x:l.x-17,y:l.y-24,inv:0,dash});g.player.grounded=false;const h=g.health;stepBoss(g,1/60);assert.equal(g.health,dash?h:h-1);}
 });
-test('three openings end «Лозунг»: the mast bends, the deck disappears and he lands on the roof for «Митинг»',()=>{
- const g=ready(),b=g.boss,n=b.broadcast;for(let i=0;i<3;i++){exposeAgitator(g);b.cooldown=0;assert.ok(damageBoss(g,2,false,b.x-20));if(i<2)tick(g,90);}
- assert.equal(b.hp,12);assert.equal(b.phase,2);assert.equal(n.stage,'leap');assert.ok(until(g,()=>n.stage==='rally',240));
+test('two openings end «Лозунг»: the mast bends, the deck disappears and he lands on the roof for «Митинг»',()=>{
+ const g=ready(),b=g.boss,n=b.broadcast;for(let i=0;i<2;i++){exposeAgitator(g);b.cooldown=0;assert.ok(damageBoss(g,2,false,b.x-20));if(i<1)tick(g,90);}
+ assert.equal(b.hp,8);assert.equal(b.phase,2);assert.equal(n.stage,'leap');assert.ok(until(g,()=>n.stage==='rally',240));
  assert.equal(n.mast,'bent');assert.ok(g.platforms.find(s=>s.id==='4:'+AGI.mast).bossHidden);assert.equal(b.y+b.h,FLOOR_Y);
 });
-function rally(g){const b=g.boss,n=b.broadcast;b.hp=12;b.phase=2;n.stage='rally';n.mode='walk';n.mast='bent';n.letters=[];b.y=FLOOR_Y-b.h;b.x=X0+900;n.spawnTimer=99;n.uraTimer=99;n.stompTimer=99;return n;}
+function rally(g){const b=g.boss,n=b.broadcast;b.hp=8;b.phase=2;n.stage='rally';n.mode='walk';n.mast='bent';n.letters=[];b.y=FLOOR_Y-b.h;b.x=X0+900;n.spawnTimer=99;n.uraTimer=99;n.stompTimer=99;return n;}
 test('«Митинг»: placards climb from a hatch and march to the beat; a stomp or a paw breaks them, contact hurts',()=>{
  const g=ready(false),n=rally(g);place(g,X0+250);n.spawnTimer=0;g.step(1/60,{});assert.equal(n.placards.length,1);const c=n.placards[0];assert.equal(c.state,'rise');assert.equal(c.dir,-1,'they march towards Uma');
  const x=c.x;tick(g,Math.round(60*(0.5+BEAT*4)));assert.equal(c.state,'march');assert.ok(c.x<x-50,'four beats of hops');
@@ -63,14 +63,14 @@ test('«Митинг»: placards climb from a hatch and march to the beat; a sto
 });
 test('on «УРА!» he turns to the crowd: a paw on his back hurts him, a paw on his front is blocked',()=>{
  const g=ready(),b=g.boss,n=rally(g);place(g,b.x-120);n.uraTimer=0;assert.ok(until(g,()=>n.mode==='ura',90));assert.equal(b.dir,1,'facing away from Uma');assert.equal(agitatorTargets(g)[0].id,'agitator-back');
- place(g,b.x-30);swingAt(g,b.x+b.w/2);assert.equal(b.hp,10);assert.equal(n.mode,'stun');
- const f=ready(),fb=f.boss,fn=rally(f);place(f,fb.x-120);fn.uraTimer=0;assert.ok(until(f,()=>fn.mode==='ura',90));place(f,fb.x+fb.w+10);swingAt(f,fb.x+fb.w/2);assert.equal(fb.hp,12,'his chest is not an opening');
+ place(g,b.x-30);swingAt(g,b.x+b.w/2);assert.equal(b.hp,6);assert.equal(n.mode,'stun');
+ const f=ready(),fb=f.boss,fn=rally(f);place(f,fb.x-120);fn.uraTimer=0;assert.ok(until(f,()=>fn.mode==='ura',90));place(f,fb.x+fb.w+10);swingAt(f,fb.x+fb.w/2);assert.equal(fb.hp,8,'his chest is not an opening');
 });
 test('close in front he swings the megaphone after a warning; far away he stomps shock waves along the roof',()=>{
  const g=ready(false),b=g.boss,n=rally(g);place(g,b.x-80);g.player.inv=0;const h=g.health;assert.ok(until(g,()=>n.mode==='swingWarn',30));assert.equal(g.health,h,'warned first');until(g,()=>n.mode==='walk',60);assert.equal(g.health,h-1);
  const s=ready(),sn=rally(s);place(s,s.boss.x-500);sn.stompTimer=0;assert.ok(until(s,()=>s.bolts.filter(v=>v.kind==='wave').length===2,90));
 });
-function air(g,tower=1){const b=g.boss,n=b.broadcast;b.hp=6;b.phase=3;n.stage='air';n.mode='idle';n.tower=tower;n.mast='bent';n.placards=[];n.letters=[];n.wind={phase:'calm',timer:99};Object.assign(b,towerStand(tower));return n;}
+function air(g,tower=1){const b=g.boss,n=b.broadcast;b.hp=4;b.phase=3;n.stage='air';n.mode='idle';n.tower=tower;n.mast='bent';n.placards=[];n.letters=[];n.wind={phase:'calm',timer:99};Object.assign(b,towerStand(tower));return n;}
 test('«Прямой эфир»: gusts blow an exposed Uma away from the tower; chimneys, the tower itself and Shift shelter her',()=>{
  const g=ready(),n=air(g,1);place(g,X0+600);n.wind={phase:'gust',timer:1};const x=g.player.x;tick(g,30);assert.ok(g.player.x<x-40,'pushed towards the far side');
  const c=CHIMNEYS[2];place(g,X0+c.x-40);assert.ok(sheltered(g));n.wind={phase:'gust',timer:1};const sx=g.player.x;tick(g,30);assert.ok(Math.abs(g.player.x-sx)<2,'behind a chimney');
@@ -99,7 +99,7 @@ test('phase 2: every second ranged attack is a placard thrown in an arc; it hurt
 });
 test('the tower ladder is climbed with ↑; on the deck a paw on the screen sends him leaping to the other tower',()=>{
  const g=ready(),b=g.boss,n=air(g,1),t=TOWERS[1];place(g,X0+t.ladder-17);assert.ok(until(g,()=>g.player.grounded&&g.player.supportId===towerDeckId(1),300,{up:true}),'climb the ladder');
- swingAt(g,b.x+b.w/2);assert.equal(b.hp,4);assert.equal(n.mode,'stun');assert.ok(until(g,()=>n.mode==='idle'&&n.tower===0,200));assert.deepEqual({x:b.x,y:b.y},towerStand(0));
+ swingAt(g,b.x+b.w/2);assert.equal(b.hp,2);assert.equal(n.mode,'stun');assert.ok(until(g,()=>n.mode==='idle'&&n.tower===0,200));assert.deepEqual({x:b.x,y:b.y},towerStand(0));
 });
 test('lingering on his deck draws a warned megaphone swing',()=>{
  const g=ready(false),b=g.boss,n=air(g,1),t=TOWERS[1];place(g,X0+t.ladder-17,towerDeckId(1));g.player.inv=0;const h=g.health;assert.ok(until(g,()=>n.mode==='swingWarn',60));assert.equal(g.health,h);until(g,()=>n.mode==='idle',60);assert.equal(g.health,h-1);

@@ -12,12 +12,12 @@ export function idleFrame(time){
 // Register each pose to the same rear paw, at one source-pixel scale.
 // Tight-crop height and changing ear position must never resize the whole cat.
 const poses=[
- {box:[87,24,415,474],anchor:[331,497]},
- {box:[569,24,413,474],anchor:[813,497]},
- {box:[1065,24,402,474],anchor:[1290,497]},
- {box:[113,529,392,467],anchor:[331,994]},
- {box:[568,523,421,473],anchor:[813,994]},
- {box:[1055,520,421,476],anchor:[1288,994]}
+ {box:[12,12,391,467],anchor:[293,479]},
+ {box:[415,13,389,466],anchor:[694,479]},
+ {box:[816,12,396,467],anchor:[1104,479]},
+ {box:[12,493,397,465],anchor:[318,958]},
+ {box:[421,493,402,465],anchor:[727,958]},
+ {box:[835,492,404,466],anchor:[1144,958]}
 ];
 export function idlePlacement(time,height=480,placement={}){
  const {frame,action}=idleFrame(time),{box,anchor}=poses[frame],tall=height>700;

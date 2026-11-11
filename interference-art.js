@@ -27,6 +27,22 @@ function drawTextures(c,img,fill,width,time){
   c.globalAlpha=Math.sin(phase/.6*Math.PI)*(.3+fill*.35);c.drawImage(img,sx,sy,CW,CH,Math.round(hash(slot+2)*(width-w)),Math.round(60+hash(slot+3)*200),Math.round(w),Math.round(w*CH/CW));}}
  c.restore();
 }
+// The meter (assets/interference-meter.png): a frame with a static monitor, a glass channel and a warning lamp; the
+// fill is cyan, turning hot magenta past 75%; the monitor shows Infoshum's eyes past 55% and cracks past 85%.
+const MT={"frame":{"r":[0,0,684,168]},"cL":{"r":[686,0,86,60]},"cM":{"r":[0,170,393,60]},"cR":{"r":[395,170,85,60]},"dL":{"r":[482,170,86,62]},"dM":{"r":[570,170,393,62]},"dR":{"r":[0,234,86,62]},"lamp0":{"r":[88,234,99,102]},"lamp1":{"r":[189,234,100,102]},"icon0":{"r":[291,234,128,113]},"icon1":{"r":[421,234,128,113]},"icon2":{"r":[551,234,129,113]},"crack0":{"r":[682,234,229,48]},"crack1":{"r":[0,349,226,50]},"crack2":{"r":[228,349,230,50]}},CHAN=[169,76,400,38.5],SCREEN=[66,50,56,58],LAMP=[583,28,63,64],PLATE=[221,11,270,42];
+function drawMeter(c,img,fill,width,time){
+ const w=Math.min(520,width-24),u=w/MT.frame.r[2],x=Math.round((width-w)/2),y=6,P=(p,X,Y,W,H)=>c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(X),Math.round(Y),Math.round(W),Math.round(H));
+ if(!img?.width){rect(c,x,y,w,30,'#030c21ed');rect(c,x+8,y+20,(w-16)*fill,5,fill>.75?'#fa73ce':'#66e9ee');return;}
+ c.save();c.imageSmoothingEnabled=false;
+ const danger=fill>.75,k=danger?'d':'c',L=MT[k+'L'],M=MT[k+'M'],R=MT[k+'R'],cx=x+CHAN[0]*u,cy=y+CHAN[1]*u,cw=CHAN[2]*u,ch=CHAN[3]*u,fh=ch,fw=cw*fill,cap=L.r[2]*fh/L.r[3];
+ if(fw>1){c.save();c.beginPath();c.rect(cx,cy,fw,ch);c.clip();P(L,cx,cy,cap,fh);const ms=[M.r[0]+8,M.r[1],M.r[2]-16,M.r[3]],mw=ms[2]*fh/ms[3],off=(time*60)%mw;for(let xx=cx+cap-off;xx<cx+fw;xx+=mw-1)c.drawImage(img,ms[0],ms[1],ms[2],ms[3],Math.round(xx),Math.round(cy),Math.ceil(mw),Math.round(fh));P(L,cx,cy,cap,fh);if(fill>.97)P(R,cx+cw-cap,cy,cap,fh);c.restore();}
+ P(MT.frame,x,y,MT.frame.r[2]*u,MT.frame.r[3]*u);
+ if(fill>.5){const q=MT['crack'+(fill>.9?2:fill>.7?1:0)];c.globalAlpha=.8;P(q,cx,cy,cw,ch);c.globalAlpha=1;}
+ const ic=MT['icon'+(fill>.85?2:fill>.55?1:0)],ir=ic.r,s=[ir[0]+ir[2]*.17,ir[1]+ir[3]*.16,ir[2]*.66,ir[3]*.6];c.drawImage(img,s[0],s[1],s[2],s[3],Math.round(x+SCREEN[0]*u),Math.round(y+SCREEN[1]*u),Math.round(SCREEN[2]*u),Math.round(SCREEN[3]*u));
+ if(danger&&Math.floor(time*4)%2===0)P(MT.lamp1,x+LAMP[0]*u,y+LAMP[1]*u,LAMP[2]*u,LAMP[3]*u);
+ c.font=Math.round(15*u*2)+'px UmaText,monospace';c.textAlign='center';c.textBaseline='middle';c.fillStyle=danger?'#6a0f4f':'#1d1842';c.fillText('ПОМЕХИ '+Math.floor(fill*100)+'%',x+(PLATE[0]+PLATE[2]/2)*u,y+(PLATE[1]+PLATE[3]/2)*u+1);
+ c.restore();
+}
 export function drawInterferenceOverlay(c,g,width,assets){
  const n=g.boss.network;if(g.room!==8||!n||n.stage!=='free'||g.boss.hp<=0)return;
  const fill=n.noise||0,img=assets?.interferenceTextures;
@@ -36,6 +52,5 @@ export function drawInterferenceOverlay(c,g,width,assets){
   c.restore();}
  if(fill>=.99){if(img?.width){const [sx,sy]=cell(11);c.drawImage(img,sx,sy,CW,CH,0,0,width,480);}
   else{rect(c,0,0,width,480,'#101337');for(let y=0;y<480;y+=4){const x=(y*31+Math.floor(g.time*40)*13)%width;rect(c,0,y,width,2,'#294267');rect(c,x,y,Math.min(width-x,80+(y*47)%300),3,y%12?'#be3da7':'#4acbd5');}}}
- const w=Math.min(190,width-90);rect(c,10,10,w,31,'#030c21ed');c.font='14px UmaText,monospace';c.fillStyle='#8bedff';c.textAlign='left';c.fillText('ПОМЕХИ '+Math.floor(fill*100)+'%',17,23);
- rect(c,17,29,w-14,5,'#233455');rect(c,17,29,(w-14)*fill,5,fill>.75?'#fa73ce':'#66e9ee');
+ drawMeter(c,assets?.interferenceMeter,fill,width,g.time);
 }

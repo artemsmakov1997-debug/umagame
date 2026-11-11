@@ -8,7 +8,7 @@
 //   Hide behind chimneys, climb the ladder and hit the screen; he then leaps to the other tower.
 import {rooms} from './level.js?v=0.21.5';
 import {FLOOR_Y,MAST_X,MAST_DECK,LETTER,SLOGAN,LETTER_FRAMES,SLOT_ORDER,HATCHES,TOWERS,CHIMNEYS,AGI,slotRect} from './agitator-map.js?v=0.21.5';
-export const AGITATOR_HP=18,PHASE_HP=6,HIT_DAMAGE=2,BEAT=60/132;
+export const AGITATOR_HP=12,PHASE_HP=4,HIT_DAMAGE=2,BEAT=60/132;
 export const SLOGAN_TIMES={rest:1.1,windup:.9,gap:.26,flight:.62,overheat:4,crumble:.5,blastWarn:.55,stun:1.1,burst:.4};
 export const RALLY_TIMES={spawn:2.3,max:4,step:22,ura:5.4,uraWarn:.55,uraHold:2.5,swingWarn:.45,swing:.3,stomp:6.5,speed:46,stun:.9};
 export const AIR_TIMES={calm:2.6,warn:.8,gust:1.7,wind:120,deckWarn:.6,swingWarn:.45,swing:.3,stun:.7,jump:1.4,bird:255};

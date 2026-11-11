@@ -1,18 +1,19 @@
 import {sprite} from './assets.js?v=0.21.5';
 export const emotionFrames=[
- {box:[48,205,331,269],pivot:[210,474]},
- {box:[449,235,324,239],pivot:[611,474]},
- {box:[800,91,346,387],pivot:[1020,478]},
- {box:[1177,108,348,370],pivot:[1351,478]},
- {box:[72,543,326,414],pivot:[207,957]},
- {box:[440,540,340,417],pivot:[601,957]},
- {box:[800,667,338,290],pivot:[967,957]},
- {box:[1160,730,361,227],pivot:[1340,957]}
+ {box:[14,14,350,268],pivot:[185,282]},
+ {box:[378,14,346,263],pivot:[551,277]},
+ {box:[738,14,315,385],pivot:[938,399]},
+ {box:[1067,14,389,371],pivot:[1262,385]},
+ {box:[14,413,298,413],pivot:[137,826]},
+ {box:[326,413,325,418],pivot:[480,831]},
+ {box:[665,413,320,327],pivot:[823,740]},
+ {box:[999,413,394,214],pivot:[1195,627]}
 ];
+// The opening slides already show Uma awake and alarmed, so the game opens on her standing on guard, staring at
+// the screen; when Infoshum appears she flinches with a raised paw, then crouches low.
 export function wakePose(time){
- if(time<2.2)return {name:'sleep',frame:Math.floor(time*3)%2};
- if(time<3.45)return {name:'yawn',frame:time<2.8?2:3};
- return {name:'surprise',frame:time<4.2?4:5};
+ if(time<2.7)return {name:'alert',frame:4};
+ return {name:'surprise',frame:time<3.5?5:7};
 }
 export function hurtPose(remaining){return remaining>.26?6:7;}
 export function drawEmotion(c,assets,frame,center,feet,height=76,flip=false){
@@ -21,14 +22,14 @@ export function drawEmotion(c,assets,frame,center,feet,height=76,flip=false){
  sprite(c,assets.emotions,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();
 }
 export const traversalFrames=[
- {box:[10,110,389,302],pivot:[205,405]},
- {box:[411,120,375,292],pivot:[592,405]},
- {box:[794,121,384,291],pivot:[980,405]},
- {box:[1197,114,338,298],pivot:[1368,405]},
- {box:[20,473,330,477],pivot:[200,943]},
- {box:[419,463,280,484],pivot:[584,943]},
- {box:[848,463,299,484],pivot:[969,943]},
- {box:[1229,469,292,481],pivot:[1375,943]}
+ {box:[14,14,394,298],pivot:[212,305]},
+ {box:[422,14,387,291],pivot:[609,298]},
+ {box:[823,14,382,294],pivot:[1008,301]},
+ {box:[1219,14,361,299],pivot:[1402,306]},
+ {box:[14,327,264,483],pivot:[158,803]},
+ {box:[292,327,266,481],pivot:[449,804]},
+ {box:[572,327,273,480],pivot:[682,803]},
+ {box:[859,327,264,484],pivot:[991,804]}
 ];
 export function traversalPose(player){
  if(player.climbing)return 4+Math.floor(player.climbTime)%4;
@@ -40,14 +41,14 @@ export function drawTraversal(c,assets,player){
  c.save();c.translate(Math.round(player.x+player.w/2),Math.round(player.y+player.h));if(index<4&&player.dir<0)c.scale(-1,1);sprite(c,assets.traversal,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
 }
 const restFrames=[
- {box:[60,160,320,310],pivot:[224,463]},
- {box:[434,235,308,230],pivot:[596,459]},
- {box:[783,240,345,226],pivot:[954,460]},
- {box:[1090,120,445,350],pivot:[1360,461]},
- {box:[24,580,356,360],pivot:[218,936]},
- {box:[398,630,382,310],pivot:[604,934]},
- {box:[775,588,407,352],pivot:[986,934]},
- {box:[1180,589,340,358],pivot:[1367,939]}
+ {box:[14,14,329,310],pivot:[183,317]},
+ {box:[357,14,310,232],pivot:[520,240]},
+ {box:[681,14,317,222],pivot:[838,230]},
+ {box:[1012,14,408,350],pivot:[1260,355]},
+ {box:[14,378,331,383],pivot:[194,757]},
+ {box:[359,378,396,309],pivot:[573,681]},
+ {box:[769,378,391,354],pivot:[972,726]},
+ {box:[1174,378,340,355],pivot:[1361,725]}
 ];
 export function restPose(p){
  if(p.sleeping)return p.sleepTime<.6?0:1+Math.floor((p.sleepTime-.6)/1.4)%2;
@@ -61,14 +62,14 @@ export function drawRest(c,assets,p){
 }
 // assets/uma-moods.png, 4×2: low swat (wind-up, strike), hit, hiss, frightened fall, dragged by glue, dash, joy.
 export const moodFrames=[
- {box:[22,136,342,263],pivot:[195,399]},
- {box:[406,155,357,249],pivot:[579,403]},
- {box:[794,140,334,263],pivot:[958,402]},
- {box:[1192,90,330,313],pivot:[1330,402]},
- {box:[42,580,296,336],pivot:[190,880]},
- {box:[356,648,379,260],pivot:[560,907]},
- {box:[761,682,410,157],pivot:[990,836]},
- {box:[1212,611,253,288],pivot:[1340,898]}
+ {box:[14,14,330,281],pivot:[181,295]},
+ {box:[358,14,343,252],pivot:[524,265]},
+ {box:[715,14,323,252],pivot:[874,265]},
+ {box:[1052,14,328,309],pivot:[1189,322]},
+ {box:[14,337,290,338],pivot:[159,639]},
+ {box:[318,337,361,258],pivot:[512,594]},
+ {box:[693,337,377,146],pivot:[904,480]},
+ {box:[1084,337,266,320],pivot:[1219,656]}
 ];
 export const MOOD={lowWindup:0,lowStrike:1,hurt:2,hiss:3,fall:4,dragged:5,dash:6,joy:7};
 const still=p=>p.grounded&&Math.abs(p.vx)<1&&p.attack===0;

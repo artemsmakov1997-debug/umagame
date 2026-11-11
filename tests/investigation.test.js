@@ -28,12 +28,12 @@ test('reading a notebook adds the room\'s next clue, with no premature answer',(
  Object.assign(g.player,{x:n.x-17,y:n.y-24,grounded:true,supportId:s.id});g.checkNotebooks();
  assert.equal(g.clues.length,1);assert.equal(g.clues[0].room,3);assert.ok(!/создаёте меня|Всё начинается с нас/i.test(g.clues[0].text));
 });
-test('Infoshum gathers the colossus around the tower after six relays and three cracks in the big screen',()=>{
+test('Infoshum gathers the colossus around the tower after four relays and two cracks in the big screen',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;g.mode='playing';
  g.room=8;g.checkpoint=8;g.boss=createBoss(8);g.boss.active=true;
  const n=g.boss.network;assert.equal(n.relays.length,4);let k=0;
  while(n.stage==='network'&&k++<40){assert.equal(crackInfoshumScreen(g),true,'paw '+k);for(let i=0;i<25&&n.stage==='network';i++)stepBoss(g,1/60);}
- assert.equal(k,9,'two relays and a crack, three times');assert.equal(n.stage,'assemble');assert.equal(g.boss.hp,12);assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
+ assert.equal(k,6,'two relays and a crack, twice');assert.equal(n.stage,'assemble');assert.equal(g.boss.hp,8);assert.ok(g.events.some(e=>e.type==='bossPhase'&&e.phase===2));
  for(let i=0;i<240;i++)stepBoss(g,1/60);
  assert.equal(n.stage,'colossus');assert.equal(g.boss.phase,2);
 });

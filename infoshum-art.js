@@ -44,9 +44,15 @@ function amberFrame(c,r,time,pad=0){c.save();c.strokeStyle='#ffc45e';c.shadowCol
 // (idle, Yuri points, junction box open, hit, exploded, rebooting) and cable pieces (three pulse frames, two snapped ends).
 // assets/infoshum-fx1.png: the scanning beam, a warning line, the cable whip, a thrown TV and its puddle of noise.
 const TOWER_K=TOWER.w/AT.mon.face.r[2],EMO_BOX=[0,0,0,0];
-// Every state of the tower was painted at its own size; k = [scale, dx, dy] registers each frame onto «face», so the
-// monitor keeps one size and place whether it shows Infoshum, Yuri, cracks or the dome.
-function drawTowerAt(c,a,face,cx,base,k=1,time=0,{alpha=1,shake=0}={}){const p=AT.mon[face]||AT.mon.face,f=AT.mon.face,u=TOWER_K*k,[s,dx,dy]=p.k||[1,0,0],x=cx+shake-f.r[2]*u/2-dx*u,y=base-f.r[3]*u-dy*u,w=p.r[2]*s*u,h=p.r[3]*s*u;piece(c,a.infoshumTower,p,x,y,w,h,{alpha});return {x,y,w,h};}
+// Every state of the tower was painted at its own size; k = [scale, dx, dy] registers each frame onto «face». For the
+// states that differ only on the glass, the casing is always the «face» casing and only the screen picture is taken
+// from the state's frame, so the monitor cannot change size or shape when Yuri or a new face appears.
+const SCREEN_ONLY=new Set(['face','yuri','half','dark','static','charge','roar','crack1','crack2']),GLASS=[50,32,111,90];
+function drawTowerAt(c,a,face,cx,base,k=1,time=0,{alpha=1,shake=0}={}){const p=AT.mon[face]||AT.mon.face,f=AT.mon.face,u=TOWER_K*k,[s,dx,dy]=p.k||[1,0,0],ox=cx+shake-f.r[2]*u/2,oy=base-f.r[3]*u;
+ if(!SCREEN_ONLY.has(face)){const x=ox-dx*u,y=oy-dy*u,w=p.r[2]*s*u,h=p.r[3]*s*u;piece(c,a.infoshumTower,p,x,y,w,h,{alpha});return {x,y,w,h};}
+ piece(c,a.infoshumTower,f,ox,oy,f.r[2]*u,f.r[3]*u,{alpha});if(face==='face')return {x:ox,y:oy,w:f.r[2]*u,h:f.r[3]*u};
+ const [gx,gy,gw,gh]=GLASS,sx=p.r[0]+(gx+dx)/s,sy=p.r[1]+(gy+dy)/s,img=a.infoshumTower;if(img){c.save();c.globalAlpha*=alpha;c.beginPath();c.roundRect?c.roundRect(ox+gx*u,oy+gy*u,gw*u,gh*u,9*u):c.rect(ox+gx*u,oy+gy*u,gw*u,gh*u);c.clip();c.drawImage(img,sx,sy,gw/s,gh/s,Math.round(ox+gx*u),Math.round(oy+gy*u),Math.round(gw*u),Math.round(gh*u));c.restore();}
+ return {x:ox,y:oy,w:f.r[2]*u,h:f.r[3]*u};}
 const RELAY_FRAME={live:'r0',yuri:'r1',open:'r2',hit:'r3',dead:'r4',reboot:'r5'};
 function cablePath(g,i,k=1){const r=relayRect(g,i),R=RELAYS[i],tx=rooms[g.room].x+TOWER.cx,side=R.cx<TOWER.cx?-1:1,ty=TOWER.base-TOWER.h*.62;
  const x0=tx+side*TOWER.w*.46,y0=ty,x1=r.x+r.w/2-side*r.w*.38,y1=r.y+r.h*.32;return t=>{t*=k;const mx=(x0+x1)/2,my=Math.max(y0,y1)+60;const u=1-t;return {x:u*u*x0+2*u*t*mx+t*t*x1,y:u*u*y0+2*u*t*my+t*t*y1};};}
@@ -70,7 +76,7 @@ function drawHallBack(c,a,g,time){
  if(fade.prev&&fk<1)drawTowerAt(c,a,fade.prev,r.x+TOWER.cx,TOWER.base,1,time,{alpha:1-fk});drawTowerAt(c,a,n.face,r.x+TOWER.cx,TOWER.base,1,time,{shake,alpha:fade.prev&&fk<1?Math.max(.4,fk):1});
  if(n.emo&&['face','crack1','crack2'].includes(n.face)&&n.take?.show!=='yuri'){const sc=towerScreen(g),box={x:sc.x+EMO_BOX[0],y:sc.y+EMO_BOX[1],w:sc.w+EMO_BOX[2],h:sc.h+EMO_BOX[3]};drawEmotion(c,a,n.emo.name,box,emoAlpha(n.emo),time);if(n.cracks)crackLines(c,box,n.cracks);}
  if(n.shield&&n.mode!=='opening')drawShield(c,g,time);
- if(n.take?.show==='yuri')amberFrame(c,towerScreen(g),time,4);
+ if(n.take?.show==='yuri'){const sc=towerScreen(g);c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=14;c.lineWidth=2;c.globalAlpha=.55+.3*Math.sin(time*8);c.beginPath();c.roundRect?c.roundRect(sc.x+2,sc.y+2,sc.w-4,sc.h-4,10):c.rect(sc.x+2,sc.y+2,sc.w-4,sc.h-4);c.stroke();c.restore();}
 }
 function drawHallFront(c,a,g,time){
  const n=g.boss.network,img=a.infoshumFx1,F=AT.fx1;
@@ -252,6 +258,21 @@ function freePiece(c,a,name,cx,cy,{flip=false,alpha=1,ay=.5,k=1}={}){const p=AT.
 const yur=(a,i)=>[a.infoshumYuri,AT.yuri['y'+i]];
 function drawCasing(c,a,name,x,y,w,pic){const cs=AT.casings[name],img=a.infoshumCasings;if(!cs||!img)return;const k=w/cs.r[2],h=cs.r[3]*k,s=cs.s;if(s&&pic?.[0])piece(c,pic[0],pic[1],x+s[0]*k-1,y+s[1]*k-1,s[2]*k+2,s[3]*k+2);piece(c,img,cs,x,y,w,h);}
 function amberPath(c,x0,y0,x1,y1,time){c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=10;c.lineWidth=3;c.globalAlpha=.55+.25*Math.sin(time*8);c.setLineDash?.([10,8]);c.lineDashOffset=-time*60;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.restore();}
+// For the last blow Yuri flies in on a little TV (assets/infoshum-yuri-rope.png), lassoes Infoshum with a cable and
+// pulls with all his strength; when the paw lands he gives a thumbs-up and climbs back into his screen.
+const YR={"y0":{"r":[0,0,151,158],"b":[96.0,147.5]},"y1":{"r":[153,0,168,160],"b":[85.0,149.5]},"y2":{"r":[323,0,183,176],"b":[80.0,163.5]},"y3":{"r":[508,0,188,174],"b":[96.5,165.5],"rope":[187.0,56.0]},"y4":{"r":[698,0,173,182],"b":[94.5,171.5],"rope":[172.5,66.0]},"y5":{"r":[873,0,169,180],"b":[92.8,168.0],"rope":[168.5,88.5]},"y6":{"r":[0,184,158,174],"b":[99.0,160.5]},"y7":{"r":[160,184,164,168],"b":[108.0,151.6]}},YK=.8;
+function yuriCheer(c,a,cx,cy,t){const img=a.infoshumYuriRope;if(!img)return;const p=YR['y'+(t<1.4?6:7)],w=p.r[2]*YK,h=p.r[3]*YK,x=cx-230,y=cy-150+Math.sin(t*3)*4-(t>2.2?(t-2.2)*60:0);c.save();c.globalAlpha=t>2.2?Math.max(0,1-(t-2.2)/.8):Math.min(1,t/.2);c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(x-w/2),Math.round(y-h/2),Math.round(w),Math.round(h));c.restore();}
+function drawYuriRope(c,a,g,f,time){
+ const img=a.infoshumYuriRope,b=g.boss;if(!img)return;const r=rooms[g.room];
+ if(f.mode==='dizzy'&&f.yuri){f.yuriT=FREE.dizzyYuri-f.timer;f.yuriDone=undefined;}else if(b.hp<=0){if(f.yuriDone===undefined)f.yuriDone=time;}
+ const won=b.hp<=0,e=won?time-f.yuriDone:f.yuriT||0,left=f.x-r.x>300,side=left?-1:1,ax=f.x+side*175,ay=f.gy-150+Math.sin(time*3)*4;
+ let n;if(won)n=e<1.2?6:7;else if(e<.3)n=0;else if(e<.55)n=1;else if(e<.85)n=2;else n=Math.floor(e*1.4)%3===2?5:3+Math.floor(time*6)%2;
+ const p=YR['y'+n],w=p.r[2]*YK,h=p.r[3]*YK,flip=!left,fly=n===0?(1-e/.3)*120:0,x0=ax-p.b[0]*YK*(flip?-1:1),y0=ay-p.b[1]*YK-fly;
+ c.save();c.translate(Math.round(x0),Math.round(y0));if(flip)c.scale(-1,1);c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],0,0,Math.round(w),Math.round(h));c.restore();
+ if(!won&&(p.rope||n===2&&e>.75)){const rp=p.rope||[p.r[2]*.9,p.r[3]*.2],sx=x0+rp[0]*YK*(flip?-1:1),sy=y0+rp[1]*YK,tx=f.x,ty=f.gy-40,mx=(sx+tx)/2,my=Math.max(sy,ty)+18+Math.sin(time*9)*4;
+  c.save();c.lineCap='round';c.strokeStyle='#3a1260';c.lineWidth=9;c.beginPath();c.moveTo(sx,sy);c.quadraticCurveTo(mx,my,tx,ty);c.stroke();c.strokeStyle='#a347e6';c.lineWidth=5;c.stroke();c.strokeStyle='#e7a6ff';c.lineWidth=1.5;c.stroke();
+  c.beginPath();c.ellipse(tx,ty,34,14,0,0,Math.PI*2);c.strokeStyle='#3a1260';c.lineWidth=8;c.stroke();c.strokeStyle='#a347e6';c.lineWidth=4;c.stroke();c.restore();}
+}
 function drawFree(c,a,g,time){
  const b=g.boss,f=b.network.free;if(!f)return;
  for(const t of f.tentacles){if(t.state==='warn')freePiece(c,a,'crack',t.x,t.y+2,{k:.5,alpha:.6+.4*Math.abs(Math.sin(time*12))});
@@ -259,7 +280,7 @@ function drawFree(c,a,g,time){
  for(const s of f.shards)freePiece(c,a,'sh'+Math.floor(time*12)%3,s.x,s.y,{k:.42,flip:s.vx<0});
  if(f.mode==='ramPrep'){const x0=Math.min(f.tx,f.ex),x1=Math.max(f.tx,f.ex);drawLineWarning(c,a,x0,f.ty,x1-x0,time);}
  // For the last blow Yuri holds him from a surviving screen.
- if(f.mode==='dizzy'&&f.yuri){const w=124,y=f.gy-262+Math.sin(time*3)*3;amberPath(c,f.x,y+70,f.x,f.gy-56,time);drawCasing(c,a,'med1',f.x-w/2,y,w,yur(a,3));amberFrame(c,{x:f.x-w/2,y,w,h:w*.82},time);}
+ if(f.mode==='dizzy'&&f.yuri)drawYuriRope(c,a,g,f,time);
  const ground={ay:1,y:f.gy+10};let name='i'+[0,1,2,3,4][Math.floor(time*6)%5],flip=false,place=null;
  if(f.mode==='enter')name='r'+Math.min(2,Math.floor((FREE.enter-f.timer)/FREE.enter*3));
  else if(f.mode==='tentacle')name='s'+Math.floor(time*8)%3;
@@ -281,7 +302,7 @@ function drawStormIsland(c,a,p){
 }
 function drawStormSky(c,a,g,time){
  const r=rooms[g.room],img=a.infoshumStorm;
- if(img?.complete&&img.naturalWidth){const w=1240,h=698,span=Math.max(1,r.width-960),k=Math.max(0,Math.min(1,(g.camera-r.x)/span)),x=g.camera-k*(w-960);c.drawImage(img,Math.round(x),-150,w,h);}
+ if(img?.complete&&img.naturalWidth){const vw=VW(g),w=Math.max(1240,vw*1.2),h=w*img.naturalHeight/img.naturalWidth,span=Math.max(1,r.width-vw),k=Math.max(0,Math.min(1,(g.camera-r.x)/span)),x=g.camera-k*(w-vw);c.drawImage(img,Math.round(x),-150*w/1240,w,h);}
  else rect(c,r.x,0,r.width,512,'#1a0b33');
  c.save();for(let i=0;i<26;i++){const x=r.x+((i*173+time*(40+i%5*18))%r.width),y=(i*97+Math.sin(time+i)*30)%430+20;c.globalAlpha=.35+.3*(i%3)/2;rect(c,x,y,3+i%4,3+i%3,i%2?'#b77cff':'#68e8ff');}c.restore();
 }
@@ -317,7 +338,7 @@ export function drawInfoshumForeground(c,a,g,time){
 }
 // «Тишина»: he shrinks into a line and a dot like an old TV switching off (boss-defeat-art.js).
 export function drawInfoshumDefeat(c,a,d){
- const img=a.infoshumSilence;if(!img)return false;const t=d.time,cx=d.x+d.w/2,cy=d.y+d.h/2,frame=t<.45?0:t<.85?1:t<1.25?2:3,alpha=frame===3?Math.max(0,1-(t-1.25)/.45):1;
+ const img=a.infoshumSilence;if(!img)return false;const t=d.time,cx=d.x+d.w/2,cy=d.y+d.h/2;yuriCheer(c,a,cx,cy,t);const frame=t<.45?0:t<.85?1:t<1.25?2:3,alpha=frame===3?Math.max(0,1-(t-1.25)/.45):1;
  if(frame===0){const sh=Math.sin(t*80)*3;cell(c,img,SILENCE_W,SILENCE_H,0,cx+sh,cy,300);}else cell(c,img,SILENCE_W,SILENCE_H,frame,cx,cy,frame===1?320:200,{alpha});
  if(frame>=1&&frame<3){c.save();c.globalAlpha=.25*(1-(t-.45)/.8);c.fillStyle='#ffffff';c.fillRect(cx-800,0,1600,480);c.restore();}
  return true;

@@ -14,7 +14,7 @@ import {originalsFound} from './dimension-systems.js?v=0.21.5';
 import {pitFall} from './pit-falls.js?v=0.21.5';
 // Each «первоисточник» from the Dimension: his face stays longer in the screens.
 export const SOURCE_NOISE_BONUS=12,SOURCE_CORE_BONUS=0,SOURCE_HINT=.8;
-export const NOISE_CLEAR=.3,NOISE_TIME=60,INFOSHUM_HP=18,HIT_DAMAGE=2,PHASE_HP=6;
+export const NOISE_CLEAR=.3,NOISE_TIME=60,INFOSHUM_HP=12,HIT_DAMAGE=2,PHASE_HP=4;
 export const noiseDuration=g=>NOISE_TIME+SOURCE_NOISE_BONUS*originalsFound(g);
 export const coreDamage=()=>HIT_DAMAGE;
 export const revealHint=g=>Math.min(2.4,SOURCE_HINT*originalsFound(g));
@@ -93,7 +93,7 @@ function stepTakeover(g,dt){
  if(t.show==='half'){t.show=t.next;t.timer=t.show==='face'?WAVE.face:WAVE.yuriFace;setFace(n,t.show==='face'?faceFor(n):'yuri');}
  else{t.next=t.show==='face'?'yuri':'face';t.show='half';t.timer=WAVE.flip;setFace(n,'half');}
 }
-const faceFor=n=>['face','crack1','crack2','crack3'][Math.min(3,n.cracks)];
+const SCREEN_HITS=2,faceFor=n=>['face','crack2','crack3'][Math.min(2,n.cracks)];
 // ——— The tower's attacks ———
 function towerAttack(g){
  const n=g.boss.network,p=g.player,px=p.x+p.w/2,r=rooms[g.room],kind=WAVE.plan[n.step++%WAVE.plan.length];
@@ -143,7 +143,7 @@ function strikeScreens(g,paw){
   n.lastSwing=p.swing;r.state='hit';r.timer=WAVE.hitFlash;const h=relayHit(g,r.index);addUnits(g,WAVE.relayUnit,h.x+h.w/2,h.y);g.emit('infoshumScreenCrack',{relay:r.index,x:h.x+h.w/2,y:h.y});return true;}
  const sc=towerScreen(g);if(n.take?.show!=='face'||!overlap(paw,sc))return false;
  n.lastSwing=p.swing;n.cracks++;addUnits(g,WAVE.screenUnit,sc.x+sc.w/2,sc.y+sc.h/2);g.emit('infoshumScreenCrack',{cracks:n.cracks,x:sc.x+sc.w/2,y:sc.y+sc.h/2});
- if(n.cracks>=3){setFace(n,'crack3');beginAssembly(g);return true;}
+ if(n.cracks>=SCREEN_HITS){setFace(n,'crack3');beginAssembly(g);return true;}
  n.round++;n.scans=[];n.whips=[];n.tvs=[];startRound(g);setFace(n,'roar',1);n.mode='rest';n.timer=WAVE.gap[n.round]+.6;return true;
 }
 // ——— The assembly: every monitor flies to the middle and snaps into the colossus ———
