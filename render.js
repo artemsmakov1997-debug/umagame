@@ -40,7 +40,7 @@ import {drawDimensionSurface,drawDimensionProps} from './dimension-art.js?v=0.21
 import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
-import {drawEmotion,hurtPose,drawTraversal,drawRest,moodPose,drawMood,MOOD} from './cat-animation.js?v=0.21.5';
+import {drawEmotion,hurtPose,drawTraversal,drawRest,moodPose,drawMood,MOOD,drawRun,runFrame} from './cat-animation.js?v=0.21.5';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.hud=canvas.ownerDocument?.getElementById('hud');this.c.imageSmoothingEnabled=false;this.assets=assets;this.combatEffects=[];this.signalTime=0;this.previousVisualTime=0;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -165,7 +165,8 @@ export class Renderer{
    const w=Math.round(box[2]*.195*scale),h=Math.round(box[3]*.195*scale);
    const center=g.swallow?(g.swallow.x+17)*(1-progress)+(g.swallow.targetX+12)*progress:p.x+p.w/2;
    const feet=g.swallow?(g.swallow.y+48)*(1-progress)+(g.swallow.targetY+24)*progress:p.y+p.h;
-   if(w>0&&h>0){c.save();if(p.dash>0){c.shadowColor='#7deaf5';c.shadowBlur=8;}sprite(c,a[sheet||'uma'],box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);c.restore();}
+   const galloping=(pose===1||pose===2)&&a.umaRun8;
+   if(w>0&&h>0){c.save();if(p.dash>0){c.shadowColor='#7deaf5';c.shadowBlur=8;}if(galloping)drawRun(c,a,runFrame(t),center,feet,p.dir<0,scale);else sprite(c,a[sheet||'uma'],box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);c.restore();}
    if(p.powerTime>0)for(let i=0;i<5;i++)rect(c,p.x-13+i*14,p.y-10+Math.sin(t*5+i)*5,2,2,'#ffe6a0');
    c.globalAlpha=1;
   }
