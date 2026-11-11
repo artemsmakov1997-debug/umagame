@@ -14,7 +14,7 @@ import {originalsFound} from './dimension-systems.js?v=0.21.5';
 import {pitFall} from './pit-falls.js?v=0.21.5';
 // Each «первоисточник» from the Dimension: his face stays longer in the screens.
 export const SOURCE_NOISE_BONUS=12,SOURCE_CORE_BONUS=0,SOURCE_HINT=.8;
-export const NOISE_TIME=60,INFOSHUM_HP=18,HIT_DAMAGE=2,PHASE_HP=6;
+export const NOISE_CLEAR=.3,NOISE_TIME=60,INFOSHUM_HP=18,HIT_DAMAGE=2,PHASE_HP=6;
 export const noiseDuration=g=>NOISE_TIME+SOURCE_NOISE_BONUS*originalsFound(g);
 export const coreDamage=()=>HIT_DAMAGE;
 export const revealHint=g=>Math.min(2.4,SOURCE_HINT*originalsFound(g));
@@ -247,7 +247,7 @@ function beginBreakout(g){
 // ——— Phase 3 «На свободе» ———
 function beginFree(g){
  const b=g.boss,n=b.network,r=rooms[g.room];
- reshape(g,STORM_ISLANDS,'storm');landSafely(g,2,100);portalOut(g);
+ reshape(g,STORM_ISLANDS,'storm');landSafely(g,2,100);portalOut(g);n.noise=0;n.noiseTime=0;
  n.stage='free';n.free={mode:'enter',timer:FREE.enter,x:r.x+768,y:210,gy:FLOOR,hits:0,step:0,count:0,sub:0,tentacles:[],shards:[],yuri:false,flash:0,dir:1,rammed:false,lastSwing:-1};
  b.state='phaseChange';g.bolts=[];g.emit('infoshumFreed',{x:r.x+768,y:150});
 }
@@ -272,6 +272,9 @@ function nextFree(g){
 function stepFree(g,dt){
  const b=g.boss,n=b.network,f=n.free,p=g.player,px=p.x+p.w/2,py=p.y+p.h/2,gap=FREE.gap[Math.min(2,f.hits)];
  f.flash=Math.max(0,f.flash-dt);
+ // «Помехи»: free, Infoshum floods the broadcast with static; full noise costs a life. Each blow clears some.
+ if(f.mode!=='enter'&&!f.yuri&&!n.portal){const dur=noiseDuration(g);n.noiseTime+=dt;n.noise=Math.min(1,n.noiseTime/dur);
+  if(n.noise>=1){g.emit('interferenceLost');n.noiseTime=dur*(g.testingInvulnerable?.82:.5);n.noise=n.noiseTime/dur;g.loseLife('interference');return;}}
  for(const t of f.tentacles){t.time+=dt;if(t.state==='warn'&&t.time>=FREE.tentWarn){t.state='up';t.time=0;g.emit('boltImpact',{x:t.x,y:t.y,kind:'tentacle'});}
   if(t.state==='up'&&t.time<.3&&p.inv<=0&&p.dash===0&&Math.abs(px-t.x)<FREE.tentHalf+p.w/2-8&&p.y+p.h>t.y-90&&p.y<t.y+6)g.hurt(false,t.x);}
  f.tentacles=f.tentacles.filter(t=>!(t.state==='up'&&t.time>FREE.tentUp));
@@ -297,8 +300,8 @@ function stepFree(g,dt){
  b.x=f.x-b.w/2;b.y=f.y-b.h/2;
 }
 function strikeCore(g,paw){
- const b=g.boss,f=b.network.free,p=g.player;if(f.mode!=='dizzy'||f.lastSwing===p.swing||!overlap(paw,freeCoreBox(f)))return false;
- f.lastSwing=p.swing;b.hp=Math.max(0,b.hp-HIT_DAMAGE);b.hurtTime=.35;b.cooldown=.24;f.hits++;f.yuri=false;
+ const b=g.boss,n=b.network,f=n.free,p=g.player;if(f.mode!=='dizzy'||f.lastSwing===p.swing||!overlap(paw,freeCoreBox(f)))return false;
+ f.lastSwing=p.swing;b.hp=Math.max(0,b.hp-HIT_DAMAGE);b.hurtTime=.35;b.cooldown=.24;f.hits++;f.yuri=false;n.noiseTime=Math.max(0,n.noiseTime-noiseDuration(g)*NOISE_CLEAR);n.noise=n.noiseTime/noiseDuration(g);
  g.emit('bossHit',{boss:'infoshum',x:f.x,y:f.gy-34});g.emit('infoshumCoreHit',{x:f.x,y:f.gy-34});
  if(b.hp===0){b.x=f.x-b.w/2;b.y=f.gy-b.h+10;f.tentacles=[];f.shards=[];g.bossDefeated();return true;}
  f.mode='hit';f.timer=FREE.hit;f.flash=.2;return true;

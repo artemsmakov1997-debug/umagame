@@ -13,6 +13,17 @@ export const ROOF_BUILDINGS=[
  {x:2160,w:144,y:150,style:'brick',wall:2165}     // 7 C2 the mast roof and the arena door
 ];
 export const ROOF_ROPES=[];
+// A Нагнетатель stands on a lattice mast; its foot (base plate) must rest entirely on one roof. x is room-local, the
+// machine's centre. The usual mast stands left of the machine; mirrored, it stands right. The plate may slide under
+// the post (shift, in world pixels) as long as the post keeps standing on it. Returns null if nothing fits.
+export const MAST_FOOT={post:61.5,back:63.5,front:65,slide:50};
+export function mastFooting(x){
+ const fit=(lo,hi)=>ROOF_BUILDINGS.filter(b=>lo>=b.x&&hi<=b.x+b.w).sort((p,q)=>p.y-q.y)[0];
+ for(const s of Array.from({length:MAST_FOOT.slide*2+1},(_,i)=>i%2?(i+1)/2:-i/2)){
+  const n=x-MAST_FOOT.post,m=x+MAST_FOOT.post,a=fit(n-MAST_FOOT.back+s,n+MAST_FOOT.front+s),b=fit(m-MAST_FOOT.front+s,m+MAST_FOOT.back+s);
+  if(a)return {flip:false,y:a.y,shift:s};if(b)return {flip:true,y:b.y,shift:s};}
+ return null;
+}
 // Trampolines (striped awnings and tarps) hang in the alleys between the roofs: a bounce reaches the next roof,
 // a miss drops Uma into the street. Holding ↓ lets her stand on one.
 export const ROOF_AWNINGS=[{x:285,w:85,y:430},{x:940,w:85,y:430},{x:1480,w:80,y:440},{x:1630,w:80,y:410}]; // 8–11

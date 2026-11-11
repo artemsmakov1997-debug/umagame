@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Game,WIDTH,WORLD,HEIGHT,FINAL_X,LAST_ROOM,ARENA_WIDTH,PORTAL_X,platforms} from '../engine.js';
 import {spawns as checkpoints,enemy,createRelays} from '../level.js';
+import {mastFooting} from '../roofs-map.js';
 import {stepProjectiles,bossDocks} from '../boss.js';
 import {stepWorldPlatforms} from '../world-platforms.js';
 import {alertNearby} from '../enemies.js';
@@ -51,6 +52,7 @@ test('portal minions on a travelling platform inherit its current position and p
 });
 test('Нагнетатели hang high above the roofs, out of reach; the nearest one blows across the whole map: airborne Uma is carried, crouching on a roof holds',()=>{
  // Out of reach: higher than any jump from a roof under it (or a trampoline throw) can bring Uma's head.
+ for(const m of new Game().enemies.filter(e=>e.type==='inflator'))assert.ok(mastFooting(m.x+m.w/2-campaignRooms[3].x),m.id+' mast stands on a roof');
  for(const m of new Game().enemies.filter(e=>e.type==='inflator')){const under=platforms.filter(s=>s.room===3&&s.x<m.x+m.w&&s.x+s.w>m.x);assert.ok(under.length);for(const s of under){const reach=s.roof?.type==='awning'?227:115;assert.ok(m.y+m.h<s.y-48-reach,m.id+' over '+s.id);}}
  const g=setup(3,0,60);g.enemies=new Game().enemies.filter(e=>e.room===3&&e.type==='inflator');for(const e of g.enemies)e.active=true;
  const far=g.enemies[0];far.dir=1;tick(g,1);g.roofs.wind={phase:'warn',timer:0,source:far.id,dir:1};tick(g,1);assert.equal(g.roofs.wind.phase,'gust');

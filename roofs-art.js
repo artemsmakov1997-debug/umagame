@@ -1,6 +1,6 @@
 import {rect,text} from './pixel.js?v=0.21.5';
 import {rooms,HEIGHT} from './level.js?v=0.21.5';
-import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE} from './roofs-map.js?v=0.21.5';
+import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE,mastFooting} from './roofs-map.js?v=0.21.5';
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {birdBox,ROOM} from './roofs-systems.js?v=0.21.5';
 // Source boxes. assets/roofs-pieces.png: parapet and tin roof (left cap, repeatable middle, right cap), chimneys, vent, tank.
@@ -75,9 +75,9 @@ export function inflatorFrame(e,t){if(e.hurtTime>0||e.guardFlash>0)return 7;if(e
 // The mast (assets/inflator-mast.png, drawn at half size): a cantilever deck with a lamp, a lattice segment (cap + tile)
 // and a pedestal with guy wires. The machine stands on the deck; the tower rises from the roof under the deck's post.
 const MAST={deck:[0,0,259,256],deckTop:107,deckMid:160,post:37,postBottom:250,seg:[261,0,67,128],cap:18,base:[330,0,257,154],baseMid:127,baseTop:60};
-function drawMastArt(c,img,fx,fy,base){
+function drawMastArt(c,img,fx,fy,base,shift=0){
  const h=v=>v/2,d=MAST.deck,sg=MAST.seg,b=MAST.base,dx=fx-h(MAST.deckMid),dy=fy-h(MAST.deckTop),px=dx+h(MAST.post),sw=h(sg[2]);
- const top=dy+h(MAST.postBottom)-4,bx=px-h(MAST.baseMid),by=base-h(b[3]);
+ const top=dy+h(MAST.postBottom)-4,bx=px-h(MAST.baseMid)+shift,by=base-h(b[3]);
  c.save();c.beginPath();c.rect(px-sw,top,sw*2,Math.max(0,by+h(MAST.baseTop)-top));c.clip();
  c.drawImage(img,sg[0],sg[1],sg[2],MAST.cap,px-sw/2,top,sw,h(MAST.cap));
  for(let y=top+h(MAST.cap);y<by+h(MAST.baseTop);y+=h(sg[3]-MAST.cap))c.drawImage(img,sg[0],sg[1]+MAST.cap,sg[2],sg[3]-MAST.cap,px-sw/2,y,sw,h(sg[3]-MAST.cap));
@@ -90,9 +90,9 @@ export function drawInflatorMachine(c,a,e,t,x=e.x+e.w/2,feet=e.y+e.h,width=96){
  // The wall bracket it is bolted to, high above the roofs.
  // It stands on a lattice mast bolted to the roof below (a platform on top, guy wires down to the roof).
  if(e.room===3&&e.mountY!==undefined){const fx=Math.round(x),fy=Math.round(feet),x0=rooms[3].x,roofAt=px=>ROOF_BUILDINGS.filter(b=>px>=x0+b.x+6&&px<=x0+b.x+b.w-6).sort((p,q)=>p.y-q.y)[0],off=(MAST.deckMid-MAST.post)/2;
-  // The lattice post must stand on a roof: if there is none under the usual side, the deck is mirrored.
-  const left=roofAt(fx-off),right=roofAt(fx+off),flip=!left&&!!right,roof=flip?right:left||roofAt(fx),base=roof?roof.y:HEIGHT;
-  if(a.inflatorMast){if(flip){c.save();c.translate(fx,0);c.scale(-1,1);c.translate(-fx,0);}drawMastArt(c,a.inflatorMast,fx,fy,base);if(flip)c.restore();}
+  // The whole foot of the lattice mast stands on one roof (see mastFooting); mirrored when it fits on the right.
+  const foot=mastFooting(fx-x0),flip=!!foot?.flip,base=foot?foot.y:HEIGHT;
+  if(a.inflatorMast){if(flip){c.save();c.translate(fx,0);c.scale(-1,1);c.translate(-fx,0);}drawMastArt(c,a.inflatorMast,fx,fy,base,foot?(flip?-foot.shift:foot.shift):0);if(flip)c.restore();}
   else{const half=12,dark='#262b38',lit='#5d6676';
    for(const s of[-1,1]){rect(c,fx+s*half-2,fy,4,base-fy,dark);rect(c,fx+s*half-2,fy,1,base-fy,lit);}
    for(let y=fy+8;y<base-4;y+=22){for(let i=0;i<22&&y+i<base;i+=2){rect(c,fx-half+i*24/22,y+i,3,2,dark);rect(c,fx+half-i*24/22-3,y+i,3,2,dark);}rect(c,fx-half,y,half*2,2,lit);}
