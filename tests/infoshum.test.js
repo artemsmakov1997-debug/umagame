@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {Game} from '../engine.js';import {activateRoom} from '../room-transitions.js';
 import {strikeInfoshum,exposeInfoshum,crackInfoshumScreen,smashWall,colossusInfoshum,breakHand,dropColossus,freeInfoshum,fistBox,headBox,sweepBox,ramBox,freeCoreBox,infoshumTargets,
- relayHit,relayRect,towerScreen,beamFloor,buildWall,WAVE,COL,FREE,CHANNELS,MAGNET,tvBox,FLOOR,INFOSHUM_HP,HALL,ROUND_PAIRS} from '../infoshum-combat.js';
+ relayHit,relayRect,towerScreen,beamFloor,buildWall,WAVE,COL,FREE,CHANNELS,tvBox,FLOOR,INFOSHUM_HP,HALL,ROUND_PAIRS} from '../infoshum-combat.js';
 import {jumpTo} from './navigation.js';
 function game(testing=true){const g=new Game({story:false,cinematic:true,testingInvulnerable:testing});g.start();activateRoom(g,8);g.enemies=[];g.notebooks=[];g.fishes=[];g.lifePickups=[];g.soups=[];g.boss.noticeTime=0;g.mode='playing';g.abilities={attack:true,dash:true,sneak:true};buildWall(g);return g;}
 function tick(g,n,input={}){for(let i=0;i<n;i++)g.step(1/60,input);}
@@ -73,17 +73,16 @@ test('an arm sweeps low (a jump clears it) or high (a crouch passes under it); t
  const g=colossus(false),a=attack(g,COL.plan.indexOf('beam')),m=a.beam;assert.equal(m.state,'charge');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>m.state==='fire',120));tick(g,30);assert.equal(g.health,h-1);
  const q=colossus(false),c=attack(q,COL.plan.indexOf('beam'));assert.ok(c.beam);q.player.inv=0;const h2=q.health;for(let i=0;i<400&&c.beam;i++)q.step(1/60,{right:true});assert.equal(q.health,h2,'a running cat outruns the beam');
 });
-test('«Каналы»: three televisions land and fire along the floor one after another; a paw smashes one that is on',()=>{
- const g=colossus(false),a=attack(g,COL.plan.indexOf('channels')),ch=a.channels;assert.equal(ch.tvs.length,3);
- assert.ok(until(g,()=>ch.tvs.every(t=>t.state!=='drop'),120));assert.ok(until(g,()=>ch.tvs[0].state==='on',120));assert.equal(ch.tvs[1].state,'off','one at a time');
- const t=ch.tvs[0],box=tvBox(t);Object.assign(g.player,{x:t.x-t.dir*40-17,dir:t.dir,attack:0,cooldown:0});g.step(1/60,{attack:true});tick(g,3);assert.equal(t.state,'broken');
- assert.ok(until(g,()=>ch.tvs[1].state==='fire',300));assert.ok(until(g,()=>!a.channels,400));assert.equal(a.mode,'idle');
-});
-test('«Магнит»: Uma is dragged towards him, his feet spark, junk flies in; a paw knocks a piece away',()=>{
- const g=colossus(false),a=attack(g,COL.plan.indexOf('magnet')),m=a.magnet;g.player.inv=99;Object.assign(g.player,{x:16128+300});assert.ok(until(g,()=>m.state==='pull',120));
- const x=g.player.x;tick(g,30);assert.ok(g.player.x>x+20,'pulled towards the middle');assert.ok(until(g,()=>m.junk.length>0,120));
- const q=colossus(false),b=attack(q,COL.plan.indexOf('magnet')),n=b.magnet;assert.ok(until(q,()=>n.state==='pull',120));Object.assign(q.player,{x:16128+768-17,inv:0});const h=q.health;tick(q,2);assert.equal(q.health,h-1,'the sparking floor at his feet');
- assert.ok(until(q,()=>!b.magnet,400));assert.equal(b.mode,'idle');
+test('«Каналы»: televisions fall at random free spots, keep firing until a paw smashes them',()=>{
+ const spots=new Set();
+ for(let run=0;run<4;run++){const g=colossus(false),a=attack(g,COL.plan.indexOf('channels'));assert.equal(a.tvs.length,CHANNELS.count);
+  const c=16128+768,ux=g.player.x+g.player.w/2;for(const t of a.tvs){spots.add(Math.round(t.x));assert.ok(Math.abs(t.x-c)>=CHANNELS.body&&Math.abs(t.x-ux)>=CHANNELS.uma);assert.equal(t.dir,t.x<c?-1:1);}
+  assert.ok(Math.abs(a.tvs[0].x-a.tvs[1].x)>=CHANNELS.apart);}
+ assert.ok(spots.size>4,'not the same spots every time');
+ const g=colossus(false),a=attack(g,COL.plan.indexOf('channels'));g.player.inv=99;assert.ok(until(g,()=>!a.channels,120));assert.equal(a.mode,'idle','the attack itself ends once they land');
+ const t=a.tvs[0];assert.ok(until(g,()=>t.state==='fire',300));assert.ok(until(g,()=>t.state==='off',120));assert.ok(until(g,()=>t.state==='fire',400),'fires again');assert.ok(a.tvs.includes(t),'still standing');
+ Object.assign(g.player,{x:t.x-t.dir*40-17,y:FLOOR-48,dir:t.dir,attack:0,cooldown:0,grounded:true});g.step(1/60,{attack:true});tick(g,3);assert.equal(t.state,'broken');assert.ok(until(g,()=>!a.tvs.includes(t),120));
+ for(let i=0;i<6;i++)attack(g,COL.plan.indexOf('channels'));assert.ok(a.tvs.filter(t=>t.state!=='wreck').length<=CHANNELS.max);
 });
 test('the second fall cracks the head: he bursts out of it into the storm («На свободе»)',()=>{
  const g=colossus(),n=g.boss.network;for(let k=0;k<2;k++)assert.ok(dropColossus(g),'fall '+k);assert.equal(n.stage,'breakout');assert.equal(g.boss.hp,4);assert.equal(g.boss.phase,3);
