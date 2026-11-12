@@ -217,7 +217,7 @@ export class Game {
   if(this.mode!=='playing'||this.swallow)return;
   stepPhasePack(this);
   for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
-  for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;this.health=Math.min(MAX_HEALTH,this.health+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});}
+  for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;soup.takenAt=this.time;this.health=Math.min(MAX_HEALTH,this.health+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
   for(const relay of this.relays){relay.breakTime=Math.max(0,relay.breakTime-dt);if(!relay.scripted&&relay.room!==8&&relay.hp>0&&p.attack>0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;relay.hp=0;relay.breakTime=.65;p.joyTime=1.1;this.emit('dishBreak',{x:relay.x+relay.w/2,y:relay.y+25});this.emit('relay',{room:relay.room,id:relay.id});
     const effect=applyRelayEffect(this,relay),clue=relayClues[relay.room]?.[relay.ordinal];

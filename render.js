@@ -24,7 +24,7 @@ import {cats,RUN_CYCLE,creatures,sprite} from './assets.js?v=0.21.5';
 import {drawMonster,drawLure,drawSoup} from './art.js?v=0.21.5';
 import {drawHud} from './hud.js?v=0.21.5';
 import {drawNotebook} from './notebook-art.js?v=0.21.5';
-import {drawPack} from './pack-art.js?v=0.21.5';
+import {drawPack,packFrame} from './pack-art.js?v=0.21.5';
 import {drawMovingRails,drawArenaTransfer,drawLocationLoading} from './stage-art.js?v=0.21.5';
 import {drawArenaBoss} from './boss-art.js?v=0.21.5';
 import {drawShelter} from './spreader-art.js?v=0.21.5';
@@ -94,7 +94,7 @@ export class Renderer{
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t,a);drawSensations(c,a,g,t);drawRoofWind(c,g,t,a);
   for(const f of g.fishes)if(f.room===g.room&&!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
-  for(const pack of g.soups)if(pack.room===g.room&&!pack.taken)drawPack(c,a,pack,t);
+  for(const pack of g.soups)if(pack.room===g.room)drawPack(c,a,pack,packFrame(pack,g.time,t));
   for(const e of g.enemies)if(e.active&&!e.dead&&e.room===g.room&&e.teleport)drawTeleportMarkers(c,e,t);
   for(const e of g.enemies)if(e.room===g.room&&e.active&&(!e.dead||e.deathTime>0)&&e.x>cam-140&&e.x<cam+vw+140){
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
