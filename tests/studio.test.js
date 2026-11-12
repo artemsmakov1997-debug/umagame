@@ -104,13 +104,18 @@ test('scissors cut the film strip Uma stands on; it falls away and comes back ta
  for(let i=0;i<Math.ceil((CUT_GAP+.5)*60);i++)stepStudioPlatforms(g,1/60);assert.equal(s.studioPhase,'solid');assert.equal(n.taped[14],true);
 });
 
-test('projector: three strips become shadowless fakes, never the route to the projector or under Uma; the lamp goes dark',()=>{
+test('projector: on each move half of the strips blink and vanish completely, never the route to the projector or under Uma; the lamp goes dark',()=>{
  const g=ready();toPhase(g,3);const under=at(g,7,20);const seen=phases(g)(60*8,'3:dark');
  assert.deepEqual(seen.slice(0,5),['3:transform','3:project','3:charge','3:beam','3:dark']);
- const n=g.boss.studio,fakes=g.platforms.filter(s=>s.room===6&&s.intangible).map(s=>s.index);
- assert.equal(fakes.length,3);assert.deepEqual(fakes.sort(),[...n.fakes].sort());assert.ok(!fakes.includes(under.index));assert.equal(n.decoys.length,3);assert.ok(n.decoys.every(i=>i<DECOYS.length));
- for(const i of fakes)assert.ok(!solidSurfaces(g).some(s=>s.id==='6:'+i));assert.ok(manipulatorExposed(g.boss));
- const route={0:[6,7,13,14],1:[14,9,10,15,11,12],2:[6,17,8]}[n.dock];assert.ok(fakes.every(i=>!route.includes(i)));
+ const n=g.boss.studio,gone=g.platforms.filter(s=>s.room===6&&s.intangible).map(s=>s.index);
+ assert.ok(gone.length>=3);assert.deepEqual(gone.sort(),[...n.fakes].sort());assert.ok(!gone.includes(under.index));assert.equal(n.decoys.length,0);
+ for(const i of gone)assert.ok(!solidSurfaces(g).some(s=>s.id==='6:'+i));assert.ok(manipulatorExposed(g.boss));
+ const route={0:[6,7,13,14],1:[14,9,10,15,11,12],2:[6,17,8]}[n.dock];assert.ok(gone.every(i=>!route.includes(i)));
+ // The next move re-cuts the stage: the leaving strips still hold while they blink, then go.
+ const before=[...n.fakes];for(let i=0;i<60*6&&n.reel<2;i++){stepBoss(g,1/60);stepStudioPlatforms(g,1/60);}assert.ok(n.reel>=2);
+ const leaving=Object.keys(n.leaving).map(Number);for(const i of leaving)assert.ok(solidSurfaces(g).some(s=>s.id==='6:'+i),'blinking strips still hold');
+ for(let i=0;i<60;i++)stepStudioPlatforms(g,1/60);for(const i of n.fakes)assert.ok(!solidSurfaces(g).some(s=>s.id==='6:'+i));
+ assert.ok(before.some(i=>!n.fakes.includes(i))||n.fakes.some(i=>!before.includes(i)),'the set changes');
 });
 
 test('the projector laser hurts at lens height; dropping below it or Shift protects',()=>{

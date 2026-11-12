@@ -28,9 +28,9 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
  }
  await p.waitForFunction(()=>testGame.boss.network.stage==='breakout',null,{timeout:5000});await p.waitForTimeout(1500);await shot(p,'infoshum-live-breakout');
  await p.waitForFunction(()=>testGame.boss.network.stage==='free',null,{timeout:8000});
- // Phase 3 «На свободе»: dodge the ram (Uma is lifted over it), then swat him while he lies dizzy.
+ // Phase 3 «На свободе»: survive the ghost dive (Uma dashes through it), then swat him while Yuri holds him.
  for(let k=0;k<2;k++){
-  for(let w=0;w<900&&!await p.evaluate(()=>{const g=testGame,f=g.boss.network.free;if(['ramPrep','ram'].includes(f.mode))Object.assign(g.player,{y:f.gy-48-130,vy:0,grounded:false});return f.mode==='dizzy'||g.mode!=='playing';});w++)await p.waitForTimeout(40);
+  for(let w=0;w<900&&!await p.evaluate(()=>{const g=testGame,f=g.boss.network.free;if(['ghostPrep','ghostDash'].includes(f.mode))g.player.inv=Math.max(g.player.inv,.5);return f.mode==='dizzy'||g.mode!=='playing';});w++)await p.waitForTimeout(40);
   if(k===0)await shot(p,'infoshum-live-dizzy');
   await p.evaluate(()=>{const g=testGame,f=g.boss.network.free,s=g.platforms.find(s=>s.room===8&&!s.bossHidden&&Math.abs(s.y-f.gy)<2&&f.x>=s.x&&f.x<=s.x+s.w);Object.assign(g.player,{x:f.x-60,y:f.gy-48,h:48,grounded:true,supportId:s?.id,vx:0,vy:0,dir:1,attack:0,cooldown:0,inv:2});g.updateCamera();});
   const hp=await p.evaluate(()=>testGame.boss.hp);await p.keyboard.press('Space');await p.waitForFunction(h=>testGame.boss.hp<h||testGame.mode==='bossDefeat',hp,{timeout:3000});

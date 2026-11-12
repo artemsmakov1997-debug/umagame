@@ -7,8 +7,8 @@ import {solidSurfaces} from './terrain.js?v=0.21.5';
 //   above Uma casts a safe shadow; in this phase nothing burns out under it. After the pan the crane lowers the camera onto a dock: it smokes.
 // 2 «Стоп-кадр»: the camera leaves the crane. A viewfinder follows Uma and snaps a stop-frame; scissors cut
 //   the film-strip platforms. After two snaps the camera ejects its reel and stands open without it.
-// 3 «Проектор»: the camera becomes a projector. It projects neon platforms; only the ones with a shadow are
-//   real. A laser across the stage, then the lamp goes dark for a reel change — the opening.
+// 3 «Проектор»: the camera becomes a projector. Each time it moves it re-cuts the stage: half of the strips blink
+//   and vanish, the others stay. A laser across the stage, then the lamp goes dark for a reel change — the opening.
 export const MANIPULATOR_HP=18,HIT=3,PHASE_HP=6;
 export const STUDIO_DOCKS=[1,2,3];
 export const STRIPS=[6,7,8,9,10,11,12,13,14,15,16,17];
@@ -25,7 +25,7 @@ export const DECOYS=[[600,300,96],[1215,282,96],[880,170,100],[400,150,100],[144
 const ROUTES={1:[6,7,13,14],2:[14,9,10,15,11,12],3:[6,17,8]};
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function manipulatorPhase(b){return b.hp>MANIPULATOR_HP-PHASE_HP?1:b.hp>MANIPULATOR_HP-2*PHASE_HP?2:3;}
-export function createStudioFight(){return {phase:1,mode:'intro',timer:1.2,elapsed:0,relocations:0,beam:null,snaps:0,dock:0,crane:null,viewfinder:null,photo:null,scissors:null,scissorsClock:SCISSORS_EVERY,cuts:{},taped:{},fakes:[],decoys:[],reel:0,hitThisWindow:false,scorches:[]};}
+export function createStudioFight(){return {phase:1,mode:'intro',timer:1.2,elapsed:0,relocations:0,beam:null,snaps:0,dock:0,crane:null,viewfinder:null,photo:null,scissors:null,scissorsClock:SCISSORS_EVERY,cuts:{},taped:{},fakes:[],decoys:[],leaving:{},reel:0,hitThisWindow:false,scorches:[]};}
 export function studioDock(g,index){return g.platforms.find(s=>s.room===6&&s.index===STUDIO_DOCKS[index]);}
 export function manipulatorExposed(b){const n=b.studio;return !!n&&OPENINGS.includes(n.mode)&&!n.hitThisWindow;}
 function setMode(g,mode,timer){const b=g.boss,n=b.studio;n.mode=mode;n.timer=timer;n.elapsed=0;if(OPENINGS.includes(mode))n.hitThisWindow=false;
@@ -78,10 +78,16 @@ export function segmentHits(seg,box,pad=5){
 }
 
 // ——— Phase 3 reels ———
+// Every time the projector arrives at a dock it re-cuts the stage: a random half of the film strips (never the route
+// to its dock, never the one under Uma) blink for REEL_WARN seconds and vanish completely; the strips that were gone
+// come back at once. The next relocation shuffles them again.
+export const REEL_WARN=.9,REEL_HIDE=.45;
 function shuffleReel(g){
  const n=g.boss.studio,p=g.player,keep=new Set(ROUTES[STUDIO_DOCKS[n.dock]]||[]),pool=STRIPS.filter(i=>!keep.has(i)&&!(p.grounded&&p.supportId==='6:'+i));n.reel++;
- const pick=(list,k)=>{const out=[],a=[...list];for(let i=0;i<k&&a.length;i++){const j=Math.floor(((n.reel*7919+i*104729)%997)/997*a.length);out.push(a.splice(j,1)[0]);}return out;};
- n.fakes=pick(pool,3);n.decoys=pick(DECOYS.map((_,i)=>i),3);g.emit('reelSwap',{x:g.boss.x,y:g.boss.y});
+ const before=new Set(n.fakes),count=Math.max(1,Math.round(pool.length*REEL_HIDE));let hide=[];
+ for(let tries=0;tries<6;tries++){const a=[...pool];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}hide=a.slice(0,count);if(hide.some(i=>!before.has(i)))break;}
+ n.leaving={};for(const i of hide)if(!before.has(i))n.leaving[i]=REEL_WARN;
+ n.fakes=hide;n.decoys=[];g.emit('reelSwap',{x:g.boss.x,y:g.boss.y});
 }
 
 // ——— The fight ———
@@ -185,7 +191,9 @@ export function damageManipulator(g,amount,reflected=false){
 export function stepStudioPlatforms(g,dt){
  if(g.room!==6)return;const b=g.boss,n=b.studio,list=g.platforms.filter(s=>s.room===6&&s.studioPlatform);
  const live=b.active&&b.hp>0&&n;
- for(const s of list)s.intangible=!!(live&&n.phase===3&&n.fakes.includes(s.index));
+ // Phase 3: a hidden strip is gone (no collision, not drawn); a leaving one still holds while it blinks.
+ if(live&&n.phase===3&&n.leaving)for(const k of Object.keys(n.leaving)){n.leaving[k]-=dt;if(n.leaving[k]<=0)delete n.leaving[k];}
+ for(const s of list)s.intangible=!!(live&&n.phase===3&&n.fakes.includes(s.index)&&!(n.leaving?.[s.index]>0));
  if(!live){for(const s of list){s.studioPhase='solid';s.studioTimer=5;}return;}
  if(n.phase===1){
   let missing=list.filter(s=>['gap','forming'].includes(s.studioPhase)&&!s.burnGap).length;
