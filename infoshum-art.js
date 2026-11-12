@@ -1,6 +1,6 @@
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor} from './infoshum-combat.js?v=0.21.5';
+import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos} from './infoshum-combat.js?v=0.21.5';
 import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.5';
 // Infoshum's three phases: the broadcast tower with Yuri in the relays, the colossus, the free creature in the storm.
 import {rooms,WIDTH} from './level.js?v=0.21.5';
@@ -78,12 +78,10 @@ function drawHallBack(c,a,g,time){
  if(n.shield&&n.mode!=='opening')drawShield(c,g,time);
  if(n.take?.show==='yuri'){const sc=towerScreen(g);c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=14;c.lineWidth=2;c.globalAlpha=.55+.3*Math.sin(time*8);c.beginPath();c.roundRect?c.roundRect(sc.x+2,sc.y+2,sc.w-4,sc.h-4,10):c.rect(sc.x+2,sc.y+2,sc.w-4,sc.h-4);c.stroke();c.restore();}
 }
-// Televisions thrown from a screen (the tower's in phase 1, the colossus head's in «Ливень экранов») and the static
-// puddles they leave. In the rain each landing spot is marked from the moment the set leaves the screen.
+// Televisions thrown from the tower's screen and the static puddles they leave.
 function drawTvRain(c,a,n,time){
  const img=a.infoshumFx1,F=AT.fx1;if(!img)return;
  for(const q of n.puddles){const k=q.time/WAVE.puddle,p=F['pud'+Math.min(3,Math.floor(k*4))];stand(c,img,p,q.x,q.y+8,WAVE.puddleHalf*2.6);}
- for(const t of n.tvs)if(t.rain&&t.state==='fly'){c.save();c.globalAlpha=(t.t<0?.35:.55)+.35*Math.abs(Math.sin(time*10));c.fillStyle='#ff5ae0';c.beginPath();c.ellipse(t.tx,t.ty+2,34,7,0,0,Math.PI*2);c.fill();c.globalAlpha=1;c.strokeStyle='#ffd0f4';c.lineWidth=1;c.beginPath();c.ellipse(t.tx,t.ty+2,34,7,0,0,Math.PI*2);c.stroke();c.restore();}
  for(const t of n.tvs){if(t.t<0)continue;if(t.state==='fly'){const k=t.t/WAVE.flight,x=t.fx+(t.tx-t.fx)*k,y=t.fy+(t.ty-t.fy)*k-Math.sin(k*Math.PI)*160,p=F['tv'+Math.floor(time*10)%2];piece(c,img,p,x-26,y-28,52,56);}
   else stand(c,img,F.tvhit,t.tx,t.ty+8,74);}
 }
@@ -252,7 +250,6 @@ function drawColossusForeground(c,a,g,time){
  if(col.dust){const p=AT.parts.dust,k=col.dust.time/.45,w=180*(1+k*.5),h=w*p.r[3]/p.r[2];piece(c,img,p,col.dust.x-w/2,FLOOR-h+14,w,h,{alpha:1-k});}
  const s=col.sweep;if(s&&s.state==='warn'){const y=s.low?FLOOR-22:FLOOR-62;drawLineWarning(c,a,rooms[g.room].x+TOWER.cx-COL.sweepSpan/2,y,COL.sweepSpan,time);}
  if(n.stage==='colossus')drawCannon(c,a,g,time);
- drawTvRain(c,a,n,time);
  flash(c,g,Math.min(.4,col.flash*1.4));
  if(n.stage==='breakout')drawBreakout(c,a,g,n.transitionProgress,time);
 }
@@ -272,7 +269,7 @@ const YR={"y0":{"r":[0,0,151,158],"b":[96.0,147.5]},"y1":{"r":[153,0,168,160],"b
 function yuriCheer(c,a,cx,cy,t){const img=a.infoshumYuriRope;if(!img)return;const p=YR['y'+(t<1.4?6:7)],w=p.r[2]*YK,h=p.r[3]*YK,x=cx-230,y=cy-150+Math.sin(t*3)*4-(t>2.2?(t-2.2)*60:0);c.save();c.globalAlpha=t>2.2?Math.max(0,1-(t-2.2)/.8):Math.min(1,t/.2);c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(x-w/2),Math.round(y-h/2),Math.round(w),Math.round(h));c.restore();}
 function drawYuriRope(c,a,g,f,time){
  const img=a.infoshumYuriRope,b=g.boss;if(!img)return;const r=rooms[g.room];
- if(f.mode==='dizzy'&&f.yuri){f.yuriT=FREE.dizzyYuri-f.timer;f.yuriDone=undefined;}else if(b.hp<=0){if(f.yuriDone===undefined)f.yuriDone=time;}
+ if(f.mode==='pulled'&&f.yuri){f.yuriT=FREE.pull-f.timer;f.yuriDone=undefined;}else if(f.mode==='dizzy'&&f.yuri){f.yuriT=FREE.pull+FREE.dizzyYuri-f.timer;f.yuriDone=undefined;}else if(b.hp<=0){if(f.yuriDone===undefined)f.yuriDone=time;}
  const won=b.hp<=0,e=won?time-f.yuriDone:f.yuriT||0,left=f.x-r.x>300,side=left?-1:1,ax=f.x+side*175,ay=f.gy-150+Math.sin(time*3)*4;
  let n;if(won)n=e<1.2?6:7;else if(e<.3)n=0;else if(e<.55)n=1;else if(e<.85)n=2;else n=Math.floor(e*1.4)%3===2?5:3+Math.floor(time*6)%2;
  const p=YR['y'+n],w=p.r[2]*YK,h=p.r[3]*YK,flip=!left,fly=n===0?(1-e/.3)*120:0,x0=ax-p.b[0]*YK*(flip?-1:1),y0=ay-p.b[1]*YK-fly;
@@ -281,20 +278,33 @@ function drawYuriRope(c,a,g,f,time){
   c.save();c.lineCap='round';c.strokeStyle='#3a1260';c.lineWidth=9;c.beginPath();c.moveTo(sx,sy);c.quadraticCurveTo(mx,my,tx,ty);c.stroke();c.strokeStyle='#a347e6';c.lineWidth=5;c.stroke();c.strokeStyle='#e7a6ff';c.lineWidth=1.5;c.stroke();
   c.beginPath();c.ellipse(tx,ty,34,14,0,0,Math.PI*2);c.strokeStyle='#3a1260';c.lineWidth=8;c.stroke();c.strokeStyle='#a347e6';c.lineWidth=4;c.stroke();c.restore();}
 }
+// «Двойники»: two pale copies high on either side; their dive lines blink, then they dive through Uma's spot.
+function drawGhosts(c,a,f,time){
+ const prep=f.mode==='ghostPrep',k=prep?0:1-Math.max(0,f.timer)/FREE.ghostDash,appear=prep?Math.min(1,(FREE.ghostPrep-f.timer)/.4):1;
+ for(const gh of f.ghosts){const dx=gh.x1-gh.x0,dy=gh.y1-gh.y0;
+  if(prep){c.save();c.globalAlpha=.35+.35*Math.abs(Math.sin(time*10));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*80;c.beginPath();c.moveTo(gh.x0,gh.y0);c.lineTo(gh.x1,gh.y1);c.stroke();c.restore();}
+  const q=ghostPos(gh,k);c.save();c.globalAlpha=(prep?.25+.35*appear:.65)*(k>.85?(1-k)/.15:1);c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';
+  c.translate(q.x,q.y);let ang=Math.atan2(dy,dx);if(dx<0){c.scale(-1,1);ang=Math.atan2(dy,-dx);}c.rotate(prep?0:ang);free2(c,a,prep?'w2':'m'+Math.floor(time*14)%2,0,0);c.restore();}
+}
 function drawFree(c,a,g,time){
  const b=g.boss,f=b.network.free;if(!f)return;
  for(const t of f.tentacles){if(t.state==='warn')freePiece(c,a,'crack',t.x,t.y+2,{k:.5,alpha:.6+.4*Math.abs(Math.sin(time*12))});
   else{const k=Math.min(1,t.time/.1)*(t.time>FREE.tentUp-.15?Math.max(0,(FREE.tentUp-t.time)/.15):1),p=AT.free.tent,w=p.r[2]*.62,h=p.r[3]*.62*k;piece(c,a.infoshumFree,p,t.x-w/2,t.y+10-h,w,h);}}
- for(const s of f.shards)freePiece(c,a,'sh'+Math.floor(time*12)%3,s.x,s.y,{k:.42,flip:s.vx<0});
+ // A swatted shard turns gold on its way back.
+ for(const s of f.shards){if(s.back){c.save();c.filter='sepia(1) saturate(3) brightness(1.35)';}freePiece(c,a,'sh'+Math.floor(time*12)%3,s.x,s.y,{k:.42,flip:s.vx<0});if(s.back)c.restore();}
  if(f.mode==='ramPrep'){const x0=Math.min(f.tx,f.ex),x1=Math.max(f.tx,f.ex);drawLineWarning(c,a,x0,f.ty,x1-x0,time);}
  // For the last blow Yuri holds him from a surviving screen.
- if(f.mode==='dizzy'&&f.yuri)drawYuriRope(c,a,g,f,time);
+ if((f.mode==='dizzy'||f.mode==='pulled')&&f.yuri)drawYuriRope(c,a,g,f,time);
+ if(f.ghosts&&(f.mode==='ghostPrep'||f.mode==='ghostDash'))drawGhosts(c,a,f,time);
  const ground={ay:1,y:f.gy+10};let name='i'+[0,1,2,3,4][Math.floor(time*6)%5],flip=false,place=null;
  if(f.mode==='enter')name='r'+Math.min(2,Math.floor((FREE.enter-f.timer)/FREE.enter*3));
  else if(f.mode==='tentacle')name='s'+Math.floor(time*8)%3;
  else if(f.mode==='volley')name=f.timer>0?'i0':'r'+(1+Math.floor(time*8)%2);
  else if(f.mode==='ramPrep'){name='w'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/FREE.ramPrep)*3));flip=f.dir<0;}
  else if(f.mode==='ram'){name='m'+Math.floor(time*14)%2;flip=f.dir<0;}
+ else if(f.mode==='ghostPrep')name='r'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/FREE.ghostPrep)*3));
+ else if(f.mode==='ghostDash')name='r2';
+ else if(f.mode==='pulled')name='d0';
  else if(f.mode==='crash'){name='c'+Math.min(2,Math.floor((FREE.crash-f.timer)/FREE.crash*3));place=ground;}
  else if(f.mode==='dizzy'){name='d'+Math.floor(time*4)%2;place=ground;}
  else if(f.mode==='hit'){name='t'+Math.min(1,Math.floor((FREE.hit-f.timer)/FREE.hit*2));}

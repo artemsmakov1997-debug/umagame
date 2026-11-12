@@ -1,5 +1,5 @@
 import {rooms} from './level.js?v=0.21.5';
-import {rect} from './pixel.js?v=0.21.5';
+import {rect,text} from './pixel.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
 import {studioDock,cranePivot,craneTip,TRACK_Y,DOLLY,DECOYS,WARP,FRAME,VIEWFINDER,SCISSORS_AIM} from './manipulator-combat.js?v=0.21.5';
 const clamp01=v=>Math.max(0,Math.min(1,v));
@@ -49,11 +49,6 @@ export function drawStudioBackdrop(c,a,g,t){
  drawTrack(c,g);
  // The crane stands behind the stage, in the backdrop's shade: it carries the camera but never touches Uma.
  if(n.crane){c.save();c.filter='brightness(.58) saturate(.75)';c.globalAlpha=.92;drawCrane(c,a,n.crane,n.phase===1);c.restore();}
- // Phase 3 illusions: fake strips and decoys look exactly like the real ones, but cast no shadow.
- if(n.phase===3&&n.mode!=='dark'){
-  for(const i of n.decoys){const [x,y,w]=DECOYS[i];drawNeon(c,a,r.x+x,y,w,t,i);}
-  for(const s of g.platforms)if(s.room===6&&s.intangible)drawNeon(c,a,s.x,s.y,s.w,t,s.index);
- }
 }
 function drawTrack(c,g){
  const r=rooms[6],y=TRACK_Y+3;c.save();c.globalAlpha=.9;
@@ -117,10 +112,15 @@ function projectorFrame(b,n,t){
  if(b.hurtTime>0)return 3;
  switch(n.mode){case 'project':return 0;case 'charge':case 'beam':return 1;case 'dark':return 2;case 'warp':return 4;default:return 0;}
 }
+// Phase 3: the strips about to vanish blink red with a dashed outline and a «!» over them.
+function drawLeaving(c,g,t){
+ const n=g.boss.studio;if(n.phase!==3||!n.leaving)return;
+ for(const s of g.platforms){if(s.room!==6||!(n.leaving[s.index]>0))continue;const on=Math.floor(t*10)%2===0;c.save();c.globalAlpha=on?.85:.4;c.strokeStyle='#ff6a7d';c.lineWidth=2;c.setLineDash?.([6,4]);c.strokeRect(s.x-2,s.y-6,s.w+4,22);c.globalAlpha=on?.35:.15;c.fillStyle='#ff6a7d';c.fillRect(s.x,s.y-4,s.w,18);c.restore();if(on)text(c,'!',s.x+s.w/2-2,s.y-22,'#ffdf9c',2);}
+}
 export function drawManipulator(c,a,g,t){
  const b=g.boss,n=b.studio;if(!n)return;const cx=b.x+b.w/2,bottom=b.y+b.h,flip=b.dir<0,width=b.w+30;
  // Phase 3: real strips cast a shadow on what lies below.
- if(n.phase===3)drawShadows(c,a,g);
+ if(n.phase===3){drawShadows(c,a,g);drawLeaving(c,g,t);}
  for(const s of n.scorches)centered(c,a.manipulatorFx,MFX.flash,s.x,s.y-4,18*(1-s.t/.6)+6,1-s.t/.6);
  if(n.phase===2)drawStopFrame(c,a,g,n,t);
  const warping=n.mode==='warp',out=warping&&!n.arrived,arrive=warping?clamp01(1-n.timer/(WARP/2)):1;

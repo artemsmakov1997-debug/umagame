@@ -23,7 +23,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
   assert.equal(await until(p,'2:develop',30),'2:develop');await shot(p,'montage-develop-'+width);
   await p.evaluate(async()=>{const{damageBoss}=await import('./boss.js?v=0.21.5');testGame.boss.hp=9;damageBoss(testGame,1);});
   await place(p,4,200);
-  assert.equal(await until(p,'3:project',30),'3:project');assert.ok(await p.evaluate(()=>testGame.platforms.filter(s=>s.room===6&&s.intangible).length===3));await shot(p,'montage-projector-'+width);
+  assert.equal(await until(p,'3:project',30),'3:project');assert.ok(await p.evaluate(()=>testGame.boss.studio.fakes.length>=3));await shot(p,'montage-projector-'+width);
   assert.equal(await until(p,'3:beam',4),'3:beam');await shot(p,'montage-laser-'+width);
   assert.equal(await until(p,'3:dark',10),'3:dark');await shot(p,'montage-dark-'+width);
   await p.keyboard.press('Escape');const frozen=await p.evaluate(()=>JSON.stringify(testGame.boss.studio));await p.waitForTimeout(80);assert.equal(await p.evaluate(()=>JSON.stringify(testGame.boss.studio)),frozen);await p.keyboard.press('Escape');

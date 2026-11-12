@@ -73,11 +73,6 @@ test('an arm sweeps low (a jump clears it) or high (a crouch passes under it); t
  const g=colossus(false),a=attack(g,COL.plan.indexOf('beam')),m=a.beam;assert.equal(m.state,'charge');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>m.state==='fire',120));tick(g,30);assert.equal(g.health,h-1);
  const q=colossus(false),c=attack(q,COL.plan.indexOf('beam'));assert.ok(c.beam);q.player.inv=0;const h2=q.health;for(let i=0;i<400&&c.beam;i++)q.step(1/60,{right:true});assert.equal(q.health,h2,'a running cat outruns the beam');
 });
-test('«Ливень экранов»: the head throws televisions at marked spots — one onto a cat that stands still; a running cat gets through',()=>{
- const g=colossus(false),a=attack(g,COL.plan.indexOf('rain'));assert.equal(a.rain,true);const n=g.boss.network,px=g.player.x+g.player.w/2;assert.ok(n.tvs.length>=4);assert.ok(n.tvs.some(t=>Math.abs(t.tx-px)<1));
- g.player.inv=0;const h=g.health;for(let i=0;i<60*5&&a.rain;i++)tick(g,1);assert.equal(a.rain,false,'the attack ends');assert.ok(g.health<h,'a cat that stands still is hit');assert.equal(a.mode,'idle');
- const q=colossus(false),c=attack(q,COL.plan.indexOf('rain'));q.player.inv=0;const h2=q.health;for(let i=0;i<60*5&&c.rain;i++)q.step(1/60,{right:q.player.x<16128+1300,left:q.player.x>=16128+1300});assert.ok(q.health>=h2-1);
-});
 test('the second fall cracks the head: he bursts out of it into the storm («На свободе»)',()=>{
  const g=colossus(),n=g.boss.network;for(let k=0;k<2;k++)assert.ok(dropColossus(g),'fall '+k);assert.equal(n.stage,'breakout');assert.equal(g.boss.hp,4);assert.equal(g.boss.phase,3);
  assert.ok(until(g,()=>n.stage==='free',260));assert.ok(g.platforms.filter(s=>s.room===8&&!s.bossHidden).every(s=>s.storm!==undefined));assert.equal(n.free.mode,'enter');
@@ -89,17 +84,23 @@ test('tentacles burst out of the ground where Uma stood, after a crack warns; sh
  const g=free(false),f=freeAttack(g,1);place(g,'8:2',120);g.player.inv=0;const h=g.health;assert.equal(f.mode,'volley');assert.ok(until(g,()=>f.shards.length>0,120));const s=f.shards[0];assert.ok(Math.abs(s.y-(g.player.y+18))<30);assert.equal(Math.sign(s.vx),Math.sign(g.player.x-s.x));
  assert.ok(until(g,()=>g.health<h,200),'a shard hits a cat that stands still');
 });
-test('the ram: if it hits Uma he flies on; if she dodges it he crashes at the end of her island, dizzy — a paw tears a tentacle off',()=>{
- const g=free(false),b=g.boss,f=freeAttack(g,2),s=place(g,'8:2',200);g.player.inv=9;tick(g,1);assert.equal(f.mode,'ramPrep');assert.equal(f.gy,s.y);
- assert.ok(until(g,()=>f.mode==='ram',120));g.player.inv=0;const h=g.health;assert.ok(until(g,()=>f.mode!=='ram',120));assert.equal(g.health,h-1);assert.equal(f.mode,'bounce');assert.equal(infoshumTargets(g).length,0);
- const q=free(false),c=q.boss,e=freeAttack(q,2),isl=place(q,'8:2',200);assert.ok(until(q,()=>e.mode==='ram',120));const h2=q.health;
- for(let i=0;i<120&&e.mode==='ram';i++){Object.assign(q.player,{y:isl.y-48-130,vy:0,grounded:false});q.step(1/60,{});}assert.equal(q.health,h2);assert.equal(e.mode,'crash');
- assert.ok(until(q,()=>e.mode==='dizzy',60));assert.ok(e.x>isl.x&&e.x<isl.x+isl.w,'he lies on her island');assert.deepEqual(infoshumTargets(q).map(t=>t.id),['core']);assert.equal(e.yuri,false);
- assert.ok(ramBox(e).w>0);assert.ok(swing(q,freeCoreBox(e)));assert.equal(c.hp,2);assert.equal(e.hits,1);assert.equal(e.mode,'hit');assert.equal(swing(q,freeCoreBox(e)),false,'only while dizzy');
+test('«Двойники»: two ghost copies dive through Uma\'s spot from high on either side; then Yuri drags the real one down for the paw',()=>{
+ const g=free(false),b=g.boss,f=freeAttack(g,2),s=place(g,'8:2',200);g.player.inv=9;tick(g,1);assert.equal(f.mode,'ghostPrep');assert.equal(f.ghosts.length,2);
+ const px=g.player.x+g.player.w/2;assert.ok(f.ghosts.every(gh=>gh.y0<120),'they start high');assert.ok(f.ghosts.some(gh=>gh.x0<px)&&f.ghosts.some(gh=>gh.x0>px),'one on each side');
+ assert.ok(until(g,()=>f.mode==='ghostDash',120));g.player.inv=0;const h=g.health;assert.ok(until(g,()=>f.mode!=='ghostDash',60));assert.equal(g.health,h-1,'standing still, a ghost hits');
+ assert.equal(f.mode,'pulled');assert.equal(f.yuri,true);assert.ok(g.events.some(v=>v.type==='yuriHold'));assert.ok(until(g,()=>f.mode==='dizzy',60));
+ assert.deepEqual(infoshumTargets(g).map(t=>t.id),['core']);assert.ok(swing(g,freeCoreBox(f)));assert.equal(b.hp,2);assert.equal(f.hits,1);assert.equal(f.mode,'hit');assert.equal(swing(g,freeCoreBox(f)),false,'only while held');
+ // Out of the dive lines (a dash) the ghosts miss.
+ const q=free(false),e=freeAttack(q,2);place(q,'8:2',200);assert.ok(until(q,()=>e.mode==='ghostDash',120));const h2=q.health;q.player.dash=.3;q.player.inv=0;
+ for(let i=0;i<40&&e.mode==='ghostDash';i++){q.player.dash=.3;q.step(1/60,{});}assert.equal(q.health,h2);
+});
+test('a shard swatted with the paw flies back gold and bursts on Infoshum, clearing some static',()=>{
+ const g=free(false),f=freeAttack(g,1),n=g.boss.network;place(g,'8:2',120);g.player.inv=99;assert.ok(until(g,()=>f.shards.length>0,120));const s=f.shards[0];
+ for(let i=0;i<120&&!s.back;i++){const dir=Math.sign(s.x-(g.player.x+17));g.player.dir=dir||1;tick(g,1,{attack:Math.abs(s.x-(g.player.x+17))<60&&g.player.cooldown===0});}
+ assert.equal(s.back,true,'swatted');assert.equal(Math.sign(s.vx),Math.sign(f.x-s.x));n.noiseTime=10;const before=n.noiseTime;assert.ok(until(g,()=>!f.shards.includes(s),200));assert.ok(n.noiseTime<before||s.life<=0);
 });
 test('for the last blow Yuri holds him longer; the paw ends the fight in the finale',()=>{
- const g=free(),b=g.boss,f=b.network.free;b.hp=2;const e=freeAttack(g,2),isl=place(g,'8:2',200);assert.ok(until(g,()=>e.mode==='ram',120));
- for(let i=0;i<120&&e.mode==='ram';i++){Object.assign(g.player,{y:isl.y-48-130,vy:0,grounded:false});g.step(1/60,{});}assert.ok(until(g,()=>e.mode==='dizzy',60));
+ const g=free(),b=g.boss,f=b.network.free;b.hp=2;const e=freeAttack(g,2);place(g,'8:2',200);assert.ok(until(g,()=>e.mode==='dizzy',300));
  assert.equal(e.yuri,true);assert.ok(e.timer>FREE.dizzy);assert.ok(g.events.some(v=>v.type==='yuriHold'&&v.last));
  assert.ok(swing(g,freeCoreBox(f)));assert.equal(g.mode,'bossDefeat');g.storyEnabled=true;g.skipBossDefeat();assert.equal(g.mode,'ending');
 });

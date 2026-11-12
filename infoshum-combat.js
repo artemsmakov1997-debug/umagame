@@ -33,8 +33,14 @@ export const WAVE={opening:1.4,gap:[1.05,.9,.75],plan:['scan','whip','volley','w
  yuriDelay:1.1,yuriPoint:.9,hitFlash:.3,reboot:.8,takeover:12,yuriFace:1.05,face:1.1,flip:.22,relayUnit:.5,screenUnit:1};
 export const ARRIVE=1.6,ASSEMBLE=3.6,BREAKOUT=3;
 export const COL={reach:110,windup:.55,intro:2,gap:[1.1,.85,.6],aim:[1.1,.95,.8],lock:.35,fall:.12,stuck:[2.8,2.6,2.4],lift:.45,fistHalf:58,track:340,shockSpeed:430,shockRange:520,
- sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,rainGap:.32,rainSpread:170,plan:['slam','sweep','rain','slam','beam','rain']};
-export const FREE={enter:1.2,gap:[1,.8,.6],hoverY:120,tentWarn:.75,tentUp:.5,tentGap:.7,tentHalf:30,volleyMove:.7,volleyGap:.42,shardSpeed:420,ramPrep:.95,ramSpeed:780,crash:.35,dizzy:2.8,dizzyYuri:4.2,hit:.7,bounce:.7,plan:['tentacle','volley','ram']};
+ sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,plan:['slam','sweep','slam','beam']};
+export const FREE={enter:1.2,gap:[1,.8,.6],hoverY:120,tentWarn:.75,tentUp:.5,tentGap:.7,tentHalf:30,volleyMove:.7,volleyGap:.42,shardSpeed:420,ramPrep:.95,ramSpeed:780,crash:.35,dizzy:2.8,dizzyYuri:4.2,hit:.7,bounce:.7,
+ ghostPrep:1.15,ghostDash:.5,ghostSpread:260,ghostOver:140,pull:.6,reflect:1.25,plan:['tentacle','volley','ghosts']};
+// «Двойники»: he rises out of reach and splits off two ghostly copies high on either side of Uma; their dive lines
+// show, then both dive through the spot where she stood. Then Yuri lassoes the real one and drags him down: the
+// opening. A shard of his volley swatted with the paw flies back at him (it clears some static if it hits).
+export function ghostPos(gh,k){return {x:gh.x0+(gh.x1-gh.x0)*k,y:gh.y0+(gh.y1-gh.y0)*k};}
+export function ghostBox(p){return {x:p.x-34,y:p.y-26,w:68,h:52};}
 export const STORM_ISLANDS={0:[0,474,460,0],11:[520,474,530,0],12:[1110,474,426,0],1:[92,366,296,1],3:[1131,366,296,1],4:[411,413,165,0],5:[965,413,165,0],2:[617,332,300,1],9:[464,272,145,2],10:[961,272,145,2]};
 export const towerTop=()=>TOWER.base-TOWER.h;
 export function towerScreen(g){const x=rooms[g.room].x+TOWER.cx;return {x:x-102,y:towerTop()+51,w:204,h:146};}
@@ -175,18 +181,13 @@ export function fistBox(f){return {x:f.x-48,y:FLOOR-122,w:96,h:112};}
 export function headBox(g){const x=centre(g)-30;return {x:x-75,y:FLOOR-110,w:150,h:104};}
 export function sweepBox(s){return {x:s.x-80,y:s.low?FLOOR-38:FLOOR-84,w:160,h:s.low?38:44};}
 function idle(a){a.mode='idle';a.timer=COL.gap[roundOf(a)];}
-function collapse(g){const n=g.boss.network,a=n.col;a.mode='collapse';a.clock=0;a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.rain=false;n.tvs=[];n.puddles=[];a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
+function collapse(g){const a=g.boss.network.col;a.mode='collapse';a.clock=0;a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
 function rise(a){a.mode='rise';a.clock=0;a.timer=COL.rise;a.hands={L:true,R:true};a.head=1;a.headTime=COL.rise;a.flash=.3;}
 function nextAttack(g){
  const n=g.boss.network,a=n.col,p=g.player,px=p.x+p.w/2,kind=COL.plan[a.step++%COL.plan.length];a.mode='attack';
  // A fist lands at a fixed spot beside the body, on Uma's side (the other hand if that one is broken).
  if(kind==='slam'){let side=px<centre(g)?'L':'R';if(!a.hands[side])side=side==='R'?'L':'R';const x=centre(g)+(side==='L'?-1:1)*COL.reach;a.fist={side,x,y:-240,state:'aim',timer:COL.aim[roundOf(a)]+COL.windup,weak:false,lastSwing:-1,age:0};g.emit('infoshumWarning',{attack:'slam',x,y:FLOOR});}
  else if(kind==='sweep'){const dir=px<centre(g)?-1:1;a.sweep={dir,low:Math.random()<.5,x:centre(g)-dir*COL.sweepSpan/2,state:'warn',timer:COL.sweepWarn,travel:0,age:0};g.emit('infoshumWarning',{attack:'sweep'});}
- // «Ливень экранов»: the head monitor spits a string of televisions in high arcs — the first lands where Uma
- // stands, the rest to either side and one more on her again; each crash leaves a puddle of static for a moment.
- else if(kind==='rain'){const r=rooms[g.room],h=headBox(g),offs=[0,-1,1,0,-2,2],count=roundOf(a)>0?6:4;a.rain=true;a.head=2;a.headTime=1;a.roar=.7;
-  for(let i=0;i<count;i++){const tx=clamp(px+offs[i]*COL.rainSpread,r.x+40,r.end-40);n.tvs.push({fx:h.x+h.w/2,fy:h.y+h.h/2,tx,ty:beamFloor(g,tx),t:-.45-i*COL.rainGap,state:'fly',rain:true});}
-  g.emit('infoshumWarning',{attack:'rain'});}
  else{a.beam={state:'charge',timer:COL.beamCharge,x:px};a.head=2;a.headTime=9;g.emit('infoshumWarning',{attack:'beam'});}
 }
 function stepFist(g,dt){
@@ -216,8 +217,8 @@ function stepBeam(g,dt){
 }
 function stepColossus(g,dt){
  const b=g.boss,n=b.network,a=n.col,p=g.player;a.clock=(a.clock||0)+dt;if(a.hurt>0)a.hurt-=dt;if(a.roar>0)a.roar-=dt;
- stepEmo(a,dt);if(a.mode!=='idle'||a.hurt>0||a.fist||a.sweep||a.beam||a.rain)a.emo=null;
- if(a.mode==='idle'&&!a.fist&&!a.sweep&&!a.beam&&!a.rain){a.moodT=(a.moodT??1.2)-dt;if(a.moodT<=0){if(Math.random()<.3)a.roar=.7;else emote(a,undefined,1+Math.random()*.6);a.moodT=2+Math.random()*1.6;}}
+ stepEmo(a,dt);if(a.mode!=='idle'||a.hurt>0||a.fist||a.sweep||a.beam)a.emo=null;
+ if(a.mode==='idle'&&!a.fist&&!a.sweep&&!a.beam){a.moodT=(a.moodT??1.2)-dt;if(a.moodT<=0){if(Math.random()<.3)a.roar=.7;else emote(a,undefined,1+Math.random()*.6);a.moodT=2+Math.random()*1.6;}}
  a.flash=Math.max(0,a.flash-dt);a.headTime=Math.max(0,a.headTime-dt);if(a.headTime<=0&&a.mode!=='collapse')a.head=0;
  if(a.dust){a.dust.time+=dt;if(a.dust.time>.45)a.dust=null;}
  b.x=centre(g)-b.w/2;b.y=120;
@@ -228,9 +229,7 @@ function stepColossus(g,dt){
  if(a.mode==='collapse'){b.state='recover';if(a.timer<=0)rise(a);return;}
  if(a.mode==='rise'){b.state='windup';if(a.timer<=0)idle(a);return;}
  b.state='windup';
- stepAttacks(g,dt);
  if(a.fist)stepFist(g,dt);else if(a.sweep)stepSweep(g,dt);else if(a.beam)stepBeam(g,dt);
- else if(a.rain){if(!n.tvs.length){a.rain=false;idle(a);}}
  else if(a.mode==='idle'&&a.timer<=0)nextAttack(g);
 }
 function strikeColossus(g,paw){
@@ -247,7 +246,7 @@ function strikeColossus(g,paw){
 // ——— The breakout: he bursts out of the head screen ———
 function beginBreakout(g){
  const b=g.boss,n=b.network,a=n.col;
- n.stage='breakout';n.mode='breakout';n.timer=BREAKOUT;n.transitionProgress=0;a.mode='collapse';a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.rain=false;n.tvs=[];n.puddles=[];g.bolts=[];
+ n.stage='breakout';n.mode='breakout';n.timer=BREAKOUT;n.transitionProgress=0;a.mode='collapse';a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];g.bolts=[];
  b.phase=3;b.phaseName='На свободе';b.state='phaseChange';b.hp=PHASE_HP;g.player.inv=Math.max(g.player.inv,BREAKOUT+1);
  const h=headBox(g);g.emit('bossPhase',{boss:'infoshum',phase:3,name:'На свободе'});g.emit('infoshumRupture',{x:h.x+h.w/2,y:h.y});
 }
@@ -266,6 +265,7 @@ function targetSurface(g){
  const s=support||below||surfaces.sort((a,b)=>Math.abs(a.y-p.y-p.h)-Math.abs(b.y-p.y-p.h))[0]||g.platforms.find(s=>s.room===g.room&&!s.bossHidden);
  return {x:clamp(p.x+p.w/2,s.x+32,s.x+s.w-32),y:s.y,platformId:s.id,left:s.x,right:s.x+s.w};
 }
+const r0=g=>rooms[g.room].x;
 export function ramBox(f){return {x:f.x-46,y:f.y-34,w:92,h:68};}
 export function freeCoreBox(f){return {x:f.x-42,y:f.gy-64,w:84,h:64};}
 function hover(f,gap){f.mode='hover';f.timer=gap;}
@@ -273,10 +273,11 @@ function nextFree(g){
  const b=g.boss,f=b.network.free,p=g.player,r=rooms[g.room],px=p.x+p.w/2,py=p.y+p.h/2,kind=FREE.plan[f.step++%FREE.plan.length];
  if(kind==='tentacle'){f.mode='tentacle';f.count=2+Math.min(2,f.hits);f.sub=0;}
  else if(kind==='volley'){const side=px-r.x<768?1:-1;f.mode='volley';f.timer=FREE.volleyMove;f.count=3;f.sub=0;f.from={x:f.x,y:f.y};f.tx=clamp(px+side*340,r.x+60,r.end-60);f.ty=clamp(py-6,70,440);f.dir=-side;}
- else{const s=targetSurface(g),fromLeft=px>=(s.left+s.right)/2;f.mode='ramPrep';f.timer=FREE.ramPrep;f.from={x:f.x,y:f.y};f.dir=fromLeft?1:-1;f.tx=fromLeft?s.left-180:s.right+180;f.ex=fromLeft?s.right-48:s.left+48;f.gy=s.y;f.ty=s.y-40;f.rammed=false;
-  g.emit('infoshumWarning',{attack:'ram',x:f.tx,y:f.ty});}
+ else{const s=targetSurface(g),feet=s.y-20,top=60;f.mode='ghostPrep';f.timer=FREE.ghostPrep;f.from={x:f.x,y:f.y};f.tx=clamp(px,r.x+120,r.end-120);f.ty=40;f.gy=s.y;f.rammed=false;
+  f.ghosts=[-1,1].map(side=>{const x0=clamp(px+side*FREE.ghostSpread,r.x+30,r.end-30),y0=top,dx=px-x0,dy=feet-y0,len=Math.hypot(dx,dy)||1;return {side,x0,y0,x1:px+dx/len*FREE.ghostOver,y1:feet+dy/len*FREE.ghostOver,hit:false};});
+  g.emit('infoshumWarning',{attack:'ghosts',x:px,y:feet});}
 }
-function stepFree(g,dt){
+function stepFree(g,dt,paw=null){
  const b=g.boss,n=b.network,f=n.free,p=g.player,px=p.x+p.w/2,py=p.y+p.h/2,gap=FREE.gap[Math.min(2,f.hits)];
  f.flash=Math.max(0,f.flash-dt);
  // «Помехи»: free, Infoshum floods the broadcast with static; full noise costs a life. Each blow clears some.
@@ -285,7 +286,11 @@ function stepFree(g,dt){
  for(const t of f.tentacles){t.time+=dt;if(t.state==='warn'&&t.time>=FREE.tentWarn){t.state='up';t.time=0;g.emit('boltImpact',{x:t.x,y:t.y,kind:'tentacle'});}
   if(t.state==='up'&&t.time<.3&&p.inv<=0&&p.dash===0&&Math.abs(px-t.x)<FREE.tentHalf+p.w/2-8&&p.y+p.h>t.y-90&&p.y<t.y+6)g.hurt(false,t.x);}
  f.tentacles=f.tentacles.filter(t=>!(t.state==='up'&&t.time>FREE.tentUp));
- for(const s of f.shards){s.x+=s.vx*dt;s.life-=dt;if(p.inv<=0&&p.dash===0&&overlap(p,{x:s.x-22,y:s.y-9,w:44,h:18}))g.hurt(false,s.x);}
+ for(const s of f.shards){s.x+=s.vx*dt;s.life-=dt;const box={x:s.x-22,y:s.y-9,w:44,h:18};
+  // A swat sends the shard back; a returned shard never hurts Uma and bursts on Infoshum.
+  if(!s.back&&paw&&p.attack>0&&overlap(paw,box)){s.back=true;s.vx=-s.vx*FREE.reflect;s.life=Math.max(s.life,1.6);g.emit('enemyHit',{x:s.x,y:s.y,enemyType:'shard'});continue;}
+  if(s.back){if(Math.abs(s.x-f.x)<56&&Math.abs(s.y-f.y)<56){s.life=0;f.flash=.18;n.noiseTime=Math.max(0,n.noiseTime-noiseDuration(g)*NOISE_CLEAR*.5);n.noise=n.noiseTime/noiseDuration(g);g.emit('boltImpact',{x:s.x,y:s.y,kind:'reflect'});}continue;}
+  if(p.inv<=0&&p.dash===0&&overlap(p,box))g.hurt(false,s.x);}
  f.shards=f.shards.filter(s=>s.life>0);
  f.timer-=dt;const follow=()=>{f.x+=clamp(px-f.x,-140*dt,140*dt);f.y+=(FREE.hoverY+Math.sin(g.time*2)*8-f.y)*Math.min(1,dt*3);};
  const glide=total=>{const k=1-Math.max(0,f.timer)/total,e=k*k*(3-2*k);f.x=f.from.x+(f.tx-f.from.x)*e;f.y=f.from.y+(f.ty-f.from.y)*e;};
@@ -298,6 +303,11 @@ function stepFree(g,dt){
   if(f.timer>0)glide(FREE.volleyMove);else{f.x=f.tx;f.sub-=dt;f.y+=(clamp(py-6,70,440)-f.y)*Math.min(1,dt*4);
    if(f.sub<=0&&f.count>0){f.shards.push({x:f.x+f.dir*40,y:f.y,vx:f.dir*FREE.shardSpeed,life:2.4});f.count--;f.sub=FREE.volleyGap;g.emit('bossCast',{boss:'infoshum',ability:'shards',x:f.x,y:f.y});}
    if(f.count===0&&f.sub<=-.3)hover(f,gap);}}
+ else if(f.mode==='ghostPrep'){b.state='windup';glide(FREE.ghostPrep);if(f.timer<=0){f.mode='ghostDash';f.timer=FREE.ghostDash;g.emit('bossCast',{boss:'infoshum',ability:'ghosts',x:f.x,y:f.y});}}
+ else if(f.mode==='ghostDash'){b.state='casting';const k=1-Math.max(0,f.timer)/FREE.ghostDash;
+  for(const gh of f.ghosts){const q=ghostPos(gh,k);if(!f.rammed&&p.inv<=0&&p.dash===0&&overlap(p,ghostBox(q))){g.hurt(false,q.x);f.rammed=true;}}
+  if(f.timer<=0){const s=targetSurface(g);f.gy=s.y;f.from={x:f.x,y:f.y};f.tx=clamp(px+(px-r0(g)>768?-110:110),s.left+40,s.right-40);f.ty=s.y-34;f.mode='pulled';f.timer=FREE.pull;f.yuri=true;g.emit('yuriHold',{x:f.tx,y:f.gy-40,last:b.hp<=HIT_DAMAGE});}}
+ else if(f.mode==='pulled'){b.state='recover';glide(FREE.pull);if(f.timer<=0){f.x=f.tx;f.ghosts=null;f.mode='dizzy';f.timer=FREE.dizzyYuri;g.emit('infoshumWeak',{x:f.x,y:f.gy-40});}}
  else if(f.mode==='ramPrep'){b.state='windup';glide(FREE.ramPrep);if(f.timer<=0){f.x=f.tx;f.y=f.ty;f.mode='ram';g.emit('bossCast',{boss:'infoshum',ability:'ram',x:f.x,y:f.y});}}
  else if(f.mode==='ram'){b.state='casting';f.x+=f.dir*FREE.ramSpeed*dt;
   if(!f.rammed&&p.inv<=0&&p.dash===0&&overlap(p,ramBox(f))){g.hurt(false,f.x);f.rammed=true;}
@@ -336,7 +346,7 @@ export function stepInfoshum(g,dt,paw=null){
  if(n.stage==='assemble'){n.timer=Math.max(0,n.timer-dt);n.transitionProgress=1-n.timer/ASSEMBLE;portalIn(g,n.transitionProgress);if(n.timer===0)beginColossus(g);return;}
  if(n.stage==='colossus'){stepPortalOut(g,dt);stepColossus(g,dt);return;}
  if(n.stage==='breakout'){n.timer=Math.max(0,n.timer-dt);n.transitionProgress=1-n.timer/BREAKOUT;n.col.flash=Math.max(0,n.col.flash-dt);portalIn(g,n.transitionProgress);if(n.timer===0)beginFree(g);return;}
- if(n.stage==='free'){stepPortalOut(g,dt);stepFree(g,dt);}
+ if(n.stage==='free'){stepPortalOut(g,dt);stepFree(g,dt,paw);}
 }
 export function strikeInfoshum(g,paw){
  const b=g.boss,n=b.network,p=g.player;if(!b.active||!n||p.attack<=0||b.hp<=0||g.mode!=='playing')return false;

@@ -1,4 +1,4 @@
-import {musicScores,sceneMusic} from './music-scores.js?v=0.21.5';
+import {musicScores,sceneMusic,musicIntensity} from './music-scores.js?v=0.21.5';
 import {rooms} from './level.js?v=0.21.5';
 // Original chiptune score and procedural Foley. No downloads or external audio.
 function volume(key){try{const n=Number(globalThis.localStorage?.getItem('uma-volume-'+key)??'0.8');return Number.isFinite(n)?Math.max(0,Math.min(1,n)):.8;}catch{return .8;}}
@@ -39,29 +39,49 @@ export class GameAudio{
  setHidden(hidden){this.hidden=!!hidden;if(hidden){this.stop();this.next=0;}}
  setScene(view,game){
   const pause=view==='exit'||view==='game'&&['paused','lost','respawning','exited','loading'].includes(game.mode);
-  const theme=sceneMusic(view,game,rooms);
+  const theme=sceneMusic(view,game,rooms);this.intensity=musicIntensity(theme,game);
   this.duck=view==='game'&&['dialogue','waking','conclusion'].includes(game.mode);
   if(theme!==this.theme||pause!==this.paused){this.stop(pause?null:'music');this.step=0;this.next=0;this.theme=theme;this.paused=pause;}
   if(this.music)this.music.gain.setTargetAtTime(pause||this.hidden?0:this.duck?.12*this.musicVolume:.42*this.musicVolume,this.context.currentTime,.08);
  }
- voice({frequency=220,to=frequency,duration=.15,gain=.06,wave='square',start,pan=0,group='effects',noise=false,filter=1800}){
+ voice({frequency=220,to=frequency,duration=.15,gain=.06,wave='square',start,pan=0,group='effects',noise=false,filter=1800,attack=.007,vibrato=0}){
   const ctx=this.context;if(!ctx)return;const at=start??ctx.currentTime+.006,source=noise?ctx.createBufferSource():ctx.createOscillator(),volume=ctx.createGain();
   if(noise){source.buffer=this.noise;const eq=ctx.createBiquadFilter();eq.type='bandpass';eq.frequency.value=filter;eq.Q.value=.7;source.connect(eq);eq.connect(volume);}
   else{source.type=wave;source.frequency.setValueAtTime(Math.max(12,frequency),at);source.frequency.exponentialRampToValueAtTime(Math.max(12,to),at+duration);source.connect(volume);}
-  volume.gain.setValueAtTime(.0001,at);volume.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),at+.007);volume.gain.exponentialRampToValueAtTime(.0001,at+duration);
+  const rise=Math.min(attack,duration*.6);volume.gain.setValueAtTime(.0001,at);volume.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),at+rise);volume.gain.exponentialRampToValueAtTime(.0001,at+duration);
+  if(vibrato&&!noise){const lfo=ctx.createOscillator(),depth=ctx.createGain();lfo.frequency.value=5.2;depth.gain.value=frequency*vibrato;lfo.connect(depth);depth.connect(source.frequency);lfo.start(at);lfo.stop(at+duration+.02);}
   const bus=group==='music'?this.music:this.effects;
   if(ctx.createStereoPanner){const stereo=ctx.createStereoPanner();stereo.pan.value=pan;volume.connect(stereo);stereo.connect(bus);}else volume.connect(bus);
   const voice={source,group};this.voices.add(voice);source.onended=()=>{this.voices.delete(voice);source.disconnect();volume.disconnect();};source.start(at);source.stop(at+duration+.02);return voice;
  }
+ // One 8th-note step of the current theme (see music-scores.js for the notation).
  scheduleStep(index,start){
-  const score=musicScores[this.theme],step=index%64,part=Math.floor(step/16),beat=60/score.bpm/2,note=score.melody[step%score.melody.length],boss=['spreader','agitator','manipulator','infoshum'].includes(this.theme);
-  if(note!==null)this.voice({frequency:midi(note),duration:beat*.77,gain:score.gain??(boss?.043:.034),wave:score.wave,start,group:'music',pan:.12});
-  if(this.theme==='infoshum'&&note!==null&&step%4===0)this.voice({frequency:midi(note+7),duration:beat*.4,gain:.014,wave:'square',start:start+beat*.12,group:'music',pan:-.2});
-  if(step%2===0)this.voice({frequency:midi(score.bass[part]+(step%8===6?12:0)),duration:beat*1.5,gain:boss?.085:.065,wave:'triangle',start,group:'music',pan:-.12});
-  if(step%8===0)for(const n of score.chords[part])this.voice({frequency:midi(n),duration:beat*6,gain:.013,wave:'triangle',start,group:'music',pan:-.25});
-  if(score.drums.includes(step%8))this.voice({duration:.045,gain:boss?.028:.017,start,group:'music',noise:true,filter:score.noise,pan:.25});
-  if(score.drums.length&&step%4===0)this.voice({frequency:boss?125:98,to:42,duration:.13,gain:boss?.09:.06,wave:'sine',start,group:'music'});
-  if(score.drums.length&&step%8===4)this.voice({duration:.11,gain:.04,start,group:'music',noise:true,filter:score.noise*.55});
+  const sc=musicScores[this.theme];if(!sc)return;const step=index%sc.steps,bar=step>>3,pos=step&7,beat=60/sc.bpm/2,boss=['spreader','agitator','manipulator','infoshum'].includes(this.theme);
+  const level=this.intensity||0,up=sc.epic&&level>=2?2:0,at=start+(pos&1?beat*(sc.swing||0):0),chord=sc.chordNotes[bar].map(n=>n+up),f=n=>midi(n+up);
+  const v=o=>this.voice({group:'music',start:at,...o});
+  // Lead: a doubled, detuned or echoed voice; the dimension's lead wobbles.
+  const m=sc.melody[step],L=sc.lead;
+  if(m){const d=beat*m.hold*.92,o={frequency:f(m.note),duration:d,gain:L.gain,wave:L.wave,attack:L.attack||.007,pan:.12,vibrato:sc.wobble?.012:0};v(o);
+   if(L.detune)v({...o,frequency:f(m.note)*Math.pow(2,L.detune/1200),gain:L.gain*.6,pan:-.15});
+   if(L.octave)v({...o,frequency:f(m.note+L.octave),gain:L.gain*.55,pan:0});
+   if(L.echo)this.voice({...o,start:at+beat*L.echo[0],gain:L.gain*L.echo[1],pan:-.3,group:'music'});}
+  const k=sc.counterLine?.[step];if(k)v({frequency:f(k.note),duration:beat*k.hold*.8,gain:sc.counter.gain,wave:sc.counter.wave,pan:-.35});
+  // Pad: the bar's chord, swelling in slowly where the theme asks.
+  if(pos===0&&sc.pad)for(const n of chord){v({frequency:midi(n),duration:beat*8*.96,gain:sc.pad.gain,wave:sc.pad.wave,attack:sc.pad.attack||.05,pan:-.25});if(sc.pad.detune)v({frequency:midi(n)*Math.pow(2,sc.pad.detune/1200),duration:beat*8*.96,gain:sc.pad.gain*.7,wave:'sawtooth',attack:.12,pan:.25});}
+  // Arpeggio (the final boss adds it only when he breaks free).
+  if(sc.arp&&level>=(sc.arp.from||0)){const i=sc.arp.pattern[pos];if(i!==null&&i!==undefined){const n=chord[i%chord.length]+12*(sc.arp.octave+Math.floor(i/chord.length));v({frequency:midi(n),duration:beat*.55,gain:sc.arp.gain,wave:sc.arp.wave,pan:.3});
+   if(sc.epic&&level>=2)v({frequency:midi(n+12),duration:beat*.4,gain:sc.arp.gain*.7,wave:sc.arp.wave,start:at+beat/2,pan:-.3});}}
+  // Bass.
+  const b=sc.bassLine[step],B=sc.bass;if(b&&!'-.'.includes(b)){let hold=1;while(sc.bassLine[step+hold]==='-')hold++;const root=chord[0]-24,n=root+({R:0,'5':7,'3':chord[1]-chord[0],O:12,b:10}[b]??0);v({frequency:midi(n),duration:beat*hold*.9,gain:B.gain*(boss?1.08:1),wave:B.wave,pan:-.12});}
+  // Drums: kick, snare, hats (o = open), toms; the final boss fills every 8th bar and doubles the hats past the tower.
+  const D=sc.drums,hit=(lane)=>D[lane]&&D[lane][pos]!=='.'&&D[lane][pos];
+  if(hit('kick'))v({frequency:boss?125:100,to:42,duration:.13,gain:boss?.09:.062,wave:'sine'});
+  if(hit('snare'))v({duration:sc.snareLen||.1,gain:boss?.04:.03,noise:true,filter:sc.snareFilter||2400,pan:.08});
+  const h=hit('hat');if(h)v({duration:h==='o'?.12:.035,gain:sc.hatGain||(boss?.022:.015),noise:true,filter:sc.hatFilter||6500,pan:.25});
+  if(sc.epic&&level>=1&&pos&1)v({duration:.025,gain:.006,noise:true,filter:9000,start:at+beat/2,pan:-.25});
+  if(sc.fill&&bar===7&&sc.fill.replace(/\s/g,'')[pos]==='x')v({frequency:220-pos*14,to:80,duration:.16,gain:.07,wave:'sine'});
+  if(sc.epic&&step===0&&level>=1)v({duration:.6,gain:.03,noise:true,filter:4200,pan:0});
+  if(sc.wind&&step%32===0)v({duration:beat*12,gain:.012,noise:true,filter:900,attack:beat*4,pan:-.4});
  }
  tick(){
   const ctx=this.context;if(!ctx||ctx.state!=='running'||!this.enabled||this.hidden||this.paused){this.next=0;return;}
