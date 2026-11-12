@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {Game} from '../engine.js';import {activateRoom} from '../room-transitions.js';
 import {strikeInfoshum,exposeInfoshum,crackInfoshumScreen,smashWall,colossusInfoshum,breakHand,dropColossus,freeInfoshum,fistBox,headBox,sweepBox,ramBox,freeCoreBox,infoshumTargets,
- relayHit,relayRect,towerScreen,beamFloor,buildWall,WAVE,COL,FREE,FLOOR,INFOSHUM_HP,HALL,ROUND_PAIRS} from '../infoshum-combat.js';
+ relayHit,relayRect,towerScreen,beamFloor,buildWall,WAVE,COL,FREE,LIVE,liveReach,FLOOR,INFOSHUM_HP,HALL,ROUND_PAIRS} from '../infoshum-combat.js';
 import {jumpTo} from './navigation.js';
 function game(testing=true){const g=new Game({story:false,cinematic:true,testingInvulnerable:testing});g.start();activateRoom(g,8);g.enemies=[];g.notebooks=[];g.fishes=[];g.lifePickups=[];g.soups=[];g.boss.noticeTime=0;g.mode='playing';g.abilities={attack:true,dash:true,sneak:true};buildWall(g);return g;}
 function tick(g,n,input={}){for(let i=0;i<n;i++)g.step(1/60,input);}
@@ -72,6 +72,14 @@ test('an arm sweeps low (a jump clears it) or high (a crouch passes under it); t
  const b=sweepBox({x:0,low:true}),t=sweepBox({x:0,low:false});assert.ok(b.y+b.h===FLOOR&&t.y+t.h<FLOOR-30);
  const g=colossus(false),a=attack(g,COL.plan.indexOf('beam')),m=a.beam;assert.equal(m.state,'charge');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>m.state==='fire',120));tick(g,30);assert.equal(g.health,h-1);
  const q=colossus(false),c=attack(q,COL.plan.indexOf('beam'));assert.ok(c.beam);q.player.inv=0;const h2=q.health;for(let i=0;i<400&&c.beam;i++)q.step(1/60,{right:true});assert.equal(q.health,h2,'a running cat outruns the beam');
+});
+test('«Прямой эфир»: the chest opens, wreckage drops on either side, the beam sweeps the floor; behind a block Uma is safe',()=>{
+ const g=colossus(false),a=attack(g,COL.plan.indexOf('live')),l=a.live;assert.equal(l.state,'open');assert.equal(l.shelters.length,2);const c=16128+768;
+ assert.ok(l.shelters.some(s=>s.x<c)&&l.shelters.some(s=>s.x>c),'one block on each side');
+ g.player.inv=0;const h=g.health;assert.ok(until(g,()=>l.state==='fire',200));Object.assign(g.player,{x:c-130-17,inv:0});assert.ok(l.shelters.every(s=>s.landed));tick(g,30);assert.equal(g.health,h-1,'in the open the beam hits');
+ const q=colossus(false),b=attack(q,COL.plan.indexOf('live')),m=b.live;assert.ok(until(q,()=>m.shelters.every(s=>s.landed),200));const left=m.shelters.find(s=>s.x<c);
+ Object.assign(q.player,{x:left.x-LIVE.shelterW/2-40,inv:0});const h2=q.health;assert.ok(liveReach(q,-1)>q.player.x+q.player.w);assert.ok(until(q,()=>m.state==='close',200));assert.equal(q.health,h2,'behind the block');
+ assert.ok(until(q,()=>!b.live,60));assert.equal(b.mode,'idle');
 });
 test('the second fall cracks the head: he bursts out of it into the storm («На свободе»)',()=>{
  const g=colossus(),n=g.boss.network;for(let k=0;k<2;k++)assert.ok(dropColossus(g),'fall '+k);assert.equal(n.stage,'breakout');assert.equal(g.boss.hp,4);assert.equal(g.boss.phase,3);

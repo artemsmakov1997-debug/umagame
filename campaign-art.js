@@ -1,3 +1,4 @@
+import {drawInfoshumMini} from './infoshum-art.js?v=0.21.5';
 function safeWarning(p){return p.collapseCharge>.35;}
 import {rooms,WIDTH} from './level.js?v=0.21.5';
 import {rect,text} from './pixel.js?v=0.21.5';
@@ -103,7 +104,7 @@ export function drawOpening(c,a,g){
  const screen={x:214,y:154,w:135,h:104};c.save();c.beginPath();c.rect(screen.x,screen.y,screen.w,screen.h);c.clip();
  rect(c,screen.x,screen.y,screen.w,screen.h,'#041930');
  for(let i=0;i<10;i++)rect(c,screen.x+3,screen.y+4+i*12,screen.w-6,1,Math.floor((g.wakeTime+g.time)*16+i)%3?'#0b627d':'#57e6ed');
- if(g.wakeTime>=2.7&&(g.mode==='waking'||g.pausedFrom==='waking')){const progress=Math.min(1,(g.wakeTime-2.7)/.35);c.globalAlpha=progress;drawMonster(c,a,'infoshum',screen.x-4,screen.y+8+(1-progress)*90,screen.w+8,screen.h-8,g.wakeTime+g.time,false,{state:g.mode==='waking'?'casting':'idle',projection:true});}
+ if(g.wakeTime>=2.7&&(g.mode==='waking'||g.pausedFrom==='waking')){const progress=Math.min(1,(g.wakeTime-2.7)/.35);c.globalAlpha=progress;const t=g.wakeTime+g.time;if(!drawInfoshumMini(c,a,screen.x+screen.w/2,screen.y+screen.h/2+4+(1-progress)*90,screen.h*.86,t))drawMonster(c,a,'infoshum',screen.x-4,screen.y+8+(1-progress)*90,screen.w+8,screen.h-8,t,false,{state:g.mode==='waking'?'casting':'idle',projection:true});}
  c.restore();
 }
 // These screens are scenery only; their rectangles never enter collision geometry.
