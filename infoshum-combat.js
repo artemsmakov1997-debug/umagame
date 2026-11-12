@@ -35,10 +35,11 @@ export const ARRIVE=1.6,ASSEMBLE=3.6,BREAKOUT=3;
 export const COL={reach:110,windup:.55,intro:2,gap:[1.1,.85,.6],aim:[1.1,.95,.8],lock:.35,fall:.12,stuck:[2.8,2.6,2.4],lift:.45,fistHalf:58,track:340,shockSpeed:430,shockRange:520,
  sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,plan:['slam','sweep','slam','beam']};
 export const FREE={enter:1.2,gap:[1,.8,.6],hoverY:120,tentWarn:.75,tentUp:.5,tentGap:.7,tentHalf:30,volleyMove:.7,volleyGap:.42,shardSpeed:420,ramPrep:.95,ramSpeed:780,crash:.35,dizzy:2.8,dizzyYuri:4.2,hit:.7,bounce:.7,
- ghostPrep:1.15,ghostDash:.5,ghostSpread:260,ghostOver:140,pull:.35,reflect:1.25,plan:['tentacle','volley','ghosts']};
-// «Двойники»: he rises above Uma and splits off two ghostly copies high on either side; the three dive lines show,
-// then he dives straight down through the spot where she stood while the copies dive at it from the sides. Where he
-// lands Yuri lassoes him: the opening. A shard of his volley swatted with the paw flies back at him (it clears some static if it hits).
+ ghostRise:.45,ghostSplit:.65,ghostAim:.45,ghostDash:.4,ghostSpread:260,ghostOver:140,pull:.35,reflect:1.25,plan:['tentacle','volley','ghosts']};
+// «Двойники»: he rises above Uma and splits into three — two ghostly copies slide out of him to either side. Then
+// they attack one after another: each one aims at where Uma is now (its line blinks), then dives through that spot;
+// the real one goes last, straight down. Where he lands Yuri lassoes him: the opening.
+export const ghostPrep=()=>FREE.ghostRise+FREE.ghostSplit;
 export function ghostPos(gh,k){return {x:gh.x0+(gh.x1-gh.x0)*k,y:gh.y0+(gh.y1-gh.y0)*k};}
 export function ghostBox(p){return {x:p.x-34,y:p.y-26,w:68,h:52};}
 export const STORM_ISLANDS={0:[0,474,460,0],11:[520,474,530,0],12:[1110,474,426,0],1:[92,366,296,1],3:[1131,366,296,1],4:[411,413,165,0],5:[965,413,165,0],2:[617,332,300,1],9:[464,272,145,2],10:[961,272,145,2]};
@@ -273,11 +274,16 @@ function nextFree(g){
  const b=g.boss,f=b.network.free,p=g.player,r=rooms[g.room],px=p.x+p.w/2,py=p.y+p.h/2,kind=FREE.plan[f.step++%FREE.plan.length];
  if(kind==='tentacle'){f.mode='tentacle';f.count=2+Math.min(2,f.hits);f.sub=0;}
  else if(kind==='volley'){const side=px-r.x<768?1:-1;f.mode='volley';f.timer=FREE.volleyMove;f.count=3;f.sub=0;f.from={x:f.x,y:f.y};f.tx=clamp(px+side*340,r.x+60,r.end-60);f.ty=clamp(py-6,70,440);f.dir=-side;}
- else{const s=targetSurface(g),feet=s.y-20,top=60;f.mode='ghostPrep';f.timer=FREE.ghostPrep;f.from={x:f.x,y:f.y};f.tx=clamp(px,r.x+120,r.end-120);f.ty=40;f.gy=s.y;f.rammed=false;
-  // He dives too: straight down through her spot from above, between his two copies.
-  f.dive={x:f.tx,y0:f.ty,y1:s.y-34};
-  f.ghosts=[-1,1].map(side=>{const x0=clamp(px+side*FREE.ghostSpread,r.x+30,r.end-30),y0=top,dx=px-x0,dy=feet-y0,len=Math.hypot(dx,dy)||1;return {side,x0,y0,x1:px+dx/len*FREE.ghostOver,y1:feet+dy/len*FREE.ghostOver,hit:false};});
-  g.emit('infoshumWarning',{attack:'ghosts',x:px,y:feet});}
+ else{const s=targetSurface(g);f.mode='ghostPrep';f.timer=ghostPrep();f.from={x:f.x,y:f.y};f.tx=clamp(px,r.x+120,r.end-120);f.ty=40;f.gy=s.y;f.rammed=false;f.seq=0;f.phase=null;
+  f.ghosts=[-1,1].map(side=>({side,x0:clamp(f.tx+side*FREE.ghostSpread,r.x+30,r.end-30),y0:60,x1:0,y1:0,state:'wait',k:0}));
+  f.dive={x:f.tx,y0:40,y1:s.y-34};g.emit('infoshumWarning',{attack:'ghosts',x:px,y:s.y});}
+}
+// Aim the next attacker (0, 1 — the copies; 2 — Infoshum himself) at where Uma is now.
+function aimGhost(g,f){
+ const p=g.player,px=p.x+p.w/2,s=targetSurface(g),feet=s.y-20;f.phase='aim';f.timer=FREE.ghostAim;
+ if(f.seq<2){const gh=f.ghosts[f.seq],dx=px-gh.x0,dy=feet-gh.y0,len=Math.hypot(dx,dy)||1;gh.state='aim';gh.x1=px+dx/len*FREE.ghostOver;gh.y1=feet+dy/len*FREE.ghostOver;}
+ else{f.gy=s.y;f.dive={x:clamp(px,rooms[g.room].x+60,rooms[g.room].end-60),y0:f.y,y1:s.y-34};}
+ g.emit('infoshumWarning',{attack:'ghostDive',x:px,y:feet});
 }
 function stepFree(g,dt,paw=null){
  const b=g.boss,n=b.network,f=n.free,p=g.player,px=p.x+p.w/2,py=p.y+p.h/2,gap=FREE.gap[Math.min(2,f.hits)];
@@ -305,13 +311,15 @@ function stepFree(g,dt,paw=null){
   if(f.timer>0)glide(FREE.volleyMove);else{f.x=f.tx;f.sub-=dt;f.y+=(clamp(py-6,70,440)-f.y)*Math.min(1,dt*4);
    if(f.sub<=0&&f.count>0){f.shards.push({x:f.x+f.dir*40,y:f.y,vx:f.dir*FREE.shardSpeed,life:2.4});f.count--;f.sub=FREE.volleyGap;g.emit('bossCast',{boss:'infoshum',ability:'shards',x:f.x,y:f.y});}
    if(f.count===0&&f.sub<=-.3)hover(f,gap);}}
- else if(f.mode==='ghostPrep'){b.state='windup';glide(FREE.ghostPrep);if(f.timer<=0){f.mode='ghostDash';f.timer=FREE.ghostDash;g.emit('bossCast',{boss:'infoshum',ability:'ghosts',x:f.x,y:f.y});}}
- else if(f.mode==='ghostDash'){b.state='casting';const k=1-Math.max(0,f.timer)/FREE.ghostDash,e=k*k;
-  f.x=f.dive.x;f.y=f.dive.y0+(f.dive.y1-f.dive.y0)*e;
-  if(!f.rammed&&p.inv<=0&&p.dash===0&&overlap(p,ramBox(f))){g.hurt(false,f.x);f.rammed=true;}
-  for(const gh of f.ghosts){const q=ghostPos(gh,k);if(!f.rammed&&p.inv<=0&&p.dash===0&&overlap(p,ghostBox(q))){g.hurt(false,q.x);f.rammed=true;}}
-  // He lands where she stood; Yuri lassoes him right there.
-  if(f.timer<=0){f.y=f.dive.y1;f.flash=.15;g.emit('boltImpact',{x:f.x,y:f.gy,kind:'crash'});f.from={x:f.x,y:f.y};f.tx=f.x;f.ty=f.gy-34;f.mode='pulled';f.timer=FREE.pull;f.yuri=true;g.emit('yuriHold',{x:f.tx,y:f.gy-40,last:b.hp<=HIT_DAMAGE});}}
+ else if(f.mode==='ghostPrep'){b.state='windup';const rise=f.timer-FREE.ghostSplit;if(rise>0){const k=1-rise/FREE.ghostRise,e=k*k*(3-2*k);f.x=f.from.x+(f.tx-f.from.x)*e;f.y=f.from.y+(f.ty-f.from.y)*e;}else{f.x=f.tx;f.y=f.ty;}
+  if(f.timer<=0){f.x=f.tx;f.y=f.ty;f.mode='ghostDash';aimGhost(g,f);g.emit('bossCast',{boss:'infoshum',ability:'ghosts',x:f.x,y:f.y});}}
+ else if(f.mode==='ghostDash'){b.state='casting';const k=1-Math.max(0,f.timer)/FREE.ghostDash,hit=box=>{if(!f.rammed&&p.inv<=0&&p.dash===0&&overlap(p,box)){g.hurt(false,box.x+box.w/2);f.rammed=true;}};
+  if(f.seq===2&&f.phase==='aim')f.x+=clamp(f.dive.x-f.x,-420*dt,420*dt);
+  if(f.phase==='aim'){if(f.timer<=0){f.phase='dive';f.timer=FREE.ghostDash;f.rammed=false;if(f.seq<2)f.ghosts[f.seq].state='dive';else{f.x=f.dive.x;f.dive.y0=f.y;}}}
+  else if(f.seq<2){const gh=f.ghosts[f.seq];gh.k=k*k;hit(ghostBox(ghostPos(gh,gh.k)));if(f.timer<=0){gh.state='gone';f.seq++;aimGhost(g,f);}}
+  else{const e=k*k;f.y=f.dive.y0+(f.dive.y1-f.dive.y0)*e;hit(ramBox(f));
+   // He lands where she stood; Yuri lassoes him right there.
+   if(f.timer<=0){f.y=f.dive.y1;f.flash=.15;g.emit('boltImpact',{x:f.x,y:f.gy,kind:'crash'});f.from={x:f.x,y:f.y};f.tx=f.x;f.ty=f.gy-34;f.mode='pulled';f.timer=FREE.pull;f.yuri=true;g.emit('yuriHold',{x:f.tx,y:f.gy-40,last:b.hp<=HIT_DAMAGE});}}}
  else if(f.mode==='pulled'){b.state='recover';glide(FREE.pull);if(f.timer<=0){f.x=f.tx;f.ghosts=null;f.mode='dizzy';f.timer=FREE.dizzyYuri;g.emit('infoshumWeak',{x:f.x,y:f.gy-40});}}
  else if(f.mode==='ramPrep'){b.state='windup';glide(FREE.ramPrep);if(f.timer<=0){f.x=f.tx;f.y=f.ty;f.mode='ram';g.emit('bossCast',{boss:'infoshum',ability:'ram',x:f.x,y:f.y});}}
  else if(f.mode==='ram'){b.state='casting';f.x+=f.dir*FREE.ramSpeed*dt;
