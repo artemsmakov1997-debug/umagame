@@ -776,3 +776,5 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
 #menu-cat{position:absolute;left:0;top:0;pointer-events:none;display:none;image-rendering:auto}#app[data-screen="menu"] #menu-cat{display:block}
 
 #dialogue[data-speaker="uma"] .dialogue-panel{box-shadow:inset 0 0 0 2px #f0a9a2aa}#dialogue[data-speaker="uma"] #dialogue-speaker{color:#ffc7b8}
+
+.game-logo-tv{position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none}

@@ -1,3 +1,4 @@
+import {startTitleTV} from './title-tv.js?v=0.21.5';
 import {projectileStyle} from './projectile-art.js?v=0.21.5';
 import {ConclusionUI} from './conclusion-ui.js?v=0.21.5';
 import {SettingsUI} from './settings.js?v=0.21.5';
@@ -148,3 +149,4 @@ async function boot(){
  requestAnimationFrame(frame);
 }
 boot();
+startTitleTV();
