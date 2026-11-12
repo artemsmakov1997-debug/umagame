@@ -20,7 +20,7 @@ test('wake-up uses separate sleep, yawn and surprise frames without moving Uma o
  const g=new Game();g.start();const x=g.player.x,y=g.player.y;assert.equal(wakePose(.2).name,'alert');assert.equal(wakePose(2.5).name,'alert');assert.equal(wakePose(3.5).name,'surprise');assert.equal(emotionFrames.length,8);tick(g,340,{right:true,attack:true});assert.equal(g.mode,'dialogue');assert.equal(g.dialogue.id,'intro');assert.equal(g.player.x,x);assert.equal(g.player.y,y);assert.ok(g.enemies.every(e=>!e.active));assert.equal('clock'in g,false);
 });
 test('intro has four short pages; Yuri does not know where he is or what happened',()=>{
- const g=ready();assert.equal(scenes.intro.pages.length,4);assert.match(scenes.intro.pages[1],/не знаю/);for(const scene of Object.values(scenes))for(const text of scene.pages)assert.ok(text.length<=130,text);assert.equal(g.mode,'playing');assert.equal(g.room,0);assert.equal(g.player.swing,0);assert.ok(!('people'in g));
+ const g=ready();assert.equal(scenes.intro.pages.length,5);assert.equal(scenes.intro.pages[1],'Мяу!');assert.match(scenes.intro.pages[2],/не знаю/);for(const scene of Object.values(scenes))for(const text of scene.pages)assert.ok(text.length<=130,text);assert.equal(g.mode,'playing');assert.equal(g.room,0);assert.equal(g.player.swing,0);assert.ok(!('people'in g));
 });
 test('Yuri curates the quiet-room course: run, crawl, dash, jump and paw in order with real inputs',()=>{
  const g=ready();assert.equal(completeTutorial(g),true);const q=g.tutorial;
