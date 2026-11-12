@@ -4,7 +4,7 @@ import {solidSurfaces} from './terrain.js?v=0.21.5';
 // and cannot be hit; elsewhere it takes three paw hits. Its bots jump together on one shared beat, from platform to
 // platform towards Uma; they hurt on contact and die from one hit. A bot that jumps onto a riser that goes dark falls.
 // When the rack breaks, every bot it made hangs (grey, spinner) and falls apart.
-export const BOT_BEAT=1.2,MAX_BOTS=3,PRINT_TIME=.6,PRINT_COOLDOWN=2.6,BOT_SPEED=78,BOT_HOP=44,FREEZE_TIME=.6;
+export const BOT_BEAT=1.2,MAX_BOTS=3,PRINT_TIME=.6,PRINT_COOLDOWN=6,BOT_SPEED=78,BOT_HOP=44,FREEZE_TIME=.6;
 // A real jump between platforms: take-off speed, gravity and the horizontal speed of the leap (≈70 px up, ≈80 px across).
 export const BOT_JUMP={vy:-380,vx:112,gravity:1080};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));

@@ -1,4 +1,4 @@
-import {drawColossusAttacks,drawMagnetHead} from './infoshum-attacks-art.js?v=0.21.5';
+import {drawColossusAttacks} from './infoshum-attacks-art.js?v=0.21.5';
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
 import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos,ghostPrep} from './infoshum-combat.js?v=0.21.5';
@@ -177,7 +177,7 @@ function drawRigHead(c,a,r,time){
  const img=a.infoshumColossusRig,p=RIG[r.cracked?'headX':'head'],h=r.head,s=p.scr,sc=[(s[0]+s[2])/2,(s[1]+s[3])/2];
  rigPiece(c,img,p,sc,h.x,h.y,h.rot,{scale:h.scale});if(r.cracked)return;
  c.save();c.translate(h.x,h.y);c.rotate(h.rot);c.translate(-h.x,-h.y);const box=inset(headScreen(r),.03,.04);
- drawCalmFace(c,a,box);if(r.face)drawEmotion(c,a,r.face,box,r.emoAlpha,time);if(r.g)drawMagnetHead(c,a,r.g,headScreen(r),time);c.restore();
+ drawCalmFace(c,a,box);if(r.face)drawEmotion(c,a,r.face,box,r.emoAlpha,time);c.restore();
 }
 function drawRigDebris(c,a,r){if(!r.falling||r.fallK<=0||r.fallK>=1)return;const img=a.infoshumColossusRig;for(let i=0;i<9;i++){const p=RIG['deb'+i],t=r.fallK,dir=i%2?1:-1,x=r.cx+dir*(40+i*28)*t,y=200+i*6-Math.sin(t*Math.PI)*(90+i*12)+t*t*220;rigPiece(c,img,p,[p.r[2]/2,p.r[3]/2],x,Math.min(FLOOR-8,y),t*6*dir,{scale:.8,alpha:1-t*.4});}}
 function drawColossus(c,a,g,time,assembly=null){
@@ -355,7 +355,6 @@ export function drawInfoshumBackdrop(c,a,g,time){
  drawHallBack(c,a,g,time);
 }
 export function drawInfoshumPlatform(c,a,p,time){
- if(p.quake)return;// quake floor and islands: drawn by infoshum-attacks-art.js
  if(p.storm!==undefined&&drawStormIsland(c,a,p))return;
  if(p.index===0&&p.room===8&&!p.storm)return;// the hall's floor is painted in its background
  if(!a.infoshumPlatform?.complete||p.infoshumStep)return;

@@ -15,7 +15,21 @@ export function wakePose(time){
  if(time<2.7)return {name:'alert',frame:4};
  return {name:'surprise',frame:time<3.5?5:7};
 }
-export function hurtPose(remaining){return remaining>.26?6:7;}
+// assets/uma-hit.png, 6 cells of 360×290 with the feet on y=282: impact, recoil (front paws up, hiss), stumble,
+// head shake, low recover, ready. The first four play over the 0.5 s of hurtTime; the last two finish the reaction
+// only while Uma stands still afterwards — any movement hands her straight back to the ordinary sprites.
+export const HIT_CELL=[360,290],HIT_FEET=282,HIT_SCALE=.27,HIT_TAIL=.36;
+const HIT_PIVOT=[233,209,245,231,245,241],HIT_TIMES=[.07,.19,.32];
+export function hitFrame(elapsed){
+ if(elapsed<.5){let i=0;while(i<HIT_TIMES.length&&elapsed>=HIT_TIMES[i])i++;return i;}
+ return elapsed<.5+HIT_TAIL/2?4:5;
+}
+export function hitSettled(p){return p.grounded&&!p.climbing&&!p.sneaking&&Math.abs(p.vx)<1&&p.attack===0&&!(p.dash>0);}
+export function drawHit(c,assets,frame,center,feet,flip=false){
+ if(!assets.umaHit)return false;const [w,h]=HIT_CELL,s=HIT_SCALE;
+ c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);
+ sprite(c,assets.umaHit,[frame*w,0,w,h],-HIT_PIVOT[frame]*s,-HIT_FEET*s,w*s,h*s);c.restore();return true;
+}
 export function drawEmotion(c,assets,frame,center,feet,height=76,flip=false){
  const {box,pivot}=emotionFrames[frame],s=height/420;
  c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);

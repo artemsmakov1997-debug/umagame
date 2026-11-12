@@ -40,7 +40,7 @@ import {drawDimensionSurface,drawDimensionProps} from './dimension-art.js?v=0.21
 import {drawTargetHighlights} from './target-highlight.js?v=0.21.5';
 import {drawTeleportMarkers,drawTeleportingInformant} from './teleport-art.js?v=0.21.5';
 import {sceneLayers,drawSurface,drawAmbience,drawCampaignObjects,drawWakeup,drawInfection,drawEpilogue,backgroundLayers,drawBackdrop,drawOpening,roomDarkness} from './campaign-art.js?v=0.21.5';
-import {drawEmotion,hurtPose,drawTraversal,drawRest,moodPose,drawMood,MOOD,drawRun,runFrame} from './cat-animation.js?v=0.21.5';
+import {drawEmotion,hitFrame,hitSettled,drawHit,HIT_TAIL,drawTraversal,drawRest,moodPose,drawMood,MOOD,drawRun,runFrame} from './cat-animation.js?v=0.21.5';
 export class Renderer{
  constructor(canvas,assets){this.c=canvas.getContext('2d');this.hud=canvas.ownerDocument?.getElementById('hud');this.c.imageSmoothingEnabled=false;this.assets=assets;this.combatEffects=[];this.signalTime=0;this.previousVisualTime=0;this.particles=[];this.trail=[];this.trailTimer=0;this.layers=sceneLayers(assets);this.backdrops=backgroundLayers(this.layers);this.wakeupStart=null;}
  burst(x,y,color){for(let i=0;i<14;i++)this.particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*140,life:.5,color});}
@@ -143,11 +143,15 @@ export class Renderer{
   for(const trail of this.trail){trail.life-=dt;c.globalAlpha=Math.max(0,trail.life/.3);rect(c,trail.x,trail.y,trail.dash?12:3,3,trail.dash?'#72dffe':'#ccd3ff');}c.globalAlpha=1;this.trail=this.trail.filter(v=>v.life>0);
   // Upside-down Uma in «Разлом»: mirror the whole sprite around her middle.
   const flipUma=p.flipped&&!g.swallow;if(flipUma){c.save();c.translate(0,2*(p.y+p.h/2));c.scale(1,-1);}
+  this.hitTail=p.hurtTime>0?HIT_TAIL:hitSettled(p)?Math.max(0,(this.hitTail||0)-dt):0;
   if(g.storyEnabled&&!g.seenScenes.has('intro')||g.dialogue?.id==='intro'){
    drawWakeup(c,a,p,g.wakeTime);
-  }else if(p.hurtTime>0){
-   // The fresh hit uses the new recoil; the recovery keeps the old crouch.
-   if(!(p.hurtTime>.26&&drawMood(c,a,MOOD.hurt,p.x+p.w/2,p.y+p.h,p.dir<0)))drawEmotion(c,a,hurtPose(p.hurtTime),p.x+p.w/2,p.y+p.h,76,p.dir>0);
+  }else if(p.hurtTime>0||this.hitTail>0){
+   // Hit reaction: impact → recoil → stumble → head shake during hurtTime, then recover → ready if she stays put.
+   const elapsed=p.hurtTime>0?.5-p.hurtTime:.5+HIT_TAIL-this.hitTail;
+   if(p.hurtTime===0&&p.inv>0&&Math.floor(t*12)%2!==0)c.globalAlpha=.6;
+   if(!drawHit(c,a,hitFrame(elapsed),p.x+p.w/2,p.y+p.h,p.dir<0))drawMood(c,a,MOOD.hurt,p.x+p.w/2,p.y+p.h,p.dir<0);
+   c.globalAlpha=1;
   }else if(moodPose(p,g)!==null&&a.moods){
    const mood=moodPose(p,g),owner=mood===MOOD.dragged?g.enemies.find(e=>e.id===g.tether.ownerId):null,face=owner?(owner.x>p.x?1:-1):p.dir;
    if(p.inv>0&&Math.floor(t*12)%2!==0)c.globalAlpha=.6;
