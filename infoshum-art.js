@@ -1,6 +1,6 @@
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos} from './infoshum-combat.js?v=0.21.5';
+import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos,ghostPrep} from './infoshum-combat.js?v=0.21.5';
 import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.5';
 // Infoshum's three phases: the broadcast tower with Yuri in the relays, the colossus, the free creature in the storm.
 import {rooms,WIDTH} from './level.js?v=0.21.5';
@@ -280,14 +280,20 @@ function drawYuriRope(c,a,g,f,time){
   c.save();c.lineCap='round';c.strokeStyle='#3a1260';c.lineWidth=9;c.beginPath();c.moveTo(sx,sy);c.quadraticCurveTo(mx,my,tx,ty);c.stroke();c.strokeStyle='#a347e6';c.lineWidth=5;c.stroke();c.strokeStyle='#e7a6ff';c.lineWidth=1.5;c.stroke();
   c.beginPath();c.ellipse(tx,ty,34,14,0,0,Math.PI*2);c.strokeStyle='#3a1260';c.lineWidth=8;c.stroke();c.strokeStyle='#a347e6';c.lineWidth=4;c.stroke();c.restore();}
 }
-// «Двойники»: two pale copies high on either side; their dive lines blink, then they dive through Uma's spot.
+// «Двойники»: the split — two pale copies slide out of him to either side, leaving afterimages, with a flash; then
+// each attacker's line blinks while it aims and it dives along it; the copies vanish after their dive.
+function ghostSprite(c,a,x,y,alpha,time,ang=null,frame='w2'){c.save();c.globalAlpha=alpha;c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';c.translate(x,y);if(ang!==null){let r=ang;if(Math.cos(ang)<0){c.scale(-1,1);r=Math.PI-ang;}c.rotate(r);}free2(c,a,frame,0,0);c.restore();}
+function dashLine(c,x0,y0,x1,y1,time){c.save();c.globalAlpha=.4+.4*Math.abs(Math.sin(time*12));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*90;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.restore();}
 function drawGhosts(c,a,f,time){
- const prep=f.mode==='ghostPrep',k=prep?0:1-Math.max(0,f.timer)/FREE.ghostDash,appear=prep?Math.min(1,(FREE.ghostPrep-f.timer)/.4):1;
- if(prep&&f.dive){c.save();c.globalAlpha=.35+.35*Math.abs(Math.sin(time*10));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*80;c.beginPath();c.moveTo(f.dive.x,f.dive.y0+40);c.lineTo(f.dive.x,f.dive.y1+20);c.stroke();c.restore();}
- for(const gh of f.ghosts){const dx=gh.x1-gh.x0,dy=gh.y1-gh.y0;
-  if(prep){c.save();c.globalAlpha=.35+.35*Math.abs(Math.sin(time*10));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*80;c.beginPath();c.moveTo(gh.x0,gh.y0);c.lineTo(gh.x1,gh.y1);c.stroke();c.restore();}
-  const q=ghostPos(gh,k);c.save();c.globalAlpha=(prep?.25+.35*appear:.65)*(k>.85?(1-k)/.15:1);c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';
-  c.translate(q.x,q.y);let ang=Math.atan2(dy,dx);if(dx<0){c.scale(-1,1);ang=Math.atan2(dy,-dx);}c.rotate(prep?0:ang);free2(c,a,prep?'w2':'m'+Math.floor(time*14)%2,0,0);c.restore();}
+ if(f.mode==='ghostPrep'){const split=1-Math.max(0,Math.min(1,f.timer/FREE.ghostSplit));if(split<=0)return;const e=split*split*(3-2*split);
+  if(split<.25){c.save();c.globalAlpha=(1-split/.25)*.8;c.strokeStyle='#bff6ff';c.lineWidth=3;c.beginPath();c.ellipse(f.x,f.y,30+split*260,20+split*120,0,0,Math.PI*2);c.stroke();c.restore();}
+  for(const gh of f.ghosts){const x=f.x+(gh.x0-f.x)*e,y=f.y+(gh.y0-f.y)*e;for(let i=3;i>=1;i--){const q=Math.max(0,e-i*.12);ghostSprite(c,a,f.x+(gh.x0-f.x)*q,f.y+(gh.y0-f.y)*q,.12*(4-i)*split,time);}ghostSprite(c,a,x,y,.25+.4*split,time);}
+  return;}
+ for(const [i,gh] of f.ghosts.entries()){if(gh.state==='gone')continue;
+  if(gh.state==='wait')ghostSprite(c,a,gh.x0,gh.y0+Math.sin(time*4+i)*5,.55,time);
+  else if(gh.state==='aim'){dashLine(c,gh.x0,gh.y0,gh.x1,gh.y1,time);ghostSprite(c,a,gh.x0,gh.y0,.7,time);}
+  else{const q=ghostPos(gh,gh.k);ghostSprite(c,a,q.x,q.y,.7*(gh.k>.85?(1-gh.k)/.15:1),time,Math.atan2(gh.y1-gh.y0,gh.x1-gh.x0),'m'+Math.floor(time*14)%2);}}
+ if(f.seq===2&&f.phase==='aim')dashLine(c,f.dive.x,f.y+40,f.dive.x,f.dive.y1+20,time);
 }
 function drawFree(c,a,g,time){
  const b=g.boss,f=b.network.free;if(!f)return;
@@ -305,8 +311,8 @@ function drawFree(c,a,g,time){
  else if(f.mode==='volley')name=f.timer>0?'i0':'r'+(1+Math.floor(time*8)%2);
  else if(f.mode==='ramPrep'){name='w'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/FREE.ramPrep)*3));flip=f.dir<0;}
  else if(f.mode==='ram'){name='m'+Math.floor(time*14)%2;flip=f.dir<0;}
- else if(f.mode==='ghostPrep')name='r'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/FREE.ghostPrep)*3));
- else if(f.mode==='ghostDash')name='dive';
+ else if(f.mode==='ghostPrep')name='r'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/ghostPrep())*3));
+ else if(f.mode==='ghostDash')name=f.seq===2&&f.phase==='dive'?'dive':'r'+(1+Math.floor(time*8)%2);
  else if(f.mode==='pulled')name='d0';
  else if(f.mode==='crash'){name='c'+Math.min(2,Math.floor((FREE.crash-f.timer)/FREE.crash*3));place=ground;}
  else if(f.mode==='dizzy'){name='d'+Math.floor(time*4)%2;place=ground;}
