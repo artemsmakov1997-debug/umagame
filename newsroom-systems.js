@@ -12,7 +12,7 @@ export const PRESSES=[{x:560,offset:0},{x:1240,offset:1.5},{x:1700,offset:3},{x:
 export const PRESS_W=153,PRESS_H=65,PRESS_REST=300,PRESS_STRIKE=371;
 // Cycle: head up (safe) → warning (lamp blinks, head shakes) → slam → hold → rise.
 export const PRESS_CYCLE=4.5,PRESS_WARN=2.4,PRESS_SLAM=3.4,PRESS_LANDED=3.52,PRESS_HOLD=3.95;
-export const CENSOR_SOURCES=[1050,1480,1600,2230];
+export const CENSOR_SOURCES=[540,1000,1620];
 export const CENSOR={warn:.6,grow:.3,stand:2.6,retract:.35,height:62,width:24,cooldown:4.5,near:200,far:460,max:2};
 export const CHECKPOINTS=[2,4,5];
 

@@ -39,7 +39,7 @@ function stepFlock(g,dt,paw){
  if(f.phase!=='fly')return;
  for(const bird of f.birds){bird.x-=FLOCK.speed*dt;bird.deathTime=Math.max(0,bird.deathTime-dt);if(bird.dead)continue;const box=birdBox(f,bird,g.time);
   if(p.attack>0&&overlap(paw,box)){bird.dead=true;bird.deathTime=.35;g.kills++;g.emit('enemyHit',{x:box.x+17,y:box.y,enemyType:'sensation'});continue;}
-  if(!bird.hit&&p.dash===0&&p.inv===0&&overlap(p,box)){bird.hit=true;g.hurt(false,box.x+17);if(g.mode==='playing')g.push(1,box.x+17);g.emit('sensationHit',{x:box.x+17,y:box.y});}
+  if(!bird.hit&&p.dash===0&&p.inv===0&&overlap(p,box)){bird.hit=true;g.hurt(false,box.x+17);if(g.mode==='playing')g.push(-1,box.x+17);g.emit('sensationHit',{x:box.x+17,y:box.y});}
  }
  if(f.birds.every(b=>b.x+FLOCK.count*FLOCK.spacing<r.x||b.dead&&b.deathTime<=0)){f.phase='wait';f.timer=FLOCK.period;f.birds=[];}
 }
@@ -74,6 +74,6 @@ export function stepRoofs(g,dt,paw,input={}){
  if(phase==='warn'&&!q.gustWarned){q.gustWarned=true;g.emit('gustWarning',{x:p.x,y:p.y});if(!q.windIntroduced){q.windIntroduced=true;g.emit('windIntroduction',{x:p.x,y:p.y});}}
  if(phase==='calm')q.gustWarned=false;
  if(q.gust&&!p.climbing&&p.dash===0){const speed=p.grounded?(p.sneaking?0:Math.abs(WIND.ground)):Math.abs(WIND.speed);p.x+=w.dir*speed*dt;const r=rooms[ROOM];p.x=Math.max(r.x,Math.min(r.end-p.w,p.x));}
- // Сенсации: a flock sweeps the map from left to right.
+ // Сенсации: a flock sweeps the map from right to left and knocks Uma along its flight, to the left.
  stepFlock(g,dt,paw);
 }

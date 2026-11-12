@@ -75,11 +75,10 @@ test('the pan beam fires in bursts with closed-shutter gaps',()=>{
  const g=ready();at(g,4,200);until(g,'1:pan');const states=new Set();for(let i=0;i<60*3;i++){stepBoss(g,1/60);if(mode(g)==='1:pan')states.add(beamLive(g.boss.studio));}assert.deepEqual([...states].sort(),[false,true]);
 });
 
-test('studio platforms the beam touches burn out and come back',()=>{
- const g=ready();at(g,4,200);until(g,'1:pan');const burned=new Set();
- for(let i=0;i<60*7&&mode(g)==='1:pan';i++){stepBoss(g,1/60);stepStudioPlatforms(g,1/60);for(const s of g.platforms)if(s.room===6&&s.studioPlatform&&s.studioPhase==='gap')burned.add(s.index);}
- assert.ok(burned.size>=2,String([...burned]));
- for(let i=0;i<60*4;i++)stepStudioPlatforms(g,1/60);assert.ok([...burned].every(i=>g.platforms.find(s=>s.id==='6:'+i).studioPhase!=='forming'));
+test('phase 1: the pan beam burns nothing out, platforms stay put',()=>{
+ const g=ready();at(g,4,200);until(g,'1:pan');let gone=0;
+ for(let i=0;i<60*7&&mode(g)==='1:pan';i++){stepBoss(g,1/60);stepStudioPlatforms(g,1/60);for(const s of g.platforms)if(s.room===6&&s.studioPlatform&&s.studioPhase!=='solid')gone++;}
+ assert.equal(gone,0);
 });
 
 test('the crane is scenery: its rolling dolly never hurts Uma',()=>{
