@@ -29,3 +29,19 @@ export function drawEchoVortex(c,e,time){
  for(let i=0;i<26;i++){const phase=(time*(pulling?1.2:.4)+i/26)%1,r=18+(1-phase)*(pulling?210:45),a=i*2.4+phase*3;rect(c,cx+Math.cos(a)*r,cy+Math.sin(a)*r*.7,2+i%3,3,i%3?'#aa8bea':'#78e5fa');}
  c.restore();
 }
+
+// «Измерение»: an Эхо unfolds out of a ripple of shredded messages (fragments spiral in, a cyan ring closes on it);
+// a Помеха condenses out of a block of TV snow that shrinks onto it. k runs 0→1 over the arrival.
+export const DIM_ARRIVAL=.95;
+export function drawDimensionArrival(c,e,k,time){
+ const cx=e.x+e.w/2,cy=e.y+e.h/2;c.save();
+ if(e.type==='echo'){
+  const r=10+(1-k)*70;c.globalAlpha=Math.min(1,k*3)*(1-k*.6);c.strokeStyle='#78e5fa';c.lineWidth=2;c.beginPath();c.ellipse(cx,cy,r,r*.7,0,0,Math.PI*2);c.stroke();
+  c.globalAlpha=.9*(1-k*.5);for(let i=0;i<22;i++){const ph=(i/22+k*.9)%1,rr=12+(1-k)*(40+ph*60),ang=i*2.4+k*7;rect(c,cx+Math.cos(ang)*rr,cy+Math.sin(ang)*rr*.7,2+i%3,3,i%3?'#aa8bea':'#78e5fa');}
+ }else{
+  const w=e.w+40*(1-k),h=e.h+30*(1-k),x0=cx-w/2,y0=cy-h/2,cell=3,seed=Math.floor(time*24);c.globalAlpha=(1-k)*.95;
+  for(let y=0;y<h;y+=cell)for(let x=0;x<w;x+=cell){const v=((x*73856093)^(y*19349663)^(seed*83492791))>>>0;if(v%3)continue;rect(c,x0+x,y0+y,cell,cell,v%7<3?'#e8f4ff':v%7<5?'#9fb4d8':'#5b6a8c');}
+  c.globalAlpha=(1-k)*.6;for(let i=0;i<3;i++)rect(c,x0,y0+((time*90+i*h/3)%h),w,2,'#ffffff');
+ }
+ c.restore();
+}

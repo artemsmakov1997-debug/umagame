@@ -33,7 +33,7 @@ export const WAVE={opening:1.4,gap:[1.05,.9,.75],plan:['scan','whip','volley','w
  yuriDelay:1.1,yuriPoint:.9,hitFlash:.3,reboot:.8,takeover:12,yuriFace:1.05,face:1.1,flip:.22,relayUnit:.5,screenUnit:1};
 export const ARRIVE=1.6,ASSEMBLE=3.6,BREAKOUT=3;
 export const COL={reach:110,windup:.55,intro:2,gap:[1.1,.85,.6],aim:[1.1,.95,.8],lock:.35,fall:.12,stuck:[2.8,2.6,2.4],lift:.45,fistHalf:58,track:340,shockSpeed:430,shockRange:520,
- sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,plan:['slam','sweep','slam','beam']};
+ sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,rainGap:.32,rainSpread:170,plan:['slam','sweep','rain','slam','beam','rain']};
 export const FREE={enter:1.2,gap:[1,.8,.6],hoverY:120,tentWarn:.75,tentUp:.5,tentGap:.7,tentHalf:30,volleyMove:.7,volleyGap:.42,shardSpeed:420,ramPrep:.95,ramSpeed:780,crash:.35,dizzy:2.8,dizzyYuri:4.2,hit:.7,bounce:.7,plan:['tentacle','volley','ram']};
 export const STORM_ISLANDS={0:[0,474,460,0],11:[520,474,530,0],12:[1110,474,426,0],1:[92,366,296,1],3:[1131,366,296,1],4:[411,413,165,0],5:[965,413,165,0],2:[617,332,300,1],9:[464,272,145,2],10:[961,272,145,2]};
 export const towerTop=()=>TOWER.base-TOWER.h;
@@ -175,13 +175,18 @@ export function fistBox(f){return {x:f.x-48,y:FLOOR-122,w:96,h:112};}
 export function headBox(g){const x=centre(g)-30;return {x:x-75,y:FLOOR-110,w:150,h:104};}
 export function sweepBox(s){return {x:s.x-80,y:s.low?FLOOR-38:FLOOR-84,w:160,h:s.low?38:44};}
 function idle(a){a.mode='idle';a.timer=COL.gap[roundOf(a)];}
-function collapse(g){const a=g.boss.network.col;a.mode='collapse';a.clock=0;a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
+function collapse(g){const n=g.boss.network,a=n.col;a.mode='collapse';a.clock=0;a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.rain=false;n.tvs=[];n.puddles=[];a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
 function rise(a){a.mode='rise';a.clock=0;a.timer=COL.rise;a.hands={L:true,R:true};a.head=1;a.headTime=COL.rise;a.flash=.3;}
 function nextAttack(g){
  const n=g.boss.network,a=n.col,p=g.player,px=p.x+p.w/2,kind=COL.plan[a.step++%COL.plan.length];a.mode='attack';
  // A fist lands at a fixed spot beside the body, on Uma's side (the other hand if that one is broken).
  if(kind==='slam'){let side=px<centre(g)?'L':'R';if(!a.hands[side])side=side==='R'?'L':'R';const x=centre(g)+(side==='L'?-1:1)*COL.reach;a.fist={side,x,y:-240,state:'aim',timer:COL.aim[roundOf(a)]+COL.windup,weak:false,lastSwing:-1,age:0};g.emit('infoshumWarning',{attack:'slam',x,y:FLOOR});}
  else if(kind==='sweep'){const dir=px<centre(g)?-1:1;a.sweep={dir,low:Math.random()<.5,x:centre(g)-dir*COL.sweepSpan/2,state:'warn',timer:COL.sweepWarn,travel:0,age:0};g.emit('infoshumWarning',{attack:'sweep'});}
+ // «Ливень экранов»: the head monitor spits a string of televisions in high arcs — the first lands where Uma
+ // stands, the rest to either side and one more on her again; each crash leaves a puddle of static for a moment.
+ else if(kind==='rain'){const r=rooms[g.room],h=headBox(g),offs=[0,-1,1,0,-2,2],count=roundOf(a)>0?6:4;a.rain=true;a.head=2;a.headTime=1;a.roar=.7;
+  for(let i=0;i<count;i++){const tx=clamp(px+offs[i]*COL.rainSpread,r.x+40,r.end-40);n.tvs.push({fx:h.x+h.w/2,fy:h.y+h.h/2,tx,ty:beamFloor(g,tx),t:-.45-i*COL.rainGap,state:'fly',rain:true});}
+  g.emit('infoshumWarning',{attack:'rain'});}
  else{a.beam={state:'charge',timer:COL.beamCharge,x:px};a.head=2;a.headTime=9;g.emit('infoshumWarning',{attack:'beam'});}
 }
 function stepFist(g,dt){
@@ -211,8 +216,8 @@ function stepBeam(g,dt){
 }
 function stepColossus(g,dt){
  const b=g.boss,n=b.network,a=n.col,p=g.player;a.clock=(a.clock||0)+dt;if(a.hurt>0)a.hurt-=dt;if(a.roar>0)a.roar-=dt;
- stepEmo(a,dt);if(a.mode!=='idle'||a.hurt>0||a.fist||a.sweep||a.beam)a.emo=null;
- if(a.mode==='idle'&&!a.fist&&!a.sweep&&!a.beam){a.moodT=(a.moodT??1.2)-dt;if(a.moodT<=0){if(Math.random()<.3)a.roar=.7;else emote(a,undefined,1+Math.random()*.6);a.moodT=2+Math.random()*1.6;}}
+ stepEmo(a,dt);if(a.mode!=='idle'||a.hurt>0||a.fist||a.sweep||a.beam||a.rain)a.emo=null;
+ if(a.mode==='idle'&&!a.fist&&!a.sweep&&!a.beam&&!a.rain){a.moodT=(a.moodT??1.2)-dt;if(a.moodT<=0){if(Math.random()<.3)a.roar=.7;else emote(a,undefined,1+Math.random()*.6);a.moodT=2+Math.random()*1.6;}}
  a.flash=Math.max(0,a.flash-dt);a.headTime=Math.max(0,a.headTime-dt);if(a.headTime<=0&&a.mode!=='collapse')a.head=0;
  if(a.dust){a.dust.time+=dt;if(a.dust.time>.45)a.dust=null;}
  b.x=centre(g)-b.w/2;b.y=120;
@@ -223,7 +228,9 @@ function stepColossus(g,dt){
  if(a.mode==='collapse'){b.state='recover';if(a.timer<=0)rise(a);return;}
  if(a.mode==='rise'){b.state='windup';if(a.timer<=0)idle(a);return;}
  b.state='windup';
+ stepAttacks(g,dt);
  if(a.fist)stepFist(g,dt);else if(a.sweep)stepSweep(g,dt);else if(a.beam)stepBeam(g,dt);
+ else if(a.rain){if(!n.tvs.length){a.rain=false;idle(a);}}
  else if(a.mode==='idle'&&a.timer<=0)nextAttack(g);
 }
 function strikeColossus(g,paw){
@@ -240,7 +247,7 @@ function strikeColossus(g,paw){
 // ——— The breakout: he bursts out of the head screen ———
 function beginBreakout(g){
  const b=g.boss,n=b.network,a=n.col;
- n.stage='breakout';n.mode='breakout';n.timer=BREAKOUT;n.transitionProgress=0;a.mode='collapse';a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];g.bolts=[];
+ n.stage='breakout';n.mode='breakout';n.timer=BREAKOUT;n.transitionProgress=0;a.mode='collapse';a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.rain=false;n.tvs=[];n.puddles=[];g.bolts=[];
  b.phase=3;b.phaseName='На свободе';b.state='phaseChange';b.hp=PHASE_HP;g.player.inv=Math.max(g.player.inv,BREAKOUT+1);
  const h=headBox(g);g.emit('bossPhase',{boss:'infoshum',phase:3,name:'На свободе'});g.emit('infoshumRupture',{x:h.x+h.w/2,y:h.y});
 }

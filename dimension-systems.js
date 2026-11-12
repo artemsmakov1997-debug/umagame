@@ -1,5 +1,5 @@
 import {rooms} from './level.js?v=0.21.5';
-import {DIM_ROOM,FEED,MIRROR,RIFTS,ORIGINALS,DIM_CHECKPOINTS,isSafeDimPiece,slideX} from './dimension-map.js?v=0.21.5';
+import {DIM_ROOM,FEED,MIRROR,RIFTS,ORIGINALS,DIM_CHECKPOINTS,CRUMBLE,isSafeDimPiece,slideX} from './dimension-map.js?v=0.21.5';
 import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
 // «Измерение» mechanics: rising message copies (and their upside-down mirror), gravity rifts, «первоисточники».
 const x0=()=>rooms[DIM_ROOM].x;
@@ -19,11 +19,17 @@ export function placeDimensionPiece(g,s){
  if(piece.type==='copy'){
   // A reversed copy is the mirror image: it sinks from the ceiling and Uma hangs under its line.
   const f=feedState(piece,g.time),y=piece.reversed?MIRROR-f.y:f.y,wrapped=piece.reversed?y<s.y-60:y>s.y+60;
-  s.y=y;s.dimState=f.state;s.intangible=piece.inverted||f.state==='pop';
+  // A purple copy crumbles under Uma (she stands on it, or hangs under it in «Изнанка») and stays gone until it wraps.
+  if(wrapped)delete s.crumbleAt;
+  const p=g.player,under=!piece.blue&&p&&p.grounded&&p.supportId===s.id&&g.room===DIM_ROOM;
+  if(under&&s.crumbleAt===undefined){s.crumbleAt=g.time;g.emit?.('messageCrack',{x:s.x+s.w/2,y:s.y});}
+  const age=s.crumbleAt===undefined?-1:g.time-s.crumbleAt;if(age<-.01)delete s.crumbleAt;
+  const state=age>=CRUMBLE.pop?'pop':age>=CRUMBLE.crack?'fade':f.state;
+  s.y=y;s.dimState=state;s.intangible=piece.inverted||state==='pop';
   if(wrapped){s.prevY=s.y;s.dy=0;}else s.dy=s.y-s.prevY;
   // A Кликбейт sitting on a copy rides it (pinned here; the world step then adds this frame's dy), reappears with it
   // after a wrap and cannot bite while its bubble pops.
-  for(const e of g.enemies||[])if(e.ride&&e.room===DIM_ROOM&&e.platformIndex===s.index&&!e.dead){e.y=s.y-e.h-s.dy;e.x=Math.max(s.x,Math.min(s.x+s.w-e.w,e.x));e.phased=f.state==='pop';}
+  for(const e of g.enemies||[])if(e.ride&&e.room===DIM_ROOM&&e.platformIndex===s.index&&!e.dead){e.y=s.y-e.h-s.dy;e.x=Math.max(s.x,Math.min(s.x+s.w-e.w,e.x));e.phased=state==='pop';}
   return;
  }
  if(piece.type==='slide'){const x=rooms[DIM_ROOM].x+slideX(piece,g.time);s.dx=x-s.prevX;s.x=x;s.dimState='slide';s.intangible=false;

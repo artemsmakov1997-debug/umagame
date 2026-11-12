@@ -13,9 +13,14 @@ export function drawDimensionSurface(c,a,g,s){
  if(s.room!==DIM_ROOM||!s.dim||!a.dimensionPieces)return false;const img=a.dimensionPieces,piece=s.dim;
  if(piece.type==='yuri'||piece.type==='copy'||piece.type==='slide'){
   // Upside-down messages are the same bubbles mirrored about their line: Uma hangs under them.
+  // A blue message at the very top of the feed fades out and is gone for a moment before it comes back below.
+  if(piece.blue&&s.dimState==='pop')return true;
   if(piece.inverted){c.save();c.translate(0,2*s.y);c.scale(1,-1);}
-  const box=piece.type==='yuri'?P.yuri:s.dimState==='pop'?P.pop:s.dimState==='fade'?P.fade:P.copy,k=s.w/(box===P.pop?P.copy[2]:box[2]);
+  if(piece.blue&&s.dimState==='fade'){c.save();c.globalAlpha=.55+.45*Math.abs(Math.sin(g.time*14));}
+  // Yuri's own blue messages hold; purple forwarded copies crack and pop (see dimension-systems.js).
+  const box=piece.blue?P.yuri:s.dimState==='pop'?P.pop:s.dimState==='fade'?P.fade:P.copy,k=s.w/(box===P.pop?P.copy[2]:box[2]);
   const top=box===P.pop?s.y-(P.copy[1]-P.pop[1])*k:s.y-3;blit(c,img,box,s.x-(box===P.pop?(box[2]-P.copy[2])*k/2:0),top,box[2]*k,box[3]*k);
+  if(piece.blue&&s.dimState==='fade')c.restore();
   if(piece.inverted)c.restore();return true;
  }
  if(piece.inverted){const box=P.hanging,k=s.w/box[2];blit(c,img,box,s.x,s.y-box[3]*k+6,s.w,box[3]*k);return true;}

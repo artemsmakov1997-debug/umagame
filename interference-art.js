@@ -27,20 +27,21 @@ function drawTextures(c,img,fill,width,time){
   c.globalAlpha=Math.sin(phase/.6*Math.PI)*(.3+fill*.35);c.drawImage(img,sx,sy,CW,CH,Math.round(hash(slot+2)*(width-w)),Math.round(60+hash(slot+3)*200),Math.round(w),Math.round(w*CH/CW));}}
  c.restore();
 }
-// The meter (assets/interference-meter.png): a frame with a static monitor, a glass channel and a warning lamp; the
-// fill is cyan, turning hot magenta past 75%; the monitor shows Infoshum's eyes past 55% and cracks past 85%.
 const MT={"frame":{"r":[0,0,684,168]},"cL":{"r":[686,0,86,60]},"cM":{"r":[0,170,393,60]},"cR":{"r":[395,170,85,60]},"dL":{"r":[482,170,86,62]},"dM":{"r":[570,170,393,62]},"dR":{"r":[0,234,86,62]},"lamp0":{"r":[88,234,99,102]},"lamp1":{"r":[189,234,100,102]},"icon0":{"r":[291,234,128,113]},"icon1":{"r":[421,234,128,113]},"icon2":{"r":[551,234,129,113]},"crack0":{"r":[682,234,229,48]},"crack1":{"r":[0,349,226,50]},"crack2":{"r":[228,349,230,50]}},CHAN=[169,76,400,38.5],SCREEN=[66,50,56,58],LAMP=[583,28,63,64],PLATE=[221,11,270,42];
+// The compact gauge just under the boss health bar (top centre of the view): a dark plate with the label and the
+// glass channel of assets/interference-meter.png; cyan fill, hot magenta past 75%. No monitor, lamp or frame.
+export function meterBox(width){const w=Math.round(Math.max(220,Math.min(340,width*.36))),h=16;return {x:Math.round((width-w)/2),y:4,w,h,label:82};}
 function drawMeter(c,img,fill,width,time){
- const w=Math.min(520,width-24),u=w/MT.frame.r[2],x=Math.round((width-w)/2),y=6,P=(p,X,Y,W,H)=>c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(X),Math.round(Y),Math.round(W),Math.round(H));
- if(!img?.width){rect(c,x,y,w,30,'#030c21ed');rect(c,x+8,y+20,(w-16)*fill,5,fill>.75?'#fa73ce':'#66e9ee');return;}
+ const m=meterBox(width),danger=fill>.75,cx=m.x+m.label,cy=m.y+3,cw=m.w-m.label-4,ch=m.h-6,fw=Math.round(cw*fill);
  c.save();c.imageSmoothingEnabled=false;
- const danger=fill>.75,k=danger?'d':'c',L=MT[k+'L'],M=MT[k+'M'],R=MT[k+'R'],cx=x+CHAN[0]*u,cy=y+CHAN[1]*u,cw=CHAN[2]*u,ch=CHAN[3]*u,fh=ch,fw=cw*fill,cap=L.r[2]*fh/L.r[3];
- if(fw>1){c.save();c.beginPath();c.rect(cx,cy,fw,ch);c.clip();P(L,cx,cy,cap,fh);const ms=[M.r[0]+8,M.r[1],M.r[2]-16,M.r[3]],mw=ms[2]*fh/ms[3],off=(time*60)%mw;for(let xx=cx+cap-off;xx<cx+fw;xx+=mw-1)c.drawImage(img,ms[0],ms[1],ms[2],ms[3],Math.round(xx),Math.round(cy),Math.ceil(mw),Math.round(fh));P(L,cx,cy,cap,fh);if(fill>.97)P(R,cx+cw-cap,cy,cap,fh);c.restore();}
- P(MT.frame,x,y,MT.frame.r[2]*u,MT.frame.r[3]*u);
- if(fill>.5){const q=MT['crack'+(fill>.9?2:fill>.7?1:0)];c.globalAlpha=.8;P(q,cx,cy,cw,ch);c.globalAlpha=1;}
- const ic=MT['icon'+(fill>.85?2:fill>.55?1:0)],ir=ic.r,s=[ir[0]+ir[2]*.17,ir[1]+ir[3]*.16,ir[2]*.66,ir[3]*.6];c.drawImage(img,s[0],s[1],s[2],s[3],Math.round(x+SCREEN[0]*u),Math.round(y+SCREEN[1]*u),Math.round(SCREEN[2]*u),Math.round(SCREEN[3]*u));
- if(danger&&Math.floor(time*4)%2===0)P(MT.lamp1,x+LAMP[0]*u,y+LAMP[1]*u,LAMP[2]*u,LAMP[3]*u);
- c.font=Math.round(15*u*2)+'px UmaText,monospace';c.textAlign='center';c.textBaseline='middle';c.fillStyle=danger?'#6a0f4f':'#1d1842';c.fillText('ПОМЕХИ '+Math.floor(fill*100)+'%',x+(PLATE[0]+PLATE[2]/2)*u,y+(PLATE[1]+PLATE[3]/2)*u+1);
+ c.fillStyle='#060a1fdd';c.beginPath();c.roundRect(m.x,m.y,m.w,m.h,4);c.fill();c.strokeStyle=danger?'#fa73cecc':'#66e9eebb';c.lineWidth=1;c.beginPath();c.roundRect(m.x+.5,m.y+.5,m.w-1,m.h-1,4);c.stroke();
+ c.fillStyle='#02040e';c.fillRect(cx,cy,cw,ch);
+ if(fw>0){const k=danger?'d':'c',M=MT[k+'M'],ms=[M.r[0]+8,M.r[1]+6,M.r[2]-16,M.r[3]-12];
+  if(img?.width){c.save();c.beginPath();c.rect(cx,cy,fw,ch);c.clip();const mw=ms[2]*ch/ms[3],off=(time*40)%mw;for(let xx=cx-off;xx<cx+fw;xx+=mw-1)c.drawImage(img,ms[0],ms[1],ms[2],ms[3],Math.round(xx),cy,Math.ceil(mw),ch);c.restore();}
+  else{c.fillStyle=danger?'#fa73ce':'#66e9ee';c.fillRect(cx,cy,fw,ch);}
+  if(danger&&Math.floor(time*4)%2===0){c.fillStyle='#ffffff55';c.fillRect(cx,cy,fw,ch);}}
+ c.strokeStyle='#3d4a78';c.strokeRect(cx-.5,cy-.5,cw+1,ch+1);
+ c.font='9px UmaText,monospace';c.textAlign='left';c.textBaseline='middle';c.fillStyle=danger?'#ff9ad8':'#bfeff4';c.fillText('ПОМЕХИ '+Math.floor(fill*100)+'%',m.x+6,m.y+m.h/2+1);
  c.restore();
 }
 export function drawInterferenceOverlay(c,g,width,assets){

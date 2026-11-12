@@ -121,7 +121,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  if(room===3&&['inflator','paparazzi'].includes(type)||['boom','spotlight'].includes(type))delete actor.source;
  // In the Dimension monsters simply appear — no televisions or torn-paper portals on the map.
  if(room===7)delete actor.source;
- actor.arrivalDuration=actor.arrivalDuration||actor.spawnTime||(room===1?.8:.55);return actor;
+ actor.arrivalDuration=actor.arrivalDuration||actor.spawnTime||(room===1?.8:['echo','static'].includes(type)?.95:.55);return actor;
 }
 // A studio monster sits behind the glass of its container: its box is centred on the window (see studio-container-art.js).
 function seatInContainer(actor,s){
@@ -141,12 +141,13 @@ export function createEnemies(){const all=[
  // Ботоферма caged over the door at the far end, sending its bots towards Uma from the moment she arrives.
  enemy('boom',5,715,3,{dir:-1,trigger:430}),enemy('spotlight',5,860,4,{trigger:600}),enemy('boom',5,1525,8,{dir:-1}),
  enemy('spotlight',5,1800,11),enemy('botfarm',5,1925,11,{range:2400,trigger:60}),
- // Измерение: Помеха over the feeds, Кликбейт only on moving messages (two rising copies, a sliding one), an Эхо by
- // each rift and one in «Пересылка».
- enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,430,4,{trigger:250,ride:true}),enemy('clickbait',7,580,8,{trigger:300,ride:true}),enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
- enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('clickbait',7,2140,24,{ride:true}),enemy('echo',7,2420,25,{trigger:2300}),enemy('static',7,2660,26,{y:200})
+ // Измерение: Помеха over the feeds, Кликбейты only on the rising messages of «Лента» (five of them, on purple and
+ // blue bubbles alike), an Эхо by each rift and one in «Пересылка».
+ enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,290,2,{trigger:200,ride:true}),enemy('clickbait',7,430,4,{trigger:250,ride:true}),enemy('clickbait',7,470,6,{trigger:280,ride:true}),
+ enemy('clickbait',7,580,8,{trigger:300,ride:true}),enemy('clickbait',7,610,9,{trigger:320,ride:true}),enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
+ enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('echo',7,2420,25,{trigger:2300}),enemy('static',7,2660,26,{y:200})
  ];
- const kept={1:[330,760,1180,1430,1900,2210,2290],3:[575,520,1150,1060,1727,2240],5:[715,860,1525,1800,1925],7:[330,430,580,760,1250,1700,1960,2140,2420,2660]};
+ const kept={1:[330,760,1180,1430,1900,2210,2290],3:[575,520,1150,1060,1727,2240],5:[715,860,1525,1800,1925],7:[330,290,430,470,580,610,760,1250,1700,1960,2420,2660]};
  const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}

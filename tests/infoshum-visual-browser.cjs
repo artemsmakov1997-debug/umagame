@@ -16,7 +16,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    m.crackInfoshumScreen(g);run(25);m.crackInfoshumScreen(g);run(30);out.take=n.take?.show;g.player.x=16128+700;g.player.y=262-48;draw('yuri-in-screen');m.exposeInfoshum(g);draw('face-in-screen');
    m.smashWall(g);run(60);out.assemble=n.stage;draw('assemble-relays');run(100);draw('assemble-rise');
    run(120);out.colossus=n.stage;const col=n.col,go=i=>{col.fist=null;col.sweep=null;col.beam=null;col.shocks=[];col.mode='idle';col.timer=0;col.step=i;g.player.x=16128+500;g.player.y=474-48;};
-   go(0);run(30);draw('fist-raised');run(70);draw('fist-stuck');go(1);run(60);draw('sweep');go(3);run(100);draw('head-beam');
+   go(0);run(30);draw('fist-raised');run(70);draw('fist-stuck');go(1);run(60);draw('sweep');go(4);run(100);draw('head-beam');go(2);run(50);draw('tv-rain');
    go(0);m.breakHand(g);m.breakHand(g);run(20);out.collapse=col.mode;draw('falling');run(60);draw('lying');
    m.dropColossus(g);m.dropColossus(g);m.dropColossus(g);run(45);out.breakout=n.stage;draw('breakout-glass');run(60);draw('breakout-roar');
    run(120);out.free=n.stage;const f=n.free,fa=i=>{f.tentacles=[];f.shards=[];f.mode='hover';f.timer=0;f.step=i;};

@@ -14,7 +14,7 @@ import {drawPassages} from './passage-art.js?v=0.21.5';
 import {drawNewsroomScenery,drawNewsroomConveyor,drawNewsroomPlatform} from './newsroom-art.js?v=0.21.5';
 import {drawMapProps} from './chapter-route-art.js?v=0.21.5';
 import {drawExitArrow} from './navigation-art.js?v=0.21.5';
-import {drawEnemySources,drawEchoVortex,drawBeltEmergence} from './enemy-arrival-art.js?v=0.21.5';
+import {drawEnemySources,drawEchoVortex,drawBeltEmergence,drawDimensionArrival,DIM_ARRIVAL} from './enemy-arrival-art.js?v=0.21.5';
 import {drawFinaleBackdrop} from './ending-ui.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
 import {drawTacticalTerrain,drawEnemyDefense} from './tactical-art.js?v=0.21.5';
@@ -100,7 +100,8 @@ export class Renderer{
    if(e.type==='clickbait'&&!e.revealed){drawLure(c,a,e.x+24,e.y+8,t);continue;}
    drawBeltEmergence(c,a,e);
    c.save();
-   if(e.spawnTime>0){const progress=Math.max(0,Math.min(1,(1-e.spawnTime/(e.arrivalDuration||.55)-.12)/.88));c.beginPath();c.rect(e.x-140,e.y-170,328,e.h+170);c.clip();c.translate(0,(1-progress)*(e.type==='servant'?12:78));c.globalAlpha=progress>.01?1:0;}
+   if(e.spawnTime>0&&['echo','static'].includes(e.type)){const k=Math.max(0,Math.min(1,1-e.spawnTime/(e.arrivalDuration||DIM_ARRIVAL)));drawDimensionArrival(c,e,k,t);const s=.55+.45*k,cx=e.x+e.w/2,cy=e.y+e.h/2;c.translate(cx,cy);c.scale(s,s);c.translate(-cx,-cy);c.globalAlpha=k<.35?0:Math.floor(t*30)%3===0&&k<.85?.3:Math.min(1,(k-.35)/.5);}
+   else if(e.spawnTime>0){const progress=Math.max(0,Math.min(1,(1-e.spawnTime/(e.arrivalDuration||.55)-.12)/.88));c.beginPath();c.rect(e.x-140,e.y-170,328,e.h+170);c.clip();c.translate(0,(1-progress)*(e.type==='servant'?12:78));c.globalAlpha=progress>.01?1:0;}
    else if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
    if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
    if(e.type==='servant')drawServant(c,a,e,t);
