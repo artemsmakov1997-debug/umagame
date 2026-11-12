@@ -1,3 +1,4 @@
+import {drawColossusAttacks,drawMagnetHead} from './infoshum-attacks-art.js?v=0.21.5';
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
 import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos,ghostPrep} from './infoshum-combat.js?v=0.21.5';
@@ -155,7 +156,7 @@ function buildRig(g,n,a,b,time,assembly){
  if(roar)face='roar';if(f&&!fallK)face=f.state==='aim'||f.state==='lock'?'glare':f.state==='broken'?'scream':f.weak?'sneer':'grin';
  if(sw&&!fallK)face='roar';if(a.beam)face=a.beam.state==='charge'?'glare':'scream';if(a.hurt>0)face='scream';if(fallK>.3)face='glitch';
  const cracked=b.hurtTime>0&&fallK===1||breakout&&breakoutFrame(n.transitionProgress)>=2;
- return {cx,fallK,falling:a.mode==='collapse'&&!breakout,torso:{x:tx,y:ty},down:{x:dx,y:dy},SL,SR,arm,head,face,cracked,mir,assembly,emoAlpha:a.emo&&face===a.emo.name?emoAlpha(a.emo):1};
+ return {g,cx,fallK,falling:a.mode==='collapse'&&!breakout,torso:{x:tx,y:ty},down:{x:dx,y:dy},SL,SR,arm,head,face,cracked,mir,assembly,emoAlpha:a.emo&&face===a.emo.name?emoAlpha(a.emo):1};
 }
 // The calm face between moods: the squid-eyed screen of the tower (assets/infoshum-tower.png, «face»).
 function drawCalmFace(c,a,box){const img=a.infoshumTower,f=AT.mon.face.r;if(!img)return;c.save();c.beginPath();c.rect(box.x,box.y,box.w,box.h);c.clip();c.drawImage(img,f[0]+48,f[1]+28,122,94,Math.round(box.x-2),Math.round(box.y-2),Math.round(box.w+4),Math.round(box.h+4));c.restore();}
@@ -176,7 +177,7 @@ function drawRigHead(c,a,r,time){
  const img=a.infoshumColossusRig,p=RIG[r.cracked?'headX':'head'],h=r.head,s=p.scr,sc=[(s[0]+s[2])/2,(s[1]+s[3])/2];
  rigPiece(c,img,p,sc,h.x,h.y,h.rot,{scale:h.scale});if(r.cracked)return;
  c.save();c.translate(h.x,h.y);c.rotate(h.rot);c.translate(-h.x,-h.y);const box=inset(headScreen(r),.03,.04);
- drawCalmFace(c,a,box);if(r.face)drawEmotion(c,a,r.face,box,r.emoAlpha,time);c.restore();
+ drawCalmFace(c,a,box);if(r.face)drawEmotion(c,a,r.face,box,r.emoAlpha,time);if(r.g)drawMagnetHead(c,a,r.g,headScreen(r),time);c.restore();
 }
 function drawRigDebris(c,a,r){if(!r.falling||r.fallK<=0||r.fallK>=1)return;const img=a.infoshumColossusRig;for(let i=0;i<9;i++){const p=RIG['deb'+i],t=r.fallK,dir=i%2?1:-1,x=r.cx+dir*(40+i*28)*t,y=200+i*6-Math.sin(t*Math.PI)*(90+i*12)+t*t*220;rigPiece(c,img,p,[p.r[2]/2,p.r[3]/2],x,Math.min(FLOOR-8,y),t*6*dir,{scale:.8,alpha:1-t*.4});}}
 function drawColossus(c,a,g,time,assembly=null){
@@ -249,7 +250,7 @@ function drawColossusForeground(c,a,g,time){
  for(const s of col.shocks){const p=AT.parts['shock'+Math.min(2,Math.floor(s.travel/50))],w=84,h=w*p.r[3]/p.r[2];piece(c,img,p,s.x-w/2,FLOOR-h+12,w,h,{alpha:Math.max(.25,1-s.travel/COL.shockRange)});}
  if(col.dust){const p=AT.parts.dust,k=col.dust.time/.45,w=180*(1+k*.5),h=w*p.r[3]/p.r[2];piece(c,img,p,col.dust.x-w/2,FLOOR-h+14,w,h,{alpha:1-k});}
  const s=col.sweep;if(s&&s.state==='warn'){const y=s.low?FLOOR-22:FLOOR-62;drawLineWarning(c,a,rooms[g.room].x+TOWER.cx-COL.sweepSpan/2,y,COL.sweepSpan,time);}
- if(n.stage==='colossus')drawCannon(c,a,g,time);
+ if(n.stage==='colossus'){drawCannon(c,a,g,time);drawColossusAttacks(c,a,g,time);}
  flash(c,g,Math.min(.4,col.flash*1.4));
  if(n.stage==='breakout')drawBreakout(c,a,g,n.transitionProgress,time);
 }
@@ -354,6 +355,7 @@ export function drawInfoshumBackdrop(c,a,g,time){
  drawHallBack(c,a,g,time);
 }
 export function drawInfoshumPlatform(c,a,p,time){
+ if(p.quake)return;// quake floor and islands: drawn by infoshum-attacks-art.js
  if(p.storm!==undefined&&drawStormIsland(c,a,p))return;
  if(p.index===0&&p.room===8&&!p.storm)return;// the hall's floor is painted in its background
  if(!a.infoshumPlatform?.complete||p.infoshumStep)return;
