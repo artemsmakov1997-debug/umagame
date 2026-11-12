@@ -78,6 +78,15 @@ function drawHallBack(c,a,g,time){
  if(n.shield&&n.mode!=='opening')drawShield(c,g,time);
  if(n.take?.show==='yuri'){const sc=towerScreen(g);c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=14;c.lineWidth=2;c.globalAlpha=.55+.3*Math.sin(time*8);c.beginPath();c.roundRect?c.roundRect(sc.x+2,sc.y+2,sc.w-4,sc.h-4,10):c.rect(sc.x+2,sc.y+2,sc.w-4,sc.h-4);c.stroke();c.restore();}
 }
+// Televisions thrown from a screen (the tower's in phase 1, the colossus head's in «Ливень экранов») and the static
+// puddles they leave. In the rain each landing spot is marked from the moment the set leaves the screen.
+function drawTvRain(c,a,n,time){
+ const img=a.infoshumFx1,F=AT.fx1;if(!img)return;
+ for(const q of n.puddles){const k=q.time/WAVE.puddle,p=F['pud'+Math.min(3,Math.floor(k*4))];stand(c,img,p,q.x,q.y+8,WAVE.puddleHalf*2.6);}
+ for(const t of n.tvs)if(t.rain&&t.state==='fly'){c.save();c.globalAlpha=(t.t<0?.35:.55)+.35*Math.abs(Math.sin(time*10));c.fillStyle='#ff5ae0';c.beginPath();c.ellipse(t.tx,t.ty+2,34,7,0,0,Math.PI*2);c.fill();c.globalAlpha=1;c.strokeStyle='#ffd0f4';c.lineWidth=1;c.beginPath();c.ellipse(t.tx,t.ty+2,34,7,0,0,Math.PI*2);c.stroke();c.restore();}
+ for(const t of n.tvs){if(t.t<0)continue;if(t.state==='fly'){const k=t.t/WAVE.flight,x=t.fx+(t.tx-t.fx)*k,y=t.fy+(t.ty-t.fy)*k-Math.sin(k*Math.PI)*160,p=F['tv'+Math.floor(time*10)%2];piece(c,img,p,x-26,y-28,52,56);}
+  else stand(c,img,F.tvhit,t.tx,t.ty+8,74);}
+}
 function drawHallFront(c,a,g,time){
  const n=g.boss.network,img=a.infoshumFx1,F=AT.fx1;
  for(const s of n.scans){const bottom=s.state==='go'?s.bottom:beamFloor(g,s.x);
@@ -86,9 +95,7 @@ function drawHallFront(c,a,g,time){
  for(const w of n.whips){const len=w.x1-w.x0;
   if(w.state==='warn'){drawLineWarning(c,a,w.x0,w.y-3,len,time);const k=1-Math.max(0,w.timer)/WAVE.whipWarn,p=F['whip'+Math.min(2,Math.floor(k*3))],x=w.from<0?w.x0-30:w.x1+30;stand(c,img,p,x,w.y+4,p.r[2]*1.2,{flip:w.from>0});}
   else{const k=Math.min(1,(WAVE.whipHit-w.timer)/(WAVE.whipHit+.35)),p=F['whip'+(3+Math.min(3,Math.floor(k*4)))];stand(c,img,p,w.x0+len/2,w.y+6,len+40,{flip:w.from>0});}}
- for(const q of n.puddles){const k=q.time/WAVE.puddle,p=F['pud'+Math.min(3,Math.floor(k*4))];stand(c,img,p,q.x,q.y+8,WAVE.puddleHalf*2.6);}
- for(const t of n.tvs){if(t.t<0)continue;if(t.state==='fly'){const k=t.t/WAVE.flight,x=t.fx+(t.tx-t.fx)*k,y=t.fy+(t.ty-t.fy)*k-Math.sin(k*Math.PI)*160,p=F['tv'+Math.floor(time*10)%2];piece(c,img,p,x-26,y-28,52,56);}
-  else stand(c,img,F.tvhit,t.tx,t.ty+8,74);}
+ drawTvRain(c,a,n,time);
  // The open junction box: an amber glow so the cat sees where Yuri waits.
  n.relays.forEach((q,i)=>{if(q.state==='open'){const r=relayRect(g,i);amberFrame(c,{x:r.x+r.w*.55,y:r.y+r.h*.52,w:r.w*.36,h:r.h*.28},time,2);}});
 }
@@ -245,6 +252,7 @@ function drawColossusForeground(c,a,g,time){
  if(col.dust){const p=AT.parts.dust,k=col.dust.time/.45,w=180*(1+k*.5),h=w*p.r[3]/p.r[2];piece(c,img,p,col.dust.x-w/2,FLOOR-h+14,w,h,{alpha:1-k});}
  const s=col.sweep;if(s&&s.state==='warn'){const y=s.low?FLOOR-22:FLOOR-62;drawLineWarning(c,a,rooms[g.room].x+TOWER.cx-COL.sweepSpan/2,y,COL.sweepSpan,time);}
  if(n.stage==='colossus')drawCannon(c,a,g,time);
+ drawTvRain(c,a,n,time);
  flash(c,g,Math.min(.4,col.flash*1.4));
  if(n.stage==='breakout')drawBreakout(c,a,g,n.transitionProgress,time);
 }
@@ -291,7 +299,11 @@ function drawFree(c,a,g,time){
  else if(f.mode==='dizzy'){name='d'+Math.floor(time*4)%2;place=ground;}
  else if(f.mode==='hit'){name='t'+Math.min(1,Math.floor((FREE.hit-f.timer)/FREE.hit*2));}
  else if(b.hurtTime>0)name='h'+Math.floor(time*10)%2;
- free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5});
+ // He has to stand out of the purple storm: a dark halo behind him, a dark outline and a cyan glow around the
+ // sprite, and smooth scaling (the sheet is drawn at 1.4×, which nearest-neighbour turns into uneven blocks).
+ const cy=place?place.y-60:f.y;c.save();const halo=c.createRadialGradient(f.x,cy,10,f.x,cy,120);halo.addColorStop(0,'rgba(4,2,16,.62)');halo.addColorStop(1,'rgba(4,2,16,0)');c.fillStyle=halo;c.fillRect(f.x-120,cy-120,240,240);c.restore();
+ c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.filter='drop-shadow(0 0 1px #090316) drop-shadow(0 0 1px #090316) drop-shadow(0 0 6px rgba(110,235,255,.8))';
+ free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5});c.restore();
  flash(c,g,Math.min(.4,f.flash*1.4));
 }
 // The storm (assets/infoshum-storm.jpg, infoshum-storm-platforms.png: slab, cracked slab, slab with a terminal).

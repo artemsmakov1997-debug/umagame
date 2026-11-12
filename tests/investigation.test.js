@@ -19,8 +19,8 @@ test('monster origins remain a mystery until the full chain is shown in the epil
 
 });
 
-test('no chapter keeps transmitters; the Dimension still hides its «первоисточники»',()=>{
- const g=new Game({story:false});g.start();assert.equal(g.relays.length,0);assert.equal(g.originals.length,3);
+test('no chapter keeps transmitters, and the Dimension has no envelopes left',()=>{
+ const g=new Game({story:false});g.start();assert.equal(g.relays.length,0);assert.equal(g.originals.length,0);
 });
 test('reading a notebook adds the room\'s next clue, with no premature answer',()=>{
  const g=new Game({story:false});g.start();g.tutorial.complete=true;g.enemies=[];g.fishes=[];g.soups=[];

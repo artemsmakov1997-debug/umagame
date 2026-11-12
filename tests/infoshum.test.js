@@ -70,8 +70,13 @@ test('an arm sweeps low (a jump clears it) or high (a crouch passes under it); t
   for(let i=0;i<200&&a.sweep;i++){const now=s.state==='go'||s.timer<.1;g.step(1/60,dodge&&now?(low?{jump:g.player.grounded&&s.travel<COL.sweepSpan*.6}:{down:true}):{});}
   assert.equal(g.health,dodge?h:h-1,(low?'low':'high')+(dodge?' dodged':' hit'));}
  const b=sweepBox({x:0,low:true}),t=sweepBox({x:0,low:false});assert.ok(b.y+b.h===FLOOR&&t.y+t.h<FLOOR-30);
- const g=colossus(false),a=attack(g,3),m=a.beam;assert.equal(m.state,'charge');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>m.state==='fire',120));tick(g,30);assert.equal(g.health,h-1);
- const q=colossus(false),c=attack(q,3);q.player.inv=0;const h2=q.health;for(let i=0;i<400&&c.beam;i++)q.step(1/60,{right:true});assert.equal(q.health,h2,'a running cat outruns the beam');
+ const g=colossus(false),a=attack(g,COL.plan.indexOf('beam')),m=a.beam;assert.equal(m.state,'charge');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>m.state==='fire',120));tick(g,30);assert.equal(g.health,h-1);
+ const q=colossus(false),c=attack(q,COL.plan.indexOf('beam'));assert.ok(c.beam);q.player.inv=0;const h2=q.health;for(let i=0;i<400&&c.beam;i++)q.step(1/60,{right:true});assert.equal(q.health,h2,'a running cat outruns the beam');
+});
+test('«Ливень экранов»: the head throws televisions at marked spots — one onto a cat that stands still; a running cat gets through',()=>{
+ const g=colossus(false),a=attack(g,COL.plan.indexOf('rain'));assert.equal(a.rain,true);const n=g.boss.network,px=g.player.x+g.player.w/2;assert.ok(n.tvs.length>=4);assert.ok(n.tvs.some(t=>Math.abs(t.tx-px)<1));
+ g.player.inv=0;const h=g.health;for(let i=0;i<60*5&&a.rain;i++)tick(g,1);assert.equal(a.rain,false,'the attack ends');assert.ok(g.health<h,'a cat that stands still is hit');assert.equal(a.mode,'idle');
+ const q=colossus(false),c=attack(q,COL.plan.indexOf('rain'));q.player.inv=0;const h2=q.health;for(let i=0;i<60*5&&c.rain;i++)q.step(1/60,{right:q.player.x<16128+1300,left:q.player.x>=16128+1300});assert.ok(q.health>=h2-1);
 });
 test('the second fall cracks the head: he bursts out of it into the storm («На свободе»)',()=>{
  const g=colossus(),n=g.boss.network;for(let k=0;k<2;k++)assert.ok(dropColossus(g),'fall '+k);assert.equal(n.stage,'breakout');assert.equal(g.boss.hp,4);assert.equal(g.boss.phase,3);

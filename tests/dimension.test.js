@@ -16,25 +16,29 @@ function ready(){const g=new Game({story:false});g.start();g.tutorial.complete=t
 function stand(g,index,local,flipped=false){const s=g.platforms.find(s=>s.id==='7:'+index);Object.assign(g.player,{x:x0+local,y:flipped?s.y:s.y-48,h:48,vx:0,vy:0,grounded:true,supportId:s.id,flipped});return s;}
 const events=(g,type)=>g.events.filter(e=>e.type===type);
 
-test('the Dimension is its own map: no transmitters, ladders, burrows or controllers — three originals instead',()=>{
+test('the Dimension is its own map: no transmitters, ladders, burrows, controllers or envelopes',()=>{
  assert.equal(platforms.filter(s=>s.room===7).length,DIM_PIECES.length);
  assert.equal(createRelays().filter(d=>d.room===7).length,0);assert.equal(ladders.filter(l=>l.room===7).length,0);
  const g=ready();assert.equal(g.mapProps.filter(d=>d.room===7).length,0);assert.equal(g.routePortals.filter(r=>r.room===7).length,0);
- assert.equal(g.originals.length,ORIGINALS.length);assert.deepEqual([...new Set(createEnemies().filter(e=>e.room===7).map(e=>e.type))].sort(),['clickbait','echo','static']);
+ assert.equal(g.originals.length,0);assert.deepEqual([...new Set(createEnemies().filter(e=>e.room===7).map(e=>e.type))].sort(),['clickbait','echo','static']);
 });
 
-test('forwarded copies rise steadily and pop near the top; Yuri\'s messages stay put; a copy carries Uma up',()=>{
- const g=ready(),copy=g.platforms.find(s=>s.id==='7:1'),yuri=g.platforms.find(s=>s.id==='7:0');
- const y=copy.y;tick(g,30);const travelled=y-copy.y;assert.ok(travelled<0||Math.abs(travelled-FEED.speed*.5)<1.5,'rises at the feed speed');assert.equal(yuri.y,390);
+test('messages rise steadily and pop near the top; the ground is islands; a blue message carries Uma up, a purple copy crumbles under her and comes back',()=>{
+ const g=ready(),copy=g.platforms.find(s=>s.id==='7:1'),start=g.platforms.find(s=>s.id==='7:0');assert.equal(start.dim.type,'island');
+ const y=copy.y;tick(g,30);const travelled=y-copy.y;assert.ok(travelled<0||Math.abs(travelled-FEED.speed*.5)<1.5,'rises at the feed speed');assert.equal(start.y,390);
  let popped=false;for(let i=0;i<60*14;i++){tick(g,1);if(copy.dimState==='pop'){popped=true;assert.equal(copy.intangible,true);break;}}assert.ok(popped);
- const h=ready(),ride=h.platforms.find(s=>s.id==='7:4');h.time=0;tick(h,1);stand(h,4,ride.x-x0+30);const start=h.player.y;tick(h,45);
- assert.ok(h.player.grounded&&h.player.supportId==='7:4');assert.ok(start-h.player.y>20,'carried upwards');
+ assert.ok(DIM_PIECES.filter(p=>p.type==='copy').some(p=>p.blue)&&DIM_PIECES.filter(p=>p.type==='copy').some(p=>!p.blue));assert.ok(DIM_PIECES.filter(p=>p.type==='slide').every(p=>p.blue));
+ const h=ready(),ride=h.platforms.find(s=>s.id==='7:5');assert.equal(ride.dim.blue,true);h.time=0;tick(h,1);stand(h,5,ride.x-x0+30);const from=h.player.y;tick(h,45);
+ assert.ok(h.player.grounded&&h.player.supportId==='7:5');assert.ok(from-h.player.y>20,'carried upwards');
+ const k=ready(),purple=k.platforms.find(s=>s.id==='7:4');assert.equal(purple.dim.blue,false);k.time=0;tick(k,1);stand(k,4,purple.x-x0+30);tick(k,1);
+ assert.equal(events(k,'messageCrack').length,1);tick(k,45);assert.notEqual(k.player.supportId,'7:4','the copy crumbled away');assert.equal(purple.intangible,true);
+ for(let i=0;i<60*14&&purple.intangible;i++)tick(k,1);assert.equal(purple.intangible,false,'it comes back with the next wrap');
  for(const piece of DIM_PIECES.filter(p=>p.type==='copy'))assert.ok(feedState(piece,0).y<=FEED.bottom&&feedState(piece,0).y>=FEED.top);
 });
 
-test('a Кликбейт sits on two rising copies, rides them up and around, and cannot bite while its bubble pops',()=>{
- const all=createEnemies().filter(e=>e.room===7&&e.type==='clickbait');assert.ok(all.every(e=>e.ride&&['copy','slide'].includes(DIM_PIECES[e.platformIndex].type)),'a Кликбейт only ever sits on a moving message');
- const roster=all.filter(e=>DIM_PIECES[e.platformIndex].type==='copy');assert.equal(roster.length,2);assert.ok(roster.every(e=>!DIM_PIECES[e.platformIndex].reversed));
+test('Кликбейты sit only on the rising messages of «Лента», ride them up and around, and cannot bite while a bubble pops',()=>{
+ const all=createEnemies().filter(e=>e.room===7&&e.type==='clickbait');assert.ok(all.every(e=>e.ride&&DIM_PIECES[e.platformIndex].type==='copy'),'a Кликбейт only ever sits on a rising message');
+ const roster=all;assert.equal(roster.length,5);assert.ok(roster.every(e=>!DIM_PIECES[e.platformIndex].reversed));
  const g=ready();g.enemies=roster.map(e=>Object.assign(e,{active:true}));g.player.inv=999;Object.assign(g.player,{x:x0+60});
  const e=g.enemies[0],copy=g.platforms.find(s=>s.id==='7:'+e.platformIndex);let wrapped=false,popPhased=false,last=copy.y;
  for(let i=0;i<60*14;i++){tick(g,1);assert.ok(Math.abs(e.y+e.h-copy.y)<1.5,'stays on its copy');assert.ok(e.x>=copy.x-.5&&e.x+e.w<=copy.x+copy.w+.5);if(copy.y>last+60)wrapped=true;if(copy.dimState==='pop'&&e.phased)popPhased=true;last=copy.y;}
@@ -44,8 +48,8 @@ test('the first rift flips Uma under a hanging message; the upside-down feed is 
  const g=ready();stand(g,10,800);let flipped=false;for(let i=0;i<200&&!flipped;i++){tick(g,1,{right:true});flipped=g.player.flipped&&g.player.grounded;}
  assert.ok(flipped);assert.equal(g.player.supportId,'7:11');assert.equal(g.player.y,70);assert.equal(events(g,'riftFlip').length,1);
  for(let k=0;k<9;k++){const a=g.platforms.find(s=>s.id==='7:'+(1+k)),b=g.platforms.find(s=>s.id==='7:'+(12+k));assert.ok(Math.abs(b.y-(MIRROR-a.y))<.01,'mirror of copy '+(1+k));assert.equal(b.dimState,a.dimState);assert.equal(b.intangible,true,'never solid for an upright Uma');}
- const h=ready();tick(h,1);const ride=h.platforms.find(s=>s.id==='7:15');for(let i=0;i<60*12&&!(ride.y>60&&ride.y<200&&ride.dimState==='rise');i++)tick(h,1);
- stand(h,15,ride.x-x0+30,true);const start=h.player.y;tick(h,45);assert.ok(h.player.grounded&&h.player.supportId==='7:15'&&h.player.flipped);assert.ok(h.player.y-start>20,'carried downwards, hanging');
+ const h=ready();tick(h,1);const ride=h.platforms.find(s=>s.id==='7:16');for(let i=0;i<60*12&&!(ride.y>60&&ride.y<200&&ride.dimState==='rise');i++)tick(h,1);
+ stand(h,16,ride.x-x0+30,true);const start=h.player.y;tick(h,45);assert.ok(h.player.grounded&&h.player.supportId==='7:16'&&h.player.flipped);assert.ok(h.player.y-start>20,'carried downwards, hanging');
  assert.equal(h.player.y,ride.y);
 });
 test('the second rift puts Uma back on her feet over the island below',()=>{
@@ -60,26 +64,6 @@ test('falling up out of the world costs one heart and returns Uma upright to the
  const g=ready();stand(g,10,760);tick(g,2);stand(g,11,900,true);tick(g,1);g.player.inv=0;
  Object.assign(g.player,{x:x0+1060,grounded:false,supportId:null,vy:-200});for(let i=0;i<90&&g.health===4;i++)tick(g,1);
  assert.equal(g.health,3);assert.equal(g.player.flipped,false);assert.ok(['7:10','7:0'].includes(g.player.supportId),g.player.supportId+' '+JSON.stringify(g.safeTrail.slice(-3)));
-});
-test('originals: picked once, kept after losing a life, reset on a location retry, and they weaken Infoshum',()=>{
- const g=ready();for(const o of g.originals)Object.assign(g.player,{x:o.x,y:o.y}),tick(g,1);
- assert.equal(originalsFound(g),3);assert.equal(events(g,'sourceFound').length,3);
- assert.equal(noiseDuration(g),NOISE_TIME+36);assert.ok(revealHint(g)>2);
- g.health=1;g.player.inv=0;g.hurt();for(let i=0;i<120&&g.mode!=='playing';i++)tick(g,1);assert.equal(originalsFound(g),3);
- g.retryLocation();assert.equal(originalsFound(g),0);assert.equal(noiseDuration(g),NOISE_TIME);
-});
-
-test('each original is reachable as placed: the feed top, the bottom of the mirrored feed, over the last island',()=>{
- // 1: a copy close to the top, then a jump.
- const g=ready(),o1=g.originals[0],lane=g.platforms.filter(s=>s.dim?.lane===1&&!s.dim.reversed);let ride=null;
- for(let i=0;i<60*12&&!ride;i++){tick(g,1);ride=lane.find(s=>s.y<170&&s.y>140&&s.dimState!=='pop');}assert.ok(ride,'a copy reaches the top');
- Object.assign(g.player,{x:o1.x-2,y:ride.y-48,grounded:true,supportId:ride.id,vx:0,vy:0});tick(g,1,{jump:true});for(let i=0;i<40;i++)tick(g,1);assert.equal(o1.taken,true);
- // 2: the mirror — a sinking copy close to the bottom, then a jump “down”.
- const m=ready(),o2=m.originals[1],low=m.platforms.filter(s=>s.dim?.lane===1&&s.dim.reversed);let hang=null;
- for(let i=0;i<60*12&&!hang;i++){tick(m,1);hang=low.find(s=>s.y>MIRROR-170&&s.y<MIRROR-140&&s.dimState!=='pop');}assert.ok(hang,'a copy sinks to the bottom');
- Object.assign(m.player,{x:o2.x-2,y:hang.y,h:48,grounded:true,supportId:hang.id,vx:0,vy:0,flipped:true});tick(m,1,{jump:true});for(let i=0;i<40;i++)tick(m,1);assert.equal(o2.taken,true);
- // 3: a full jump from the last island.
- const h=ready(),o3=h.originals[2];stand(h,23,o3.x-x0-2);tick(h,1,{jump:true});for(let i=0;i<50;i++)tick(h,1);assert.equal(o3.taken,true);
 });
 test('the Echo double copies the flip; checkpoints follow the blocks; Clickbait spits Uma out for two hearts',()=>{
  const g=ready(),e=enemy('echo',7,1600,21,{active:true,noticed:true,spawnTime:0,noticeTime:0});g.enemies=[e];g.player.inv=999;stand(g,10,760);
