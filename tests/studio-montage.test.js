@@ -59,15 +59,19 @@ test('a Журавль sweeps his boom at head height: standing Uma is knocked b
  ({g,e}=mk());stand(g,3,640);assert.ok(sweep(g,e));g.player.inv=99;for(let i=0;i<200&&e.state==='sweep';i++)tick(g,1);g.player.inv=0;assert.equal(e.state,'patrol');tick(g,5);assert.equal(g.health,4);
  ({g,e}=mk());stand(g,3,680);e.inv=0;assert.equal(g.hitEnemy(e),true);assert.equal(e.state,'stunned');for(let k=0;k<2;k++){e.inv=0;g.hitEnemy(e);}assert.equal(e.dead,true);
 });
-test('a Прожекторщик hangs out of reach, leads its red beam after Uma and burns; under the hanging flat she is safe',()=>{
+test('a Прожекторщик rides the ceiling rail after Uma, leads its red beam and burns a hole in the floor under it; under the hanging flat nothing burns',()=>{
  const mk=()=>{const g=ready({enemies:true}),e=arm(g,g.enemies.find(e=>e.type==='spotlight'&&e.platformIndex===4));g.enemies=[e];return {g,e};};
- let {g,e}=mk();stand(g,4,800);for(let i=0;i<200&&e.state!=='burn';i++)tick(g,1);assert.equal(e.state,'burn');assert.ok(Math.abs(e.beamX-(g.player.x+g.player.w/2))<40,'aimed at Uma');
- tick(g,3);assert.equal(g.health,3);assert.ok(g.events.some(v=>v.type==='spotHit'));
- assert.equal(g.hitEnemy(e),false,'a paw cannot reach the ceiling');assert.ok(e.y+e.h<120);
- // Under the flat the beam lands on the flat.
- ({g,e}=mk());stand(g,4,880);for(let i=0;i<200&&e.state!=='burn';i++)tick(g,1,{down:true});assert.equal(e.state,'burn');const box=beamBox(g,e);assert.ok(box.y+box.h<=g.player.y+2,'the beam stops on the flat');tick(g,10,{down:true});assert.equal(g.health,4);
- // Ducking under the flat just before the burn is safe too.
- ({g,e}=mk());stand(g,4,800);for(let i=0;i<200&&!(e.state==='aim'&&e.timer<.6);i++)tick(g,1);for(let i=0;i<80;i++)tick(g,1,{right:g.player.x<x0+870,down:true});assert.equal(g.health,4);
+ // The rail runs over the whole studio: the lamp drifts after Uma.
+ let {g,e}=mk();stand(g,8,1450);const startX=e.x;tick(g,60);assert.ok(e.x>startX+40,'rides towards Uma');assert.ok(e.y+e.h<120);
+ assert.equal(g.hitEnemy(e),false,'a paw cannot reach the ceiling');
+ ({g,e}=mk());stand(g,4,800);const health=g.health;for(let i=0;i<200&&e.state!=='burn';i++)tick(g,1);assert.equal(e.state,'burn');assert.ok(Math.abs(e.beamX-(g.player.x+g.player.w/2))<40,'aimed at Uma');
+ const cut=g.cuts.find(c=>c.ownerId===e.id);assert.ok(cut,'the beam burns the floor under it');assert.equal(cut.platformId,'5:4');
+ tick(g,SPOTLIGHTER.warn*60+2);assert.equal(cut.phase,'gap');assert.ok(!solidSurfaces(g).some(s=>s.id==='5:4'&&e.beamX>s.x&&e.beamX<s.x+s.w),'a hole under the beam');
+ assert.ok(!g.events.some(v=>v.type==='spotHit'),'the beam itself neither hurts nor pushes');
+ for(let i=0;i<60;i++)tick(g,1);assert.ok(g.health<health||g.player.y>330,'standing in the light drops Uma through');
+ // Under the flat the beam lands on the flat and burns nothing.
+ ({g,e}=mk());stand(g,4,880);for(let i=0;i<200&&e.state!=='burn';i++)tick(g,1,{down:true});assert.equal(e.state,'burn');const box=beamBox(g,e);assert.ok(box.y+box.h<=g.player.y+2,'the beam stops on the flat');
+ assert.equal(g.cuts.filter(c=>c.ownerId===e.id).length,0);tick(g,40,{down:true});assert.equal(g.health,4);
 });
 test('the huge Ботоферма at the far end sends bots that leap between the fixed islands towards Uma without falling',()=>{
  const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];assert.equal(farm.platformIndex,11);assert.ok(farm.h>=120,'big');assert.equal(farm.container,undefined);

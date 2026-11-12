@@ -63,8 +63,20 @@ export function drawNewsroomScenery(c,a,g,t){
   const s=pressState(press,t),frame=pressFrame(s),shake=s.warn?Math.round(Math.sin(t*40)):0;
   // A soft shadow behind the machine lifts it off the wall.
   c.save();c.globalAlpha=.35;c.fillStyle='#02040c';c.fillRect(Math.round(cx-w/2+10),Math.round(top+18),Math.round(w-8),Math.round(BELT_TOP-top-14));c.restore();
-  c.drawImage(image,frame*S.w,0,S.w,S.h,Math.round(cx-w/2+shake),Math.round(top),Math.round(w),Math.round(h));
+  const f=outlinedPress(image,frame,Math.round(w),Math.round(h));c.drawImage(f,Math.round(cx-w/2+shake)-1,Math.round(top)-1);
  }
+}
+// A thin warm rim (the colour of the belt's edge) traced around the press so it reads as part of the conveyor and
+// not as a picture on the wall. Frames are outlined once at draw size and cached.
+const pressCache=new Map();
+function outlinedPress(image,frame,w,h){
+ const key=frame+':'+w+'x'+h;let o=pressCache.get(key);if(o)return o;
+ o=document.createElement('canvas');o.width=w+2;o.height=h+2;const x=o.getContext('2d');x.imageSmoothingEnabled=false;
+ const sil=document.createElement('canvas');sil.width=w+2;sil.height=h+2;const s=sil.getContext('2d');s.imageSmoothingEnabled=false;
+ s.drawImage(image,frame*PRESS_SPRITE.w,0,PRESS_SPRITE.w,PRESS_SPRITE.h,1,1,w,h);s.globalCompositeOperation='source-in';s.fillStyle='#d9ae5f';s.fillRect(0,0,w+2,h+2);
+ x.globalAlpha=.8;for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])x.drawImage(sil,dx,dy);x.globalAlpha=1;
+ x.drawImage(image,frame*PRESS_SPRITE.w,0,PRESS_SPRITE.w,PRESS_SPRITE.h,1,1,w,h);
+ pressCache.set(key,o);return o;
 }
 
 // Over the platforms: press shadows and paper bursts, then Censors.

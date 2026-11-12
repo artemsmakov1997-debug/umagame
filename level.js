@@ -110,7 +110,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  if(type==='paparazzi'){actor.w=44;actor.h=52;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  if(type==='boom'){actor.w=40;actor.h=50;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  // The Прожекторщик hangs from the ceiling truss above its platform.
- if(type==='spotlight'){actor.w=60;actor.h=62;actor.y=8;actor.origin=actor.end=actor.x;actor.beamX=actor.x+actor.w/2;delete actor.source;actor.arrivalDuration=.05;}
+ if(type==='spotlight'){actor.w=60;actor.h=62;actor.y=8;actor.origin=rooms[room].x+40;actor.end=rooms[room].end-40-actor.w;actor.beamX=actor.x+actor.w/2;delete actor.source;actor.arrivalDuration=.05;}
  if(room===5&&studioContainer(platformIndex))seatInContainer(actor,s);
  if(type==='inflator'&&room===3){actor.w=74;actor.h=56;actor.y=(extra.mountY??s.y)-actor.h;actor.origin=actor.end=actor.x;actor.speed=0;actor.hp=actor.maxHp=99;}
  const kinds={botfarm:'printer',fakenews:platformIndex%3?'papers':'bin',informant:'receiver',paparazzi:'receiver',injection:'printer',static:'screen',echo:'rift',copier:'printer',stamp:'printer',cutter:'reel',splicer:'reel',inflator:'receiver',panicker:'receiver'};
@@ -129,21 +129,24 @@ function seatInContainer(actor,s){
  Object.assign(actor,{container:piece.kind,printOn:piece.print,w:48,h:29,speed:0});actor.x=glass.x+glass.w/2-actor.w/2;actor.y=glass.y+glass.h/2-actor.h/2;actor.origin=actor.end=actor.x;
 }
 export function createEnemies(){const all=[
+ // Редакция: Фейкньюс, Цензоры (newsroom-systems.js CENSOR_SOURCES) and Штампы alternate evenly along the belt —
+ // F 330 · C 540 · F 760 · C 1000 · S 1180 · F 1430 · C 1620 · F 1900 · S 2210 · F 2290. Each Штамп wakes while Uma is
+ // still on the catwalk before it, so its ink rides the belt into the open stretch she has to cross on foot.
  enemy('fakenews',1,330,0,{trigger:90}),enemy('fakenews',1,760,0),
- enemy('stamp',1,1120,0,{trigger:820}),enemy('fakenews',1,1420,0),enemy('fakenews',1,960,0),
- enemy('stamp',1,1580,0),enemy('fakenews',1,1900,0),enemy('fakenews',1,2250,0,{hp:2,maxHp:2}),
+ enemy('stamp',1,1180,0,{trigger:880,timer:0}),enemy('fakenews',1,1430,0),
+ enemy('fakenews',1,1900,0),enemy('stamp',1,2210,0,{trigger:1900,timer:0}),enemy('fakenews',1,2290,0,{hp:2,maxHp:2}),
  // Крыши: Нагнетатели sit on wall brackets high above the roofs, out of reach, and blow across the whole map.
- enemy('paparazzi',3,575,1,{trigger:260}),enemy('inflator',3,520,1,{dir:-1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:-1,mountY:112}),enemy('inflator',3,1680,10,{dir:-1,mountY:98}),enemy('paparazzi',3,2240,7),
- // Студия: a Журавль on each long truss, a Прожекторщик over the dolly and over the takes, the Ботоферма caged
- // over the door at the far end, sending its bots towards Uma.
- enemy('boom',5,715,3,{dir:-1,trigger:430}),enemy('spotlight',5,860,4,{sweep:[790,985],trigger:600}),enemy('boom',5,1525,8,{dir:-1}),
- enemy('spotlight',5,1800,11,{sweep:[1600,2070]}),enemy('botfarm',5,1925,11,{range:1500,trigger:1250}),
+ enemy('paparazzi',3,575,1,{trigger:260}),enemy('inflator',3,520,1,{dir:-1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:-1,mountY:112}),enemy('inflator',3,1727,10,{dir:-1,mountY:64}),enemy('paparazzi',3,2240,7),
+ // Студия: a Журавль on each long truss, two Прожекторщики riding the ceiling rail over the whole studio, the
+ // Ботоферма caged over the door at the far end, sending its bots towards Uma from the moment she arrives.
+ enemy('boom',5,715,3,{dir:-1,trigger:430}),enemy('spotlight',5,860,4,{trigger:600}),enemy('boom',5,1525,8,{dir:-1}),
+ enemy('spotlight',5,1800,11),enemy('botfarm',5,1925,11,{range:2400,trigger:60}),
  // Измерение: Помеха over the feeds, Кликбейт only on moving messages (two rising copies, a sliding one), an Эхо by
  // each rift and one in «Пересылка».
  enemy('static',7,330,0,{trigger:150}),enemy('clickbait',7,430,4,{trigger:250,ride:true}),enemy('clickbait',7,580,8,{trigger:300,ride:true}),enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
  enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('clickbait',7,2140,24,{ride:true}),enemy('echo',7,2420,25,{trigger:2300}),enemy('static',7,2660,26,{y:200})
  ];
- const kept={1:[330,760,1120,1420,960,1580,1900,2250],3:[575,520,1150,1060,1680,2240],5:[715,860,1525,1800,1925],7:[330,430,580,760,1250,1700,1960,2140,2420,2660]};
+ const kept={1:[330,760,1180,1430,1900,2210,2290],3:[575,520,1150,1060,1727,2240],5:[715,860,1525,1800,1925],7:[330,430,580,760,1250,1700,1960,2140,2420,2660]};
  const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}

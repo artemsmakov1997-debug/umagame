@@ -3,8 +3,8 @@ import {phasePlans} from './boss-phases.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
 // «Монтаж»: the Manipulator films the fight in three phases of two hits (each paw hit deals 3 of 18).
 // 1 «Панорама»: the camera rides a crane that rolls along the dolly track behind the stage (it never hurts) and
-//   pans a slanted beam across the stage in bursts. The beam stops on the first surface it meets: the permanent docks cast a safe shadow, the
-//   studio platforms it touches burn out. After the pan the crane lowers the camera onto a dock: it smokes.
+//   pans a slanted beam across the stage in bursts. The beam stops on the first surface it meets, so a platform
+//   above Uma casts a safe shadow; in this phase nothing burns out under it. After the pan the crane lowers the camera onto a dock: it smokes.
 // 2 «Стоп-кадр»: the camera leaves the crane. A viewfinder follows Uma and snaps a stop-frame; scissors cut
 //   the film-strip platforms. After two snaps the camera ejects its reel and stands open without it.
 // 3 «Проектор»: the camera becomes a projector. It projects neon platforms; only the ones with a shadow are
@@ -59,8 +59,9 @@ function moveCrane(c,target,dt,speed){
  return Math.abs(d)<=step&&!turning&&Math.abs(target.angle-c.angle)<.01;
 }
 // The beam leaves the lens at BEAM_ANGLE below the horizon and stops on the first surface it meets.
-// The lens of the tilted camera pose (camera sheet frame 5), so the beam leaves exactly where the painted beam starts.
-export function lensPoint(g){const b=g.boss;return {x:b.x+b.w/2+b.dir*16,y:b.y+b.h-51};}
+// The centre of the lens in the phase-1 shot pose (assets/manipulator-shot.png: lens at (103,83) of a 160×165 cell whose
+// wheel stands at (80,149); drawn (b.w+30)/114 wide), so the beam leaves the lens itself.
+export function lensPoint(g){const b=g.boss,k=(b.w+30)/114;return {x:b.x+b.w/2+b.dir*23*k,y:b.y+b.h-66*k};}
 // The pan beam fires in bursts: while the shutter is closed Uma can slip past it.
 export const BURST=.8,SHUTTER=.55;
 export function beamLive(n){return n.mode==='pan'&&(n.elapsed%(BURST+SHUTTER))<BURST;}
@@ -111,7 +112,6 @@ function stepCrane(g,dt){
    if(done||n.timer<=0){if(!done){c.x=n.pan.from;c.dir=n.pan.dir;c.angle=PAN_ANGLE;}hangCamera(g);setMode(g,'aim',AIM);n.beam=castBeam(g);g.emit('bossWarning',{boss:b.id,ability:'pan',x:b.x,y:b.y});}return;}
   case 'aim':{hangCamera(g);n.beam=castBeam(g);if(n.timer<=0){setMode(g,'pan',12);g.emit('bossCast',{boss:b.id,ability:'pan',x:b.x,y:b.y});}return;}
   case 'pan':{c.moving=true;const done=moveCrane(c,{x:n.pan.to,angle:PAN_ANGLE},dt,PAN_SPEED);hangCamera(g);n.beam=castBeam(g);const s=n.beam.surface,live=beamLive(n);n.beam.live=live;
-   if(live&&s&&s.studioPlatform&&s.studioPhase==='solid'){s.studioPhase='warning';s.studioTimer=.45;s.burned=true;g.emit('cutWarning',{x:n.beam.x2,y:s.y,enemyType:'manipulator'});}
    if(live&&Math.floor(n.elapsed*12)!==Math.floor((n.elapsed-dt)*12))n.scorches.push({x:n.beam.x2,y:n.beam.y2,t:0});
    if(live&&!g.player.dash&&segmentHits(n.beam,g.player))hurtUma(g,n.beam.x2);
    if(done||n.timer<=0){n.beam=null;n.target=nearestDock(g);n.park=parkFor(g,n.target);setMode(g,'park',9);}return;}
