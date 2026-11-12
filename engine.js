@@ -18,7 +18,7 @@ import {applyRoofWalls,roofFall,stepRoofs,placeAtRoofCheckpoint} from './roofs-s
 import {stepStudio,studioFall,placeAtStudioCheckpoint} from './studio-systems.js?v=0.21.5';
 import {stepDimension,dimensionFall,placeAtDimensionCheckpoint,landFlipped,createOriginals} from './dimension-systems.js?v=0.21.5';
 import {stepNewsroom,newsroomRestore,placeAtNewsroomCheckpoint,resetNewsroom} from './newsroom-systems.js?v=0.21.5';
-import {scenes,evidence,relayClues} from './story.js?v=0.21.5';
+import {scenes,evidence,relayClues,pageSpeaker} from './story.js?v=0.21.5';
 import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.21.5';
 import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.21.5';
 import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.21.5';
@@ -60,7 +60,7 @@ export class Game {
  }
  advanceDialogue(skip=false){
   if(this.mode!=='dialogue'||!this.dialogue)return false;
-  const d=this.dialogue,pages=d.pages||scenes[d.id]?.pages||[];if(!skip&&d.page+1<pages.length){if(d.id==='intro'&&d.page===0){d.catReply=true;this.emit('catMeow');}else d.catReply=false;d.page++;this.emit('dialogue',{id:d.id});return true;}
+  const d=this.dialogue,pages=d.pages||scenes[d.id]?.pages||[];if(!skip&&d.page+1<pages.length){d.page++;d.catReply=pageSpeaker(d.id,d.page).who==='uma';if(d.catReply)this.emit('catMeow');this.emit('dialogue',{id:d.id});return true;}
   this.dialogue=null;this.mode=d.after;this.player.inv=Math.max(this.player.inv,.65);
   if(d.next){this.mode='playing';this.openDialogue(d.next,'won');return true;}
   this.emit(this.mode==='won'?'won':'dialogueEnd',{id:d.id});return true;

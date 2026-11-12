@@ -774,3 +774,5 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
  #overlay[data-result="won"] .result-panel #result-score{padding:6px 8px 8px}#overlay[data-result="won"] .result-score strong{font-size:28px;margin:2px 0 6px}.result-tiles li{min-height:42px}#overlay[data-result="won"] .result-actions{margin-bottom:10px}}
 
 #menu-cat{position:absolute;left:0;top:0;pointer-events:none;display:none;image-rendering:auto}#app[data-screen="menu"] #menu-cat{display:block}
+
+#dialogue[data-speaker="uma"] .dialogue-panel{box-shadow:inset 0 0 0 2px #f0a9a2aa}#dialogue[data-speaker="uma"] #dialogue-speaker{color:#ffc7b8}

@@ -7,7 +7,6 @@ function face(c,a,screen,t,quality,echo=false,emotion=0){c.save();c.beginPath();
 export function drawYuriSignal(c,a,g,t){
  const dialogue=g.mode==='dialogue'||g.mode==='paused'&&g.pausedFrom==='dialogue';
  const profile=g.dialogue?.signal||g.signal,echo=g.signal.echoTime>0;
- if(g.dialogue?.catReply)text(c,'Мяу!',g.player.x+15,g.player.y-28,'#ffe8b5',1.5);
  // Quiet room: once Uma is awake, Yuri curates the course from the old monitor.
  if(g.room===0){if(dialogue||g.mode!=='waking'&&g.pausedFrom!=='waking')face(c,a,{x:214,y:154,w:135,h:104},t,profile.quality,echo,yuriEmotion(g));return;}
  let screens=hauntedScreens.filter(s=>s.room===g.room&&rooms[g.room].x+s.lx>=g.camera-90&&rooms[g.room].x+s.lx<g.camera+(g.viewWidth||768));
