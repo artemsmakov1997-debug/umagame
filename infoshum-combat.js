@@ -33,19 +33,12 @@ export const WAVE={opening:1.4,gap:[1.05,.9,.75],plan:['scan','whip','volley','w
  yuriDelay:1.1,yuriPoint:.9,hitFlash:.3,reboot:.8,takeover:12,yuriFace:1.05,face:1.1,flip:.22,relayUnit:.5,screenUnit:1};
 export const ARRIVE=1.6,ASSEMBLE=3.6,BREAKOUT=3;
 export const COL={reach:110,windup:.55,intro:2,gap:[1.1,.85,.6],aim:[1.1,.95,.8],lock:.35,fall:.12,stuck:[2.8,2.6,2.4],lift:.45,fistHalf:58,track:340,shockSpeed:430,shockRange:520,
- sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,plan:['slam','sweep','live','slam','beam']};
-// «Прямой эфир»: the chest opens on a screen-heart; wreckage drops from above on either side; the heart charges and
-// fires a wide beam of static along the floor to both walls. Only the wreckage stops it: stand behind a block (on
-// the far side from him) or get up on a platform.
-export const LIVE={open:.55,charge:1.6,fall:.5,fire:1.25,close:.5,band:100,grow:.3,shelterW:100,near:[200,250],far:[330,420],body:70};
-export function liveShelters(l){return l?l.shelters.filter(s=>s.landed):[];}
-// Where the beam stops on one side (dir −1 left, +1 right): the nearest landed block, else the wall.
-export function liveReach(g,dir){const l=g.boss.network.col.live,c=centre(g),r=rooms[g.room];let x=dir<0?r.x:r.end;for(const s of liveShelters(l))if((s.x-c)*dir>0&&Math.abs(s.x-c)<Math.abs(x-c))x=s.x-dir*LIVE.shelterW/2+dir*6;return x;}
+ sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,plan:['slam','sweep','slam','beam']};
 export const FREE={enter:1.2,gap:[1,.8,.6],hoverY:120,tentWarn:.75,tentUp:.5,tentGap:.7,tentHalf:30,volleyMove:.7,volleyGap:.42,shardSpeed:420,ramPrep:.95,ramSpeed:780,crash:.35,dizzy:2.8,dizzyYuri:4.2,hit:.7,bounce:.7,
- ghostPrep:1.15,ghostDash:.5,ghostSpread:260,ghostOver:140,pull:.6,reflect:1.25,plan:['tentacle','volley','ghosts']};
-// «Двойники»: he rises out of reach and splits off two ghostly copies high on either side of Uma; their dive lines
-// show, then both dive through the spot where she stood. Then Yuri lassoes the real one and drags him down: the
-// opening. A shard of his volley swatted with the paw flies back at him (it clears some static if it hits).
+ ghostPrep:1.15,ghostDash:.5,ghostSpread:260,ghostOver:140,pull:.35,reflect:1.25,plan:['tentacle','volley','ghosts']};
+// «Двойники»: he rises above Uma and splits off two ghostly copies high on either side; the three dive lines show,
+// then he dives straight down through the spot where she stood while the copies dive at it from the sides. Where he
+// lands Yuri lassoes him: the opening. A shard of his volley swatted with the paw flies back at him (it clears some static if it hits).
 export function ghostPos(gh,k){return {x:gh.x0+(gh.x1-gh.x0)*k,y:gh.y0+(gh.y1-gh.y0)*k};}
 export function ghostBox(p){return {x:p.x-34,y:p.y-26,w:68,h:52};}
 export const STORM_ISLANDS={0:[0,474,460,0],11:[520,474,530,0],12:[1110,474,426,0],1:[92,366,296,1],3:[1131,366,296,1],4:[411,413,165,0],5:[965,413,165,0],2:[617,332,300,1],9:[464,272,145,2],10:[961,272,145,2]};
@@ -188,30 +181,14 @@ export function fistBox(f){return {x:f.x-48,y:FLOOR-122,w:96,h:112};}
 export function headBox(g){const x=centre(g)-30;return {x:x-75,y:FLOOR-110,w:150,h:104};}
 export function sweepBox(s){return {x:s.x-80,y:s.low?FLOOR-38:FLOOR-84,w:160,h:s.low?38:44};}
 function idle(a){a.mode='idle';a.timer=COL.gap[roundOf(a)];}
-function collapse(g){const a=g.boss.network.col;a.mode='collapse';a.clock=0;a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.live=null;a.shocks=[];a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
+function collapse(g){const a=g.boss.network.col;a.mode='collapse';a.clock=0;a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
 function rise(a){a.mode='rise';a.clock=0;a.timer=COL.rise;a.hands={L:true,R:true};a.head=1;a.headTime=COL.rise;a.flash=.3;}
 function nextAttack(g){
  const n=g.boss.network,a=n.col,p=g.player,px=p.x+p.w/2,kind=COL.plan[a.step++%COL.plan.length];a.mode='attack';
  // A fist lands at a fixed spot beside the body, on Uma's side (the other hand if that one is broken).
  if(kind==='slam'){let side=px<centre(g)?'L':'R';if(!a.hands[side])side=side==='R'?'L':'R';const x=centre(g)+(side==='L'?-1:1)*COL.reach;a.fist={side,x,y:-240,state:'aim',timer:COL.aim[roundOf(a)]+COL.windup,weak:false,lastSwing:-1,age:0};g.emit('infoshumWarning',{attack:'slam',x,y:FLOOR});}
  else if(kind==='sweep'){const dir=px<centre(g)?-1:1;a.sweep={dir,low:Math.random()<.5,x:centre(g)-dir*COL.sweepSpan/2,state:'warn',timer:COL.sweepWarn,travel:0,age:0};g.emit('infoshumWarning',{attack:'sweep'});}
- else if(kind==='live'){const c=centre(g),near=LIVE.near[0]+Math.random()*(LIVE.near[1]-LIVE.near[0]),far=LIVE.far[0]+Math.random()*(LIVE.far[1]-LIVE.far[0]),uma=px<c?-1:1;
-  // Uma's side gets the nearer block (easier to reach), the other side the farther one.
-  a.live={state:'open',timer:LIVE.open,band:0,shelters:[-1,1].map((dir,i)=>({x:c+dir*(dir===uma?near:far),kind:(i+Math.floor(Math.random()*3))%3,y:-120,landed:false,dust:0}))};a.head=2;a.headTime=LIVE.open+LIVE.charge;g.emit('infoshumWarning',{attack:'live'});}
  else{a.beam={state:'charge',timer:COL.beamCharge,x:px};a.head=2;a.headTime=9;g.emit('infoshumWarning',{attack:'beam'});}
-}
-function stepLive(g,dt){
- const a=g.boss.network.col,l=a.live,p=g.player,c=centre(g);l.timer-=dt;
- for(const s of l.shelters){if(s.dust>0)s.dust-=dt;}
- if(l.state==='open'){if(l.timer<=0){l.state='charge';l.timer=LIVE.charge;g.emit('bossCast',{boss:'infoshum',ability:'liveOpen',x:c,y:FLOOR-80});}return;}
- if(l.state==='charge'){const k=1-Math.max(0,l.timer)/LIVE.charge;
-  for(const s of l.shelters)if(!s.landed){const t=Math.min(1,k*LIVE.charge/LIVE.fall);s.y=-120+(FLOOR+120)*t*t;if(t>=1){s.landed=true;s.y=FLOOR;s.dust=.45;g.emit('boltImpact',{x:s.x,y:FLOOR,kind:'crash'});}}
-  if(l.timer<=0){l.state='fire';l.timer=LIVE.fire;l.hit=false;a.flash=.25;g.emit('bossCast',{boss:'infoshum',ability:'live',x:c,y:FLOOR-50});}return;}
- if(l.state==='fire'){l.band=Math.min(1,(LIVE.fire-l.timer)/LIVE.grow);const top=FLOOR-LIVE.band*l.band,px=p.x+p.w/2,dir=px<c?-1:1,reach=liveReach(g,dir);
-  const inBeam=Math.abs(px-c)>LIVE.body?(dir<0?px>reach:px<reach):true;
-  if(!l.hit&&hurtable(p)&&inBeam&&p.y+p.h>top+4){g.hurt(false,px);l.hit=true;}
-  if(l.timer<=0){l.state='close';l.timer=LIVE.close;}return;}
- if(l.state==='close'){l.band=Math.max(0,l.timer/LIVE.close)*.4;if(l.timer<=0){a.live=null;idle(a);}}
 }
 function stepFist(g,dt){
  const b=g.boss,a=b.network.col,f=a.fist,p=g.player,px=p.x+p.w/2;f.timer-=dt;f.age+=dt;
@@ -240,8 +217,8 @@ function stepBeam(g,dt){
 }
 function stepColossus(g,dt){
  const b=g.boss,n=b.network,a=n.col,p=g.player;a.clock=(a.clock||0)+dt;if(a.hurt>0)a.hurt-=dt;if(a.roar>0)a.roar-=dt;
- stepEmo(a,dt);if(a.mode!=='idle'||a.hurt>0||a.fist||a.sweep||a.beam||a.live)a.emo=null;
- if(a.mode==='idle'&&!a.fist&&!a.sweep&&!a.beam&&!a.live){a.moodT=(a.moodT??1.2)-dt;if(a.moodT<=0){if(Math.random()<.3)a.roar=.7;else emote(a,undefined,1+Math.random()*.6);a.moodT=2+Math.random()*1.6;}}
+ stepEmo(a,dt);if(a.mode!=='idle'||a.hurt>0||a.fist||a.sweep||a.beam)a.emo=null;
+ if(a.mode==='idle'&&!a.fist&&!a.sweep&&!a.beam){a.moodT=(a.moodT??1.2)-dt;if(a.moodT<=0){if(Math.random()<.3)a.roar=.7;else emote(a,undefined,1+Math.random()*.6);a.moodT=2+Math.random()*1.6;}}
  a.flash=Math.max(0,a.flash-dt);a.headTime=Math.max(0,a.headTime-dt);if(a.headTime<=0&&a.mode!=='collapse')a.head=0;
  if(a.dust){a.dust.time+=dt;if(a.dust.time>.45)a.dust=null;}
  b.x=centre(g)-b.w/2;b.y=120;
@@ -252,7 +229,7 @@ function stepColossus(g,dt){
  if(a.mode==='collapse'){b.state='recover';if(a.timer<=0)rise(a);return;}
  if(a.mode==='rise'){b.state='windup';if(a.timer<=0)idle(a);return;}
  b.state='windup';
- if(a.fist)stepFist(g,dt);else if(a.sweep)stepSweep(g,dt);else if(a.beam)stepBeam(g,dt);else if(a.live)stepLive(g,dt);
+ if(a.fist)stepFist(g,dt);else if(a.sweep)stepSweep(g,dt);else if(a.beam)stepBeam(g,dt);
  else if(a.mode==='idle'&&a.timer<=0)nextAttack(g);
 }
 function strikeColossus(g,paw){
@@ -269,7 +246,7 @@ function strikeColossus(g,paw){
 // ——— The breakout: he bursts out of the head screen ———
 function beginBreakout(g){
  const b=g.boss,n=b.network,a=n.col;
- n.stage='breakout';n.mode='breakout';n.timer=BREAKOUT;n.transitionProgress=0;a.mode='collapse';a.fist=null;a.sweep=null;a.beam=null;a.live=null;a.shocks=[];g.bolts=[];
+ n.stage='breakout';n.mode='breakout';n.timer=BREAKOUT;n.transitionProgress=0;a.mode='collapse';a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];g.bolts=[];
  b.phase=3;b.phaseName='На свободе';b.state='phaseChange';b.hp=PHASE_HP;g.player.inv=Math.max(g.player.inv,BREAKOUT+1);
  const h=headBox(g);g.emit('bossPhase',{boss:'infoshum',phase:3,name:'На свободе'});g.emit('infoshumRupture',{x:h.x+h.w/2,y:h.y});
 }
@@ -297,6 +274,8 @@ function nextFree(g){
  if(kind==='tentacle'){f.mode='tentacle';f.count=2+Math.min(2,f.hits);f.sub=0;}
  else if(kind==='volley'){const side=px-r.x<768?1:-1;f.mode='volley';f.timer=FREE.volleyMove;f.count=3;f.sub=0;f.from={x:f.x,y:f.y};f.tx=clamp(px+side*340,r.x+60,r.end-60);f.ty=clamp(py-6,70,440);f.dir=-side;}
  else{const s=targetSurface(g),feet=s.y-20,top=60;f.mode='ghostPrep';f.timer=FREE.ghostPrep;f.from={x:f.x,y:f.y};f.tx=clamp(px,r.x+120,r.end-120);f.ty=40;f.gy=s.y;f.rammed=false;
+  // He dives too: straight down through her spot from above, between his two copies.
+  f.dive={x:f.tx,y0:f.ty,y1:s.y-34};
   f.ghosts=[-1,1].map(side=>{const x0=clamp(px+side*FREE.ghostSpread,r.x+30,r.end-30),y0=top,dx=px-x0,dy=feet-y0,len=Math.hypot(dx,dy)||1;return {side,x0,y0,x1:px+dx/len*FREE.ghostOver,y1:feet+dy/len*FREE.ghostOver,hit:false};});
   g.emit('infoshumWarning',{attack:'ghosts',x:px,y:feet});}
 }
@@ -327,9 +306,12 @@ function stepFree(g,dt,paw=null){
    if(f.sub<=0&&f.count>0){f.shards.push({x:f.x+f.dir*40,y:f.y,vx:f.dir*FREE.shardSpeed,life:2.4});f.count--;f.sub=FREE.volleyGap;g.emit('bossCast',{boss:'infoshum',ability:'shards',x:f.x,y:f.y});}
    if(f.count===0&&f.sub<=-.3)hover(f,gap);}}
  else if(f.mode==='ghostPrep'){b.state='windup';glide(FREE.ghostPrep);if(f.timer<=0){f.mode='ghostDash';f.timer=FREE.ghostDash;g.emit('bossCast',{boss:'infoshum',ability:'ghosts',x:f.x,y:f.y});}}
- else if(f.mode==='ghostDash'){b.state='casting';const k=1-Math.max(0,f.timer)/FREE.ghostDash;
+ else if(f.mode==='ghostDash'){b.state='casting';const k=1-Math.max(0,f.timer)/FREE.ghostDash,e=k*k;
+  f.x=f.dive.x;f.y=f.dive.y0+(f.dive.y1-f.dive.y0)*e;
+  if(!f.rammed&&p.inv<=0&&p.dash===0&&overlap(p,ramBox(f))){g.hurt(false,f.x);f.rammed=true;}
   for(const gh of f.ghosts){const q=ghostPos(gh,k);if(!f.rammed&&p.inv<=0&&p.dash===0&&overlap(p,ghostBox(q))){g.hurt(false,q.x);f.rammed=true;}}
-  if(f.timer<=0){const s=targetSurface(g);f.gy=s.y;f.from={x:f.x,y:f.y};f.tx=clamp(px+(px-r0(g)>768?-110:110),s.left+40,s.right-40);f.ty=s.y-34;f.mode='pulled';f.timer=FREE.pull;f.yuri=true;g.emit('yuriHold',{x:f.tx,y:f.gy-40,last:b.hp<=HIT_DAMAGE});}}
+  // He lands where she stood; Yuri lassoes him right there.
+  if(f.timer<=0){f.y=f.dive.y1;f.flash=.15;g.emit('boltImpact',{x:f.x,y:f.gy,kind:'crash'});f.from={x:f.x,y:f.y};f.tx=f.x;f.ty=f.gy-34;f.mode='pulled';f.timer=FREE.pull;f.yuri=true;g.emit('yuriHold',{x:f.tx,y:f.gy-40,last:b.hp<=HIT_DAMAGE});}}
  else if(f.mode==='pulled'){b.state='recover';glide(FREE.pull);if(f.timer<=0){f.x=f.tx;f.ghosts=null;f.mode='dizzy';f.timer=FREE.dizzyYuri;g.emit('infoshumWeak',{x:f.x,y:f.gy-40});}}
  else if(f.mode==='ramPrep'){b.state='windup';glide(FREE.ramPrep);if(f.timer<=0){f.x=f.tx;f.y=f.ty;f.mode='ram';g.emit('bossCast',{boss:'infoshum',ability:'ram',x:f.x,y:f.y});}}
  else if(f.mode==='ram'){b.state='casting';f.x+=f.dir*FREE.ramSpeed*dt;

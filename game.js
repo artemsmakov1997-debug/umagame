@@ -51,7 +51,7 @@ async function boot(){
   $('overlay').hidden=false;clearInput();const won=kind==='won';$('retry-location').hidden=won;$('result-library').hidden=won;$('play').hidden=won;$('result-share').hidden=!won;$('share-menu').hidden=true;$('result-art').hidden=!won;
   $('overlay').dataset.result=won?'won':'lost';$('defeat-art').hidden=won;$('result-text').hidden=!won;
   $('result-title').textContent=won?'СПАСИБО ЗА ИГРУ':'Инфошум победил';$('return-menu').textContent='Главное меню';
-  $('result-text').textContent=won?'Ума вернулась домой. Держи ухо востро!':`Жизни закончились. Рыбок: ${game.fish}.`;
+  $('result-text').textContent=won?'':`Жизни закончились. Рыбок: ${game.fish}.`;$('result-text').hidden=won;
   $('play').textContent='Начать заново';$('result-media').hidden=!won;$('result-purpose').hidden=!won;$('result-score').hidden=!won;
   $('result-purpose-text').textContent=projectPurpose;const score=game.finalScore||scoreBreakdown(game);$('result-points').textContent=score.total.toLocaleString('ru-RU');
   $('result-breakdown').replaceChildren(...score.items.map(i=>{const li=document.createElement('li'),b=document.createElement('b'),s=document.createElement('span');b.textContent=i.count;s.textContent=i.label==='Побеждённые враги'?'Враги':i.label;li.append(b,s);return li;}));
