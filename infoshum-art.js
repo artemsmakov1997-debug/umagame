@@ -1,6 +1,6 @@
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {WAVE,COL,FREE,LIVE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos,liveReach} from './infoshum-combat.js?v=0.21.5';
+import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos} from './infoshum-combat.js?v=0.21.5';
 import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.5';
 // Infoshum's three phases: the broadcast tower with Yuri in the relays, the colossus, the free creature in the storm.
 import {rooms,WIDTH} from './level.js?v=0.21.5';
@@ -185,37 +185,11 @@ function drawColossus(c,a,g,time,assembly=null){
  const tA=1-ease((r.fallK-.25)/.5),dA=ease((r.fallK-.15)/.5);
  if(dA>0)rigPiece(c,img,R.down,[0,0],r.down.x,r.down.y,0,{alpha:dA});if(tA>0)rigPiece(c,img,R.torso,[0,0],r.torso.x,r.torso.y,0,{alpha:tA});
  c.restore();
- if(!assembly&&r.fallK<=0)drawLiveChest(c,a,g,r,time);
  const lying=r.fallK>.5;if(!lying)drawRigHead(c,a,r,time);
  drawRigArm(c,a,r,'L',time);drawRigArm(c,a,r,'R',time);
  if(lying)drawRigHead(c,a,r,time);drawRigDebris(c,a,r);
  return r;
 }
-// ——— «Прямой эфир» (assets/infoshum-live.png): the chest opening ×4, the screen-heart charging ×4, the beam ×3 + fading,
-// three blocks of wreckage and their dust. The chest sits on the torso's middle; its heart is at (148,132) of the frame.
-const LV={chest:[[9,56,296,241],[322,56,296,241],[637,56,295,241],[950,56,296,241]],charge:[[23,384,267,203],[337,384,268,203],[651,384,268,203],[958,345,283,261]],
- beam:[[10,743,294,105],[324,743,293,90],[638,729,293,107]],fade:[952,776,292,35],shelter:[[9,1042,294,151],[323,1045,293,147],[637,1011,294,180]],dust:[950,1000,296,195]},LV_HEART=[148,132],LV_CHARGE_HEART=[133,100];
-function lvBlit(c,img,b,x,y,w,h,alpha=1){c.save();c.globalAlpha*=alpha;c.drawImage(img,b[0],b[1],b[2],b[3],Math.round(x),Math.round(y),Math.round(w),Math.round(h));c.restore();}
-function liveHeart(r){return {x:r.cx,y:r.torso.y+RIG.torso.gy[0]-(241-LV_HEART[1])};}
-function drawLiveChest(c,a,g,r,time){
- const l=g.boss.network.col?.live,img=a.infoshumLive;if(!l||!img)return;const bottom=r.torso.y+RIG.torso.gy[0],x=r.cx-148;
- const f=l.state==='open'?Math.min(2,Math.floor((1-Math.max(0,l.timer)/LIVE.open)*3)):l.state==='close'?(l.timer>LIVE.close/2?1:0):l.state==='charge'?2:3;
- const b=LV.chest[f];lvBlit(c,img,b,x,bottom-b[3],b[2],b[3]);
- if(l.state==='charge'){const k=1-Math.max(0,l.timer)/LIVE.charge,i=Math.min(3,Math.floor(k*4)),cb=LV.charge[i],s=.7,h=liveHeart(r),shake=i>=2?Math.sin(time*60)*1.5:0;lvBlit(c,img,cb,h.x-LV_CHARGE_HEART[0]*s+shake,h.y-LV_CHARGE_HEART[1]*s,cb[2]*s,cb[3]*s);}
-}
-function drawLiveFront(c,a,g,time){
- const col=g.boss.network.col,l=col?.live,img=a.infoshumLive;if(!l||!img)return;const cx=rooms[g.room].x+TOWER.cx;
- // The beam: a band along the floor from the heart to the first block (or the wall) on each side, rising as it starts.
- if(l.state==='charge'&&l.timer<.9){for(const dir of[-1,1]){const reach=liveReach(g,dir);drawLineWarning(c,a,Math.min(cx,reach),FLOOR-6,Math.abs(reach-cx),time);}}
- if((l.state==='fire'||l.state==='close')&&l.band>0){const h=LIVE.band*l.band,top=FLOOR-h,frame=l.state==='close'?null:LV.beam[Math.floor(time*14)%3];
-  for(const dir of[-1,1]){const reach=liveReach(g,dir),x0=Math.min(cx,reach),w=Math.abs(reach-cx);c.save();c.beginPath();c.rect(x0,top-10,w,h+20);c.clip();c.globalCompositeOperation='lighter';
-   const b=frame||LV.fade,tw=b[2]*(h+20)/b[3];for(let x=x0-((time*600)%tw);x<x0+w;x+=tw-2)lvBlit(c,img,b,x,top-10,tw,h+20,frame?1:.7);c.restore();}
-  const h2=liveHeartFront(g),glow=LV.charge[3],s=.55;lvBlit(c,img,glow,h2.x-LV_CHARGE_HEART[0]*s,h2.y-LV_CHARGE_HEART[1]*s,glow[2]*s,glow[3]*s,l.state==='fire'?1:.5);}
- // The wreckage blocks and their dust.
- for(const s of l.shelters){const b=LV.shelter[s.kind],w=LIVE.shelterW,h=w*b[3]/b[2];lvBlit(c,img,b,s.x-w/2,s.y-h+8,w,h,l.state==='close'?Math.max(0,l.timer/LIVE.close):1);
-  if(s.dust>0){const d=LV.dust,dw=150,dh=dw*d[3]/d[2];lvBlit(c,img,d,s.x-dw/2,FLOOR-dh+16,dw,dh,Math.min(1,s.dust/.3));}}
-}
-function liveHeartFront(g){const cx=rooms[g.room].x+TOWER.cx;return {x:cx,y:BASE-(241-LV_HEART[1])};}
 // ——— The assembly: the relays fly into the tower, then the giant rises out of the floor around its new head ———
 function drawAssembly(c,a,g,time){
  const n=g.boss.network,k=n.transitionProgress,r=rooms[g.room],cx=r.x+TOWER.cx;
@@ -275,7 +249,7 @@ function drawColossusForeground(c,a,g,time){
  for(const s of col.shocks){const p=AT.parts['shock'+Math.min(2,Math.floor(s.travel/50))],w=84,h=w*p.r[3]/p.r[2];piece(c,img,p,s.x-w/2,FLOOR-h+12,w,h,{alpha:Math.max(.25,1-s.travel/COL.shockRange)});}
  if(col.dust){const p=AT.parts.dust,k=col.dust.time/.45,w=180*(1+k*.5),h=w*p.r[3]/p.r[2];piece(c,img,p,col.dust.x-w/2,FLOOR-h+14,w,h,{alpha:1-k});}
  const s=col.sweep;if(s&&s.state==='warn'){const y=s.low?FLOOR-22:FLOOR-62;drawLineWarning(c,a,rooms[g.room].x+TOWER.cx-COL.sweepSpan/2,y,COL.sweepSpan,time);}
- if(n.stage==='colossus'){drawCannon(c,a,g,time);drawLiveFront(c,a,g,time);}
+ if(n.stage==='colossus')drawCannon(c,a,g,time);
  flash(c,g,Math.min(.4,col.flash*1.4));
  if(n.stage==='breakout')drawBreakout(c,a,g,n.transitionProgress,time);
 }
@@ -309,6 +283,7 @@ function drawYuriRope(c,a,g,f,time){
 // «Двойники»: two pale copies high on either side; their dive lines blink, then they dive through Uma's spot.
 function drawGhosts(c,a,f,time){
  const prep=f.mode==='ghostPrep',k=prep?0:1-Math.max(0,f.timer)/FREE.ghostDash,appear=prep?Math.min(1,(FREE.ghostPrep-f.timer)/.4):1;
+ if(prep&&f.dive){c.save();c.globalAlpha=.35+.35*Math.abs(Math.sin(time*10));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*80;c.beginPath();c.moveTo(f.dive.x,f.dive.y0+40);c.lineTo(f.dive.x,f.dive.y1+20);c.stroke();c.restore();}
  for(const gh of f.ghosts){const dx=gh.x1-gh.x0,dy=gh.y1-gh.y0;
   if(prep){c.save();c.globalAlpha=.35+.35*Math.abs(Math.sin(time*10));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*80;c.beginPath();c.moveTo(gh.x0,gh.y0);c.lineTo(gh.x1,gh.y1);c.stroke();c.restore();}
   const q=ghostPos(gh,k);c.save();c.globalAlpha=(prep?.25+.35*appear:.65)*(k>.85?(1-k)/.15:1);c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';
@@ -331,7 +306,7 @@ function drawFree(c,a,g,time){
  else if(f.mode==='ramPrep'){name='w'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/FREE.ramPrep)*3));flip=f.dir<0;}
  else if(f.mode==='ram'){name='m'+Math.floor(time*14)%2;flip=f.dir<0;}
  else if(f.mode==='ghostPrep')name='r'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/FREE.ghostPrep)*3));
- else if(f.mode==='ghostDash')name='r2';
+ else if(f.mode==='ghostDash')name='dive';
  else if(f.mode==='pulled')name='d0';
  else if(f.mode==='crash'){name='c'+Math.min(2,Math.floor((FREE.crash-f.timer)/FREE.crash*3));place=ground;}
  else if(f.mode==='dizzy'){name='d'+Math.floor(time*4)%2;place=ground;}
@@ -341,7 +316,8 @@ function drawFree(c,a,g,time){
  // sprite, and smooth scaling (the sheet is drawn at 1.4×, which nearest-neighbour turns into uneven blocks).
  const cy=place?place.y-60:f.y;c.save();const halo=c.createRadialGradient(f.x,cy,10,f.x,cy,120);halo.addColorStop(0,'rgba(4,2,16,.62)');halo.addColorStop(1,'rgba(4,2,16,0)');c.fillStyle=halo;c.fillRect(f.x-120,cy-120,240,240);c.restore();
  c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.filter='drop-shadow(0 0 1px #090316) drop-shadow(0 0 1px #090316) drop-shadow(0 0 6px rgba(110,235,255,.8))';
- free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5});c.restore();
+ if(name==='dive'){c.translate(f.x,f.y);c.rotate(Math.PI/2);free2(c,a,'m'+Math.floor(time*14)%2,0,0);}
+ else free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5});c.restore();
  flash(c,g,Math.min(.4,f.flash*1.4));
 }
 // The storm (assets/infoshum-storm.jpg, infoshum-storm-platforms.png: slab, cracked slab, slab with a terminal).
