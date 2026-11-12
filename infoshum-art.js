@@ -355,7 +355,6 @@ export function drawInfoshumBackdrop(c,a,g,time){
  drawHallBack(c,a,g,time);
 }
 export function drawInfoshumPlatform(c,a,p,time){
- if(p.quake)return;// quake floor and islands: drawn by infoshum-attacks-art.js
  if(p.storm!==undefined&&drawStormIsland(c,a,p))return;
  if(p.index===0&&p.room===8&&!p.storm)return;// the hall's floor is painted in its background
  if(!a.infoshumPlatform?.complete||p.infoshumStep)return;

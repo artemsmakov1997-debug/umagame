@@ -33,19 +33,13 @@ export const WAVE={opening:1.4,gap:[1.05,.9,.75],plan:['scan','whip','volley','w
  yuriDelay:1.1,yuriPoint:.9,hitFlash:.3,reboot:.8,takeover:12,yuriFace:1.05,face:1.1,flip:.22,relayUnit:.5,screenUnit:1};
 export const ARRIVE=1.6,ASSEMBLE=3.6,BREAKOUT=3;
 export const COL={reach:110,windup:.55,intro:2,gap:[1.1,.85,.6],aim:[1.1,.95,.8],lock:.35,fall:.12,stuck:[2.8,2.6,2.4],lift:.45,fistHalf:58,track:340,shockSpeed:430,shockRange:520,
- sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,plan:['slam','cables','sweep','channels','slam','quake','beam','magnet']};
-// Four attacks to try out (assets/infoshum-cables|channels|quake|magnet.png, drawn in infoshum-attacks-art.js):
-// «Сеть кабелей» — cables shoot from his sides to the walls at two heights; static pulses run out along them (jump
-//   over the low ones, don't jump into the high ones); then the low cables flash all at once — be in the air — and snap.
+ sweepWarn:.85,sweepSpeed:1500,sweepSpan:760,beamCharge:1,beamTime:2.2,beamSpeed:118,beamHalf:30,collapse:4.6,rise:1.2,fallTime:.8,plan:['slam','sweep','channels','slam','beam','magnet']};
+// Two extra attacks (assets/infoshum-channels|magnet.png, drawn in infoshum-attacks-art.js):
 // «Каналы» — he drops three televisions on the floor, facing the walls; one after another they warm up, overheat and
 //   fire a beam along the floor to the wall (jump over it). A paw smashes a television that is on.
-// «Землетрясение» — both fists into the floor: two wide stretches of floor crack and fall into the abyss, small
-//   islands rise in them; stand on an island or the floor that is left; then the floor comes back.
 // «Магнит» — the head turns into a vortex: Uma is dragged towards him, the floor at his feet sparks, and junk flies
 //   at him from the walls (jump the low pieces, stay down for the high ones; a paw knocks a piece away).
-export const CABLES={shoot:.55,run:2.6,warn:.75,flash:.35,snap:.5,speed:330,every:.5,low:26,high:118,half:9,body:170};
 export const CHANNELS={drop:.5,warm:.7,heat:.6,fire:.8,first:.8,gap:1,beamH:26,tvW:92,tvH:72};
-export const QUAKE={raise:.6,crack:.9,fall:.35,rise:.5,hold:2.4,warn:.7,reform:.5,zones:[[140,600],[936,1396]],islands:[[4,230],[6,430],[5,1006],[8,1206]],islandY:46,islandW:100};
 export const MAGNET={charge:.8,pull:3.2,end:.4,force:75,zone:170,every:.55,speed:270,low:22,high:80};
 export const FREE={enter:1.2,gap:[1,.8,.6],hoverY:120,tentWarn:.75,tentUp:.5,tentGap:.7,tentHalf:30,volleyMove:.7,volleyGap:.42,shardSpeed:420,ramPrep:.95,ramSpeed:780,crash:.35,dizzy:2.8,dizzyYuri:4.2,hit:.7,bounce:.7,
  ghostRise:.45,ghostSplit:.65,ghostAim:.45,ghostDash:.4,ghostSpread:260,ghostOver:140,pull:.35,reflect:1.25,plan:['tentacle','volley','ghosts']};
@@ -196,29 +190,16 @@ export function headBox(g){const x=centre(g)-30;return {x:x-75,y:FLOOR-110,w:150
 export function sweepBox(s){return {x:s.x-80,y:s.low?FLOOR-38:FLOOR-84,w:160,h:s.low?38:44};}
 function idle(a){a.mode='idle';a.timer=COL.gap[roundOf(a)];}
 function collapse(g){const a=g.boss.network.col;a.mode='collapse';a.clock=0;a.timer=COL.collapse;a.fist=null;a.sweep=null;a.beam=null;a.shocks=[];clearAttacks(g);a.flash=.3;a.head=3;const h=headBox(g);g.emit('infoshumCollapse',{x:h.x+h.w/2,y:h.y});g.emit('infoshumWeak',{x:h.x+h.w/2,y:h.y});}
-function clearAttacks(g){const a=g.boss.network.col;if(a.quake)restoreFloor(g);a.cables=null;a.channels=null;a.quake=null;a.magnet=null;}
+function clearAttacks(g){const a=g.boss.network.col;a.channels=null;a.magnet=null;}
 function rise(a){a.mode='rise';a.clock=0;a.timer=COL.rise;a.hands={L:true,R:true};a.head=1;a.headTime=COL.rise;a.flash=.3;}
 function nextAttack(g){
  const n=g.boss.network,a=n.col,p=g.player,px=p.x+p.w/2,kind=COL.plan[a.step++%COL.plan.length];a.mode='attack';
  // A fist lands at a fixed spot beside the body, on Uma's side (the other hand if that one is broken).
  if(kind==='slam'){let side=px<centre(g)?'L':'R';if(!a.hands[side])side=side==='R'?'L':'R';const x=centre(g)+(side==='L'?-1:1)*COL.reach;a.fist={side,x,y:-240,state:'aim',timer:COL.aim[roundOf(a)]+COL.windup,weak:false,lastSwing:-1,age:0};g.emit('infoshumWarning',{attack:'slam',x,y:FLOOR});}
  else if(kind==='sweep'){const dir=px<centre(g)?-1:1;a.sweep={dir,low:Math.random()<.5,x:centre(g)-dir*COL.sweepSpan/2,state:'warn',timer:COL.sweepWarn,travel:0,age:0};g.emit('infoshumWarning',{attack:'sweep'});}
- else if(kind==='cables'){const c=centre(g),r=rooms[g.room];a.cables={state:'shoot',timer:CABLES.shoot,clock:0,pulses:[],lines:[-1,1].flatMap(dir=>[CABLES.low,CABLES.high].map(h=>({dir,y:FLOOR-h,low:h===CABLES.low,x0:c+dir*CABLES.body,x1:dir<0?r.x+16:r.end-16})))};a.roar=.6;g.emit('infoshumWarning',{attack:'cables'});}
  else if(kind==='channels'){const c=centre(g),uma=px<c?-1:1,xs=[[uma,230],[-uma,420],[uma,440]];a.channels={clock:0,tvs:xs.map(([dir,d],i)=>({x:c+dir*d,dir,start:CHANNELS.first+i*CHANNELS.gap,state:'drop',t:0,y:-80}))};g.emit('infoshumWarning',{attack:'channels'});}
- else if(kind==='quake'){a.quake={state:'raise',timer:QUAKE.raise,rise:0};a.roar=.8;g.emit('infoshumWarning',{attack:'quake'});}
  else if(kind==='magnet'){a.magnet={state:'charge',timer:MAGNET.charge,junk:[],clock:0};a.head=2;a.headTime=MAGNET.charge+MAGNET.pull;g.emit('infoshumWarning',{attack:'magnet'});}
  else{a.beam={state:'charge',timer:COL.beamCharge,x:px};a.head=2;a.headTime=9;g.emit('infoshumWarning',{attack:'beam'});}
-}
-const onLine=(p,l)=>{const px=p.x+p.w/2;return (l.dir<0?px<=l.x0&&px>=l.x1:px>=l.x0&&px<=l.x1)&&p.y<l.y+CABLES.half&&p.y+p.h>l.y-CABLES.half;};
-function stepCables(g,dt){
- const a=g.boss.network.col,k=a.cables,p=g.player;k.timer-=dt;k.clock+=dt;
- if(k.state==='shoot'){if(k.timer<=0){k.state='run';k.timer=CABLES.run;k.next=0;}return;}
- if(k.state==='run'){k.next-=dt;if(k.next<=0&&k.timer>.6){k.next=CABLES.every;const l=k.lines[Math.floor(Math.random()*k.lines.length)];k.pulses.push({line:l,x:l.x0});}
-  for(const q of k.pulses){q.x+=q.line.dir*CABLES.speed*dt;if(hurtable(p)&&overlap(p,{x:q.x-20,y:q.line.y-11,w:40,h:22}))g.hurt(false,q.x);}
-  k.pulses=k.pulses.filter(q=>q.line.dir<0?q.x>q.line.x1:q.x<q.line.x1);if(k.timer<=0){k.state='warn';k.timer=CABLES.warn;k.pulses=[];g.emit('infoshumWarning',{attack:'cableFlash'});}return;}
- if(k.state==='warn'){if(k.timer<=0){k.state='flash';k.timer=CABLES.flash;k.hit=false;g.emit('bossCast',{boss:'infoshum',ability:'cables',x:centre(g),y:FLOOR-30});}return;}
- if(k.state==='flash'){if(!k.hit&&hurtable(p)&&k.lines.some(l=>l.low&&onLine(p,l))){g.hurt(false,p.x+p.w/2);k.hit=true;}if(k.timer<=0){k.state='snap';k.timer=CABLES.snap;}return;}
- if(k.state==='snap'&&k.timer<=0){a.cables=null;idle(a);}
 }
 export function tvBox(t){return {x:t.x-CHANNELS.tvW/2,y:FLOOR-CHANNELS.tvH,w:CHANNELS.tvW,h:CHANNELS.tvH};}
 export function tvBeam(g,t){const r=rooms[g.room],x0=t.x+t.dir*CHANNELS.tvW/2,x1=t.dir<0?r.x:r.end;return {x:Math.min(x0,x1),y:FLOOR-8-CHANNELS.beamH,w:Math.abs(x1-x0),h:CHANNELS.beamH};}
@@ -235,21 +216,6 @@ function stepChannels(g,dt,paw){
   if(t.dust>0)t.dust-=dt;if(!['dead','gone'].includes(t.state))busy=true;}
  if(!busy){ch.fade=(ch.fade||0)+dt;if(ch.fade>.4){a.channels=null;idle(a);}}
 }
-function quakeShapes(lift){const sh={0:[600,FLOOR,336,'floor'],1:[0,FLOOR,140,'floor'],3:[1396,FLOOR,140,'floor']};for(const [i,x] of QUAKE.islands)sh[i]=[x,FLOOR-QUAKE.islandY*lift+(1-lift)*60,QUAKE.islandW,'island'];return sh;}
-function stepQuake(g,dt){
- const a=g.boss.network.col,q=a.quake;q.timer-=dt;
- if(q.state==='raise'){if(q.timer<=0){q.state='crack';q.timer=QUAKE.crack;a.flash=.2;q.ring=.5;g.emit('bossCast',{boss:'infoshum',ability:'quake',x:centre(g),y:FLOOR});}return;}
- if(q.ring>0)q.ring-=dt;
- if(q.state==='crack'){if(q.timer<=0){q.state='fall';q.timer=QUAKE.fall;reshape(g,quakeShapes(0),'quake');g.emit('boltImpact',{x:centre(g),y:FLOOR,kind:'crash'});}return;}
- if(q.state==='fall'){if(q.timer<=0){q.state='rise';q.timer=QUAKE.rise;}return;}
- if(q.state==='rise'){q.rise=1-Math.max(0,q.timer)/QUAKE.rise;liftIslands(g,q.rise);if(q.timer<=0){q.state='hold';q.timer=QUAKE.hold;}return;}
- if(q.state==='hold'){if(q.timer<=0){q.state='warn';q.timer=QUAKE.warn;g.emit('infoshumWarning',{attack:'quakeEnd'});}return;}
- if(q.state==='warn'){if(q.timer<=0){q.state='reform';q.timer=QUAKE.reform;restoreFloor(g);}return;}
- if(q.state==='reform'&&q.timer<=0){a.quake=null;idle(a);}
-}
-// Islands rise: move them (and anyone standing on them) up to their height.
-function liftIslands(g,k){const r=rooms[g.room],p=g.player;for(const [i] of QUAKE.islands){const s=g.platforms.find(s=>s.room===g.room&&s.index===i);if(!s)continue;const y=FLOOR-QUAKE.islandY*k+(1-k)*60,dy=y-s.y;if(p.grounded&&p.supportId===s.id)p.y+=dy;s.prevY=s.y;s.y=y;s.baseY=y;}}
-function restoreFloor(g){const p=g.player,on=g.platforms.find(s=>s.id===p.supportId);reshape(g,{0:[0,FLOOR,1536,'floor']},'quake');for(const s of g.platforms)if(s.room===g.room)delete s.quake;if(on&&on.room===g.room&&p.grounded){p.y=FLOOR-p.h;p.supportId=g.room+':0';}}
 function stepMagnet(g,dt,paw){
  const a=g.boss.network.col,m=a.magnet,p=g.player,c=centre(g),r=rooms[g.room],px=p.x+p.w/2;m.timer-=dt;m.clock+=dt;
  if(m.state==='charge'){if(m.timer<=0){m.state='pull';m.timer=MAGNET.pull;m.next=0;g.emit('bossCast',{boss:'infoshum',ability:'magnet',x:c,y:120});}return;}
@@ -293,8 +259,8 @@ function stepBeam(g,dt){
 }
 function stepColossus(g,dt,paw=null){
  const b=g.boss,n=b.network,a=n.col,p=g.player;a.clock=(a.clock||0)+dt;if(a.hurt>0)a.hurt-=dt;if(a.roar>0)a.roar-=dt;
- stepEmo(a,dt);if(a.mode!=='idle'||a.hurt>0||a.fist||a.sweep||a.beam||a.cables||a.channels||a.quake||a.magnet)a.emo=null;
- if(a.mode==='idle'&&!(a.fist||a.sweep||a.beam||a.cables||a.channels||a.quake||a.magnet)){a.moodT=(a.moodT??1.2)-dt;if(a.moodT<=0){if(Math.random()<.3)a.roar=.7;else emote(a,undefined,1+Math.random()*.6);a.moodT=2+Math.random()*1.6;}}
+ stepEmo(a,dt);if(a.mode!=='idle'||a.hurt>0||a.fist||a.sweep||a.beam||a.channels||a.magnet)a.emo=null;
+ if(a.mode==='idle'&&!(a.fist||a.sweep||a.beam||a.channels||a.magnet)){a.moodT=(a.moodT??1.2)-dt;if(a.moodT<=0){if(Math.random()<.3)a.roar=.7;else emote(a,undefined,1+Math.random()*.6);a.moodT=2+Math.random()*1.6;}}
  a.flash=Math.max(0,a.flash-dt);a.headTime=Math.max(0,a.headTime-dt);if(a.headTime<=0&&a.mode!=='collapse')a.head=0;
  if(a.dust){a.dust.time+=dt;if(a.dust.time>.45)a.dust=null;}
  b.x=centre(g)-b.w/2;b.y=120;
@@ -305,7 +271,7 @@ function stepColossus(g,dt,paw=null){
  if(a.mode==='collapse'){b.state='recover';if(a.timer<=0)rise(a);return;}
  if(a.mode==='rise'){b.state='windup';if(a.timer<=0)idle(a);return;}
  b.state='windup';
- if(a.fist)stepFist(g,dt);else if(a.sweep)stepSweep(g,dt);else if(a.beam)stepBeam(g,dt);else if(a.cables)stepCables(g,dt);else if(a.channels)stepChannels(g,dt,paw);else if(a.quake)stepQuake(g,dt);else if(a.magnet)stepMagnet(g,dt,paw);
+ if(a.fist)stepFist(g,dt);else if(a.sweep)stepSweep(g,dt);else if(a.beam)stepBeam(g,dt);else if(a.channels)stepChannels(g,dt,paw);else if(a.magnet)stepMagnet(g,dt,paw);
  else if(a.mode==='idle'&&a.timer<=0)nextAttack(g);
 }
 function strikeColossus(g,paw){
@@ -415,7 +381,7 @@ export function corePoint(b){return {x:b.x+b.w/2,y:b.y+b.h/2+8};}
 export function coreBox(b){const c=corePoint(b);return {x:c.x-34,y:c.y-34,w:68,h:68};}
 export function headlineBoxes(){return [];}
 // A fall between the storm islands returns Uma to the last island she stood on (and costs a heart).
-export function infoshumFall(g){const n=g.boss?.network;if(g.room!==STAGE_ROOM||!(n?.stage==='free'||n?.stage==='colossus'&&n.col?.quake))return false;return pitFall(g,STAGE_ROOM,s=>!s.bossHidden);}
+export function infoshumFall(g){const n=g.boss?.network;if(g.room!==STAGE_ROOM||n?.stage!=='free')return false;return pitFall(g,STAGE_ROOM,s=>!s.bossHidden);}
 // ——— The portal between phases (drawn from assets/infoshum-portal.png) ———
 // Near the end of each transition a portal opens behind Uma and pulls her in; the next phase begins with her
 // tumbling out of a closing portal. Positions are driven here so physics cannot fight the pull.

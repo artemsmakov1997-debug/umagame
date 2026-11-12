@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {Game} from '../engine.js';import {activateRoom} from '../room-transitions.js';
 import {strikeInfoshum,exposeInfoshum,crackInfoshumScreen,smashWall,colossusInfoshum,breakHand,dropColossus,freeInfoshum,fistBox,headBox,sweepBox,ramBox,freeCoreBox,infoshumTargets,
- relayHit,relayRect,towerScreen,beamFloor,buildWall,WAVE,COL,FREE,CABLES,CHANNELS,QUAKE,MAGNET,tvBox,FLOOR,INFOSHUM_HP,HALL,ROUND_PAIRS} from '../infoshum-combat.js';
+ relayHit,relayRect,towerScreen,beamFloor,buildWall,WAVE,COL,FREE,CHANNELS,MAGNET,tvBox,FLOOR,INFOSHUM_HP,HALL,ROUND_PAIRS} from '../infoshum-combat.js';
 import {jumpTo} from './navigation.js';
 function game(testing=true){const g=new Game({story:false,cinematic:true,testingInvulnerable:testing});g.start();activateRoom(g,8);g.enemies=[];g.notebooks=[];g.fishes=[];g.lifePickups=[];g.soups=[];g.boss.noticeTime=0;g.mode='playing';g.abilities={attack:true,dash:true,sneak:true};buildWall(g);return g;}
 function tick(g,n,input={}){for(let i=0;i<n;i++)g.step(1/60,input);}
@@ -73,24 +73,11 @@ test('an arm sweeps low (a jump clears it) or high (a crouch passes under it); t
  const g=colossus(false),a=attack(g,COL.plan.indexOf('beam')),m=a.beam;assert.equal(m.state,'charge');g.player.inv=0;const h=g.health;assert.ok(until(g,()=>m.state==='fire',120));tick(g,30);assert.equal(g.health,h-1);
  const q=colossus(false),c=attack(q,COL.plan.indexOf('beam'));assert.ok(c.beam);q.player.inv=0;const h2=q.health;for(let i=0;i<400&&c.beam;i++)q.step(1/60,{right:true});assert.equal(q.health,h2,'a running cat outruns the beam');
 });
-test('«Сеть кабелей»: cables at two heights to both walls, pulses along them, then the low ones flash — in the air Uma is safe',()=>{
- const g=colossus(false),a=attack(g,COL.plan.indexOf('cables')),k=a.cables;assert.equal(k.lines.length,4);assert.ok(k.lines.some(l=>l.dir<0)&&k.lines.some(l=>l.dir>0));
- assert.ok(until(g,()=>k.state==='flash',400));g.player.inv=0;const h=g.health;tick(g,3);assert.equal(g.health,h-1,'standing on the floor at the flash');
- const q=colossus(false),b=attack(q,COL.plan.indexOf('cables')),m=b.cables;assert.ok(until(q,()=>m.state==='warn',400));for(let i=0;i<60&&m.state==='warn';i++){if(m.timer<.08&&q.player.grounded)q.step(1/60,{jump:true});else q.step(1/60,{});}
- q.player.inv=0;const h2=q.health;for(let i=0;i<30&&m.state==='flash';i++)q.step(1/60,{});assert.equal(q.health,h2,'jumping over the flash');assert.ok(until(q,()=>!b.cables,100));assert.equal(b.mode,'idle');
-});
 test('«Каналы»: three televisions land and fire along the floor one after another; a paw smashes one that is on',()=>{
  const g=colossus(false),a=attack(g,COL.plan.indexOf('channels')),ch=a.channels;assert.equal(ch.tvs.length,3);
  assert.ok(until(g,()=>ch.tvs.every(t=>t.state!=='drop'),120));assert.ok(until(g,()=>ch.tvs[0].state==='on',120));assert.equal(ch.tvs[1].state,'off','one at a time');
  const t=ch.tvs[0],box=tvBox(t);Object.assign(g.player,{x:t.x-t.dir*40-17,dir:t.dir,attack:0,cooldown:0});g.step(1/60,{attack:true});tick(g,3);assert.equal(t.state,'broken');
  assert.ok(until(g,()=>ch.tvs[1].state==='fire',300));assert.ok(until(g,()=>!a.channels,400));assert.equal(a.mode,'idle');
-});
-test('«Землетрясение»: two stretches of floor fall away and islands rise in them; a fall costs a heart; the floor comes back',()=>{
- const g=colossus(false),a=attack(g,COL.plan.indexOf('quake')),q=a.quake;assert.ok(until(g,()=>q.state==='hold',300));
- const [l,h]=QUAKE.zones[0],x0=16128;assert.ok(!g.platforms.some(s=>s.room===8&&!s.bossHidden&&s.y===FLOOR&&s.x<x0+l+50&&s.x+s.w>x0+l+50),'the floor is gone there');
- assert.equal(g.platforms.filter(s=>s.room===8&&!s.bossHidden&&s.quake==='island').length,4);
- Object.assign(g.player,{x:x0+l+60,y:FLOOR-48,grounded:false,vy:0,inv:0,supportId:null});const hp=g.health;for(let i=0;i<120&&g.health===hp;i++)tick(g,1);assert.equal(g.health,hp-1);
- assert.ok(until(g,()=>!a.quake,400));assert.ok(g.platforms.some(s=>s.id==='8:0'&&!s.bossHidden&&s.w===1536),'the floor is whole again');
 });
 test('«Магнит»: Uma is dragged towards him, his feet spark, junk flies in; a paw knocks a piece away',()=>{
  const g=colossus(false),a=attack(g,COL.plan.indexOf('magnet')),m=a.magnet;g.player.inv=99;Object.assign(g.player,{x:16128+300});assert.ok(until(g,()=>m.state==='pull',120));

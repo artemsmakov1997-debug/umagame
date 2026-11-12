@@ -5,7 +5,7 @@ import {Game,WIDTH,WORLD,FINAL_X,LAST_ROOM,rooms,platforms,ladders} from '../eng
 import {enemy,createEnemies} from '../level.js';
 import {scenes,evidence} from '../story.js';
 import {damageBoss} from '../boss.js';
-import {wakePose,hurtPose,traversalPose,emotionFrames,traversalFrames} from '../cat-animation.js';
+import {wakePose,hitFrame,traversalPose,emotionFrames,traversalFrames} from '../cat-animation.js';
 import {monsterFrame,monsterReaction,motion} from '../monster-animation.js';
 import {idleFrame,idlePlacement} from '../menu-animation.js';
 import {stickVector} from '../touch-controls.js';
@@ -37,7 +37,7 @@ test('climbing alternates real paw frames by travelled distance and freezes on a
  const g=ready();g.storyEnabled=false;atLadder(g,false);tick(g,1,{up:true});const first=traversalPose(g.player);tick(g,12,{up:true});const next=traversalPose(g.player);assert.notEqual(first,next);tick(g,1,{});const pose=traversalPose(g.player),time=g.player.climbTime;tick(g,30,{});assert.equal(g.player.climbTime,time);assert.equal(traversalPose(g.player),pose);assert.equal(traversalFrames.length,8);
 });
 test('creeping selects different low walking poses; damage has its own reaction',()=>{
- const g=ready();g.abilities.sneak=true;tick(g,1,{down:true});assert.equal(traversalPose(g.player),0);tick(g,8,{down:true,right:true});assert.ok([1,2].includes(traversalPose(g.player)));const pose=traversalPose(g.player);tick(g,15,{down:true,right:true});assert.notEqual(traversalPose(g.player),pose);assert.equal(hurtPose(.5),6);assert.equal(hurtPose(.1),7);
+ const g=ready();g.abilities.sneak=true;tick(g,1,{down:true});assert.equal(traversalPose(g.player),0);tick(g,8,{down:true,right:true});assert.ok([1,2].includes(traversalPose(g.player)));const pose=traversalPose(g.player);tick(g,15,{down:true,right:true});assert.notEqual(traversalPose(g.player),pose);assert.deepEqual([0,.1,.25,.4,.6,.8].map(hitFrame),[0,1,2,3,4,5]);
 });
 test('no enemy activates during training; later enemies wait for their own trigger and warning',()=>{
  const g=ready();completeTutorial(g);assert.ok(g.enemies.every(e=>!e.active));at(g,1,0,45);tick(g,1);assert.equal(g.dialogue.id,'notebook:paw');assert.ok(g.enemies.filter(e=>e.room===1).every(e=>!e.active));assert.ok(g.notebooks.find(n=>n.id==='paw').taken);assert.equal(g.enemies[0].active,false);g.advanceDialogue(true);g.player.x=campaignRooms[1].x+95;tick(g,1);assert.equal(g.enemies[0].active,true);assert.ok(g.enemies[0].spawnTime>0);assert.equal(g.enemies[1].active,false);tick(g,60);assert.ok(g.enemies[0].noticed);assert.equal(g.dialogue,null);
