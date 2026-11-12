@@ -32,7 +32,7 @@ export function stepWorldPlatforms(g,dt){
   }
  }
  for(const portal of g.portals){const s=g.platforms.find(s=>s.room===portal.room&&s.index===portal.platformIndex);if(s){portal.x+=s.dx;portal.y+=s.dy;}}
- for(const item of [...g.relays,...g.lifePickups,...g.notebooks]){
+ for(const item of [...g.relays,...(g.soups||[]),...g.notebooks]){
   const s=g.platforms.find(s=>s.room===item.room&&s.index===(item.platformIndex??item.index));if(s){item.x+=s.dx;item.y+=s.dy;}
  }
 }

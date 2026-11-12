@@ -6,7 +6,8 @@ import {beginChapterStory,advanceChapterStory} from './chapter-story.js?v=0.21.5
 import {createMapProps,createRoutePortals,stepMapProps,stepSection,stepLocationHazards,tryRouteShortcut} from './chapter-routes.js?v=0.21.5';
 import {advanceOpening} from './prologue.js?v=0.21.5';
 import {tryDrop} from './drop-through.js?v=0.21.5';
-import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createSoup,createNotebooks,createRelays,createLifePickups,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.21.5';
+import {createPacks,queuePhasePack,stepPhasePack} from './health-packs.js?v=0.21.5';
+import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createNotebooks,createRelays,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.21.5';
 import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.21.5';
 import {strikeInfoshum,infoshumFall} from './infoshum-combat.js?v=0.21.5';
 import {stepEnemies,stepPortals} from './enemies.js?v=0.21.5';
@@ -39,12 +40,12 @@ export class Game {
   this.dialogue=null;this.ending=null;this.conclusion=null;this.defeat=null;this.signal={...signalProfile(0),echoTime:0};this.finalScore=null;this.encounters={};this.seenScenes=new Set();this.evidence=[];this.clues=[];this.parries=0;this.truthFound=false;this.wakeTime=0;this.viewWidth=this.viewWidth||WIDTH;this.transition=null;this.loading=null;this.chapter=0;this.bossesDefeated=new Set();this.roomHistory=new Set([0]);this.visitedPlatforms=new Set(['0:0']);this.safeTrail=[];this.echoImmunity=0;this.echoWarp=null;this.tether=null;
   this.trainingHintShown=false;this.tutorial=createTutorial();
   this.abilities={attack:true,dash:true,sneak:true};this.notebooks=createNotebooks();
-  this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;this.lifePickups=createLifePickups();
+  this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;
   this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,frightTime:0,joyTime:0,lowSwat:false,powerTime:0,glueGrace:0,pulled:false};
-  this.swallow=null;this.interlude=null;this.mapProps=createMapProps();this.originals=createOriginals();this.routePortals=createRoutePortals();this.visitedSections=new Set();this.sectionTransition=null;this.routeUpHeld=false;this.echoPull=null;this.portals=[];this.portalSerial=0;this.soups=createSoup();this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();
+  this.swallow=null;this.interlude=null;this.mapProps=createMapProps();this.originals=createOriginals();this.routePortals=createRoutePortals();this.visitedSections=new Set();this.sectionTransition=null;this.routeUpHeld=false;this.echoPull=null;this.portals=[];this.portalSerial=0;this.soups=createPacks();this.pendingPack=null;this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();
   this.relays=createRelays();this.censors=[];this.bolts=[];this.events=[];this.inks=[];this.cuts=[];this.tacticalSerial=0;
  }
- emit(type,data={}){this.events.push({type,...data});}
+ emit(type,data={}){const event={type,...data};this.events.push(event);queuePhasePack(this,event);}
  unlockForRoom(){return this.abilities;}
 
  abandon(){this.mode='ready';delete this.pausedFrom;for(const key of ['dialogue','defeat','conclusion','ending','interlude','loading','arenaEntry','echoWarp','echoPull','tether','swallow'])this[key]=null;this.bolts=[];this.portals=[];this.inks=[];this.cuts=[];this.events=[];this.signal.echoTime=0;this.boss.active=false;Object.assign(this.player,{attack:0,dash:0,vx:0,vy:0,knock:0,climbing:false,pulled:false,echoPulled:false});}
@@ -214,8 +215,8 @@ export class Game {
   const reach=p.powerTime>0?81:54,paw={x:p.dir>0?p.x+16:p.x-reach+18,y:p.y-2,w:reach,h:p.h+6};stepTutorial(this,dt,paw,oldX);stepRoofs(this,dt,paw,input);stepStudio(this,dt);stepDimension(this,dt,oldX);stepMapProps(this,dt,paw);stepLocationHazards(this,dt);stepNewsroom(this,dt);stepSection(this,dt);
   stepEnemies(this,dt,paw,prevBottom);if(this.mode==='playing')stepPortals(this,dt);
   if(this.mode!=='playing'||this.swallow)return;
+  stepPhasePack(this);
   for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
-  for(const life of this.lifePickups)if(!life.taken&&this.lives<MAX_LIVES&&Math.abs(p.x+17-life.x)<25&&Math.abs(p.y+p.h/2-life.y)<32){life.taken=true;this.lives++;this.emit('lifePickup',{x:life.x,y:life.y});}
   for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;this.health=Math.min(MAX_HEALTH,this.health+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
   for(const relay of this.relays){relay.breakTime=Math.max(0,relay.breakTime-dt);if(!relay.scripted&&relay.room!==8&&relay.hp>0&&p.attack>0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;relay.hp=0;relay.breakTime=.65;p.joyTime=1.1;this.emit('dishBreak',{x:relay.x+relay.w/2,y:relay.y+25});this.emit('relay',{room:relay.room,id:relay.id});

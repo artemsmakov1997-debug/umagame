@@ -1,7 +1,6 @@
 import {rect} from './pixel.js?v=0.21.5';
 import {drawTargetSprite} from './target-art.js?v=0.21.5';
 import {drawHauntedMonitor} from './art.js?v=0.21.5';
-import {catLife} from './hud.js?v=0.21.5';
 import {rooms,PORTAL_X,PORTAL_ROOM} from './level.js?v=0.21.5';
 const dishFrames=[
  {box:[0,0,512,512],pivot:[318,480]}, {box:[512,0,512,512],pivot:[830,480]}, {box:[1024,0,512,512],pivot:[1335,480]},
@@ -29,23 +28,6 @@ export function drawMovingRails(c,platforms,time){
  }
 }
 let lifeIcon;
-function getLifeIcon(){
- if(lifeIcon)return lifeIcon;
- const face=document.createElement('canvas');face.width=26;face.height=18;const ink=face.getContext('2d');ink.scale(2,2);catLife(ink,0,0);
- lifeIcon=document.createElement('canvas');lifeIcon.width=36;lifeIcon.height=30;const glow=lifeIcon.getContext('2d');glow.filter='drop-shadow(0px 0px 2px #ffc76c)';glow.drawImage(face,5,5);return lifeIcon;
-}
-export function drawLifeCaches(c,g,time){
- const p=g.player;
- for(const life of g.lifePickups){
-  if(life.taken||life.room!==g.room)continue;const near=Math.abs(p.x+17-life.x)<190&&Math.abs(p.y+p.h/2-life.y)<150;
-  const x=Math.round(life.x),y=Math.round(life.y);rect(c,x-19,y+3,38,22,'#071326');rect(c,x-17,y+5,34,18,'#294359');
-  for(let i=0;i<3;i++)rect(c,x-13+i*10,y+15,6,2,'#6e858d');
-  if(near){
-   c.save();c.globalAlpha*=g.lives<3?1:.6;c.drawImage(getLifeIcon(),x-18,y-17+Math.sin(time*3+life.x)*2);c.restore();
-   for(let i=0;i<3;i++)rect(c,x-20+i*19,y-15-Math.sin(time*3+i)*5,2,2,'#ffe1a3');
-  }else rect(c,x+10,y+4,3,2,Math.floor(time*2)%3===0?'#ffe6a4':'#2c7081');
- }
-}
 export function drawTowerPortal(c,g,time,a){
  if(g.room!==PORTAL_ROOM&&g.pausedFrom!=='enteringArena')return;
  if(a?.dimensionPieces)return; // «Порог Инфошума» (dimension-art.js) replaces the old barrier column

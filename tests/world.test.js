@@ -9,6 +9,8 @@ import {stepProjectiles,bossDocks} from '../boss.js';
 import {stepWorldPlatforms} from '../world-platforms.js';
 import {alertNearby} from '../enemies.js';
 import {jumpTo,supportOf,walkTo} from './navigation.js';
+import {createPacks} from '../health-packs.js';
+import {activateRoom} from '../room-transitions.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 function setup(room=1,index=0,x=45){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};g.enemies=[];g.fishes=[];g.soups=[];g.room=room;g.checkpoint=room;g.relays.filter(r=>r.room<room).forEach(r=>r.hp=0);const s=g.platforms.find(s=>s.room===room&&s.index===index);Object.assign(g.player,{x:campaignRooms[room].x+x,y:s.y-48,grounded:true,supportId:s.id});return g;}
 // Moving-platform mechanics are exercised on the old generic room-7 layout.
@@ -26,20 +28,28 @@ test('both lower and upper arena routes are reachable through actual jumping and
  for(const [route,minX] of [[[1,16,9],450],[[1,4,2,5,3,13],1200]]){const g=setup(LAST_ROOM,0,74);g.boss.active=false;for(const index of route)assert.equal(jumpTo(g,LAST_ROOM,index),true,'arena platform '+index);assert.equal(g.health,4);assert.ok(g.player.x>FINAL_X+minX);}
 });
 test('losing a life in the dimension restarts there and preserves collected items and investigation records',()=>{
- const g=setup(LAST_ROOM,0,74);g.arenaEntered=true;g.evidence=[{room:1,id:'autopublish'}];g.lifePickups[0].taken=true;g.health=1;g.hurt();assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.room,LAST_ROOM);assert.equal(g.checkpoint,LAST_ROOM);assert.equal(g.player.x,checkpoints[LAST_ROOM].x);assert.equal(g.boss.active,true);assert.equal(g.boss.hp,g.boss.maxHp);assert.equal(g.lifePickups[0].taken,true);assert.equal(g.evidence.length,1);assert.ok(g.camera>=FINAL_X);
+ const g=setup(LAST_ROOM,0,74);g.soups=createPacks();g.arenaEntered=true;g.evidence=[{room:1,id:'autopublish'}];g.soups[0].taken=true;g.health=1;g.hurt();assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.room,LAST_ROOM);assert.equal(g.checkpoint,LAST_ROOM);assert.equal(g.player.x,checkpoints[LAST_ROOM].x);assert.equal(g.boss.active,true);assert.equal(g.boss.hp,g.boss.maxHp);assert.equal(g.soups[0].taken,true);assert.equal(g.evidence.length,1);assert.ok(g.camera>=FINAL_X);
 });
 test('Shift gives invulnerability throughout the actual dash and damage returns after it ends',()=>{
  const g=setup(),x=g.player.x;g.step(1/60,{dash:true,right:true});assert.equal(g.player.dash,.2);assert.equal(g.player.vx,430);assert.ok(g.player.x>x);for(const kind of ['paper','packet','rain','wave']){g.bolts=[{kind,x:g.player.x+4,y:g.player.y+4,w:20,h:16,vx:0,vy:0,ttl:1,fixedY:true}];stepProjectiles(g,1/60,{x:0,y:0,w:0,h:0});assert.equal(g.health,4,kind);}g.hurt();g.push(-1,g.player.x+40);assert.equal(g.health,4);assert.equal(g.player.knock,0);tick(g,10);assert.ok(g.player.dash>0);g.hurt();assert.equal(g.health,4);tick(g,4);assert.equal(g.player.dash,0);g.player.inv=0;g.hurt();assert.equal(g.health,3);
 });
 test('falling loses a full life even during a dash, then restores the checkpoint',()=>{const g=setup();g.player.y=HEIGHT+35;g.player.dash=.1;g.hurt(true);assert.equal(g.lives,2);assert.equal(g.health,0);assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.health,4);assert.equal(g.player.y,checkpoints[1].y);});
-test('a hidden cat-face cache restores one life, leaves hearts unchanged and cannot be collected twice',()=>{
- const g=setup(1,3,980),life=g.lifePickups.find(l=>l.room===1);Object.assign(g.player,{x:life.x-17,y:life.y-24});g.lives=2;g.health=1;tick(g,1);assert.equal(g.lives,3);assert.equal(g.health,1);assert.equal(life.taken,true);tick(g,60);assert.equal(g.lives,3);assert.equal(g.events.filter(e=>e.type==='lifePickup').length,1);
+test('health packets: two on every map, none in arenas at first; one heals a heart and stays spent after a death',()=>{
+ for(const room of campaignRooms.filter(r=>r.index>0)){const g=setup(room.index);g.soups=createPacks();const packs=g.soups.filter(l=>l.room===room.index);assert.equal(packs.length,room.arena?0:2,room.name);
+  for(const pack of packs){const s=g.platforms.find(s=>s.room===room.index&&s.index===pack.platformIndex);assert.ok(pack.x>s.x&&pack.x<s.x+s.w);assert.equal(pack.y,s.y-24);}}
+ const g=setup(1,3,980);g.soups=createPacks();const pack=g.soups.find(l=>l.room===1);Object.assign(g.player,{x:pack.x-17,y:pack.y-24});g.health=2;tick(g,1);assert.equal(g.health,3);assert.equal(pack.taken,true);
+ g.loseLife();tick(g,70);assert.equal(pack.taken,true);g.start();assert.ok(g.soups.every(l=>!l.taken));
 });
-test('full lives leave a cache available; consumed caches stay spent after death and reset on restart',()=>{
- const g=setup(1,3,980),life=g.lifePickups.find(l=>l.room===1);Object.assign(g.player,{x:life.x-17,y:life.y-24});tick(g,1);assert.equal(life.taken,false);g.lives=2;tick(g,1);assert.equal(life.taken,true);g.loseLife();tick(g,70);assert.equal(life.taken,true);assert.equal(g.lives,2);g.start();assert.ok(g.lifePickups.every(l=>!l.taken));
+test('no lives lie on the map: they are topped up when Uma starts the next level, not on a respawn',()=>{
+ const g=setup(1);assert.equal(g.lifePickups,undefined);g.lives=2;g.health=1;g.hurt();tick(g,70);assert.equal(g.room,1);assert.equal(g.lives,1,'a respawn keeps the count');
+ g.lives=1;activateRoom(g,2);assert.equal(g.lives,1,'a boss arena does not refill');activateRoom(g,3);assert.equal(g.lives,3);assert.ok(g.events.some(e=>e.type==='livesRefill'));
 });
-test('each arena has an accessible side cache and every chapter has two optional caches',()=>{
- for(const room of campaignRooms.filter(r=>r.index>0)){const g=setup(room.index),caches=g.lifePickups.filter(l=>l.room===room.index);assert.equal(caches.length,room.arena?1:2);for(const life of caches){const s=g.platforms.find(s=>s.room===room.index&&s.index===life.platformIndex);assert.ok(life.x>s.x&&life.x<s.x+s.w);assert.equal(life.y,s.y-24);}if(room.arena){if(room.index===2){const t=g.platforms.find(s=>s.id==='2:1');Object.assign(g.player,{x:t.x+20,y:t.y-48,grounded:true,supportId:t.id});}for(const index of (room.index===2?[3]:room.index===6?[17,3]:room.index===4?[4]:room.index===8?[1,16,9]:[14,9]))assert.equal(jumpTo(g,room.index,index),true);g.lives=2;assert.equal(walkTo(g,caches[0].x-17),true);tick(g,2);assert.equal(caches[0].taken,true);assert.equal(g.lives,3);}}
+test('a boss entering a new phase leaves a health packet within reach once the change is over',()=>{
+ const g=setup(4,0,300);activateRoom(g,4);g.mode='playing';g.dialogue=null;g.enemies=[];Object.assign(g.player,{x:g.platforms.find(s=>s.id==='4:0').x+300});g.events=[];g.emit('bossPhase',{boss:g.boss.id,phase:1});tick(g,1);assert.equal(g.soups.filter(s=>s.room===4).length,0,'not for the first phase');
+ g.boss.state='phaseChange';g.emit('bossPhase',{boss:g.boss.id,phase:2});tick(g,1);assert.equal(g.soups.filter(s=>s.room===4).length,0,'waits for the change');
+ g.boss.state='recover';tick(g,1);const pack=g.soups.find(s=>s.room===4&&s.phase);assert.ok(pack);const s=g.platforms.find(s=>s.room===4&&s.index===pack.platformIndex);assert.ok(s&&!s.bossHidden);
+ const d=Math.abs(pack.x-(g.player.x+17));assert.ok(d>=120&&d<=420,'a short run away: '+d);assert.ok(Math.abs(s.y-(g.player.y+g.player.h))<=130);
+ activateRoom(g,4);assert.equal(g.soups.filter(s=>s.room===4).length,0,'a fresh attempt starts without it');
 });
 test('moving platforms carry Uma and their passengers without fake walking or sliding',()=>{
  const g=legacy(7,13,840),s=g.platforms.find(s=>s.room===7&&s.index===13),e=seat(enemy('panicker',7,960,13,{active:true,noticed:true,state:'recover',timer:999}));g.enemies=[e];g.platformClocks[7]=6.7;stepWorldPlatforms(g,0);const px=g.player.x-s.x,ex=e.x-s.x,x=s.x;tick(g,60);assert.ok(Math.abs(s.x-x)>30);assert.ok(Math.abs(g.player.x-s.x-px)<.001);assert.ok(Math.abs(e.x-s.x-ex)<.001);assert.equal(g.player.grounded,true);assert.equal(e.walkTime,0);assert.equal(g.health,4);

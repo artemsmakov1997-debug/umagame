@@ -177,7 +177,7 @@ const centre=g=>rooms[g.room].x+768;
 function beginColossus(g){
  const b=g.boss,n=b.network;
  reshape(g,{0:[0,FLOOR,1536,'floor']},'heap');
- for(const key of ['fishes','soups','lifePickups'])if(Array.isArray(g[key]))g[key]=g[key].filter(o=>o.room!==g.room);
+ for(const key of ['fishes'])if(Array.isArray(g[key]))g[key]=g[key].filter(o=>o.room!==g.room);
  {const p=g.player;Object.assign(p,{y:FLOOR-p.h,vx:0,vy:0,grounded:true,supportId:g.room+':0'});portalOut(g);}
  n.stage='colossus';n.col={clock:0,hurt:0,mode:'intro',timer:COL.intro,round:0,hands:{L:true,R:true},side:'R',step:0,fist:null,sweep:null,beam:null,shocks:[],dust:null,head:1,headTime:1.3,flash:0,lastSwing:-1};
  b.state='phaseChange';landSafely(g,0,440);g.emit('infoshumColossus',{x:centre(g),y:120});
