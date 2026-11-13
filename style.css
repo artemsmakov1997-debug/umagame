@@ -778,3 +778,59 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
 #dialogue[data-speaker="uma"] .dialogue-panel{box-shadow:inset 0 0 0 2px #f0a9a2aa}#dialogue[data-speaker="uma"] #dialogue-speaker{color:#ffc7b8}
 
 .game-logo-tv{position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none}
+/* ── Portrait phone layout «Г» (mobile-layout.js): the scene under the HUD at one fixed scale, a decorated panel below ── */
+#app[data-layout="panel"][data-screen="game"] #game{top:var(--hud-height)!important;bottom:auto!important;height:var(--scene-h)!important}
+.touch-panel{display:none}
+#app[data-layout="panel"] .touch-panel:not([hidden]){display:block;position:absolute;left:0;right:0;top:calc(var(--hud-height) + var(--scene-h));bottom:0;z-index:1;pointer-events:none;
+ border-top:3px solid #d9a95a;box-shadow:inset 0 3px #6e4b22,inset 0 6px #0a1428,0 -2px #0a1428;
+ background:
+  radial-gradient(ellipse 60% 55% at 50% 0%,#ffcf8a26,transparent 70%),
+  radial-gradient(ellipse 80% 70% at 50% 120%,#5b3fa033,transparent 70%),
+  repeating-linear-gradient(0deg,#0000 0 17px,#0b1530 17px 19px),
+  repeating-linear-gradient(90deg,#0000 0 37px,#0b153099 37px 39px),
+  linear-gradient(180deg,#2a3561 0%,#1c2448 45%,#121a36 100%);
+ background-blend-mode:normal}
+#app[data-layout="panel"] .touch-panel.art{background:url('./assets/touch-panel.png') top center/cover no-repeat,#151d3c}
+#app[data-layout="panel"] .touch-controls{inset:calc(var(--hud-height) + var(--scene-h)) 0 0 0!important;width:auto!important;height:auto!important;z-index:5}
+#app[data-layout="panel"] #stick-pad{left:0;top:0;width:56%;height:100%}
+#app[data-layout="panel"] #stick-base{left:50%;top:52%;opacity:.8;background:#06182dab;border-color:#8fd6e0cc}
+#app[data-layout="panel"] #stick-pad.engaged #stick-base{opacity:1}
+#app[data-layout="panel"] #touch-actions{right:max(12px,env(safe-area-inset-right));top:50%;bottom:auto;transform:translateY(-50%);width:176px;height:180px}
+#app[data-layout="panel"] #touch-actions button{opacity:1;font-size:0;color:transparent;background-color:#0a2542e8;background-repeat:no-repeat;background-position:center;box-shadow:0 4px #050d1f,inset 0 0 0 3px #ffffff14}
+#app[data-layout="panel"] #touch-actions button.pressed{background-color:#1e5172;transform:scale(.94);box-shadow:0 1px #050d1f}
+#app[data-layout="panel"] #touch-actions .touch-jump{width:76px;height:76px;right:0;top:0;border-color:#6fdcec;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff1cf' d='M12 3 3 12h5v8h8v-8h5z'/%3E%3C/svg%3E");background-size:36px}
+#app[data-layout="panel"] #touch-actions .touch-paw{width:80px;height:80px;left:0;top:auto;bottom:0;right:auto;border-color:#f2c661;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff1cf'%3E%3Cellipse cx='12' cy='16' rx='5.2' ry='4.4'/%3E%3Cellipse cx='5.2' cy='10.5' rx='2.1' ry='2.6'/%3E%3Cellipse cx='9.4' cy='6.4' rx='2.1' ry='2.7'/%3E%3Cellipse cx='14.6' cy='6.4' rx='2.1' ry='2.7'/%3E%3Cellipse cx='18.8' cy='10.5' rx='2.1' ry='2.6'/%3E%3C/svg%3E");background-size:40px}
+#app[data-layout="panel"] #touch-actions .touch-dash{width:62px;height:62px;right:4px;left:auto;bottom:4px;top:auto;border-color:#b693ff;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff1cf' d='M14 2 4 14h6l-2 8 10-12h-6z'/%3E%3C/svg%3E") center/30px no-repeat,radial-gradient(circle,#10263c 62%,transparent 64%),conic-gradient(#b693ff var(--ready,100%),#263b58 0)}
+#app[data-layout="panel"] #touch-actions .touch-dash #dash-status{position:absolute;bottom:-18px;font:13px/1 UmaText,monospace;color:#d8c8ff}
+/* ── Visual-novel dialogue on phones (novel-portraits.js): whole busts standing on the text box, tap to go on ── */
+.novel-portrait,.novel-hint{display:none}
+#app[data-layout="panel"] #dialogue{--box-h:min(214px,30svh);position:absolute!important;inset:var(--hud-height) 0 0 0!important;padding:0!important;filter:none!important;z-index:8;
+ background:linear-gradient(180deg,#02081740 0%,#020817a8 45%,#020817e6 100%)!important;cursor:pointer}
+#app[data-layout="panel"] #dialogue[hidden]{display:none!important}
+#app[data-layout="panel"] .novel-portrait{display:block;position:absolute;bottom:calc(var(--box-h) + max(10px,env(safe-area-inset-bottom)) - 4px);height:min(250px,31svh);width:auto;z-index:0;transform-origin:50% 100%;transition:transform .18s ease-out}
+#app[data-layout="panel"] #novel-uma{right:1%;transform:translateY(1%) scaleX(-1)}
+#app[data-layout="panel"] #novel-yuri{left:1%;transform:translateY(7%)}
+#app[data-layout="panel"] #dialogue .dialogue-panel{position:absolute;left:8px;right:8px;bottom:max(10px,env(safe-area-inset-bottom));height:var(--box-h)!important;display:block!important;padding:14px 16px 10px!important;z-index:1;background:#020c20f7!important;overflow:hidden}
+#app[data-layout="panel"] #dialogue #narrator-portrait{display:none!important}
+#app[data-layout="panel"] #dialogue .dialogue-content{display:flex!important;flex-direction:column;height:100%;gap:6px;padding:0!important}
+#app[data-layout="panel"] #dialogue .dialogue-heading{display:block!important;padding:0 104px 0 0!important;min-height:0!important}
+#app[data-layout="panel"] #dialogue .dialogue-heading h2{font:24px/1.1 UmaText,monospace!important;margin:0}
+#app[data-layout="panel"] #dialogue .narrator-role{font:15px/1 UmaText,monospace!important;margin:3px 0 0!important}
+#app[data-layout="panel"] #dialogue #dialogue-text{flex:1;min-height:0;margin:2px 0 0!important;font:20px/1.2 UmaText,monospace!important;overflow:auto}
+#app[data-layout="panel"] #dialogue .dialogue-actions{position:absolute;top:12px;right:12px;display:block!important}
+#app[data-layout="panel"] #dialogue #dialogue-next{display:none!important}
+#app[data-layout="panel"] #dialogue #dialogue-skip{font:15px/1 UmaText,monospace!important;min-height:36px!important;padding:6px 10px!important}
+#app[data-layout="panel"] #dialogue .novel-hint{display:block;margin:0;font:13px/1 UmaText,monospace;color:#7f98bb;text-align:center}
+#app[data-layout="panel"] #dialogue .dialogue-panel::after{background:none;left:auto;right:5px;top:auto;bottom:5px;width:16px;height:16px}
+#app[data-layout="panel"] #dialogue .dialogue-content{align-items:stretch!important}
+#app[data-layout="panel"] #dialogue .dialogue-heading{padding-left:6px!important}
+#app[data-layout="panel"] #dialogue .dialogue-heading,#app[data-layout="panel"] #dialogue .dialogue-heading h2{text-align:left!important}
+#app[data-layout="panel"] #novel-uma{transform-origin:50% 100%}#app[data-layout="panel"] #novel-yuri{transform-origin:50% 100%}
+#app[data-layout="panel"] #dialogue{--box-h:clamp(204px,30svh,236px)}
+#app[data-layout="panel"] #dialogue #dialogue-text{font-size:clamp(17px,5.2vw,20px)!important}
+/* Library on portrait phones: the four monster cards in one row above the open card. */
+@media(max-width:700px) and (orientation:portrait){
+ #app #library-screen #monster-list{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto;grid-auto-rows:auto;align-items:start;height:auto!important;flex:none!important;min-height:0!important;max-height:none;gap:6px;margin-bottom:10px}
+ #app #library-screen .monster-option span{font-size:clamp(9px,2.8vw,12px);line-height:1.05;white-space:normal;text-align:center}
+ #app #library-screen .monster-option span.long{font-size:clamp(7px,2.05vw,9.5px);letter-spacing:-.04em;white-space:nowrap;overflow:visible}
+}
