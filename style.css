@@ -790,7 +790,7 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
   repeating-linear-gradient(90deg,#0000 0 37px,#0b153099 37px 39px),
   linear-gradient(180deg,#2a3561 0%,#1c2448 45%,#121a36 100%);
  background-blend-mode:normal}
-#app[data-layout="panel"] .touch-panel.art{background:url('./assets/touch-panel.png') top center/cover no-repeat,#151d3c}
+#app[data-layout="panel"] .touch-panel:not([hidden]){border-top:0;box-shadow:0 -2px #0a1428;background:url('./assets/touch-panel.jpg') 50% 0/100% auto no-repeat,#0f142a}
 #app[data-layout="panel"] .touch-controls{inset:calc(var(--hud-height) + var(--scene-h)) 0 0 0!important;width:auto!important;height:auto!important;z-index:5}
 #app[data-layout="panel"] #stick-pad{left:0;top:0;width:56%;height:100%}
 #app[data-layout="panel"] #stick-base{left:50%;top:52%;opacity:.8;background:#06182dab;border-color:#8fd6e0cc}
