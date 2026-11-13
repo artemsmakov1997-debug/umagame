@@ -26,6 +26,10 @@ export class ScreenManager{
   const next=document.createElement('button');next.id='library-next';next.className='library-arrow next';next.setAttribute('aria-label','Следующая глава');next.addEventListener('click',()=>this.selectChapter(this.chapterIndex+1));
   const dots=document.createElement('span');dots.className='library-dots';dots.setAttribute('aria-hidden','true');this.chapterDots=chapters.map(()=>{const dot=document.createElement('i');dots.append(dot);return dot;});
   pager.append(prev,dots,next);document.querySelector('.library-panel').append(pager);
+  // Portrait phones: no title plate — the «В меню» tag moves between the arrows, in place of the dots.
+  const back=document.querySelector('#library-screen [data-back]'),header=back.parentElement,narrow=matchMedia('(max-width:700px) and (orientation:portrait)');
+  const placeBack=()=>{if(narrow.matches){if(back.parentElement!==pager)pager.insertBefore(back,next);}else if(back.parentElement!==header)header.prepend(back);};
+  narrow.addEventListener('change',placeBack);placeBack();
   this.selectMonster(0);this.show('menu',false);
  }
  showLibrary(returnTo=null){this.libraryReturn=returnTo;document.querySelector('#library-screen [data-back]').textContent=returnTo?'← МЕНЮ ИГРЫ':'← В МЕНЮ';this.show('library');}
