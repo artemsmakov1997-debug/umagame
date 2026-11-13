@@ -99,11 +99,11 @@ async function boot(){
    if(event.type==='antennaHit')notify('Попадание '+event.hits+'/3. Чередуй антенны!',2800);
    if(event.type==='interferenceLost')notify(game.testingInvulnerable?'Тестовая защита: помехи достигли предела.':'Помехи заполнили эфир. Потеряна жизнь.',3000);
    if(event.type==='broadcastShieldBreak')notify('Щит разрушен! Догони Агитатора до заполнения помех.',3600);
-   if(event.type==='infoshumReveal'&&event.first)notify('Юрий Шмаков: «Я прорвался в экран! Бей, когда на нём Инфошум!»',4600);if(event.type==='infoshumReveal'&&event.giant&&!giantShown){giantShown=true;notify('Юрий борется с ним за огромный экран! Бей, когда на экране Инфошум.',4600);};
+   if(event.type==='infoshumReveal'&&event.first)notify('«Я прорвался в экран! Бей, когда на нём Инфошум!»',4600);if(event.type==='infoshumReveal'&&event.giant&&!giantShown){giantShown=true;notify('Юрий борется с ним за огромный экран! Бей, когда на экране Инфошум.',4600);};
    if(event.type==='infoshumFakeHit'&&!event.double)notify('Обманка! Жди, пока Юрий укажет настоящий экран.',2600);
    if(event.type==='infoshumRupture')notify('Экран-голова трещит! Инфошум вырывается на свободу!',3700);
    if(event.type==='infoshumFreed')notify('Он на свободе! Увернись от тарана — он врежется, и тогда бей.',2600);
-   if(event.type==='infoshumSplit')notify('Двойники с фиолетовыми глазами — фейки. Уклонись от настоящего и бей, пока он застрял!',4600);if(event.type==='yuriHint'&&!yuriHintShown){yuriHintShown=true;notify('Юрий Шмаков: «Я вскрыл щиток ретранслятора — бей по нему!» Луч сверху — прячься под уступ.',5200);}if(event.type==='infoshumWave'&&event.round===0)yuriHintShown=false;if(event.type==='infoshumAssemble'){giantShown=false;}if(event.type==='infoshumAssemble')notify('Он собирает из обломков колосса!',3200);if(event.type==='infoshumCollapse')notify('Он рухнул! Бей экран-голову!',3200);if(event.type==='yuriHold')if(event.last)notify('Юрий Шмаков: «Сейчас, Ума! Я держу его!»',3200);if(event.type==='infoshumColossus')notify('Колосс! Перепрыгни волну от кулака и бей монитор на костяшках.',5200);
+   if(event.type==='infoshumSplit')notify('Двойники с фиолетовыми глазами — фейки. Уклонись от настоящего и бей, пока он застрял!',4600);if(event.type==='yuriHint'&&!yuriHintShown){yuriHintShown=true;notify('«Я вскрыл щиток ретранслятора — бей по нему!» Луч сверху — прячься под уступ.',5200);}if(event.type==='infoshumWave'&&event.round===0)yuriHintShown=false;if(event.type==='infoshumAssemble'){giantShown=false;}if(event.type==='infoshumAssemble')notify('Он собирает из обломков колосса!',3200);if(event.type==='infoshumCollapse')notify('Он рухнул! Бей экран-голову!',3200);if(event.type==='yuriHold')if(event.last)notify('«Сейчас, Ума! Я держу его!»',3200);if(event.type==='infoshumColossus')notify('Колосс! Перепрыгни волну от кулака и бей монитор на костяшках.',5200);
   if(event.type==='gate')notify(event.boss?'Победи хозяина арены и отключи его защиту.':({1:'Отключи все печатные узлы!',3:'Отключи городские передатчики!',5:'Останови монтажные станции!',7:'Разрушь ядра искажённого сигнала!'})[game.room]||'Отключи все сигнальные узлы.');
 
   if(event.type==='roofFall'){const place=game.room===5?'на площадку':'на крышу';notify(game.testingInvulnerable?'Тестовая защита: Ума возвращена '+place+'.':'Падение! −1 сердце. Ума вернулась '+place+'.',2600);}
@@ -113,8 +113,8 @@ async function boot(){
   if(event.type==='sourceFound')notify(`Первоисточник ${event.count}/${event.total}: помехи Инфошума будут расти медленнее, удары по ядру — сильнее.`,4200);
   if(event.type==='clickbaitSpit')notify('Кликбейт выплюнул Уму: −2 сердца.',2600);
   if(event.type==='windIntroduction')notify('Порыв ветра! В воздухе сносит влево.',2200);
-  if(event.type==='lesson')notify('Юрий Шмаков: '+event.text,6000);
-  if(event.type==='tutorialBump')notify('Юрий Шмаков: Шагом барьер не пройти — нужен рывок!',3600);
+  if(event.type==='lesson')notify(event.text,6000);
+  if(event.type==='tutorialBump')notify('Шагом барьер не пройти — нужен рывок!',3600);
   if(event.type==='tutorialBarrier'||event.type==='tutorialMonitor')renderer.burst(event.x,event.y,event.type==='tutorialMonitor'?'#d78bff':'#8e8aff');
   if(event.type==='livesRefill')notify('Жизни восстановлены');
   if(event.type==='controlBreak')notify('Опасный механизм отключён.');
