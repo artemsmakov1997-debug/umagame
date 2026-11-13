@@ -834,3 +834,37 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
  #app #library-screen .monster-option span{font-size:clamp(9px,2.8vw,12px);line-height:1.05;white-space:normal;text-align:center}
  #app #library-screen .monster-option span.long{font-size:clamp(7px,2.05vw,9.5px);letter-spacing:-.04em;white-space:nowrap;overflow:visible}
 }
+/* Phone novel: no corner mark, the name block flush left. */
+#app[data-layout="panel"] #dialogue .dialogue-panel::before{display:none}
+#app[data-layout="panel"] #dialogue .dialogue-heading{align-self:stretch!important;width:auto!important;margin:0!important;padding:0 112px 0 0!important}
+/* Phone hints from Yuri: a slim strip under the HUD (his face says who it is), clear of the menu button. */
+#app[data-layout="panel"] .status{top:calc(var(--hud-height) + 6px)!important;left:8px!important;transform:none!important;width:auto!important;max-width:calc(100% - 68px)!important;font-size:15px!important;line-height:1.18!important;
+ border-width:11px 10px 13px 10px!important;border-image-width:11px 10px 13px 10px!important;padding:1px 6px 0 38px!important;min-height:30px!important}
+#app[data-layout="panel"] .status::before{width:38px!important;height:41px!important;margin-top:-20px!important;left:-3px!important;background-size:76px 41px!important;animation-name:yuri-talk-xs!important}
+@keyframes yuri-talk-xs{to{background-position:-76px 0}}
+/* Phone controls: brass-rimmed buttons that match the panel's cornice; the main action (jump) is the biggest and
+   sits under the thumb, the paw to its left, the dash above between them. */
+#app[data-layout="panel"] #touch-actions{width:188px;height:176px;top:auto;bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));transform:none}
+#app[data-layout="panel"] #touch-actions button{border:0;box-shadow:0 5px 0 #050a18,0 7px 12px #0008;
+ background-color:transparent;background-repeat:no-repeat;transition:transform .06s}
+#app[data-layout="panel"] #touch-actions button::after{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;
+ box-shadow:inset 0 0 0 3px #f6cf7a,inset 0 0 0 6px #7a5524,inset 0 0 0 8px #1a1430,inset 0 10px 14px #ffffff1c}
+#app[data-layout="panel"] #touch-actions button.pressed{transform:translateY(4px) scale(.96);box-shadow:0 1px 0 #050a18,0 2px 6px #0008}
+#app[data-layout="panel"] #touch-actions .touch-jump{width:88px;height:88px;right:0;bottom:0;top:auto;left:auto;
+ background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff1cf' d='M12 3 3 12h5v8h8v-8h5z'/%3E%3C/svg%3E") center/40px no-repeat,radial-gradient(circle at 50% 35%,#2a7f9b,#123b5c 62%,#0b2240)}
+#app[data-layout="panel"] #touch-actions .touch-paw{width:74px;height:74px;left:0;bottom:6px;top:auto;right:auto;
+ background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff1cf'%3E%3Cellipse cx='12' cy='16' rx='5.2' ry='4.4'/%3E%3Cellipse cx='5.2' cy='10.5' rx='2.1' ry='2.6'/%3E%3Cellipse cx='9.4' cy='6.4' rx='2.1' ry='2.7'/%3E%3Cellipse cx='14.6' cy='6.4' rx='2.1' ry='2.7'/%3E%3Cellipse cx='18.8' cy='10.5' rx='2.1' ry='2.6'/%3E%3C/svg%3E") center/36px no-repeat,radial-gradient(circle at 50% 35%,#a8742c,#5c3a17 62%,#341f0d)}
+#app[data-layout="panel"] #touch-actions .touch-dash{width:62px;height:62px;left:56px;top:0;bottom:auto;right:auto;
+ background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff1cf' d='M14 2 4 14h6l-2 8 10-12h-6z'/%3E%3C/svg%3E") center/28px no-repeat,radial-gradient(circle,#3b2a6e 52%,transparent 54%),conic-gradient(#c8a6ff var(--ready,100%),#241b40 0)}
+#app[data-layout="panel"] #touch-actions .touch-dash #dash-status{bottom:auto;top:-17px}
+#app[data-layout="panel"] #stick-base{width:118px;height:118px;border:0;opacity:1;background:radial-gradient(circle,#0b1a35cc 0 55%,#132a4ccc 56% 100%);
+ box-shadow:inset 0 0 0 3px #f6cf7a,inset 0 0 0 6px #7a5524,inset 0 0 0 8px #1a1430,0 6px 14px #0009}
+#app[data-layout="panel"] #stick-knob{left:34px;top:34px;width:50px;height:50px;border:0;background:radial-gradient(circle at 45% 35%,#ffe9b0,#d9a24c 45%,#7a5524 100%);box-shadow:0 4px 0 #2a1a0a,0 6px 10px #0009}
+#app[data-layout="panel"] #stick-pad.engaged #stick-base{box-shadow:inset 0 0 0 3px #ffe39a,inset 0 0 0 6px #9a6c2c,inset 0 0 0 8px #1a1430,0 0 16px #ffcf6a55}
+/* Library header on portrait phones: the «В меню» tag centred on the same line as the gold plate's body, and the
+   word «Библиотека» centred inside the plate (the plate image has its ribbon on top, so its body sits low). */
+@media(max-width:700px) and (orientation:portrait){
+ #app #library-screen .section-heading{height:max(calc(14px + min(190px,48vw)*.473),calc(min(190px,48vw)*.312 + 50px))}
+ #app #library-screen .section-heading h2{padding-top:calc(min(190px,48vw)*.312 - 8px);font-size:clamp(12px,3.9vw,15px)}
+ #app #library-screen .section-heading .back-button{top:calc(6px + min(190px,48vw)*.312 - 28px)}
+}
