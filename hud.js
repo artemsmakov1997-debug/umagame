@@ -40,8 +40,9 @@ function drawIcons(c,img,g,width,height){
  c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
  // Hearts sit where the old pixel hearts were (7×6 cells of `scale`, 10 apart).
  f.hearts.forEach((frame,i)=>put(frame,left+i*10*scale+3.5*scale,top+6*scale+scale*1.2,scale*8*ICON[0]/115));
- // Faces: no «ЖИЗНИ» label any more; they are bigger and centred in the bar's height at its right end.
- const face=compact?36:56,gap=compact?6:10,faceH=face*112/133,base=Math.round((height-4)/2+faceH/2),x0=width-left-START_LIVES*face-(START_LIVES-1)*gap;
+ // Faces: no «ЖИЗНИ» label any more; they are bigger and centred in the top band at its right end (on phones the
+ // boss bar takes the lower part of a taller HUD, so the faces stay in the first 64 px).
+ const face=compact?36:56,gap=compact?6:10,faceH=face*112/133,band=compact?Math.min(height,64):height,base=Math.round((band-4)/2+faceH/2),x0=width-left-START_LIVES*face-(START_LIVES-1)*gap;
  f.faces.forEach((frame,i)=>put(frame,x0+i*(face+gap)+face/2,base,face*ICON[0]/133));
  c.restore();
 }
