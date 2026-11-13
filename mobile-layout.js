@@ -7,8 +7,11 @@ export function panelLayout(width,height,touch){
  const scene=Math.round(Math.min(width*480/PANEL.worldWidth,height-PANEL.bossHud-PANEL.minPanel));
  return {scene,world:Math.round(width*480/scene)};
 }
+// Landscape phones («вариант Б»): the scene fills the screen, compact brass controls sit in the bottom corners and the
+// dialogue is a slim strip along the bottom (tap anywhere to go on).
+export function isLandscapePhone(width,height,touch){return !!touch&&width>height&&height<=520;}
 export function applyPanelLayout(app,touch){
  const layout=panelLayout(innerWidth,innerHeight,touch);
- if(!layout){if(app.dataset.layout)delete app.dataset.layout;return null;}
+ if(!layout){const land=isLandscapePhone(innerWidth,innerHeight,touch);if(land){if(app.dataset.layout!=='landscape')app.dataset.layout='landscape';}else if(app.dataset.layout)delete app.dataset.layout;return null;}
  app.dataset.layout='panel';app.style.setProperty('--scene-h',layout.scene+'px');return layout;
 }

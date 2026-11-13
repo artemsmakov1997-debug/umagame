@@ -6,7 +6,7 @@ const $=id=>document.getElementById(id);
 export class DialogueUI{
  constructor(game,assets,clearInput){this.game=game;this.clearInput=clearInput;this.lastKey=null;this.signalClock=0;this.mouthAge=0;this.assets=assets;$('dialogue-next').addEventListener('click',()=>this.advance());$('dialogue-skip').addEventListener('click',()=>this.advance(true));
   // Phone layout: a tap anywhere on the dialogue goes on (the buttons keep their own meaning).
-  $('dialogue').addEventListener('click',event=>{if($('app').dataset.layout==='panel'&&!event.target.closest('button'))this.advance();});}
+  $('dialogue').addEventListener('click',event=>{if(['panel','landscape'].includes($('app').dataset.layout)&&!event.target.closest('button'))this.advance();});}
  advance(skip=false){this.clearInput();this.game.advanceDialogue(skip);this.update(true);if(this.game.mode==='playing'){$('game').focus({preventScroll:true});}}
  key(event){
   if(this.game.mode!=='dialogue')return false;

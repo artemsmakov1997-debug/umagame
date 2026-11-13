@@ -16,7 +16,7 @@ async function nextPhase(page,phase,delay){
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||undefined,args:['--no-sandbox']});
  const errors=[],p=await browser.newPage({viewport:{width:1280,height:960}});p.on('pageerror',e=>errors.push(e.message));await open(p);await p.evaluate(()=>window.testTime=.5);await p.waitForTimeout(60);
- assert.ok(await p.evaluate(()=>testUI.assets.menu.src.includes('menu-compact.png')));await shot(p,'menu-pile-before-teleport');
+ assert.ok(await p.evaluate(()=>testUI.assets.menu.src.includes('menu-compact')));await shot(p,'menu-pile-before-teleport');
  await begin(p);await setupTeleport(p);const from=await p.evaluate(()=>testGame.enemies[0].x),images=[];
  for(const [phase,delay]of [['charge',.18],['out',.14],['blink',0],['in',.16],['done',0]]){
   if(phase!=='charge')await nextPhase(p,phase,delay);const state=await p.evaluate(()=>({phase:testGame.enemies[0].teleport?.phase,x:testGame.enemies[0].x,index:testGame.enemies[0].platformIndex,health:testGame.health,bolts:testGame.bolts.length,phased:testGame.enemies[0].phased}));
