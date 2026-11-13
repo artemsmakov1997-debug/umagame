@@ -19,5 +19,9 @@ async function atDish(page,room){const data=await page.evaluate(room=>{const d=t
 async function legacyFixture(page,index=0,x=45){await fixture(page,7,0,45);await page.evaluate(async([index,x])=>{const L=await import('./tests/legacy-room.js'),g=testGame;L.installLegacyRoom7(g);
  const s=g.platforms.find(s=>s.room===7&&s.index===index),x0=g.platforms.find(s=>s.id==='7:0').x;Object.assign(g.player,{x:x0+x,y:s.y-48,h:48,vx:0,vy:0,grounded:true,supportId:s.id,flipped:false});
  const seat=()=>{for(const e of g.enemies)if(e.room===7&&!e.legacySeated){L.seatLegacy(e);e.legacySeated=true;}};const step=Object.getPrototypeOf(g).step;g.step=function(dt,input){seat();return step.call(this,dt,input);};g.updateCamera();},[index,x]);}
+// Bottom of the play area: the scene, or on portrait phones the control panel right under it (mobile-layout.js).
+async function fieldBottom(page){return page.evaluate(()=>{const g=document.getElementById('game').getBoundingClientRect(),t=document.getElementById('touch-panel');if(!t||t.hidden||document.getElementById('app').dataset.layout!=='panel')return g.bottom;const r=t.getBoundingClientRect();return Math.abs(r.top-g.bottom)<2?r.bottom:-1;});}
+// «Далее»: the button, or on the phone novel layout a tap on the text box.
+async function next(page){if(await page.locator('#dialogue-next').isVisible())await page.click('#dialogue-next');else await page.click('#dialogue-text');}
 const shot=(page,name)=>page.screenshot({path:path.join(artifacts,name+'.png'),fullPage:true});
-module.exports={open,begin,skip,at,atDish,fixture,legacyFixture,shot,artifacts,url};
+module.exports={next,fieldBottom,open,begin,skip,at,atDish,fixture,legacyFixture,shot,artifacts,url};

@@ -1,6 +1,6 @@
 const{chromium}=require('playwright');
 const assert=require('node:assert/strict');
-const{open,shot,fixture}=require('./browser-helpers.cjs');
+const{open,shot,fixture,fieldBottom}=require('./browser-helpers.cjs');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH,args:['--no-sandbox']}),errors=[];
  for(const[width,height]of[[1920,1080],[1865,930],[2865,1390],[1280,960],[320,844],[390,844],[844,390]]){
@@ -17,7 +17,7 @@ const{open,shot,fixture}=require('./browser-helpers.cjs');
   }
   await p.waitForFunction(()=>testGame.mode==='waking');await p.evaluate(()=>{testGame.step=()=>{};testGame.wakeTime=.2;});await p.waitForTimeout(70);
   const boxes=await p.evaluate(()=>{const box=id=>document.getElementById(id).getBoundingClientRect().toJSON();return{hud:box('game-hud'),field:box('game')};});
-  assert.ok(boxes.hud.height>=60&&Math.abs(boxes.hud.bottom-boxes.field.top)<1,JSON.stringify(boxes));assert.ok(Math.abs(boxes.field.bottom-height)<1);assert.equal(boxes.hud.width,width);
+  assert.ok(boxes.hud.height>=60&&Math.abs(boxes.hud.bottom-boxes.field.top)<1,JSON.stringify(boxes));assert.ok(Math.abs((await fieldBottom(p))-height)<1);assert.equal(boxes.hud.width,width);
   if(width>=1000){
    assert.equal(await p.evaluate(()=>testGame.camera),0);assert.equal(await p.evaluate(()=>testGame.viewWidth),768);
    const full=await p.evaluate(()=>{const g=testGame,c=testRenderer.c,vw=c.canvas.width,s=Math.min(vw/768,480/512);return{left:(vw-768*s)/2,right:(vw+768*s)/2,top:(480-512*s)/2,bottom:(480+512*s)/2,width:vw,sourceWidth:testRenderer.backdrops[0].width};});
