@@ -5,7 +5,7 @@
 // Block 2 «Прожекторы»: two lamps swing together over three risers.
 // Block 3 «Монтажная»: two banks of lamps (warm «дубль 1», cold «дубль 2») switch on the clapper's beat.
 // Monsters: a Журавль on each long truss sweeps its boom microphone at head height (crawl under or wait);
-// a Прожекторщик hangs from the ceiling over the dolly and over the takes, its red beam burns (the hanging flat
+// a Прожектор hangs from the ceiling over the dolly and over the takes, its red beam burns (the hanging flat
 // over the dolly shields from it); the Ботоферма sits in a cage over the door at the far end and sends its
 // bots hopping towards Uma. Platform indices follow this order.
 export const STUDIO_PIECES=[

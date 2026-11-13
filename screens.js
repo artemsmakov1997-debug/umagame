@@ -1,10 +1,14 @@
 import {chapters} from './level.js?v=0.21.5';
 import {monsters} from './catalog.js?v=0.21.5';
+import {fitText} from './fit-text.js?v=0.21.5';
 // Wax seals for each ability (assets/library-seals.png): 0 projectile, 1 summon, 2 dash, 3 area, 4 shield, 5 trap, 6 swirl/teleport, 7 beam, 8 stun, 9 warning.
 const ABILITY_SEALS={fakenews:[2,9],censor:[3,4],stamp:[5,8],spreader:[0,2],informant:[6,0],paparazzi:[6,0],boom:[9,5],spotlight:[6,8],inflator:[7,5],sensation:[1,8],agitator:[9,3],botfarm:[1,9],cutter:[9,5],splicer:[6,8],manipulator:[7,5],echo:[6,9],clickbait:[5,8],static:[2,8],infoshum:[4,7]};
 import {drawMenuScene,drawPortrait} from './art.js?v=0.21.5';
 import {idleFrame} from './menu-animation.js?v=0.21.5';
 const $=id=>document.getElementById(id);
+// Long monster descriptions shrink until they fit their row of the card (and refit when the window changes).
+const fitDescription=()=>fitText(document.getElementById('monster-description'));
+addEventListener('resize',()=>requestAnimationFrame(fitDescription));
 export class ScreenManager{
  constructor(assets,onStart,onExit,onQuit=()=>{},onSettings=()=>{}){
   this.onSettings=onSettings;this.assets=assets;this.onStart=onStart;this.onExit=onExit;this.onQuit=onQuit;this.view='menu';this.menuIndex=0;this.monsterIndex=0;this.time=0;this.idleAction='idle';this.libraryReturn=null;
@@ -38,7 +42,7 @@ export class ScreenManager{
  selectMonster(index,focus=false){
   this.monsterIndex=(index+monsters.length)%monsters.length;const monster=monsters[this.monsterIndex];this.chapterIndex=monster.chapter;this.chapterButtons.forEach((button,i)=>{button.classList.toggle('selected',i===this.chapterIndex);button.setAttribute('aria-pressed',String(i===this.chapterIndex));});this.chapterDots?.forEach((dot,i)=>dot.classList.toggle('on',i===this.chapterIndex));$('monster-card').dataset.chapter=this.chapterIndex;
   this.monsterButtons.forEach((button,i)=>{button.hidden=monsters[i].chapter!==this.chapterIndex;button.classList.toggle('selected',i===this.monsterIndex);button.setAttribute('aria-pressed',String(i===this.monsterIndex));});
-  $('monster-card').dataset.monster=monster.id;$('monster-title').textContent=monster.name;$('monster-title').classList.toggle('long-title',monster.name.length>11);$('monster-description').textContent=monster.description;$('monster-tip').textContent=monster.tip;
+  $('monster-card').dataset.monster=monster.id;$('monster-title').textContent=monster.name;$('monster-title').classList.toggle('long-title',monster.name.length>11);$('monster-description').textContent=monster.description;fitDescription();$('monster-tip').textContent=monster.tip;
   const abilities=$('monster-abilities');abilities.replaceChildren();
   for(const [i,[label,value]] of monster.abilities.entries()){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd'),icon=document.createElement('i');icon.className='seal-icon';icon.style.setProperty('--seal',(ABILITY_SEALS[monster.id]||[0,9])[i]);icon.setAttribute('aria-hidden','true');dt.append(icon,document.createTextNode(label));dd.textContent=value;row.append(dt,dd);abilities.append(row);}
   drawPortrait($('monster-art'),this.assets,monster.id);if(focus){this.monsterButtons[this.monsterIndex].focus({preventScroll:true});this.monsterButtons[this.monsterIndex].scrollIntoView({block:'nearest',inline:'nearest'});}

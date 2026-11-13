@@ -109,7 +109,7 @@ export function enemy(type,room,x,platformIndex,extra={}){
  if(type==='botfarm'){const big=room===5;actor.w=big?84:40;actor.h=big?140:68;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  if(type==='paparazzi'){actor.w=44;actor.h=52;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
  if(type==='boom'){actor.w=40;actor.h=50;actor.y=s.y-actor.h;actor.origin=actor.end=actor.x;}
- // The Прожекторщик hangs from the ceiling truss above its platform.
+ // The Прожектор hangs from the ceiling truss above its platform.
  if(type==='spotlight'){actor.w=60;actor.h=62;actor.y=8;actor.origin=rooms[room].x+40;actor.end=rooms[room].end-40-actor.w;actor.beamX=actor.x+actor.w/2;delete actor.source;actor.arrivalDuration=.05;}
  if(room===5&&studioContainer(platformIndex))seatInContainer(actor,s);
  if(type==='inflator'&&room===3){actor.w=74;actor.h=56;actor.y=(extra.mountY??s.y)-actor.h;actor.origin=actor.end=actor.x;actor.speed=0;actor.hp=actor.maxHp=99;}
@@ -137,7 +137,7 @@ export function createEnemies(){const all=[
  enemy('fakenews',1,1900,0),enemy('stamp',1,2210,0,{trigger:1900,timer:0}),enemy('fakenews',1,2290,0,{hp:2,maxHp:2}),
  // Крыши: Нагнетатели sit on wall brackets high above the roofs, out of reach, and blow across the whole map.
  enemy('paparazzi',3,575,1,{trigger:260}),enemy('inflator',3,520,1,{dir:-1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:-1,mountY:112}),enemy('inflator',3,1727,10,{dir:-1,mountY:64}),enemy('paparazzi',3,2240,7),
- // Студия: a Журавль on each long truss, two Прожекторщики riding the ceiling rail over the whole studio, the
+ // Студия: a Журавль on each long truss, two Прожекторы riding the ceiling rail over the whole studio, the
  // Ботоферма caged over the door at the far end, sending its bots towards Uma from the moment she arrives.
  enemy('boom',5,715,3,{dir:-1,trigger:430}),enemy('spotlight',5,860,4,{trigger:600}),enemy('boom',5,1525,8,{dir:-1}),
  enemy('spotlight',5,1800,11),enemy('botfarm',5,1925,11,{range:2400,trigger:60}),

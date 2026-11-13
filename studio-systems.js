@@ -32,7 +32,7 @@ export function stepStudio(g,dt){
  if(q.lastTake&&q.lastTake!==live.color)g.emit('takeSwap',{color:live.color,x:p.x,y:p.y});q.lastTake=live.color;
  // One hint per block, the first time Uma meets its rule.
  const hints=q.hints??=new Set(),local=p.x-x0();
- for(const [key,cond,text] of [['stage',local>240,'Подиум видно и держит только в луче прожектора. Иди за светом.'],['take',local>1570,'Прожекторы переключаются по хлопушке. Прыгай, пока мигает свет.']])if(cond&&!hints.has(key)){hints.add(key);g.emit('studioHint',{key,text});}
+ for(const [key,cond,text] of [['stage',local>240,'Подиум появляется только в луче прожектора — пока светло, по нему можно пройти. Иди за светом.'],['take',local>1570,'Прожекторы переключаются по хлопушке. Прыгай, пока мигает свет.']])if(cond&&!hints.has(key)){hints.add(key);g.emit('studioHint',{key,text});}
  for(const [i,c]of STUDIO_CHECKPOINTS.entries())if(i>q.checkpoint&&p.grounded&&p.supportId===ROOM+':'+c.index)q.checkpoint=i;
  updateStudioPlatforms(g);
 }

@@ -59,7 +59,7 @@ test('a Журавль sweeps his boom at head height: standing Uma is knocked b
  ({g,e}=mk());stand(g,3,640);assert.ok(sweep(g,e));g.player.inv=99;for(let i=0;i<200&&e.state==='sweep';i++)tick(g,1);g.player.inv=0;assert.equal(e.state,'patrol');tick(g,5);assert.equal(g.health,4);
  ({g,e}=mk());stand(g,3,680);e.inv=0;assert.equal(g.hitEnemy(e),true);assert.equal(e.state,'stunned');for(let k=0;k<2;k++){e.inv=0;g.hitEnemy(e);}assert.equal(e.dead,true);
 });
-test('a Прожекторщик rides the ceiling rail after Uma, leads its red beam and burns a hole in the floor under it; under the hanging flat nothing burns',()=>{
+test('a Прожектор rides the ceiling rail after Uma, leads its red beam and burns a hole in the floor under it; under the hanging flat nothing burns',()=>{
  const mk=()=>{const g=ready({enemies:true}),e=arm(g,g.enemies.find(e=>e.type==='spotlight'&&e.platformIndex===4));g.enemies=[e];return {g,e};};
  // The rail runs over the whole studio: the lamp drifts after Uma.
  let {g,e}=mk();stand(g,8,1450);const startX=e.x;tick(g,60);assert.ok(e.x>startX+40,'rides towards Uma');assert.ok(e.y+e.h<120);
