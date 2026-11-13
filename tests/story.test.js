@@ -80,3 +80,11 @@ test('a boss fight starts with Yuri\'s advice and the game waits until it is rea
  const {activateRoom}=await import('../room-transitions.js');
  for(const [room,id] of [[2,'spreader'],[4,'agitator'],[6,'manipulator'],[8,'infoshum']]){const g=ready();activateRoom(g,room);g.mode='playing';tick(g,1);assert.equal(g.dialogue?.id,'notebook:'+id,id);assert.equal(g.mode,'dialogue');const hp=g.boss.hp,t=g.time;tick(g,60);assert.equal(g.time,t,'paused');assert.equal(g.boss.hp,hp);g.advanceDialogue(true);tick(g,2);assert.equal(g.dialogue,null);}
 });
+test('Uma answers Yuri with meows in many scenes, also inside a notebook made of several scenes',async()=>{
+ const {umaPages,scenes,dialogueSpeaker}=await import('../story.js');
+ const replies=Object.entries(umaPages).flatMap(([id,m])=>Object.entries(m).map(([page,emotion])=>({text:scenes[id].pages[page],emotion})));
+ assert.ok(replies.length>=15);assert.deepEqual([...new Set(replies.map(r=>r.text))].sort(),['Мяу!','Мяу?','Мяу…'].sort());assert.ok(new Set(replies.map(r=>r.emotion)).size>=5,'different faces');
+ const g=ready();at(g,1,0,45);tick(g,1);const d=g.dialogue;assert.equal(d.id,'notebook:paw');const i=d.pages.indexOf('Мяу…');assert.ok(i>0);
+ assert.equal(dialogueSpeaker({...d,page:i}).who,'uma');assert.equal(dialogueSpeaker({...d,page:0}).who,'yuri');
+ while(g.dialogue&&g.dialogue.page<i-1)g.advanceDialogue();g.events=[];g.advanceDialogue();assert.ok(g.events.some(e=>e.type==='catMeow'),'she meows aloud');
+});

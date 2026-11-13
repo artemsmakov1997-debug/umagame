@@ -11,8 +11,9 @@ export const relayClues={
  5:['В эфире осталась лишь часть исходной фразы.','Монтаж менял не слова, а смысл сообщения.','Исходная запись сохранилась. В ней нет угрозы.'],
  7:['Одни и те же слова возвращаются, но начало ещё скрыто.','Заголовки меняются, но след ведёт к одной пересылке.','Первая пересылка совсем близко. Что было до неё?']
 };
-// Pages spoken by Uma instead of Yuri, with her emotion (uma-portrait.js umaEmotions).
-export const umaPages={intro:{1:1}};
+// A dialogue built from several scenes (Yuri's notebooks) carries its own speakers list, one entry per page.
+export function dialogueSpeaker(d){const e=d?.speakers?d.speakers[d.page]:umaPages[d?.id]?.[d?.page];return e==null?{who:'yuri'}:{who:'uma',emotion:e};}
+export function scenesSpeakers(ids){return ids.flatMap(id=>(scenes[id]?.pages||[]).map((_,i)=>umaPages[id]?.[i]??null));}
 export function pageSpeaker(id,page){const e=umaPages[id]?.[page];return e===undefined?{who:'yuri'}:{who:'uma',emotion:e};}
 export const scenes={
  intro:{pages:[
@@ -53,3 +54,30 @@ export const scenes={
  clickbait:{pages:['Розовая рыбка — приманка Кликбейта. Схватишь — он вынырнет и укусит. Рывок спасёт.']},
  infoshum:{pages:['Вот он. Всё, что я пытался перекричать честным словом. Я внутри, Ума, — в каждом экране.','Я проберусь в ретрансляторы и вскрою щитки. Сломай их — и я прорвусь к нему в экран.']}
 };
+// Uma answers Yuri now and then: a short meow with her own face (uma-portrait.js umaEmotions:
+// 0 calm, 1 alert, 2 surprised, 3 worried, 4 frightened, 5 happy, 6 determined). Each entry is [after page, text,
+// emotion]; the pages are spliced into the scenes and umaPages maps the new page numbers to the emotion.
+const umaReplies={
+ arrival1:[[0,'Мяу…',3]],
+ spreader:[[1,'Мяу!',6]],
+ chapter1:[[0,'Мяу?',2]],
+ arrival2:[[0,'Мяу…',3],[1,'Мяу!',6]],
+ panicker:[[0,'Мяу?',1]],
+ agitator:[[1,'Мяу!',6]],
+ chapter2:[[0,'Мяу…',0]],
+ arrival3:[[0,'Мяу?',2],[1,'Мяу!',6]],
+ botfarm:[[0,'Мяу?',1]],
+ manipulator:[[1,'Мяу!',6]],
+ chapter3:[[0,'Мяу!',5]],
+ arrival4:[[0,'Мяу…',4]],
+ echo:[[0,'Мяу?',2]],
+ clickbait:[[0,'Мяу…',3]],
+ infoshum:[[0,'Мяу…',4],[1,'Мяу!',6]]
+};
+// Pages spoken by Uma instead of Yuri, with her emotion.
+export const umaPages={intro:{1:1}};
+for(const [id,replies] of Object.entries(umaReplies)){
+ const scene=scenes[id];if(!scene)continue;const pages=[],map={};
+ scene.pages.forEach((text,i)=>{pages.push(text);for(const [after,line,emotion] of replies)if(after===i){map[pages.length]=emotion;pages.push(line);}});
+ scene.pages=pages;umaPages[id]=map;
+}
