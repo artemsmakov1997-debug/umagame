@@ -70,7 +70,7 @@ function drawCone(c,lx,ly,sx,sw,floor,colors,alpha=1){
 // Spotlight cones and the ceiling truss go behind the risers.
 export function drawStudioBack(c,a,g,t){
  if(g.room!==ROOM||!a.studioSet)return;const x0=X0(),rail=Q.rail,rk=26/rail[3],rw=rail[2]*rk;
- // One ceiling rail over the whole studio: the Прожекторщики ride it.
+ // One ceiling rail over the whole studio: the Прожекторы ride it.
  for(let x=x0;x<x0+rooms[ROOM].width;x+=rw-4)blit(c,a.studioSet,rail,x,2,rw,26);
  for(const light of SPOTLIGHTS){const span=spotSpan(light,t),lx=x0+light.x,ly=58,floor=light.floor,sx=x0+span.x,cx=x0+span.center;
   drawCone(c,lx,ly,sx,span.w,floor,['#ffd27a','#ffb35a']);

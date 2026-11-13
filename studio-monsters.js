@@ -1,7 +1,7 @@
 import {rooms} from './level.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
 // Studio monsters of the second redesign.
-// Прожекторщик: rides a rail along the studio ceiling across the whole map, out of reach, keeping a little ahead of
+// Прожектор: rides a rail along the studio ceiling across the whole map, out of reach, keeping a little ahead of
 // Uma. It swings its red beam after her, locks it and burns: the surface under the beam is burnt out for a moment
 // (a hole the beam's width, see terrain cuts), so Uma has to step off the lit spot before it goes. The beam does not
 // hurt or push. A low set flat in the way stops the beam (it lands on the flat and burns nothing), so the flat is safe.
@@ -22,7 +22,7 @@ function burnFloor(g,e){
  g.cuts.push({id:'cut-'+(++g.tacticalSerial),ownerId:e.id,room:e.room,platformId:s.id,localX,w,phase:'warning',time:SPOTLIGHTER.warn,x:s.x+localX+w/2,y:s.y,burn:true});
  g.emit('cutWarning',{x:e.beamX,y:s.y,enemyType:e.type});return true;
 }
-// The rail: the body drifts after a point a little ahead of Uma, never closer than `apart` to another Прожекторщик.
+// The rail: the body drifts after a point a little ahead of Uma, never closer than `apart` to another Прожектор.
 function ride(g,e,dt){
  const r=rooms[e.room],p=g.player,lo=r.x+40,hi=r.end-40-e.w;let goal=Math.max(lo,Math.min(hi,p.x+p.w/2+SPOTLIGHTER.lead-e.w/2));
  for(const o of g.enemies)if(o!==e&&o.type==='spotlight'&&o.room===e.room&&o.active&&!o.dead&&Math.abs(o.x-goal)<SPOTLIGHTER.apart)goal=o.x<e.x?Math.max(goal,o.x+SPOTLIGHTER.apart):Math.min(goal,o.x-SPOTLIGHTER.apart);

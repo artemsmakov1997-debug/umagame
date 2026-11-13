@@ -1,5 +1,5 @@
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
-// New monsters of the second redesign: Папарацци (Крыши), Прожекторщик and Журавль (Студия).
+// New monsters of the second redesign: Папарацци (Крыши), Прожектор and Журавль (Студия).
 // Each has a painted strip (assets/paparazzi.png etc.). Until a strip is loaded, a stand-in made of existing
 // sprites is drawn, so the gameplay works and reads before the art arrives.
 // assets/paparazzi.png: 8 cells, feet on the bottom row: 0–1 idle, 2 aim, 3 charge, 4 FLASH, 5 cooling, 6 hit, 7 broken.
@@ -38,7 +38,7 @@ export function drawBlind(c,g,view){
  const b=g.player.blindTime||0;if(b<=0)return;c.save();c.globalAlpha=Math.min(.85,b/.9*.85);c.fillStyle='#fffdf2';c.fillRect(g.camera-20,-20,(view||768)+40,560);c.restore();
 }
 
-// ——— Прожекторщик ———
+// ——— Прожектор ———
 // assets/spotlighter.png: 6 cells of 130×190, the truss clamp at the top, lens facing right:
 // 0–1 idle, 2 aim, 3 burning, 4 overheated, 5 hit. assets/spotlighter-beam.png: 3 cells of 150×240, apex at (75,8),
 // base at y≈230 and ≈123 wide: faint, medium, full.

@@ -18,7 +18,7 @@ export function applyRelayEffect(g,relay){
   g.cuts=g.cuts.filter(c=>c.room!==relay.room);
   g.tether=null;g.player.pulled=false;
   for(const e of local)if(e.type==='splicer'||e.type==='cutter'){e.state='recover';e.timer=Math.max(e.timer,2);}
-  return 'Монтажные разрезы исчезли. Путь на время свободен.';
+  return 'Монтажные разрезы исчезли. Путь пока свободен.';
  }
  if(relay.kind==='signal'){
   g.echoImmunity=Math.max(g.echoImmunity,3);

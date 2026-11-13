@@ -16,7 +16,7 @@ export const tutorialLines={
  dash:{keys:'Барьер помех! Пробей его рывком — Shift.',touch:'Барьер помех! Пробей его кнопкой «Рывок».'},
  jump:{keys:'Пол проломлен. Перепрыгни: ↑ или W.',touch:'Пол проломлен. Перепрыгни кнопкой ↑.'},
  attack:{keys:'Монитор заражён шумом. Ударь лапой — X или Пробел.',touch:'Монитор заражён шумом. Ударь его кнопкой «Лапа».'},
- exit:{keys:'Отлично! Дверь открыта — в редакцию.',touch:'Отлично! Дверь открыта — в редакцию.'}
+ exit:{keys:'Отлично! Дверь открыта — в редакцию!',touch:'Отлично! Дверь открыта — в редакцию!'}
 };
 export function createTutorial(){return {step:0,announced:-1,complete:false,barrierBroken:false,barrierTime:0,bumped:false,monitorBroken:false,monitorTime:0,doorOpen:false,doorTime:0,lastSwing:-1};}
 const local=g=>rooms[0].x;
