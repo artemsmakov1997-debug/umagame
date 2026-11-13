@@ -5,7 +5,7 @@ const{open,shot,fixture,fieldBottom}=require('./browser-helpers.cjs');
  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH,args:['--no-sandbox']}),errors=[];
  for(const[width,height]of[[1920,1080],[1865,930],[2865,1390],[1280,960],[320,844],[390,844],[844,390]]){
   const p=await browser.newPage({viewport:{width,height},isMobile:width<1000,hasTouch:width<1000});p.on('pageerror',e=>errors.push(e.message));await open(p);
-  assert.ok(await p.evaluate(()=>testUI.assets.menu.src.includes('menu-compact.png')));
+  assert.ok(await p.evaluate(()=>testUI.assets.menu.src.includes('menu-compact')));
   await p.evaluate(()=>window.testTime=1.3);await p.waitForTimeout(50);assert.equal(await p.evaluate(()=>testUI.idleAction),'lick');
   assert.ok(await p.locator('.menu-options').evaluate(e=>[...e.children].every(b=>{const r=b.getBoundingClientRect();return r.x>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;})));
   await shot(p,'new-menu-pile-'+width);

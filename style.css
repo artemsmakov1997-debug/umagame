@@ -871,3 +871,30 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
 }
 }
 #app[data-layout="panel"] #dialogue[data-speaker="uma"] #dialogue-text{font-size:30px!important;line-height:1.3!important}
+/* Narrow phones: «Распространитель» keeps its two-line break at a readable size instead of shrinking to 7px. */
+@media(max-width:360px) and (orientation:portrait){#app #library-screen .monster-option span.long{font-size:8.5px;line-height:.98;letter-spacing:-.02em;white-space:normal}}
+/* ── Landscape phones «Б» (mobile-layout.js): compact brass controls in the corners, a slim dialogue strip ── */
+#app[data-layout="landscape"] #touch-actions{right:max(14px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));top:auto;transform:none;width:156px;height:132px}
+#app[data-layout="landscape"] #touch-actions button{opacity:.88;font-size:0;color:transparent;border:0;background-color:transparent;background-repeat:no-repeat;box-shadow:0 4px 0 #050a18cc,0 6px 10px #0007;transition:transform .06s}
+#app[data-layout="landscape"] #touch-actions button::after{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;box-shadow:inset 0 0 0 2px #f6cf7a,inset 0 0 0 5px #7a5524,inset 0 0 0 6px #1a1430,inset 0 8px 12px #ffffff1c}
+#app[data-layout="landscape"] #touch-actions button.pressed{opacity:1;transform:translateY(3px) scale(.96)}
+#app[data-layout="landscape"] #touch-actions .touch-jump{width:70px;height:70px;right:0;bottom:0;top:auto;left:auto;
+ background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff1cf' d='M12 3 3 12h5v8h8v-8h5z'/%3E%3C/svg%3E") center/32px no-repeat,radial-gradient(circle at 50% 35%,#2a7f9b,#123b5c 62%,#0b2240)}
+#app[data-layout="landscape"] #touch-actions .touch-paw{width:60px;height:60px;left:0;bottom:4px;top:auto;right:auto;
+ background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff1cf'%3E%3Cellipse cx='12' cy='16' rx='5.2' ry='4.4'/%3E%3Cellipse cx='5.2' cy='10.5' rx='2.1' ry='2.6'/%3E%3Cellipse cx='9.4' cy='6.4' rx='2.1' ry='2.7'/%3E%3Cellipse cx='14.6' cy='6.4' rx='2.1' ry='2.7'/%3E%3Cellipse cx='18.8' cy='10.5' rx='2.1' ry='2.6'/%3E%3C/svg%3E") center/30px no-repeat,radial-gradient(circle at 50% 35%,#a8742c,#5c3a17 62%,#341f0d)}
+#app[data-layout="landscape"] #touch-actions .touch-dash{width:50px;height:50px;left:48px;top:0;bottom:auto;right:auto;
+ background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff1cf' d='M14 2 4 14h6l-2 8 10-12h-6z'/%3E%3C/svg%3E") center/22px no-repeat,radial-gradient(circle,#3b2a6e 52%,transparent 54%),conic-gradient(#c8a6ff var(--ready,100%),#241b40 0)}
+#app[data-layout="landscape"] #touch-actions .touch-dash #dash-status{position:absolute;top:-15px;bottom:auto;font:12px/1 UmaText,monospace;color:#d8c8ff}
+#app[data-layout="landscape"] #stick-base{width:100px;height:100px;border:0;opacity:.85;background:radial-gradient(circle,#0b1a35b0 0 55%,#132a4cb0 56% 100%);box-shadow:inset 0 0 0 2px #f6cf7a,inset 0 0 0 5px #7a5524,inset 0 0 0 6px #1a1430,0 5px 12px #0008}
+#app[data-layout="landscape"] #stick-knob{left:29px;top:29px;width:42px;height:42px;border:0;background:radial-gradient(circle at 45% 35%,#ffe9b0,#d9a24c 45%,#7a5524 100%);box-shadow:0 3px 0 #2a1a0a,0 5px 8px #0009}
+#app[data-layout="landscape"] #stick-pad.engaged #stick-base{opacity:1}
+/* Dialogue strip: small portrait, the role on its own line, tap anywhere to go on («Далее» hidden), skip in the corner. */
+#app[data-layout="landscape"] #dialogue{cursor:pointer}
+#app[data-layout="landscape"] #dialogue #dialogue-next{display:none!important}
+#app[data-layout="landscape"] #dialogue .narrator-role{display:block;margin:2px 0 4px!important;line-height:1!important}
+#app[data-layout="landscape"] #dialogue .dialogue-actions{position:absolute;top:8px;right:10px}
+#app[data-layout="landscape"] #dialogue #dialogue-skip{min-height:36px!important;padding:4px 10px!important;font-size:14px!important}
+#app[data-layout="landscape"] #dialogue .novel-hint{display:block;position:absolute;right:12px;bottom:8px;margin:0;font:12px/1 UmaText,monospace;color:#7f98bb}
+#app[data-layout="landscape"] #dialogue .dialogue-content{grid-template-rows:auto minmax(0,1fr) auto!important}
+#app[data-layout="landscape"] #dialogue #dialogue-text{font-size:20px!important;line-height:1.18!important}
+#app[data-layout="landscape"] #stick-pad:not(.engaged) #stick-base{opacity:.6}
