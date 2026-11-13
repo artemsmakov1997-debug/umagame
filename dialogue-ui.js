@@ -1,5 +1,5 @@
 import {drawYuriPortrait,yuriEmotion,yuriEmotions} from './yuri-portrait.js?v=0.21.5';
-import {scenes,pageSpeaker} from './story.js?v=0.21.5';
+import {scenes,dialogueSpeaker} from './story.js?v=0.21.5';
 import {drawUmaPortrait,umaEmotions} from './uma-portrait.js?v=0.21.5';
 import {drawNovelPortraits} from './novel-portraits.js?v=0.21.5';
 const $=id=>document.getElementById(id);
@@ -15,7 +15,7 @@ export class DialogueUI{
  }
  update(inGame,dt=0){
   const d=inGame&&this.game.mode==='dialogue'?this.game.dialogue:null,active=!!d;$('dialogue').hidden=!active;$('app').dataset.dialogue=String(active);
-  if(!active){if(this.game.mode!=='paused')this.lastKey=null;return;}this.signalClock+=dt;this.mouthAge+=dt;const portrait=$('narrator-portrait'),speaker=pageSpeaker(d.id,d.page),uma=speaker.who==='uma';$('dialogue').dataset.speaker=speaker.who;
+  if(!active){if(this.game.mode!=='paused')this.lastKey=null;return;}this.signalClock+=dt;this.mouthAge+=dt;const portrait=$('narrator-portrait'),speaker=dialogueSpeaker(d),uma=speaker.who==='uma';$('dialogue').dataset.speaker=speaker.who;
   // Uma answers in her own window: her portrait, name and emotion instead of Yuri's.
   if($('app').dataset.layout==='panel')drawNovelPortraits(this.assets,{speaker:speaker.who,umaEmotion:uma?speaker.emotion:0,yuriEmotion:yuriEmotion(this.game),umaTime:this.mouthAge,yuriTime:this.signalClock,speaking:uma||this.mouthAge<4});
   if(uma){portrait.dataset.emotion=umaEmotions[speaker.emotion];portrait.setAttribute('aria-label','Ума');drawUmaPortrait(portrait.getContext('2d'),this.assets,{time:this.mouthAge,emotion:speaker.emotion,speaking:true});}

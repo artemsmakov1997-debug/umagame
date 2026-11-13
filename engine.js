@@ -19,7 +19,7 @@ import {applyRoofWalls,roofFall,stepRoofs,placeAtRoofCheckpoint} from './roofs-s
 import {stepStudio,studioFall,placeAtStudioCheckpoint} from './studio-systems.js?v=0.21.5';
 import {stepDimension,dimensionFall,placeAtDimensionCheckpoint,landFlipped,createOriginals} from './dimension-systems.js?v=0.21.5';
 import {stepNewsroom,newsroomRestore,placeAtNewsroomCheckpoint,resetNewsroom} from './newsroom-systems.js?v=0.21.5';
-import {scenes,evidence,relayClues,pageSpeaker} from './story.js?v=0.21.5';
+import {scenes,evidence,relayClues,dialogueSpeaker,scenesSpeakers} from './story.js?v=0.21.5';
 import {createWorldPlatforms,stepWorldPlatforms,alignEnemyToPlatform} from './world-platforms.js?v=0.21.5';
 import {beginArenaEntry,stepArenaEntry} from './arena-entry.js?v=0.21.5';
 import {solidSurfaces,stepTacticalTerrain} from './terrain.js?v=0.21.5';
@@ -61,7 +61,7 @@ export class Game {
  }
  advanceDialogue(skip=false){
   if(this.mode!=='dialogue'||!this.dialogue)return false;
-  const d=this.dialogue,pages=d.pages||scenes[d.id]?.pages||[];if(!skip&&d.page+1<pages.length){d.page++;d.catReply=pageSpeaker(d.id,d.page).who==='uma';if(d.catReply)this.emit('catMeow');this.emit('dialogue',{id:d.id});return true;}
+  const d=this.dialogue,pages=d.pages||scenes[d.id]?.pages||[];if(!skip&&d.page+1<pages.length){d.page++;d.catReply=dialogueSpeaker(d).who==='uma';if(d.catReply)this.emit('catMeow');this.emit('dialogue',{id:d.id});return true;}
   this.dialogue=null;this.mode=d.after;this.player.inv=Math.max(this.player.inv,.65);
   if(d.next){this.mode='playing';this.openDialogue(d.next,'won');return true;}
   this.emit(this.mode==='won'?'won':'dialogueEnd',{id:d.id});return true;
@@ -71,11 +71,11 @@ export class Game {
   // Yuri's words open by themselves (the game waits): at the start of a location, when a boss fight begins, after a chapter.
   const n=!this.loading&&!this.transition&&this.notebooks.find(n=>!n.taken&&n.room===this.room&&n.readyAt<=this.time);
   if(!n)return false;n.taken=true;if(n.unlock)this.abilities[n.unlock]=true;
-  const pages=n.scenes.filter(id=>!this.seenScenes.has(id)).flatMap(id=>scenes[id]?.pages||[]);
+  const fresh=n.scenes.filter(id=>!this.seenScenes.has(id)),pages=fresh.flatMap(id=>scenes[id]?.pages||[]),speakers=scenesSpeakers(fresh);
   n.scenes.forEach(id=>this.seenScenes.add(id));this.emit('notebook',{id:n.id,unlock:n.unlock,x:n.x,y:n.y});
   // With the transmitters gone, the room's investigation clues are found in Yuri's notebooks.
   const found=(relayClues[n.room]||[]).find((text,i)=>!this.clues.some(c=>c.room===n.room&&c.ordinal===i));if(found){const ordinal=relayClues[n.room].indexOf(found);this.clues.push({id:'note-'+n.id,room:n.room,ordinal,text:found,effect:null});this.emit('clue',{room:n.room,text:found,effect:null,x:n.x});}
-  return this.openDialogue('notebook:'+n.id,'playing',pages);
+  const opened=this.openDialogue('notebook:'+n.id,'playing',pages);if(opened)this.dialogue.speakers=speakers;return opened;
  }
  completeChapter(room){
   const r=rooms[room];if(!r?.arena)return;const record=evidence[r.chapter-1];
