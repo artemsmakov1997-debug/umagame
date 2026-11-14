@@ -1,8 +1,8 @@
-import {platforms,rooms,MAX_LIVES} from './level.js?v=0.21.5';
+import {platforms,rooms,MAX_LIVES,MAP_PACKS} from './level.js?v=0.21.5';
 // Health packets. Each map has two, standing on platforms (they ride moving ones via world-platforms.js); a boss
 // arena starts with none and gets one each time the boss enters a new phase. Lives are not found on the map any
 // more: they are topped up when Uma starts a level (enters its map from the previous chapter).
-export const MAP_PACKS=[[1,3],[1,6],[3,13],[3,14],[5,15],[5,11],[7,10],[7,25]];
+export {MAP_PACKS};
 export const PACK={lift:24,near:[200,320],rise:130,drop:60,boss:150,minW:70};
 export function createPacks(){return MAP_PACKS.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return {id:'pack-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-PACK.lift,taken:false};});}
 // Called by activateRoom: arena packets of an earlier attempt go away; a new level refills the lives.
@@ -24,7 +24,8 @@ export function placePack(g){
  const clear=g.boss?.network?.stage==='colossus'?260:Math.max(PACK.boss,(g.boss?.w||0)/2+60);let best=null;
  for(const s of list)for(const dir of [-1,1])for(let d=PACK.near[0];d<=PACK.near[1];d+=30){
   const x=Math.max(s.x+28,Math.min(s.x+s.w-28,px+dir*d)),run=Math.abs(x-px);if(x<r.x+40||x>r.end-40)continue;
-  const score=(run<PACK.near[0]?PACK.near[0]-run:run>PACK.near[1]?run-PACK.near[1]:0)+(Math.abs(x-bx)<clear?400:0)+Math.abs(s.y-feet)*.5;
+  const fishy=g.fishes?.some(f=>!f.taken&&f.room===g.room&&Math.abs(f.x-x)<44&&Math.abs(f.y-(s.y-PACK.lift))<50);
+  const score=(run<PACK.near[0]?PACK.near[0]-run:run>PACK.near[1]?run-PACK.near[1]:0)+(Math.abs(x-bx)<clear?400:0)+Math.abs(s.y-feet)*.5+(fishy?300:0);
   if(!best||score<best.score)best={s,x,score};}
  if(!best)return null;
  return {id:'phase-'+g.boss.id+'-'+g.boss.phase,room:g.room,platformIndex:best.s.index,x:best.x,y:best.s.y-PACK.lift,taken:false,phase:true};
