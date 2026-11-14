@@ -86,14 +86,23 @@ function drawTvRain(c,a,n,time){
  for(const t of n.tvs){if(t.t<0)continue;if(t.state==='fly'){const k=t.t/WAVE.flight,x=t.fx+(t.tx-t.fx)*k,y=t.fy+(t.ty-t.fy)*k-Math.sin(k*Math.PI)*160,p=F['tv'+Math.floor(time*10)%2];piece(c,img,p,x-26,y-28,52,56);}
   else stand(c,img,F.tvhit,t.tx,t.ty+8,74);}
 }
+// The strike zone of the cable whip: a tinted band over the ledge that fills
+// from the side the tentacle comes from, so the cat sees where and when it lands.
+function drawWhipZone(c,w,len,time){
+ const k=1-Math.max(0,w.timer)/WAVE.whipWarn,late=w.timer<.4,x=Math.round(w.x0-8),wd=Math.round(len+16),h=58,top=Math.round(w.y-h);
+ c.save();c.globalAlpha=(late?.3:.16)+(late?.2:.1)*Math.abs(Math.sin(time*(late?22:9)));rect(c,x,top,wd,h,'#ff3fb4');
+ c.globalAlpha=.32;const fw=Math.round(wd*k);rect(c,w.from<0?x:x+wd-fw,top,fw,h,'#ff3fb4');
+ c.globalAlpha=.9;rect(c,x,top,2,h,'#ffd0f0');rect(c,x+wd-2,top,2,h,'#ffd0f0');
+ for(let xx=x+6;xx<x+wd-4;xx+=14)rect(c,xx,top,6,2,'#ffd0f0');c.restore();
+}
 function drawHallFront(c,a,g,time){
  const n=g.boss.network,img=a.infoshumFx1,F=AT.fx1;
  for(const s of n.scans){const bottom=s.state==='go'?s.bottom:beamFloor(g,s.x);
   if(s.state==='warn'){c.save();c.globalAlpha=.25+.25*Math.abs(Math.sin(time*12));rect(c,s.x-WAVE.scanHalf,0,WAVE.scanHalf*2,bottom,'#ff5ae0');c.restore();const x0=Math.min(s.x,s.x+s.dir*WAVE.scanSpan),w=WAVE.scanSpan;drawLineWarning(c,a,x0,FLOOR-4,w,time);piece(c,img,F.scan0,s.x-24,0,48,64);}
   else{const p=F['scan'+(1+Math.floor(time*14)%2)];piece(c,img,p,s.x-38,0,76,bottom+12);}}
  for(const w of n.whips){const len=w.x1-w.x0;
-  if(w.state==='warn'){drawLineWarning(c,a,w.x0,w.y-3,len,time);const k=1-Math.max(0,w.timer)/WAVE.whipWarn,p=F['whip'+Math.min(2,Math.floor(k*3))],x=w.from<0?w.x0-30:w.x1+30;stand(c,img,p,x,w.y+4,p.r[2]*1.2,{flip:w.from>0});}
-  else{const k=Math.min(1,(WAVE.whipHit-w.timer)/(WAVE.whipHit+.35)),p=F['whip'+(3+Math.min(3,Math.floor(k*4)))];stand(c,img,p,w.x0+len/2,w.y+6,len+40,{flip:w.from>0});}}
+  if(w.state==='warn'){drawWhipZone(c,w,len,time);drawLineWarning(c,a,w.x0,w.y-3,len,time);const k=1-Math.max(0,w.timer)/WAVE.whipWarn,p=F['whip'+Math.min(2,Math.floor(k*3))],x=w.from<0?w.x0-30:w.x1+30;stand(c,img,p,x,w.y+4,p.r[2]*1.2,{flip:w.from>0});}
+  else{const k=Math.min(1,(WAVE.whipHit-w.timer)/(WAVE.whipHit+WAVE.whipRecoil)),p=F['whip'+(3+Math.min(3,Math.floor(k*4)))];stand(c,img,p,w.x0+len/2,w.y+6,len+40,{flip:w.from>0});}}
  drawTvRain(c,a,n,time);
  // The open junction box: an amber glow so the cat sees where Yuri waits.
  n.relays.forEach((q,i)=>{if(q.state==='open'){const r=relayRect(g,i);amberFrame(c,{x:r.x+r.w*.55,y:r.y+r.h*.52,w:r.w*.36,h:r.h*.28},time,2);}});
