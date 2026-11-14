@@ -43,7 +43,7 @@ test('the scan beam sweeps the hall from above: it burns a cat on the open floor
 });
 test('the cable whip warns along Uma\'s ledge and slams it: a jump clears it; a tiny TV leaves a puddle of noise where it lands',()=>{
  for(const jump of[false,true]){const g=game(false),n=g.boss.network;place(g,'8:2',140);g.player.inv=0;const t=tower(g,1),w=t.whips[0];assert.equal(w.state,'warn');assert.equal(w.platformId,'8:2');const h=g.health;
-  for(let i=0;i<120&&t.whips.length;i++)g.step(1/60,jump&&w.timer<.25&&w.state==='warn'&&g.player.grounded?{jump:true}:{});assert.equal(g.health,jump?h:h-1,jump?'jumped':'hit');}
+  for(let i=0;i<200&&t.whips.length;i++)g.step(1/60,jump&&w.timer<.25&&w.state==='warn'&&g.player.grounded?{jump:true}:{});assert.equal(g.health,jump?h:h-1,jump?'jumped':'hit');}
  const g=game(false),n=g.boss.network;place(g,'8:0',300);g.player.inv=9;tower(g,2);assert.equal(n.tvs.length,3);assert.ok(until(g,()=>n.puddles.length===3,200));const q=n.puddles[1];
  Object.assign(g.player,{x:q.x-17,y:q.y-48,grounded:true,supportId:'8:0',vx:0,vy:0});g.player.inv=0;const h=g.health;tick(g,10);assert.equal(g.health,h-1,'the puddle hurts');tick(g,Math.round(60*WAVE.puddle));assert.equal(n.puddles.length,0);
 });

@@ -29,7 +29,7 @@ export const TOWER={cx:768,base:474,w:340,h:392};
 export const RELAYS=[{cx:105,base:474,w:150},{cx:330,base:300,w:170},{cx:1206,base:300,w:170},{cx:1431,base:474,w:150}];
 export const RELAY_H=246/174;
 export const ROUND_PAIRS=[[0,3],[1,2],[0,2]];
-export const WAVE={opening:1.4,gap:[1.05,.9,.75],plan:['scan','whip','volley','whip'],scanWarn:.75,scanSpeed:390,scanSpan:860,scanHalf:22,whipWarn:.85,whipHit:.35,whipHalf:220,volley:3,volleyGap:.28,flight:.8,puddle:3,puddleHalf:34,
+export const WAVE={opening:1.4,gap:[1.05,.9,.75],plan:['scan','whip','volley','whip'],scanWarn:.75,scanSpeed:390,scanSpan:860,scanHalf:22,whipWarn:1.35,whipHit:.3,whipRecoil:.45,whipHalf:220,volley:3,volleyGap:.28,flight:.8,puddle:3,puddleHalf:34,
  yuriDelay:1.1,yuriPoint:.9,hitFlash:.3,reboot:.8,takeover:12,yuriFace:1.05,face:1.1,flip:.22,relayUnit:.5,screenUnit:1};
 export const ARRIVE=1.6,ASSEMBLE=3.6,BREAKOUT=3;
 export const COL={reach:110,windup:.55,intro:2,gap:[1.1,.85,.6],aim:[1.1,.95,.8],lock:.35,fall:.12,stuck:[2.8,2.6,2.4],lift:.45,fistHalf:58,track:340,shockSpeed:430,shockRange:520,
@@ -121,8 +121,9 @@ function stepAttacks(g,dt){
   if(hurtable(p)&&Math.abs(px-s.x)<WAVE.scanHalf+p.w/2-6&&p.y+p.h<=s.bottom+4)g.hurt(false,s.x);}
  n.scans=n.scans.filter(s=>s.travel<WAVE.scanSpan);
  for(const w of n.whips){w.timer-=dt;if(w.state==='warn'){if(w.timer<=0){w.state='hit';w.timer=WAVE.whipHit;g.emit('bossCast',{boss:'infoshum',ability:'whip',x:(w.x0+w.x1)/2,y:w.y});}continue;}
-  if(hurtable(p)&&p.grounded&&p.supportId===w.platformId&&px>w.x0-8&&px<w.x1+8)g.hurt(false,px);}
- n.whips=n.whips.filter(w=>!(w.state==='hit'&&w.timer<=-.35));
+  // Only the slam itself hurts; the recoil afterwards is just the tentacle lifting away.
+  if(w.timer>0&&hurtable(p)&&p.grounded&&p.supportId===w.platformId&&px>w.x0-8&&px<w.x1+8)g.hurt(false,px);}
+ n.whips=n.whips.filter(w=>!(w.state==='hit'&&w.timer<=-WAVE.whipRecoil));
  for(const t of n.tvs){t.t+=dt;if(t.state==='fly'&&t.t>=WAVE.flight){t.state='hit';t.t=0;g.emit('boltImpact',{x:t.tx,y:t.ty,kind:'screen'});
    if(hurtable(p)&&Math.abs(px-t.tx)<38&&p.y+p.h>t.ty-60&&p.y<t.ty+4)g.hurt(false,t.tx);n.puddles.push({x:t.tx,y:t.ty,time:0});}}
  n.tvs=n.tvs.filter(t=>!(t.state==='hit'&&t.t>.3));
