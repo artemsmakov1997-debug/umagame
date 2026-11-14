@@ -91,7 +91,7 @@ export function drawStudioProps(c,a,g,t){
  // «В ЭФИРЕ» board over the takes and the clapper that snaps on every swap.
  const live=liveTake(t),sign=live.warn?(Math.floor(t*8)%2?Q.signOn:Q.signOff):Q.signOn,sk=34/sign[3],sw=sign[2]*sk,sx=x0+1935,sy=128;
  rect(c,sx+sw*.25,0,2,sy,'#2a2434');rect(c,sx+sw*.75,0,2,sy,'#2a2434');blit(c,a.studioSet,sign,sx,sy,sw,34);
- text(c,'В ЭФИРЕ',sx+sw/2-21,sy+8,'#fff1e6',1,1);text(c,live.color==='red'?'ДУБЛЬ 1':'ДУБЛЬ 2',sx+sw/2-21,sy+19,live.color==='red'?'#ffb0a8':'#a8c8ff',1,1);
+ text(c,'В ЭФИРЕ',sx+sw/2-21,sy+7,'#fff1e6',1,1);text(c,live.color==='red'?'ДУБЛЬ 1':'ДУБЛЬ 2',sx+sw/2-21,sy+17,live.color==='red'?'#ffb0a8':'#a8c8ff',1,1);
  const clap=live.warn?Q.clapOpen:Q.clapShut,ck=30/clap[3];blit(c,a.studioSet,clap,x0+1532,300-30,clap[2]*ck,30);
  // The pavilion door: shut while a studio transmitter still works.
  const open=!g.relays.some(d=>d.room===ROOM&&d.hp>0),door=open?Q.doorOpen:Q.doorShut,dk=STUDIO_DOOR.h/door[3];blit(c,a.studioSet,door,x0+STUDIO_DOOR.x,STUDIO_PIECES[14].y-STUDIO_DOOR.h+3,door[2]*dk,STUDIO_DOOR.h);

@@ -31,7 +31,8 @@ export function drawTutorialSurface(c,a,g,s){
 export function drawTutorialProps(c,a,g,t){
  if(g.room!==0||!a.tutorialProps)return;const q=g.tutorial,x0=rooms[0].x;
  // Start sign at the foot of the bed.
- const sign=draw(c,a,'sign',x0+212,FLOOR-66,.227);text(c,"СТАРТ",x0+219,FLOOR-57,"#fff1c4",1,1);
+ // The word sits in the middle of the board (inner area x 5–50, y 13–30 at this scale), left of the arrow tip.
+ const sign=draw(c,a,'sign',x0+212,FLOOR-66,.227);text(c,"СТАРТ",x0+226,FLOOR-48,"#fff1c4",1,1);
  // Broken floorboards frame the gap.
  const edge=.3;draw(c,a,'edgeLeft',x0+GAP.x-287*edge+6,FLOOR-8*edge-1,edge);draw(c,a,'edgeRight',x0+GAP.x+GAP.w-6,FLOOR-8*edge-1,edge);
  // Bench: the seat is a real platform; only a crouched Uma fits underneath.
@@ -57,8 +58,9 @@ export function drawTutorialProps(c,a,g,t){
   if(current){c.globalAlpha=.2+.12*Math.sin(t*4);rect(c,cx-PLAQUE_W/2-6,y-5,PLAQUE_W+12,ph+10,'#ffd36e');c.globalAlpha=1;}
   draw(c,a,'plaque',cx-PLAQUE_W/2,y,ps);
   const [key,label]=keys[station],big=key.length<=7?2:1,kw=key.length*6*big,lw=label.length*6;
-  text(c,key,cx-kw/2+big,y+(label?(big===2?11:15):(ph-7*big)/2),current?'#fff3be':'#e9c98b',big);
-  if(label)text(c,label,cx-lw/2+1,y+ph-17,current?"#ffe08f":"#c9a873",1,1);
+  // Key and label inside the plaque's inner panel (about y 8–47), clear of the bronze frame.
+  text(c,key,cx-kw/2+big,y+(label?(big===2?13:18):(ph-7*big)/2),current?'#fff3be':'#e9c98b',big);
+  if(label)text(c,label,cx-lw/2+1,y+ph-21,current?"#ffe08f":"#c9a873",1,1);
   c.restore();
  }
 }

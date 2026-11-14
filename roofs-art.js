@@ -14,7 +14,7 @@ const ENTRANCE={closed:[53,28,662,936],open:[782,28,663,936]};
 // assets/sensation.png: 4×2 cells of 384×512. Row 1: four flight frames; row 2: dash, hit, crumpled, burst.
 const CELL_W=384,CELL_H=512,PIVOT_Y=[285,780],BIRD_SCALE=.14;
 // Scenery that is not collision: antennas and the sign that points to the mast.
-const DECOR=[{kind:'sign',x:186,bottom:420,h:52},{kind:'vane',x:560,bottom:300,h:56},{kind:'antenna',x:740,bottom:250,h:60},{kind:'antenna',x:1790,bottom:230,h:64},{kind:'dish',x:2040,bottom:190,h:40},{kind:'antenna',x:2272,bottom:150,h:66}];
+const DECOR=[{kind:'sign',x:176,bottom:420,h:100},{kind:'vane',x:560,bottom:300,h:56},{kind:'antenna',x:740,bottom:250,h:60},{kind:'antenna',x:1790,bottom:230,h:64},{kind:'dish',x:2040,bottom:190,h:40},{kind:'antenna',x:2272,bottom:150,h:66}];
 const X0=()=>rooms[ROOM].x;
 const blit=(c,image,box,x,y,w,h)=>c.drawImage(image,box[0],box[1],box[2],box[3],Math.round(x),Math.round(y),Math.round(w),Math.round(h));
 const hash=n=>{n=Math.sin(n*127.1)*43758.5453;return n-Math.floor(n);};
@@ -52,7 +52,7 @@ export function drawRoofSurface(c,a,g,s){
 
 export function drawRoofProps(c,a,g,t){
  if(g.room!==ROOM||!a.roofsProps)return;const x0=X0();
- for(const d of DECOR){const box=PROPS[d.kind],k=d.h/box[3];blit(c,a.roofsProps,box,x0+d.x,d.bottom-d.h+1,box[2]*k,d.h);if(d.kind==='sign')text(c,'К МАЧТЕ',x0+d.x+6,d.bottom-d.h+9,'#2b1a12',1,1);}
+ for(const d of DECOR){const box=PROPS[d.kind],k=d.h/box[3];blit(c,a.roofsProps,box,x0+d.x,d.bottom-d.h+1,box[2]*k,d.h);if(d.kind==='sign')text(c,'К МАЧТЕ',x0+d.x+Math.round(65*k)+2,d.bottom-d.h+1+Math.round(48*k+(62*k-7)/2),'#2b1a12',1,1);/* on the board right of the post, clear of the arrow tip (x 65–190, y 48–110 of the sprite) */}
  // Fire-escape ladders: the wooden ladder sprite repeats up the wall.
  const lb=PROPS.ladder,lk=31/lb[2],lh=lb[3]*lk;
  for(const l of ROOF_LADDERS){c.save();c.beginPath();c.rect(x0+l.x-4,l.top-14,40,l.bottom-l.top+14);c.clip();for(let y=l.bottom-lh;y>l.top-lh;y-=lh-6)blit(c,a.roofsProps,lb,x0+l.x,y,31,lh);c.restore();}

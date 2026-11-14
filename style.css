@@ -898,3 +898,4 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
 #app[data-layout="landscape"] #dialogue .dialogue-content{grid-template-rows:auto minmax(0,1fr) auto!important}
 #app[data-layout="landscape"] #dialogue #dialogue-text{font-size:20px!important;line-height:1.18!important}
 #app[data-layout="landscape"] #stick-pad:not(.engaged) #stick-base{opacity:.6}
+@media(max-width:360px) and (orientation:portrait){#app #library-screen .monster-option span.long{font-size:7.5px;line-height:.86}}
