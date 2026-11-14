@@ -899,3 +899,6 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
 #app[data-layout="landscape"] #dialogue #dialogue-text{font-size:20px!important;line-height:1.18!important}
 #app[data-layout="landscape"] #stick-pad:not(.engaged) #stick-base{opacity:.6}
 @media(max-width:360px) and (orientation:portrait){#app #library-screen .monster-option span.long{font-size:7.5px;line-height:.86}}
+
+/* Main menu: no paw marker next to the selected item. */
+#app[data-screen="menu"] .menu-item.selected::before{display:none}
