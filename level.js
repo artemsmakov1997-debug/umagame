@@ -64,7 +64,7 @@ for(const index of [2,4,6,8])layouts[index]=arenaBase.map(([x,y,w],i)=>{
 // Spreader arena: floor, two shelter tables (crouch beneath, climb on top) and two side ledges.
 layouts[2]=[[0,416,864],[150,364,200],[514,364,200],[24,285,104],[736,285,104]];
 // Three permanent camera docks and a reversible holographic chase route.
-layouts[6]=[[0,422,210],[550,220,210],[1160,198,230],[70,220,180],[520,422,375],[1320,422,216],[195,352,125],[350,284,125],[240,224,145],[780,280,140],[955,226,140],[1010,348,140],[1190,360,125],[430,357,125],[700,350,125],[850,410,125],[1410,300,126],[20,320,125]];
+layouts[6]=[[0,422,210],[550,220,210],[1160,198,230],[70,220,180],[520,422,375],[1320,422,216],[195,352,125],[350,284,125],[262,224,145],[780,280,140],[955,226,140],[1010,348,140],[1190,360,125],[430,357,125],[700,350,125],[907,410,125],[1410,300,126],[20,320,125]];
 // «Мачта Агитатора» (agitator-map.js): roof, mast deck, two antenna towers, chimneys and hidden letter slots.
 layouts[4]=AGITATOR_LAYOUT;
 // The last boss uses a readable continuous floor and three reachable CRT stations.
@@ -153,9 +153,12 @@ export function createEnemies(){const all=[
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}
  return roster;
 }
+// Health packets stand on these platforms (room, platform index); health-packs.js places them, fish keep clear.
+export const MAP_PACKS=[[1,3],[1,6],[3,13],[3,14],[5,15],[5,11],[7,10],[7,25]];
+const hasPack=(room,index)=>MAP_PACKS.some(([r,i])=>r===room&&i===index);
 export function createFish(){return rooms.flatMap(r=>{
  if(r.index===2)return [];
- const points=r.index===4?AGITATOR_FISH:r.tutorial?[[330,415],[538,428],[880,415],[980,380],[1110,415],[1330,415]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).map(s=>[s.x-r.x+s.w*.45,s.y-35]);
+ const points=r.index===4?AGITATOR_FISH:r.tutorial?[[330,415],[538,428],[880,415],[980,380],[1110,415],[1330,415]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).filter(s=>!hasPack(r.index,s.index)||s.w>=110).map(s=>[s.x-r.x+s.w*(hasPack(r.index,s.index)?.18:.45),s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
 const antennaPlaces=[[2,4],[3,2],[3,5],[3,7],[5,3],[5,8],[5,11],[6,13],[8,10],[8,13]];
