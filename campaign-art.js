@@ -1,7 +1,7 @@
 import {drawInfoshumMini} from './infoshum-art.js?v=0.21.5';
 function safeWarning(p){return p.collapseCharge>.35;}
 import {rooms,WIDTH} from './level.js?v=0.21.5';
-import {rect,text} from './pixel.js?v=0.21.5';
+import {signText,rect,text} from './pixel.js?v=0.21.5';
 import {sprite,idleCats} from './assets.js?v=0.21.5';
 import {drawEmotion,wakePose} from './cat-animation.js?v=0.21.5';
 import {drawMonster,drawHauntedMonitor} from './art.js?v=0.21.5';
@@ -115,7 +115,7 @@ export function drawInfection(c,g,a){
 export function drawEpilogue(c,a,time,width=768){
  const backgroundWidth=Math.max(768,width);c.drawImage(a.menu,(width-backgroundWidth)/2,0,backgroundWidth,backgroundWidth*2/3);rect(c,0,0,width,70,'#030a1eea');const compact=width<768;
  c.save();if(!compact)c.translate((width-768)/2,0);
- text(c,'ШУМ ОСТАНОВЛЕН',compact?Math.max(8,(width-168)/2):215,22,'#ffe5a4',compact?2:3,compact?0:1);
+ signText(c,'ШУМ ОСТАНОВЛЕН',compact?width/2:384,20,'#ffe5a4',compact?18:28,'center');
  if(compact){
   drawPerson(c,a,{id:'yuri',x:width*.29,y:286,rescued:true},time,2.4);
   for(const [i,id]of ['reporter','editor','crew'].entries())drawPerson(c,a,{id,x:width*(.18+i*.32),y:400,rescued:true},time,1.5);

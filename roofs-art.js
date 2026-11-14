@@ -1,4 +1,4 @@
-import {rect,text} from './pixel.js?v=0.21.5';
+import {signText,rect,text} from './pixel.js?v=0.21.5';
 import {rooms,HEIGHT} from './level.js?v=0.21.5';
 import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE,mastFooting} from './roofs-map.js?v=0.21.5';
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
@@ -52,7 +52,7 @@ export function drawRoofSurface(c,a,g,s){
 
 export function drawRoofProps(c,a,g,t){
  if(g.room!==ROOM||!a.roofsProps)return;const x0=X0();
- for(const d of DECOR){const box=PROPS[d.kind],k=d.h/box[3];blit(c,a.roofsProps,box,x0+d.x,d.bottom-d.h+1,box[2]*k,d.h);if(d.kind==='sign')text(c,'К МАЧТЕ',x0+d.x+Math.round(65*k)+2,d.bottom-d.h+1+Math.round(48*k+(62*k-7)/2),'#2b1a12',1,1);/* on the board right of the post, clear of the arrow tip (x 65–190, y 48–110 of the sprite) */}
+ for(const d of DECOR){const box=PROPS[d.kind],k=d.h/box[3];blit(c,a.roofsProps,box,x0+d.x,d.bottom-d.h+1,box[2]*k,d.h);if(d.kind==='sign')signText(c,'К МАЧТЕ',x0+d.x+Math.round(133*k),d.bottom-d.h+1+Math.round(48*k+(62*k-10)/2),'#2b1a12',10,'center');/* on the board right of the post, clear of the arrow tip (x 65–190, y 48–110 of the sprite) */}
  // Fire-escape ladders: the wooden ladder sprite repeats up the wall.
  const lb=PROPS.ladder,lk=31/lb[2],lh=lb[3]*lk;
  for(const l of ROOF_LADDERS){c.save();c.beginPath();c.rect(x0+l.x-4,l.top-14,40,l.bottom-l.top+14);c.clip();for(let y=l.bottom-lh;y>l.top-lh;y-=lh-6)blit(c,a.roofsProps,lb,x0+l.x,y,31,lh);c.restore();}

@@ -1,6 +1,6 @@
 import {rooms} from './level.js?v=0.21.5';
 import {hazardZone,machineActive} from './chapter-routes.js?v=0.21.5';
-import {rect,text} from './pixel.js?v=0.21.5';
+import {signText,rect,text} from './pixel.js?v=0.21.5';
 import {drawTargetSprite} from './target-art.js?v=0.21.5';
 import {drawNewsroomMachines} from './newsroom-art.js?v=0.21.5';
 const columns={server:0,power:1,console:2,anchor:3};
@@ -13,7 +13,7 @@ export function drawMapProps(c,a,g,t){
  }
  for(const r of g.routePortals||[]){if(r.room!==g.room||!a.burrows)continue;for(const index of[r.fromIndex,r.toIndex]){const s=g.platforms.find(s=>s.room===r.room&&s.index===index),x=s.x+s.w/2;if(x<g.camera-80||x>g.camera+(g.viewWidth||768)+80)continue;
   const cell=r.room===3?1:r.room===5?2:3,sw=a.burrows.width/2,sh=a.burrows.height/2;c.save();c.shadowColor='#ffd771';c.shadowBlur=5;c.drawImage(a.burrows,cell%2*sw,Math.floor(cell/2)*sh,sw,sh,x-44,s.y-59,88,59);c.restore();
-  if(g.hintsEnabled!==false){rect(c,x-34,s.y-77,68,18,'#04132b');text(c,'↑ НОРКА',x-29,s.y-73,'#fff3ba');}
+  if(g.hintsEnabled!==false){rect(c,x-34,s.y-77,68,18,'#04132b');signText(c,'↑ НОРКА',x,s.y-75,'#fff3ba',11,'center');}
  }}
  // Warned environmental machinery belongs to each sector, and stops with its controller.
  for(const d of g.mapProps||[]){if(d.room!==g.room||!machineActive(g,g.room,d.section))continue;const phase=(t+d.section*.8)%5;if(phase>2.2)continue;const [from,to]=hazardZone(g.room,d.section),x=rooms[g.room].x+d.section*768+from,w=to-from,color=g.room===3?'#bfe9f0':g.room===5?'#ffdd8a':g.room===7?'#ba94f1':'#86d9e0';
