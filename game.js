@@ -21,7 +21,7 @@ let giantShown=false,yuriHintShown=false;
 async function boot(){
  document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
  const game=new Game({cinematic:true});game.testingInvulnerable=true;game.touchEnabled=document.documentElement.classList.contains('has-touch');
- const assets=await loadAssets((done,total)=>{$('loading-text').textContent=`Готовлю редакцию: ${done}/${total}`;$('loading-fill').style.width=Math.round(done/total*100)+'%';}).catch(()=>null);
+ const assets=await loadAssets((done,total)=>{$('loading-fill').style.width=Math.round(done/total*100)+'%';}).catch(()=>null);
  if(!assets){$('loading').textContent='Не удалось загрузить рисунки. ';const retry=document.createElement('button');retry.textContent='Повторить загрузку';retry.className='back-button';retry.addEventListener('click',()=>location.reload());$('loading').append(retry);return;}
  $('loading').hidden=true;document.documentElement.classList.remove('booting');document.documentElement.classList.add('booted');
  const renderer=new Renderer($('game'),assets),keys=new Set();let jump=false,dash=false,attack=false,last=0,clock=0,accumulator=0,toastTimer,touch;
