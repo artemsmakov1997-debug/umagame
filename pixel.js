@@ -57,6 +57,9 @@ Object.assign(glyphs,{
 // Latin capitals that share a shape with Cyrillic reuse those glyphs (SHIFT, X, A D…).
 const LATIN={A:'А',B:'В',C:'С',E:'Е',H:'Н',K:'К',M:'М',O:'О',P:'Р',T:'Т',X:'Х',Y:'У'};
 export function text(ctx,str,x,y,color='#ffdf9c',scale=1,weight=0){ctx.fillStyle=color;let cursor=Math.round(x);for(const char of [...str.toUpperCase().replaceAll('Ё','Е')].map(c=>LATIN[c]||c)){const g=glyphs[char]||glyphs[' '];for(let row=0;row<7;row++)for(let col=0;col<g[row].length;col++)if(g[row][col]==='1')ctx.fillRect(cursor+col*scale,Math.round(y)+row*scale,scale+weight,scale+weight);cursor+=(g[0].length+1)*scale;}return cursor-x;}
+// Signs and plaques: the game's readable UmaText face instead of the 5×7 bitmap letters. (x, y) is the top-left
+// corner like text(); align 'center' takes x as the middle. Returns the drawn width.
+export function signText(c,str,x,y,color,size=9,align='left'){c.save();c.font=`${size}px UmaText, monospace`;c.textBaseline='top';c.textAlign=align;c.fillStyle=color;c.fillText(str,Math.round(x),Math.round(y));const w=c.measureText(str).width;c.restore();return w;}
 export function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h);}
 export function heart(c,x,y,on=true){const col=on?'#f27679':'#33495e';['0110110','1111111','1111111','0111110','0011100','0001000'].forEach((r,j)=>[...r].forEach((v,i)=>{if(v==='1')rect(c,x+i,y+j,1,1,col);}));}
 // Heavy 8×8 display lettering for the title from the approved mockup.
