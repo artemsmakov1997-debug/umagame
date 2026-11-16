@@ -4,11 +4,12 @@ import {drawHauntedMonitor} from './art.js?v=0.21.5';
 import {hauntedScreens} from './campaign-art.js?v=0.21.5';
 import {rect,text} from './pixel.js?v=0.21.5';
 function face(c,a,screen,t,quality,echo=false,emotion=0){c.save();c.beginPath();c.rect(screen.x,screen.y,screen.w,screen.h);c.clip();rect(c,screen.x,screen.y,screen.w,screen.h,'#031524');c.globalAlpha=quality*.8+.16;const cut=Math.floor(t*5)%13===0;drawYuriPortrait(c,a,{...screen,time:t,emotion,quality,speaking:true});c.globalAlpha=1;for(let i=0;i<8;i++)rect(c,screen.x,screen.y+(i*17+Math.floor(t*27))%screen.h,screen.w,i%3?1:2,echo?'#e5647760':'#8de5ee35');if(cut)rect(c,screen.x,screen.y+screen.h*.47,screen.w,4,echo?'#ff4a7355':'#8ce9e650');c.restore();}
-export function drawYuriSignal(c,a,g,t){
+export function drawYuriSignal(c,a,g,t,back=false){
  const dialogue=g.mode==='dialogue'||g.mode==='paused'&&g.pausedFrom==='dialogue';
  const profile=g.dialogue?.signal||g.signal,echo=g.signal.echoTime>0;
  // Quiet room: once Uma is awake, Yuri curates the course from the old monitor.
- if(g.room===0){if(dialogue||g.mode!=='waking'&&g.pausedFrom!=='waking')face(c,a,{x:214,y:154,w:135,h:104},t,profile.quality,echo,yuriEmotion(g));return;}
+ // The quiet-room monitor sits behind Uma, so its face is drawn in the back pass, before the cat.
+ if(g.room===0){if(!back)return;if(dialogue||g.mode!=='waking'&&g.pausedFrom!=='waking')face(c,a,{x:214,y:154,w:135,h:104},t,profile.quality,echo,yuriEmotion(g));return;}
  let screens=hauntedScreens.filter(s=>s.room===g.room&&rooms[g.room].x+s.lx>=g.camera-90&&rooms[g.room].x+s.lx<g.camera+(g.viewWidth||768));
  if(dialogue||echo)for(const s of screens)face(c,a,{x:rooms[g.room].x+s.lx+s.w*.15,y:s.y+s.h*.14,w:s.w*.7,h:s.h*.65},t,profile.quality,echo,g.room===5&&s.forged?6:yuriEmotion(g));
 }
