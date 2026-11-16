@@ -30,7 +30,8 @@ export function activateRoom(g,index,{heal=true}={}){
  if(index===3)g.roofs=createRoofs();
  if(index===5){g.studio=createStudio();updateStudioPlatforms(g);}
  if(index===7){g.dimension=createDimension();g.player.flipped=false;g.player.launch=0;updateDimensionPlatforms(g);}
- if(index===LAST_ROOM)g.arenaEntered=true;
+ // The portal at the end of «Измерение» works every time Uma is back there (level select, retry), not only once.
+ g.arenaEntered=index===LAST_ROOM;
  g.unlockForRoom(index);g.updateCamera();g.emit('locationEnter',{room:index,chapter:r.chapter});
 }
 export function beginLocationTransition(g,to=g.room+1){
