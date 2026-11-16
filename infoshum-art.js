@@ -89,7 +89,7 @@ function drawTvRain(c,a,n,time){
 // The strike zone of the cable whip: a tinted band over the ledge that fills
 // from the side the tentacle comes from, so the cat sees where and when it lands.
 function drawWhipZone(c,w,len,time){
- const k=1-Math.max(0,w.timer)/WAVE.whipWarn,late=w.timer<.4,x=Math.round(w.x0-8),wd=Math.round(len+16),h=58,top=Math.round(w.y-h);
+ const k=1-Math.max(0,w.timer)/WAVE.whipWarn,late=w.timer<.4,x=Math.round(w.x0-8),wd=Math.round(len+16),h=30,top=Math.round(w.y-h);
  c.save();c.globalAlpha=(late?.3:.16)+(late?.2:.1)*Math.abs(Math.sin(time*(late?22:9)));rect(c,x,top,wd,h,'#ff3fb4');
  c.globalAlpha=.32;const fw=Math.round(wd*k);rect(c,w.from<0?x:x+wd-fw,top,fw,h,'#ff3fb4');
  c.globalAlpha=.9;rect(c,x,top,2,h,'#ffd0f0');rect(c,x+wd-2,top,2,h,'#ffd0f0');

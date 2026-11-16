@@ -7,7 +7,7 @@ import {ECHO_DELAY,ECHO_GAP,ECHO_SCATTER,trailAt,echoPose} from '../echo-double.
 import {echoFrame} from '../echo-double-art.js';
 // Эхо in «Измерение»: Uma's dark double replays her path a couple of seconds late.
 const tick=(g,n,i={})=>{for(let k=0;k<n;k++)g.step(1/60,i);};
-function ready(){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};activateRoom(g,7);g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];g.player.inv=0;g.echoImmunity=0;return g;}
+function ready(){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};activateRoom(g,7);g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];g.player.inv=0;g.echoImmunity=0;g.baitOff=true;return g;}
 const double=(g,x=60)=>{const e=enemy('echo',7,x,0,{active:true,noticed:true,spawnTime:0,noticeTime:0});g.enemies.push(e);return e;};
 
 test('the room records Uma\'s path and the double replays it exactly, two seconds late',()=>{

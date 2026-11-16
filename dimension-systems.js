@@ -1,5 +1,5 @@
-import {rooms} from './level.js?v=0.21.5';
-import {DIM_ROOM,FEED,MIRROR,RIFTS,ORIGINALS,DIM_CHECKPOINTS,CRUMBLE,isSafeDimPiece,slideX} from './dimension-map.js?v=0.21.5';
+import {rooms,enemy} from './level.js?v=0.21.5';
+import {DIM_ROOM,FEED,MIRROR,RIFTS,ORIGINALS,DIM_CHECKPOINTS,CRUMBLE,BAIT,isSafeDimPiece,slideX,feedCycle,isBaitCopy} from './dimension-map.js?v=0.21.5';
 import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
 // «Измерение» mechanics: rising message copies (and their upside-down mirror), gravity rifts, «первоисточники».
 const x0=()=>rooms[DIM_ROOM].x;
@@ -13,6 +13,13 @@ export function feedState(piece,t){
  const travel=((FEED.speed*t+(piece.slot+FEED.lanePhase[piece.lane])*spacing)%range+range)%range,k=travel/range;
  return {y:FEED.bottom-travel,k,state:k>=FEED.pop?'pop':k>=FEED.fade?'fade':'rise'};
 }
+// The Кликбейт bursts out of the bait bubble under Uma, facing her, and snaps after BAIT.emerge+.1 s.
+function releaseBait(g,s,cycle){
+ g.enemies=g.enemies.filter(e=>!(e.bait&&e.gone));
+ const e=enemy('clickbait',DIM_ROOM,Math.round(s.x+s.w/2-24-x0()),s.index,{ride:true,bait:true,active:true,noticed:true,revealed:true,state:'emerge',timer:BAIT.emerge,revealTime:0,spawnTime:0,arrivalDuration:.05});
+ e.id='bait-'+s.index+'-'+cycle;e.x=s.x+s.w/2-24;e.y=s.y-e.h;e.origin=s.x;e.end=s.x+s.w-e.w;const p=g.player;e.dir=p.x+p.w/2<e.x+24?-1:1;
+ g.enemies.push(e);g.emit('baitReveal',{x:e.x,y:e.y});
+}
 // Runs inside the world-platform step after prev positions are stored, and on its own outside play.
 export function placeDimensionPiece(g,s){
  const piece=s.dim;if(!piece)return;
@@ -21,7 +28,12 @@ export function placeDimensionPiece(g,s){
   const f=feedState(piece,g.time),y=piece.reversed?MIRROR-f.y:f.y,wrapped=piece.reversed?y<s.y-60:y>s.y+60;
   // A purple copy crumbles under Uma (she stands on it, or hangs under it in «Изнанка») and stays gone until it wraps.
   if(wrapped)delete s.crumbleAt;
-  const p=g.player,under=!piece.blue&&p&&p.grounded&&p.supportId===s.id&&g.room===DIM_ROOM;
+  const p=g.player,on=p&&p.grounded&&p.supportId===s.id&&g.room===DIM_ROOM,cycle=feedCycle(piece,g.time);
+  // A bright bait bubble holds like a blue one; stepping on it lets the Кликбейт out (once per wrap).
+  s.bait=isBaitCopy(piece,g.time)&&s.baitUsed!==cycle;
+  // (g.baitOff: tests of other Dimension systems switch the trap off.)
+  if(s.bait&&on&&g.mode==='playing'&&g.enemies&&!g.baitOff){s.baitUsed=cycle;s.bait=false;releaseBait(g,s,cycle);}
+  const under=!piece.blue&&s.baitUsed!==cycle&&!s.bait&&on;
   if(under&&s.crumbleAt===undefined){s.crumbleAt=g.time;g.emit?.('messageCrack',{x:s.x+s.w/2,y:s.y});}
   const age=s.crumbleAt===undefined?-1:g.time-s.crumbleAt;if(age<-.01)delete s.crumbleAt;
   const state=age>=CRUMBLE.pop?'pop':age>=CRUMBLE.crack?'fade':f.state;
@@ -70,5 +82,7 @@ export function stepDimension(g,dt,oldX){
  for(const o of g.originals||[])if(o.room===DIM_ROOM&&!o.taken&&g.overlap(p,o)){o.taken=true;g.emit('sourceFound',{x:o.x,y:o.y,count:originalsFound(g),total:ORIGINALS.length});}
  // Checkpoints and one hint per block.
  DIM_CHECKPOINTS.forEach((c,i)=>{if(i>q.checkpoint&&p.grounded&&p.supportId===DIM_ROOM+':'+c.index&&local>=c.x-30)q.checkpoint=i;});
+ // The Кликбейт is introduced as soon as Uma heads into the feed: its bait bubbles are there from the start.
+ if(!g.seenScenes?.has('sighting:clickbait')&&local>150){const r=(g.encounters[DIM_ROOM]??={types:{}});r.types.clickbait??={time:g.time,firstId:'bait'};g.seenScenes.add('sighting:clickbait');g.emit('enemyIntroduction',{enemyType:'clickbait',room:DIM_ROOM});}
  for(const [key,from] of [['feed',-1],['flip',700],['back',1520],['slide',1860]])if(!q.hints[key]&&local>from){q.hints[key]=true;g.emit('dimensionHint',{kind:key});}
 }

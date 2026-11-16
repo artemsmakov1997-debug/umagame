@@ -8,6 +8,15 @@ const P={yuri:[58,125,320,138],copy:[425,125,321,139],fade:[789,125,315,138],pop
  source:[55,723,294,217],gateShut:[387,664,362,279],gateOpen:[769,663,360,280],cable:[1169,735,319,203]};
 const X0=()=>rooms[DIM_ROOM].x;
 function blit(c,image,box,x,y,w,h,flip=false){if(!image)return;c.save();if(flip){c.translate(x+w,y);c.scale(-1,1);x=0;y=0;}c.drawImage(image,box[0],box[1],box[2],box[3],Math.round(x),Math.round(y),Math.round(w),Math.round(h));c.restore();}
+function drawBaitBubble(c,img,s,t){
+ const box=P.yuri,k=s.w/box[2],w=box[2]*k,h=box[3]*k,cx=s.x+w/2,cy=s.y+h/2-3,pulse=.5+.5*Math.sin(t*6);
+ c.save();const halo=c.createRadialGradient(cx,cy,8,cx,cy,w*.75);halo.addColorStop(0,`rgba(255,120,210,${.45+.25*pulse})`);halo.addColorStop(1,'rgba(255,120,210,0)');c.fillStyle=halo;c.fillRect(cx-w,cy-w*.75,2*w,1.5*w);c.restore();
+ c.save();c.filter=`hue-rotate(125deg) saturate(1.9) brightness(${1.25+.15*pulse}) drop-shadow(0 0 ${4+4*pulse}px #ffd34a)`;blit(c,img,box,s.x,s.y-3,w,h);c.restore();
+ // Sparkles circling the bubble.
+ c.save();for(let i=0;i<4;i++){const a=t*2.2+i*Math.PI/2,x=cx+Math.cos(a)*w*.56,y=cy+Math.sin(a)*h*.75,r=2+((i+Math.floor(t*8))%2);c.fillStyle=i%2?'#fff6b0':'#ffffff';c.fillRect(Math.round(x-r),Math.round(y),r*2+1,1);c.fillRect(Math.round(x),Math.round(y-r),1,r*2+1);}c.restore();
+ // A red notification badge with «!», bobbing on the corner.
+ const bx=Math.round(s.x+w-6),by=Math.round(s.y-10+Math.sin(t*5)*2);c.save();c.fillStyle='#2a0418';c.beginPath();c.arc(bx,by,9,0,Math.PI*2);c.fill();c.fillStyle='#ff2e57';c.beginPath();c.arc(bx,by,7,0,Math.PI*2);c.fill();c.fillStyle='#fff';c.fillRect(bx-1,by-5,3,6);c.fillRect(bx-1,by+2,3,2);c.restore();
+}
 // Platforms: bubbles keep their flat top on the platform line; islands hang below or rise above it.
 export function drawDimensionSurface(c,a,g,s){
  if(s.room!==DIM_ROOM||!s.dim||!a.dimensionPieces)return false;const img=a.dimensionPieces,piece=s.dim;
@@ -18,6 +27,8 @@ export function drawDimensionSurface(c,a,g,s){
   if(piece.inverted){c.save();c.translate(0,2*s.y);c.scale(1,-1);}
   if(piece.blue&&s.dimState==='fade'){c.save();c.globalAlpha=.55+.45*Math.abs(Math.sin(g.time*14));}
   // Yuri's own blue messages hold; purple forwarded copies crack and pop (see dimension-systems.js).
+  // A bright bait bubble (dimension-map.js isBaitCopy) glows hot pink and gold, sparkles and wears a red badge.
+  if(s.bait&&s.dimState!=='pop'){drawBaitBubble(c,img,s,g.time);if(piece.blue&&s.dimState==='fade')c.restore();if(piece.inverted)c.restore();return true;}
   const box=piece.blue?P.yuri:s.dimState==='pop'?P.pop:s.dimState==='fade'?P.fade:P.copy,k=s.w/(box===P.pop?P.copy[2]:box[2]);
   const top=box===P.pop?s.y-(P.copy[1]-P.pop[1])*k:s.y-3;blit(c,img,box,s.x-(box===P.pop?(box[2]-P.copy[2])*k/2:0),top,box[2]*k,box[3]*k);
   if(piece.blue&&s.dimState==='fade')c.restore();
