@@ -902,3 +902,8 @@ html.booted #menu-screen>:not(#loading),html.booted #menu-hint{animation:menu-re
 
 /* Main menu: no paw marker next to the selected item. */
 #app[data-screen="menu"] .menu-item.selected::before{display:none}
+
+/* Authors: link to the Telegram sticker pack. */
+.authors-panel .authors-stickers a{display:inline-block;padding:.35em .8em;border:2px solid #8bd9ff;color:#8bd9ff;text-decoration:none}.authors-panel .authors-stickers a:hover,.authors-panel .authors-stickers a:focus-visible{background:#8bd9ff;color:#140c2a}
+/* Authors list numbering: an explicit counter (counter(list-item) printed 0 for every line). */
+.authors-list{counter-reset:author}.authors-list li{counter-increment:author}.authors-list li::before{content:counter(author) "."}
