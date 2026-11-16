@@ -62,7 +62,12 @@ export function drawBossHud(c,a,g,width,{y=8}={}){
   if(b.id==='infoshum'){const len=bar.h*1.7,th=len*d[3]/d[2];c.save();c.translate(x,bar.y+bar.h/2);c.rotate(Math.PI/2);put(c,img,d,-len/2,-th/2,len,th);c.restore();}
   else{const dh=bar.h*1.55,dw=dh*d[2]/d[3];put(c,img,d,x-dw/2,bar.y+bar.h/2-dh/2,dw,dh);}}
  // The name on the casing's plate.
- const plate=l.plate,size=Math.max(11,Math.min(20,Math.round(plate.h*.78)));c.font=`${size}px UmaText, monospace`;c.fillStyle='#2b1631';c.textAlign='center';c.textBaseline='middle';c.fillText(style.name,plate.x+plate.w/2,plate.y+plate.h/2+1,plate.w-6);
+ // A dark inlay on the pale plate and bright outlined letters, so the name reads at a glance.
+ {const plate=l.plate,size=Math.max(14,Math.min(26,Math.round(plate.h*1.45))),inset=Math.max(2,Math.round(plate.h*.14)),ix=plate.x+inset*2,iw=plate.w-inset*4,ih=Math.max(plate.h-inset*2,size+4),iy=plate.y+plate.h/2-ih/2;
+  // The letters may be taller than a thin plate: the inlay grows with them.
+  c.save();c.fillStyle='rgba(18,8,32,.86)';c.fillRect(Math.round(ix),Math.round(iy),Math.round(iw),Math.round(ih));c.strokeStyle='rgba(255,231,166,.35)';c.lineWidth=1;c.strokeRect(Math.round(ix)+.5,Math.round(iy)+.5,Math.round(iw)-1,Math.round(ih)-1);
+  c.font=`${size}px UmaText, monospace`;c.textAlign='center';c.textBaseline='middle';const tx=plate.x+plate.w/2,ty=plate.y+plate.h/2+1,mw=iw-8;
+  c.lineJoin='round';c.lineWidth=Math.max(2,size/6);c.strokeStyle='#0b0414';c.strokeText(style.name,tx,ty,mw);c.fillStyle='#ffe7a6';c.fillText(style.name,tx,ty,mw);c.restore();}
  // Three phase badges: ahead, current (glowing), done.
  const phase=Math.max(1,Math.min(3,b.phase||1));
  for(let i=0;i<3;i++){const state=i+1<phase?2:i+1===phase?1:0,box=S.icons[i*3+state],k=fit(box,l.icons.size,l.icons.size)*(state===1?1.15:1),w=box[2]*k,h=box[3]*k,cy2=l.icons.top+l.icons.size*(i+.5);

@@ -88,3 +88,8 @@ test('a Помеха hovers over Uma, fires a column of static down that hurts a
  ({g,e}=mk());for(let i=0;i<300&&e.state!=='charge';i++)tick(g,1);const ex=e.x;for(let i=0;i<40;i++)tick(g,1,{dash:i===0,right:true});assert.equal(g.health,4,'a dash out of the column is safe '+[e.state,ex,e.x,g.player.x,g.player.inv].join(' '));
  ({g,e}=mk());e.state='overheat';e.timer=1;Object.assign(e,{x:g.player.x,y:g.player.y-30});e.inv=0;assert.equal(g.hitEnemy(e),true);
 });
+test('back in «Измерение» after the final arena (level select, retry) the portal works again',()=>{
+ const g=ready();activateRoom(g,8);assert.equal(g.arenaEntered,true);activateRoom(g,7);assert.equal(g.arenaEntered,false);
+ const last=g.platforms.filter(s=>s.room===7).sort((a,b)=>b.x-a.x)[0];Object.assign(g.player,{x:last.x+20,y:last.y-48,vx:0,vy:0,grounded:true,supportId:last.id});
+ for(let i=0;i<120&&g.mode==='playing';i++)tick(g,1,{right:true});assert.equal(g.mode,'enteringArena');
+});
