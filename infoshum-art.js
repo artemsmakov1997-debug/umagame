@@ -1,7 +1,7 @@
 import {drawColossusAttacks} from './infoshum-attacks-art.js?v=0.21.5';
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos,ghostPrep} from './infoshum-combat.js?v=0.21.5';
+import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos,ghostPrep,ghostEase} from './infoshum-combat.js?v=0.21.5';
 import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.5';
 // Infoshum's three phases: the broadcast tower with Yuri in the relays, the colossus, the free creature in the storm.
 import {rooms,WIDTH} from './level.js?v=0.21.5';
@@ -293,6 +293,7 @@ function drawYuriRope(c,a,g,f,time){
 // «Двойники»: the split — two pale copies slide out of him to either side, leaving afterimages, with a flash; then
 // each attacker's line blinks while it aims and it dives along it; the copies vanish after their dive.
 function ghostSprite(c,a,x,y,alpha,time,ang=null,frame='w2'){c.save();c.globalAlpha=alpha;c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';c.translate(x,y);if(ang!==null){let r=ang;if(Math.cos(ang)<0){c.scale(-1,1);r=Math.PI-ang;}c.rotate(r);}free2(c,a,frame,0,0);c.restore();}
+function dashArc(c,gh,time){c.save();c.globalAlpha=.4+.4*Math.abs(Math.sin(time*12));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*90;c.beginPath();for(let j=0;j<=24;j++){const q=ghostPos(gh,j/24);if(j)c.lineTo(q.x,q.y);else c.moveTo(q.x,q.y);}c.stroke();c.restore();}
 function dashLine(c,x0,y0,x1,y1,time){c.save();c.globalAlpha=.4+.4*Math.abs(Math.sin(time*12));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*90;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.restore();}
 function drawGhosts(c,a,f,time){
  if(f.mode==='ghostPrep'){const split=1-Math.max(0,Math.min(1,f.timer/FREE.ghostSplit));if(split<=0)return;const e=split*split*(3-2*split);
@@ -301,9 +302,12 @@ function drawGhosts(c,a,f,time){
   return;}
  for(const [i,gh] of f.ghosts.entries()){if(gh.state==='gone')continue;
   if(gh.state==='wait')ghostSprite(c,a,gh.x0,gh.y0+Math.sin(time*4+i)*5,.55,time);
-  else if(gh.state==='aim'){dashLine(c,gh.x0,gh.y0,gh.x1,gh.y1,time);ghostSprite(c,a,gh.x0,gh.y0,.7,time);}
-  else{const q=ghostPos(gh,gh.k);ghostSprite(c,a,q.x,q.y,.7*(gh.k>.85?(1-gh.k)/.15:1),time,Math.atan2(gh.y1-gh.y0,gh.x1-gh.x0),'m'+Math.floor(time*14)%2);}}
- if(f.seq===2&&f.phase==='aim')dashLine(c,f.dive.x,f.y+40,f.dive.x,f.dive.y1+20,time);
+  else if(gh.state==='aim'){dashArc(c,gh,time);ghostSprite(c,a,gh.x0,gh.y0+Math.sin(time*4+i)*5*Math.max(0,f.timer/FREE.ghostAim),.7,time);}
+  else{const fade=gh.k>.85?(1-gh.k)/.15:1,lead=ghostPos(gh,Math.min(1,gh.k+.04)),q=ghostPos(gh,gh.k),ang=Math.atan2(lead.y-q.y,lead.x-q.x);
+   // Afterimages along the arc behind the copy.
+   for(let j=4;j>=1;j--){const kk=Math.max(0,gh.k-j*.06),qq=ghostPos(gh,kk);ghostSprite(c,a,qq.x,qq.y,.1*(5-j)*fade,time,ang,'m'+Math.floor(time*14)%2);}
+   ghostSprite(c,a,q.x,q.y,.75*fade,time,ang,'m'+Math.floor(time*14)%2);}}
+ if(f.seq===2&&f.phase==='aim')dashLine(c,f.x,f.y+30,f.dive.x,f.dive.y1+20,time);
 }
 function drawFree(c,a,g,time){
  const b=g.boss,f=b.network.free;if(!f)return;
@@ -332,7 +336,7 @@ function drawFree(c,a,g,time){
  // sprite, and smooth scaling (the sheet is drawn at 1.4×, which nearest-neighbour turns into uneven blocks).
  const cy=place?place.y-60:f.y;c.save();const halo=c.createRadialGradient(f.x,cy,10,f.x,cy,120);halo.addColorStop(0,'rgba(4,2,16,.62)');halo.addColorStop(1,'rgba(4,2,16,0)');c.fillStyle=halo;c.fillRect(f.x-120,cy-120,240,240);c.restore();
  c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.filter='drop-shadow(0 0 1px #090316) drop-shadow(0 0 1px #090316) drop-shadow(0 0 6px rgba(110,235,255,.8))';
- if(name==='dive'){c.translate(f.x,f.y);c.rotate(Math.PI/2);free2(c,a,'m'+Math.floor(time*14)%2,0,0);}
+ if(name==='dive'){c.translate(f.x,f.y);const d=f.dive,ang=d?Math.atan2(d.y1-d.y0,d.x-d.x0):Math.PI/2;if(Math.cos(ang)<-.01){c.scale(-1,1);c.rotate(Math.PI-ang);}else c.rotate(ang);free2(c,a,'m'+Math.floor(time*14)%2,0,0);}
  else free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5});c.restore();
  flash(c,g,Math.min(.4,f.flash*1.4));
 }
