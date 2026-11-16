@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {Game} from '../engine.js';
 import {activateRoom} from '../room-transitions.js';
 import {rooms,platforms,ladders,createEnemies,createRelays} from '../level.js';
-import {DIM_PIECES,FEED,RIFTS,ORIGINALS,DIM_CHECKPOINTS,MIRROR} from '../dimension-map.js';
+import {DIM_PIECES,FEED,RIFTS,ORIGINALS,DIM_CHECKPOINTS,MIRROR,isBaitCopy} from '../dimension-map.js';
 import {feedState,originalsFound} from '../dimension-systems.js';
 import {noiseDuration,revealHint,NOISE_TIME} from '../infoshum-combat.js';
 import {enemy} from '../level.js';
@@ -12,7 +12,8 @@ import {crossDimension} from './navigation.js';
 // and three optional originals.
 const x0=rooms[7].x;
 const tick=(g,n,i={})=>{for(let k=0;k<n;k++)g.step(1/60,i);};
-function ready(){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};activateRoom(g,7);g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];g.player.inv=0;return g;}
+// Bait bubbles are switched off except in their own test, so the other systems are tested on their own.
+function ready(){const g=new Game({story:false});g.start();g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};activateRoom(g,7);g.enemies=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.notebooks=[];g.player.inv=0;g.baitOff=true;return g;}
 function stand(g,index,local,flipped=false){const s=g.platforms.find(s=>s.id==='7:'+index);Object.assign(g.player,{x:x0+local,y:flipped?s.y:s.y-48,h:48,vx:0,vy:0,grounded:true,supportId:s.id,flipped});return s;}
 const events=(g,type)=>g.events.filter(e=>e.type===type);
 
@@ -20,7 +21,7 @@ test('the Dimension is its own map: no transmitters, ladders, burrows, controlle
  assert.equal(platforms.filter(s=>s.room===7).length,DIM_PIECES.length);
  assert.equal(createRelays().filter(d=>d.room===7).length,0);assert.equal(ladders.filter(l=>l.room===7).length,0);
  const g=ready();assert.equal(g.mapProps.filter(d=>d.room===7).length,0);assert.equal(g.routePortals.filter(r=>r.room===7).length,0);
- assert.equal(g.originals.length,0);assert.deepEqual([...new Set(createEnemies().filter(e=>e.room===7).map(e=>e.type))].sort(),['clickbait','echo','static']);
+ assert.equal(g.originals.length,0);assert.deepEqual([...new Set(createEnemies().filter(e=>e.room===7).map(e=>e.type))].sort(),['echo','static']);
 });
 
 test('messages rise steadily and pop near the top; the ground is islands; a blue message carries Uma up, a purple copy crumbles under her and comes back',()=>{
@@ -36,13 +37,16 @@ test('messages rise steadily and pop near the top; the ground is islands; a blue
  for(const piece of DIM_PIECES.filter(p=>p.type==='copy'))assert.ok(feedState(piece,0).y<=FEED.bottom&&feedState(piece,0).y>=FEED.top);
 });
 
-test('Кликбейты sit only on the rising messages of «Лента», ride them up and around, and cannot bite while a bubble pops',()=>{
- const all=createEnemies().filter(e=>e.room===7&&e.type==='clickbait');assert.ok(all.every(e=>e.ride&&DIM_PIECES[e.platformIndex].type==='copy'),'a Кликбейт only ever sits on a rising message');
- const roster=all;assert.equal(roster.length,5);assert.ok(roster.every(e=>!DIM_PIECES[e.platformIndex].reversed));
- const g=ready();g.enemies=roster.map(e=>Object.assign(e,{active:true}));g.player.inv=999;Object.assign(g.player,{x:x0+60});
- const e=g.enemies[0],copy=g.platforms.find(s=>s.id==='7:'+e.platformIndex);let wrapped=false,popPhased=false,last=copy.y;
- for(let i=0;i<60*14;i++){tick(g,1);assert.ok(Math.abs(e.y+e.h-copy.y)<1.5,'stays on its copy');assert.ok(e.x>=copy.x-.5&&e.x+e.w<=copy.x+copy.w+.5);if(copy.y>last+60)wrapped=true;if(copy.dimState==='pop'&&e.phased)popPhased=true;last=copy.y;}
- assert.ok(wrapped,'went around with its copy');assert.ok(popPhased);
+test('bright bait bubbles come regularly from the start; stepping on one lets a Кликбейт out of it',()=>{
+ assert.equal(createEnemies().filter(e=>e.room===7&&e.type==='clickbait').length,0,'no Кликбейт is placed on the map');
+ const feed=DIM_PIECES.filter(p=>p.type==='copy'&&!p.reversed);
+ const seen=new Set();for(let t=0;t<40;t+=.25){for(const lane of [0,1,2]){const n=feed.filter(p=>p.lane===lane&&isBaitCopy(p,t)).length;assert.ok(n<=1,'at most one per lane');if(n)seen.add(lane);}assert.ok(feed.some(p=>isBaitCopy(p,t)),'always at least one bait in the feed ('+t+'s)');}
+ assert.equal(seen.size,3,'every lane gets its turn');
+ const g=ready();g.baitOff=false;tick(g,1);
+ const s=g.platforms.find(s=>s.room===7&&s.bait&&s.dimState==='rise'&&s.y>260&&s.y<430);assert.ok(s,'a bait bubble is up at once');
+ Object.assign(g.player,{x:s.x+s.w/2-17,y:s.y-g.player.h,vx:0,vy:0,grounded:true,supportId:s.id});
+ tick(g,1);const e=g.enemies.find(e=>e.type==='clickbait');assert.ok(e,'the Кликбейт bursts out');assert.equal(e.platformIndex,s.index);assert.equal(e.revealed,true);assert.equal(s.bait,false,'used up until it wraps');
+ assert.ok(events(g,'baitReveal').length>=1);let snapped=false;for(let i=0;i<45&&!snapped;i++){tick(g,1);snapped=e.state==='snap'||!!g.swallow;}assert.ok(snapped,'and bites');
 });
 test('the first rift flips Uma under a hanging message; the upside-down feed is «Лента» mirrored, and a sinking copy carries her down',()=>{
  const g=ready();stand(g,10,800);let flipped=false;for(let i=0;i<200&&!flipped;i++){tick(g,1,{right:true});flipped=g.player.flipped&&g.player.grounded;}
@@ -71,7 +75,8 @@ test('the Echo double copies the flip; checkpoints follow the blocks; Clickbait 
  const c=ready();stand(c,10,740);tick(c,2);assert.equal(c.dimension.checkpoint,1);stand(c,22,1670);tick(c,2);assert.equal(c.dimension.checkpoint,2);stand(c,25,2400);tick(c,2);assert.equal(c.dimension.checkpoint,3);assert.equal(DIM_CHECKPOINTS.length,4);
 });
 test('a full run with ordinary inputs crosses all four blocks without a fall and enters the threshold',()=>{
- const g=ready();assert.equal(crossDimension(g),true);assert.equal(g.health,4);
+ // The route itself, without the Кликбейт traps (they are tested above).
+ const g=ready();g.baitOff=true;assert.equal(crossDimension(g),true);assert.equal(g.health,4);
  for(let i=0;i<200&&g.room===7&&g.mode!=='enteringArena';i++)tick(g,1,{right:true});assert.ok(g.mode==='enteringArena'||g.room===8);
 });
 test('a Помеха hovers over Uma, fires a column of static down that hurts and leaves a slippery glitch stripe, then overheats low enough to swat',()=>{
