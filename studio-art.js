@@ -79,7 +79,7 @@ export function drawStudioBack(c,a,g,t){
  }
  // The two lamp banks over the takes: the live colour shines, flickers before the clapper, the other bank is off.
  const live=liveTake(t);
- for(const piece of STUDIO_PIECES){if(piece.type!=='take')continue;const lx=x0+piece.x+piece.w/2,on=live.color===piece.color,box=Q.spotD,k=44/box[3];
+ for(const piece of STUDIO_PIECES){if(piece.type!=='take')continue;const lx=x0+piece.x+piece.w/2,on=live.overlap||live.color===piece.color,box=Q.spotD,k=44/box[3];
   if(on)drawCone(c,lx,56,x0+piece.x-4,piece.w+8,piece.y,TAKE_LIGHT[piece.color],live.warn?.45+.55*Math.abs(Math.sin(t*16)):1);
   c.save();if(!on)c.filter='brightness(.45)';blit(c,a.studioSet,box,lx-box[2]*k/2,14,box[2]*k,44);c.restore();
   rect(c,lx-5,14+40,10,3,on?TAKE_LIGHT[piece.color][0]:'#2a2434');

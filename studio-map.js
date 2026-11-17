@@ -5,8 +5,8 @@
 // Block 2 «Прожекторы»: two lamps swing together over three risers.
 // Block 3 «Монтажная»: two banks of lamps (warm «дубль 1», cold «дубль 2») switch on the clapper's beat.
 // Monsters: a Журавль on each long truss sweeps its boom microphone at head height (crawl under or wait);
-// a Прожектор hangs from the ceiling over the dolly and over the takes, its red beam burns (the hanging flat
-// over the dolly shields from it); the Ботоферма sits in a cage over the door at the far end and sends its
+// a Прожектор hangs from the ceiling over the dolly and over the takes, its red beam slows Uma by 45% (the hanging flat
+// over the dolly shields from it); the breakable Ботоферма stands at the far end and sends its
 // bots hopping towards Uma. Platform indices follow this order.
 export const STUDIO_PIECES=[
  {type:'fixed',kind:'truss',x:0,w:230,y:400},          // 0 start
@@ -38,7 +38,7 @@ export const SPOTLIGHTS=[
 ];
 export const SPOT_MIN_OVERLAP=30;
 // «Дубли»: red is live for `beat` seconds, then blue; the last `warn` seconds blink before the swap.
-export const TAKES={beat:2.4,warn:.6};
+export const TAKES={beat:2.4,warn:.6,overlap:.85};
 // The Нарезчик may cut anything Uma walks on except the door island; containers are not surfaces at all.
 export function studioCuttable(index){const p=STUDIO_PIECES[index];return !!p&&p.type!=='container'&&p.kind!=='flat'&&index!==14;}
 export const studioContainer=index=>STUDIO_PIECES[index]?.type==='container';

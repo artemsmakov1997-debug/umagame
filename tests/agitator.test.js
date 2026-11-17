@@ -77,9 +77,11 @@ test('«Прямой эфир»: gusts blow an exposed Uma away from the tower; 
  place(g,X0+c.x+c.w/2-17,'4:'+AGI.chimneys[2]);assert.equal(sheltered(g),false,'standing on top is exposed');
  place(g,X0+TOWERS[1].ladder-17);assert.ok(sheltered(g),'at the foot of his tower');
 });
-test('every gust carries three Сенсации at different heights; chimneys burst them',()=>{
- const g=ready(false),n=air(g,1);place(g,X0+300);n.wind={phase:'warn',timer:0};g.step(1/60,{});assert.equal(n.birds.length,3);assert.equal(new Set(n.birds.map(s=>s.y)).size,3);assert.ok(n.birds.every(s=>s.dir===-1));
- tick(g,240);assert.ok(n.birds.every(s=>s.state==='burst')||n.birds.length===0,'the tall chimney on the right stops the low one');
+test('gust Сенсации fly around chimneys and the fallen mast in both directions',()=>{
+ for(const side of [0,1]){const g=ready(true),n=air(g,side);place(g,X0+600);g.player.inv=999;n.wind={phase:'warn',timer:0};g.step(1/60,{});assert.equal(n.birds.length,3);assert.equal(new Set(n.birds.map(s=>s.y)).size,3);let crossed=0,risen=false;const birds=[...n.birds];
+  for(let i=0;i<390;i++){tick(g,1);for(const s of birds){if(s.state==='fly'){risen ||= s.y<s.cruiseY-10;for(const c of [...CHIMNEYS,{x:MAST_X-46,w:92,h:150}])assert.ok(!g.overlap(s,{x:X0+c.x,y:FLOOR_Y-c.h,w:c.w,h:c.h}),'clear scenery');}if(side===0?s.x>X0+1266:s.x<X0+270)crossed++;}}
+  assert.ok(risen);assert.ok(crossed>0);assert.ok(birds.every(s=>s.state==='fly'),'scenery does not burst birds');
+ }
 });
 test('phase 2: when Uma is far away or up high a sound wave from the megaphone flies to her',()=>{
  const g=ready(false),b=g.boss,n=rally(g);n.shoutTimer=0;place(g,X0+300);const h=g.health;

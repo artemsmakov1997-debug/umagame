@@ -53,7 +53,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
   updateEnemyInk(g,e);
   const previousX=e.x,dx=p.x-e.x,dy=p.y+p.h-(e.y+e.h),near=Math.abs(dx)<460&&Math.abs(dy)<190,silent=e.type==='panicker'&&(p.sneaking||e.muffled);
   if(!e.noticed&&near&&!silent&&(e.type!=='clickbait'||e.revealed)){e.noticed=true;e.noticeTime=.32;g.emit('enemyNoticed',{x:e.x,y:e.y,enemyType:e.type});if(Math.abs(dx)<240&&e.type!=='bot')g.player.frightTime=.75;}
-  const traversing=stepEnemyFall(g,e,dt)||['fakenews','injection'].includes(e.type)&&(stepFakeJump(g,e,dt)||e.noticeTime===0&&beginFakeJump(g,e))||e.type==='informant'&&(stepInformantTeleport(g,e,dt)||beginInformantTeleport(g,e));
+  const traversing=!e.frozen&&stepEnemyFall(g,e,dt)||['fakenews','injection'].includes(e.type)&&(stepFakeJump(g,e,dt)||e.noticeTime===0&&beginFakeJump(g,e))||e.type==='informant'&&(stepInformantTeleport(g,e,dt)||beginInformantTeleport(g,e));
   if(!traversing&&e.noticeTime===0&&e.hurtTime===0){
    if(!e.flying)e.timer-=dt;if(e.type==='clickbait'&&e.state==='emerge')e.revealTime+=dt;
    if(e.flying)stepAirEnemy(g,e,dt);
@@ -107,7 +107,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
    }
    if((e.type==='inflator'&&e.room!==3||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*(e.inkSlow||1)*dt;
   }
-  if(!e.flying&&!e.jumpPhase&&!e.terrainFall&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
+  if(!e.frozen&&!e.flying&&!e.jumpPhase&&!e.terrainFall&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
   e.moving=!e.teleport&&Math.abs(e.x-previousX)>.01;if(e.moving)e.walkTime+=Math.abs(e.x-previousX)/24;
   if(!e.phased&&p.attack>0&&e.lastSwing!==p.swing&&g.overlap(paw,e)){e.lastSwing=p.swing;if(e.type==='clickbait'&&!e.revealed)reveal(g,e,dx);g.hitEnemy(e);}
   if(e.dead||e.phased)continue;

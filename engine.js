@@ -1,3 +1,4 @@
+import {freezeFarmBots} from './botfarm.js?v=0.21.5';
 import {strikeAgitator} from './agitator-combat.js?v=0.21.5';
 import {beginBossDefeat,stepBossDefeat,skipBossDefeat} from './boss-defeat.js?v=0.21.5';
 import {stepConclusion,advanceConclusion} from './conclusion.js?v=0.21.5';
@@ -133,7 +134,7 @@ export class Game {
  hitEnemy(e,stomp=false,amount=null,{reflected=false,sourceX=this.player.x+this.player.w/2}={}){
   if(e.inv>0||e.dead||e.phased||e.frozen)return false;
   // A roof Нагнетатель hangs out of reach: nothing to show, nothing to block.
-  if(e.type==='inflator'&&e.room===3||e.type==='spotlight'||e.type==='botfarm'&&e.room===5)return false;
+  if(e.type==='inflator'&&e.room===3||e.type==='spotlight')return false;
   if(e.type==='clickbait'||e.container||e.type==='copier'&&!['printing','recover'].includes(e.state)){
    e.guardFlash=.24;this.emit('blocked',{x:e.x+e.w/2,y:e.y,enemyType:e.type});return false;
   }
@@ -146,7 +147,7 @@ export class Game {
   cancelInformantTeleport(e);releaseTether(this,e.id);if(this.echoPull?.ownerId===e.id)releaseEchoPull(this,true);
   for(const portal of this.portals)if(portal.ownerId===e.id)portal.cancelled=true;
   if(!stomp&&!reflected&&e.type==='fakenews'&&!e.jumpPhase&&!e.terrainFall)e.x=Math.max(e.origin,Math.min(e.end,e.x+this.player.dir*18));
-  this.emit('enemyHit',{x:e.x+24,y:e.y,enemyType:e.type});if(e.hp<=0){e.dead=true;e.deathTime=.28;this.kills++;this.emit('pop',{x:e.x+24,y:e.y,enemyType:e.type});cleanCopies(this);}return true;
+  this.emit('enemyHit',{x:e.x+24,y:e.y,enemyType:e.type});if(e.hp<=0){e.dead=true;e.deathDuration=e.type==='botfarm'?1.1:.28;e.deathTime=e.deathDuration;if(e.type==='botfarm')freezeFarmBots(this,e);this.kills++;this.emit('pop',{x:e.x+24,y:e.y,enemyType:e.type});cleanCopies(this);}return true;
  }
  step(dt,input={}){
   if(this.mode==='bossDefeat'){stepBossDefeat(this,Math.min(dt,1/30));return;}
@@ -166,7 +167,7 @@ export class Game {
    else this.loseLife('clickbait');this.updateCamera();}return;}
   stepWorldPlatforms(this,dt);
   stepTacticalTerrain(this,dt);
-  for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace','frightTime','joyTime','launch','blindTime'])p[key]=Math.max(0,(p[key]||0)-dt);
+  for(const key of ['inv','cooldown','attack','dash','dashCooldown','knock','hurtTime','glueGrace','echoGrace','frightTime','joyTime','launch','blindTime','flashReaction'])p[key]=Math.max(0,(p[key]||0)-dt);
   // Blinded by a Папарацци flash: Uma freezes, shielding her eyes.
   if(p.blindTime>0)input={...input,left:false,right:false,jump:false,attack:false,dash:false,axisX:0};
   const keyboardAxis=(input.right?1:0)-(input.left?1:0),axis=keyboardAxis||Math.max(-1,Math.min(1,input.axisX||0));if(Math.abs(axis)>.05&&p.dash===0)p.dir=axis>0?1:-1;

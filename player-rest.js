@@ -1,3 +1,4 @@
+import {spotlightSlow} from './studio-monsters.js?v=0.21.5';
 import {inkAt} from './terrain.js?v=0.21.5';
 export const REST_AFTER=30;
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
@@ -11,6 +12,7 @@ export function playerHorizontal(g,axis,dt){
   else if(p.launch>0&&!p.grounded)p.vx=p.launchVx+axis*40; // an envelope throw keeps its speed
   else p.vx=axis*(p.sneaking?62:155);
  }
+ const slow=spotlightSlow(g);if(slow<1&&!p.spotSlowed)p.slowWalkTime=g.time;p.spotSlowed=slow<1;if(p.spotSlowed)p.slowWalkTime=(p.slowWalkTime||0)+dt*slow;if(!p.knock&&p.dash===0)p.vx*=slow;
  p.slipping=!!(p.grounded&&p.dash===0&&!p.knock&&p.inkTime>0&&Math.abs(p.vx)>9&&!p.attack);
  if(p.slipping)p.slideTime=(p.slideTime||0)+dt;
 }

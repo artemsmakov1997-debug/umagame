@@ -24,7 +24,7 @@ export function stepPaparazzi(g,e,dt,dx,dy){
   e.state='flash';e.timer=PAPARAZZI.flash;e.attackFlash=PAPARAZZI.flash;
   // The flash always blinds a cat within reach (a dash through it is the only way past).
   const seen=near&&p.inv===0&&p.dash===0;
-  if(seen){p.blindTime=PAPARAZZI.blind;p.vx=0;g.emit('flashBlind',{x:p.x,y:p.y});}
+  if(seen){p.blindTime=PAPARAZZI.blind;p.flashReaction=1.15;p.vx=0;g.emit('flashBlind',{x:p.x,y:p.y});}
   g.emit('cameraFlash',{x:e.x+e.w/2,y:e.y,seen,enemyType:e.type});
  }
  else if(e.state==='flash'&&e.timer<=0){e.state='recover';e.timer=PAPARAZZI.rest;}

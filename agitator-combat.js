@@ -189,12 +189,16 @@ export function sheltered(g){
  if(px>=x0+t.x&&px<=x0+t.x+t.w)return true;
  return SHELTERS.some(c=>{const left=x0+c.x,right=left+c.w,top=FLOOR_Y-c.h;if(feet<top+10)return false;return dir>0?px>=right-8&&px<=right+70:px<=left+8&&px>=left-70;});
 }
-function spawnBirds(g){const n=g.boss.broadcast,t=TOWERS[n.tower],dir=windDir(n),x=X0()+(dir>0?t.x+t.w:t.x);for(const [y,delay] of[[FLOOR_Y-60,0],[FLOOR_Y-150,.4],[FLOOR_Y-105,.8]])n.birds.push({x:x-(dir>0?0:34)-dir*delay*AIR_TIMES.bird,y,w:34,h:20,dir,state:'fly',time:0,lastSwing:-1});g.emit('sensationWarning',{x,y:FLOOR_Y-60});}
+function spawnBirds(g){const n=g.boss.broadcast,t=TOWERS[n.tower],dir=windDir(n),x=X0()+(dir>0?t.x+t.w:t.x);for(const [y,delay] of[[FLOOR_Y-60,0],[FLOOR_Y-150,.4],[FLOOR_Y-105,.8]])n.birds.push({x:x-(dir>0?0:34)-dir*delay*AIR_TIMES.bird,y,cruiseY:y,w:34,h:20,dir,state:'fly',time:0,lastSwing:-1});g.emit('sensationWarning',{x,y:FLOOR_Y-60});}
+export function birdFlightY(bird,x){let y=bird.cruiseY??bird.y;for(const c of SHELTERS){
+ const left=c.x-bird.w-18,right=c.x+c.w+18,d=x<left?left-x:x>right?x-right:0,blend=Math.max(0,1-d/110),lift=(1-Math.cos(blend*Math.PI))/2,safe=FLOOR_Y-c.h-bird.h-12;
+ y=Math.min(y,(bird.cruiseY??bird.y)+(Math.min(safe,bird.cruiseY??bird.y)-(bird.cruiseY??bird.y))*lift);
+ }return y;}
 function stepBirds(g,dt,paw){
  const n=g.boss.broadcast,p=g.player,x0=X0();
  for(const s of n.birds){s.time+=dt;if(s.state!=='fly')continue;s.x+=s.dir*AIR_TIMES.bird*dt;
-  const inArena=s.x>x0+190&&s.x+s.w<x0+1346;
-  if(inArena&&SHELTERS.some(c=>overlap(s,{x:x0+c.x,y:FLOOR_Y-c.h,w:c.w,h:c.h}))){s.state='burst';s.time=0;g.emit('boltImpact',{x:s.x+17,y:s.y+10,kind:'sensation'});continue;}
+  // A smooth preplanned rise over each chimney and the fallen mast; no impacts into scenery.
+  s.cruiseY??=s.y;s.y=birdFlightY(s,s.x-x0);
   if(paw&&p.attack>0&&s.lastSwing!==p.swing&&overlap(paw,s)){s.lastSwing=p.swing;s.state='burst';s.time=0;g.emit('enemyHit',{x:s.x+17,y:s.y,enemyType:'sensation'});continue;}
   if(p.dash===0&&p.inv<=0&&overlap(p,s)){s.state='burst';s.time=0;hurtUma(g,s.x+17,s.dir);g.emit('sensationHit',{x:s.x+17,y:s.y});}
  }

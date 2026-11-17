@@ -1,7 +1,6 @@
 import {enemy,rooms} from './level.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
-// Ботоферма (Студия): a server rack that stamps out identical bots. In the studio it is sealed in a cage on the wall
-// and cannot be hit; elsewhere it takes three paw hits. Its bots jump together on one shared beat, from platform to
+// Ботоферма (Студия): a server rack that stamps out identical bots. It takes three ordinary paw hits. Its bots jump together on one shared beat, from platform to
 // platform towards Uma; they hurt on contact and die from one hit. A bot that jumps onto a riser that goes dark falls.
 // When the rack breaks, every bot it made hangs (grey, spinner) and falls apart.
 export const BOT_BEAT=1.2,MAX_BOTS=3,PRINT_TIME=.6,PRINT_COOLDOWN=6,BOT_SPEED=78,BOT_HOP=44,FREEZE_TIME=.6;
@@ -16,6 +15,7 @@ export function botHop(t){
  if(k<.92)return {phase:'land',h:0};
  return {phase:'idle',h:0};
 }
+export function freezeFarmBots(g,farm){for(const bot of g.enemies)if(bot.type==='bot'&&bot.ownerId===farm.id&&!bot.dead&&!bot.frozen){bot.frozen=true;bot.spawnTime=0;bot.timer=FREEZE_TIME;bot.vx=bot.vy=0;bot.jumpPhase=null;bot.terrainFall=false;g.emit('botFreeze',{x:bot.x,y:bot.y,enemyType:'bot'});}}
 export const botsOf=(g,farm)=>g.enemies.filter(e=>e.type==='bot'&&e.ownerId===farm.id&&!e.dead);
 function printBot(g,farm){
  const s=g.platforms.find(s=>s.room===farm.room&&s.index===(farm.printOn??farm.platformIndex));if(!s)return;
@@ -46,10 +46,10 @@ function leapStudio(g,e,surfaces){
  e.vx=tx===null?0:(tx-cx)/T;e.vy=vy;e.jumpPhase='air';e.hopPhase='air';
 }
 export function stepBot(g,e,dt,dx){
- const owner=g.enemies.find(o=>o.id===e.ownerId),s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex),base=s?s.y-e.h:e.y;
+ const owner=g.enemies.find(o=>o.id===e.ownerId);
  if(!owner||owner.dead||owner.hp<=0){
-  if(!e.frozen){e.frozen=true;e.timer=FREEZE_TIME;e.y=base;g.emit('botFreeze',{x:e.x,y:e.y,enemyType:'bot'});}
-  else if(e.timer<=0){e.dead=true;e.hp=0;e.deathTime=.35;g.emit('copyDissolve',{x:e.x,y:e.y,enemyType:'bot'});}
+  if(!e.frozen){e.frozen=true;e.timer=FREEZE_TIME;e.vx=e.vy=0;g.emit('botFreeze',{x:e.x,y:e.y,enemyType:'bot'});}
+  else if(e.timer<=0){e.dead=true;e.hp=0;e.deathDuration=.45;e.deathTime=.45;g.emit('copyDissolve',{x:e.x,y:e.y,enemyType:'bot'});}
   return;
  }
  const hop=botHop(g.time),beat=Math.floor(g.time/BOT_BEAT);e.hopPhase=e.jumpPhase==='air'?'air':hop.phase;

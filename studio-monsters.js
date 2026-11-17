@@ -1,12 +1,9 @@
 import {rooms} from './level.js?v=0.21.5';
 import {solidSurfaces} from './terrain.js?v=0.21.5';
 // Studio monsters of the second redesign.
-// Прожектор: rides a rail along the studio ceiling across the whole map, out of reach, keeping a little ahead of
-// Uma. It swings its red beam after her, locks it and burns: the surface under the beam is burnt out for a moment
-// (a hole the beam's width, see terrain cuts), so Uma has to step off the lit spot before it goes. The beam does not
-// hurt or push. A low set flat in the way stops the beam (it lands on the flat and burns nothing), so the flat is safe.
-// Two of them keep apart on the rail.
-export const SPOTLIGHTER={track:95,aim:1.35,burn:.9,cool:1.2,rest:.8,half:26,reach:560,lens:60,ride:70,lead:120,apart:420,hole:64,warn:.35};
+// Прожектор follows Uma along the ceiling, fixes its red beam and slows movement inside it.
+// The beam stops at the first platform/flat and never removes collision surfaces.
+export const SPOTLIGHTER={track:95,aim:1.35,burn:.9,cool:1.2,rest:.8,half:26,reach:560,lens:60,ride:70,lead:120,apart:420,slow:.45};
 // Where the red beam lands: the first solid surface (or the flat) under its x, else the bottom of the screen.
 export function beamSurface(g,e,x=e.beamX){
  const top=SPOTLIGHTER.lens+8;return solidSurfaces(g).filter(s=>s.room===e.room&&x>=s.x&&x<=s.x+s.w&&s.y>top).sort((a,b)=>a.y-b.y)[0]||null;
@@ -14,13 +11,15 @@ export function beamSurface(g,e,x=e.beamX){
 export function beamFloor(g,e,x=e.beamX){const hit=beamSurface(g,e,x);return hit?hit.y:480;}
 export const lensPoint=e=>({x:e.x+e.w/2,y:SPOTLIGHTER.lens});
 export function beamBox(g,e){const floor=beamFloor(g,e);return {x:e.beamX-SPOTLIGHTER.half,y:floor-150,w:SPOTLIGHTER.half*2,h:150};}
-// Burn a hole in the surface under the beam (not in the flat, not twice in one surface).
-function burnFloor(g,e){
- const hit=beamSurface(g,e);if(!hit||hit.studio?.kind==='flat')return false;
- const s=g.platforms.find(p=>p.id===hit.id);if(!s||g.cuts.some(c=>c.platformId===s.id))return false;
- const w=Math.min(SPOTLIGHTER.hole,s.w),localX=Math.max(0,Math.min(s.w-w,e.beamX-s.x-w/2));
- g.cuts.push({id:'cut-'+(++g.tacticalSerial),ownerId:e.id,room:e.room,platformId:s.id,localX,w,phase:'warning',time:SPOTLIGHTER.warn,x:s.x+localX+w/2,y:s.y,burn:true});
- g.emit('cutWarning',{x:e.beamX,y:s.y,enemyType:e.type});return true;
+// Sample Uma's body across the painted cone, narrowing towards the lens.
+export function spotlightSlow(g){
+ const p=g.player;if(g.room!==5||p.dash>0)return 1;
+ for(const e of g.enemies||[]){if(e.type!=='spotlight'||e.room!==g.room||!e.active||e.dead||e.spawnTime>0||e.state!=='burn')continue;
+  const floor=beamFloor(g,e),side=e.beamX<e.x+e.w/2-4?-1:1,lens={x:e.x+e.w/2+side*24*.63,y:SPOTLIGHTER.lens};
+  for(const y of[p.y+5,p.y+p.h/2,p.y+p.h-2]){if(y<lens.y||y>=floor)continue;const t=(y-lens.y)/(floor-lens.y),x=lens.x+(e.beamX-lens.x)*t,half=32*t;
+   if(p.x+p.w>x-half&&p.x<x+half)return 1-SPOTLIGHTER.slow;
+  }
+ }return 1;
 }
 // The rail: the body drifts after a point a little ahead of Uma, never closer than `apart` to another Прожектор.
 function ride(g,e,dt){
@@ -34,7 +33,7 @@ export function stepSpotlighter(g,e,dt,dx){
  e.beamX??=e.x+e.w/2;
  if(e.state!=='burn')ride(g,e,dt);
  if(e.state==='patrol'){e.beamX+=(e.x+e.w/2-e.beamX)*Math.min(1,dt*2);if(near&&e.timer<=0){e.state='aim';e.timer=SPOTLIGHTER.aim;g.emit('spotAim',{x:e.beamX,y:e.y,enemyType:e.type});}}
- else if(e.state==='aim'){const d=target-e.beamX;e.beamX+=Math.sign(d)*Math.min(Math.abs(d),SPOTLIGHTER.track*dt);if(e.timer<=0){e.state='burn';e.timer=SPOTLIGHTER.burn;e.burned=burnFloor(g,e);g.emit('spotBurn',{x:e.beamX,y:beamFloor(g,e),enemyType:e.type});}}
+ else if(e.state==='aim'){const d=target-e.beamX;e.beamX+=Math.sign(d)*Math.min(Math.abs(d),SPOTLIGHTER.track*dt);if(e.timer<=0){e.state='burn';e.timer=SPOTLIGHTER.burn;g.emit('spotBurn',{x:e.beamX,y:beamFloor(g,e),enemyType:e.type});}}
  else if(e.state==='burn'){if(e.timer<=0){e.state='cool';e.timer=SPOTLIGHTER.cool;}}
  else if(e.state==='cool'&&e.timer<=0){e.state='patrol';e.timer=SPOTLIGHTER.rest;}
 }

@@ -1,3 +1,4 @@
+import {drawUmaReaction} from './uma-reactions.js?v=0.21.5';
 import {drawAgitatorEquipment,drawAgitatorBackdrop,drawAgitatorPlatform} from './agitator-art.js?v=0.21.5';
 import {drawInterferenceOverlay} from './interference-art.js?v=0.21.5';
 import {drawBackdropVeil,drawPlatformShadow,drawPlatformRim} from './readability.js?v=0.21.5';
@@ -103,7 +104,7 @@ export class Renderer{
    c.save();
    if(e.spawnTime>0&&['echo','static'].includes(e.type)){const k=Math.max(0,Math.min(1,1-e.spawnTime/(e.arrivalDuration||DIM_ARRIVAL)));drawDimensionArrival(c,e,k,t);const s=.55+.45*k,cx=e.x+e.w/2,cy=e.y+e.h/2;c.translate(cx,cy);c.scale(s,s);c.translate(-cx,-cy);c.globalAlpha=k<.35?0:Math.floor(t*30)%3===0&&k<.85?.3:Math.min(1,(k-.35)/.5);}
    else if(e.spawnTime>0){const progress=Math.max(0,Math.min(1,(1-e.spawnTime/(e.arrivalDuration||.55)-.12)/.88));c.beginPath();c.rect(e.x-140,e.y-170,328,e.h+170);c.clip();c.translate(0,(1-progress)*(e.type==='servant'?12:78));c.globalAlpha=progress>.01?1:0;}
-   else if(e.dead)c.globalAlpha=e.deathTime/.28;else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
+   else if(e.dead)c.globalAlpha=Math.min(1,e.deathTime/(e.deathDuration||.28));else if(e.inv>0&&Math.floor(t*20)%2===0)c.globalAlpha=.7;
    if(e.copyOwnerId){c.globalAlpha*=.78;c.filter='sepia(1) saturate(1.7) hue-rotate(125deg)';}
    if(e.type==='servant')drawServant(c,a,e,t);
    if(e.container)drawStudioContainer(c,a,g,e,t,drawMonster);
@@ -153,10 +154,12 @@ export class Renderer{
    if(p.hurtTime===0&&p.inv>0&&Math.floor(t*12)%2!==0)c.globalAlpha=.6;
    if(!drawHit(c,a,hitFrame(elapsed),p.x+p.w/2,p.y+p.h,p.dir<0))drawMood(c,a,MOOD.hurt,p.x+p.w/2,p.y+p.h,p.dir<0);
    c.globalAlpha=1;
+  }else if(drawUmaReaction(c,a,p,g)){
+   // Approved Uma sprites: wind brace/tuck, camera blink, resisted slow steps.
   }else if(moodPose(p,g)!==null&&a.moods){
    const mood=moodPose(p,g),owner=mood===MOOD.dragged?g.enemies.find(e=>e.id===g.tether.ownerId):null,face=owner?(owner.x>p.x?1:-1):p.dir;
    if(p.inv>0&&Math.floor(t*12)%2!==0)c.globalAlpha=.6;
-   c.save();if(mood===MOOD.dash){c.shadowColor='#7deaf5';c.shadowBlur=8;}drawMood(c,a,mood,p.x+p.w/2,p.y+p.h,face<0);c.restore();c.globalAlpha=1;
+   c.save();if(mood===MOOD.dash){c.shadowColor='#7deaf5';c.shadowBlur=8;}if(mood===MOOD.dash&&a.umaRun8)drawRun(c,a,runFrame(t),p.x+p.w/2,p.y+p.h,face<0);else drawMood(c,a,mood,p.x+p.w/2,p.y+p.h,face<0);c.restore();c.globalAlpha=1;
    if(mood===MOOD.hiss&&Math.floor(t*6)%2)rect(c,p.x+(face>0?p.w+2:-8),p.y+8,6,2,'#ffd2d8');
   }else if((p.sleeping||p.slipping||p.pulled)&&drawRest(c,a,p)){
    if(p.sleeping&&p.sleepTime>1){const z=Math.floor(t*1.4)%3;rect(c,p.x+32+z*4,p.y+5-z*7,4,2,'#a4cede');rect(c,p.x+34+z*4,p.y+7-z*7,2,3,'#a4cede');rect(c,p.x+32+z*4,p.y+10-z*7,4,2,'#a4cede');}

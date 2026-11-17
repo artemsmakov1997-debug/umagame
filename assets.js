@@ -18,9 +18,12 @@ function restoreSize(image,[k,w,h]){
  image.__rw=image.naturalWidth;image.__rh=image.naturalHeight;image.__k=k;image.__ow=w;image.__oh=h;
  for(const [prop,value] of [['naturalWidth',w],['naturalHeight',h],['width',w],['height',h]])Object.defineProperty(image,prop,{value,configurable:true});
 }
+// CSS backgrounds use unversioned URLs: decode those exact URLs before enabling the menu.
+export const LIBRARY_UI_FILES=['book','page','paper','note','tabs','stages','strip','seals','arrows','plate','tag','cards'].map(name=>'./assets/library-'+name+'.png');
 export async function loadAssets(onProgress=()=>{}){
  let done=0,failed=false;
- const entries=await Promise.all(Object.entries(sources).map(async([name,path])=>{const image=new Image(),url=new URL(path,import.meta.url);url.searchParams.set('v','0.21.5');image.src=url.href;try{await image.decode();}catch(error){failed=true;throw error;}done++;if(!failed)onProgress(done,Object.keys(sources).length);if(SHEET_SCALE[name])image.k=SHEET_SCALE[name];if(SHRINK[name])restoreSize(image,SHRINK[name]);return[name,image];}));
+ const files=[...Object.entries(sources),...LIBRARY_UI_FILES.map((path,i)=>['libraryUI'+i,path])];
+ const entries=await Promise.all(files.map(async([name,path])=>{const image=new Image(),url=new URL(path,import.meta.url);if(!name.startsWith('libraryUI'))url.searchParams.set('v','0.21.5');image.src=url.href;try{await image.decode();}catch(error){failed=true;throw error;}done++;if(!failed)onProgress(done,files.length);if(SHEET_SCALE[name])image.k=SHEET_SCALE[name];if(SHRINK[name])restoreSize(image,SHRINK[name]);return[name,image];}));
  return Object.fromEntries(entries);
 }
 export const cats=[

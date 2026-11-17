@@ -4,7 +4,7 @@
 const FARM_PIVOT=[[256,475],[768,475],[1280,475],[256,987],[768,987],[1280,987]];
 const BOT_PIVOT=[[207,446],[584,446],[960,399],[1344,446],[210,947],[572,947],[958,947],[1300,947]];
 export function botfarmFrame(e={},time=0){
- if(e.dead)return 5;if(e.hurtTime>0)return 4;if(e.state==='printing'||e.state==='casting')return 2;if(e.alarm||e.state==='windup'||e.noticeTime>0)return 3;
+ if(e.dead)return (e.deathDuration||1.1)-(e.deathTime||0)<.22?4:5;if(e.hurtTime>0)return 4;if(e.state==='printing'||e.state==='casting')return 2;if(e.alarm||e.state==='windup'||e.noticeTime>0)return 3;
  return e.moving?Math.floor((e.walkTime||0)*7)%2:Math.floor(time*3)%2;
 }
 export function botFrame(e={}){
@@ -18,6 +18,10 @@ function place(c,image,cell,pivot,cw,ch,x,y,w,h,height){
 // The rack is ~455 px tall in its cell; `h` is its on-screen height.
 export function drawBotfarmPortrait(c,a,x,y,w,h,time=0,actor={}){
  if(!a.botfarm)return;const f=botfarmFrame(actor,time);place(c,a.botfarm,f,FARM_PIVOT[f],512,512,x,y,w,h,470);
+ if(actor.dead){const age=(actor.deathDuration||1.1)-(actor.deathTime||0),k=h/470;
+  for(let i=0;i<5;i++){const dx=(i-2)*(16+age*26),dy=-h*.55-age*35+age*age*90;c.save();c.translate(x+w/2+dx,y+h+dy);c.rotate((i-2)*age);c.drawImage(a.botfarm,1100+i*62,650+i%2*80,38,44,-19*k,-22*k,38*k,44*k);c.restore();}
+ }
+
 }
 // A bot is ~310 px from antenna tip to feet.
 export function drawBotPortrait(c,a,x,y,w,h,time=0,actor={}){
