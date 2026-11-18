@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {Game} from '../engine.js';
 import {activateRoom} from '../room-transitions.js';
 import {rooms,platforms,ladders,createEnemies,createRelays} from '../level.js';
-import {DIM_PIECES,FEED,RIFTS,ORIGINALS,DIM_CHECKPOINTS,MIRROR,isBaitCopy} from '../dimension-map.js';
-import {feedState,originalsFound} from '../dimension-systems.js';
+import {DIM_PIECES,FEED,RIFTS,ORIGINALS,DIM_CHECKPOINTS,MIRROR,isBaitCopy,feedCycle} from '../dimension-map.js';
+import {feedState,originalsFound,updateDimensionPlatforms} from '../dimension-systems.js';
 import {noiseDuration,revealHint,NOISE_TIME} from '../infoshum-combat.js';
 import {enemy} from '../level.js';
 import {crossDimension} from './navigation.js';
@@ -47,6 +47,40 @@ test('bright bait bubbles come regularly from the start; stepping on one lets a 
  Object.assign(g.player,{x:s.x+s.w/2-17,y:s.y-g.player.h,vx:0,vy:0,grounded:true,supportId:s.id});
  tick(g,1);const e=g.enemies.find(e=>e.type==='clickbait');assert.ok(e,'the Кликбейт bursts out');assert.equal(e.platformIndex,s.index);assert.equal(e.revealed,true);assert.equal(s.bait,false,'used up until it wraps');
  assert.ok(events(g,'baitReveal').length>=1);let snapped=false;for(let i=0;i<45&&!snapped;i++){tick(g,1);snapped=e.state==='snap'||!!g.swallow;}assert.ok(snapped,'and bites');
+});
+test('the inverted feed has the same regular pink bait messages in all three lanes',()=>{
+ const upright=DIM_PIECES.filter(p=>p.type==='copy'&&!p.reversed),inverted=DIM_PIECES.filter(p=>p.type==='copy'&&p.reversed),seen=new Set();
+ for(let t=0;t<40;t+=.25){
+  assert.ok(inverted.some(p=>isBaitCopy(p,t)),'bait stays present after the rift');
+  for(let i=0;i<9;i++)assert.equal(isBaitCopy(inverted[i],t),isBaitCopy(upright[i],t));
+  for(const lane of [0,1,2]){const n=inverted.filter(p=>p.lane===lane&&isBaitCopy(p,t)).length;assert.ok(n<=1);if(n)seen.add(lane);}
+ }
+ assert.equal(seen.size,3);
+});
+function invertedBait(){
+ const g=ready();g.baitOff=false;stand(g,10,800);
+ for(let i=0;i<200&&!(g.player.flipped&&g.player.grounded);i++)tick(g,1,{right:true});
+ assert.ok(g.player.flipped&&g.player.supportId==='7:11','enter through the actual first rift');
+ const s=g.platforms.find(s=>s.dim?.inverted&&s.bait&&s.dimState==='rise'&&s.y>20&&s.y<300);assert.ok(s);
+ Object.assign(g.player,{x:s.x+s.w/2-17,y:s.y,vx:0,vy:0,grounded:true,supportId:s.id});tick(g,1);
+ const e=g.enemies.find(e=>e.bait&&e.platformIndex===s.index);assert.ok(e&&e.flipped&&e.revealed);assert.equal(e.y,s.y);assert.equal(s.bait,false);
+ return {g,s,e};
+}
+test('a Кликбейт emerges underneath a descending message, rides it, bites upside-down Uma, pauses and spits away from the ceiling',()=>{
+ const {g,s,e}=invertedBait(),y=e.y;tick(g,5);assert.ok(e.y>y);assert.ok(Math.abs(e.y-s.y)<.01);assert.equal(g.player.y,s.y);
+ for(let i=0;i<60&&!g.swallow;i++)tick(g,1);assert.ok(g.swallow);assert.equal(g.health,4);
+ const target=g.swallow.targetY+24;assert.ok(target>=e.y&&target<=e.y+e.h);
+ g.mode='paused';const snapshot=JSON.stringify(g);tick(g,45);assert.equal(JSON.stringify(g),snapshot);g.mode='playing';
+ for(let i=0;i<40&&g.swallow;i++)tick(g,1);
+ assert.equal(g.swallow,null);assert.equal(g.health,2);assert.equal(g.lives,3);assert.equal(g.player.flipped,true);assert.equal(g.player.vy,240);
+});
+test('inverted bait is consumed once per wrap; Shift evades the bite and the pink trap returns on a later feed cycle',()=>{
+ const {g,s,e}=invertedBait();g.player.inv=999;for(let i=0;i<60&&e.state!=='snap';i++)tick(g,1);assert.equal(e.state,'snap');
+ g.player.inv=0;tick(g,1,{dash:true,right:true});assert.equal(g.swallow,null);assert.equal(g.health,4);assert.equal(e.state,'vanish');
+ g.player.inv=999;tick(g,45);assert.ok(e.dead);const used=s.baitUsed;assert.equal(g.enemies.filter(e=>e.bait).length,1);
+ Object.assign(g.player,{x:x0+920,y:70,flipped:true,grounded:true,supportId:'7:11',dash:0,vx:0,vy:0});
+ for(let t=g.time+.1;t<80;t+=.1)if(isBaitCopy(s.dim,t)&&feedCycle(s.dim,t)!==used){g.time=t;break;}
+ updateDimensionPlatforms(g);assert.ok(s.bait);assert.notEqual(feedCycle(s.dim,g.time),used);
 });
 test('the first rift flips Uma under a hanging message; the upside-down feed is «Лента» mirrored, and a sinking copy carries her down',()=>{
  const g=ready();stand(g,10,800);let flipped=false;for(let i=0;i<200&&!flipped;i++){tick(g,1,{right:true});flipped=g.player.flipped&&g.player.grounded;}

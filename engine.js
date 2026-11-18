@@ -163,7 +163,7 @@ export class Game {
   const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);
   if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}
    // Кликбейт costs two hearts; only when that would empty them does it take a life.
-   if(this.health>2&&!this.testingInvulnerable){this.health-=2;this.swallow=null;Object.assign(this.player,{inv:1.8,hurtTime:.5,vx:0,vy:-240,grounded:false,knock:.25});this.emit('clickbaitSpit',{x:this.player.x,y:this.player.y});}
+   if(this.health>2&&!this.testingInvulnerable){this.health-=2;this.swallow=null;Object.assign(this.player,{inv:1.8,hurtTime:.5,vx:0,vy:this.player.flipped?240:-240,grounded:false,knock:.25});this.emit('clickbaitSpit',{x:this.player.x,y:this.player.y});}
    else this.loseLife('clickbait');this.updateCamera();}return;}
   stepWorldPlatforms(this,dt);
   stepTacticalTerrain(this,dt);

@@ -16,8 +16,8 @@ export function feedState(piece,t){
 // The Кликбейт bursts out of the bait bubble under Uma, facing her, and snaps after BAIT.emerge+.1 s.
 function releaseBait(g,s,cycle){
  g.enemies=g.enemies.filter(e=>!(e.bait&&e.gone));
- const e=enemy('clickbait',DIM_ROOM,Math.round(s.x+s.w/2-24-x0()),s.index,{ride:true,bait:true,active:true,noticed:true,revealed:true,state:'emerge',timer:BAIT.emerge,revealTime:0,spawnTime:0,arrivalDuration:.05});
- e.id='bait-'+s.index+'-'+cycle;e.x=s.x+s.w/2-24;e.y=s.y-e.h;e.origin=s.x;e.end=s.x+s.w-e.w;const p=g.player;e.dir=p.x+p.w/2<e.x+24?-1:1;
+ const e=enemy('clickbait',DIM_ROOM,Math.round(s.x+s.w/2-24-x0()),s.index,{ride:true,bait:true,flipped:!!s.dim.inverted,active:true,noticed:true,revealed:true,state:'emerge',timer:BAIT.emerge,revealTime:0,spawnTime:0,arrivalDuration:.05});
+ e.id='bait-'+s.index+'-'+cycle;e.x=s.x+s.w/2-24;e.y=e.flipped?s.y:s.y-e.h;e.origin=s.x;e.end=s.x+s.w-e.w;const p=g.player;e.dir=p.x+p.w/2<e.x+24?-1:1;
  g.enemies.push(e);g.emit('baitReveal',{x:e.x,y:e.y});
 }
 // Runs inside the world-platform step after prev positions are stored, and on its own outside play.
@@ -41,7 +41,7 @@ export function placeDimensionPiece(g,s){
   if(wrapped){s.prevY=s.y;s.dy=0;}else s.dy=s.y-s.prevY;
   // A Кликбейт sitting on a copy rides it (pinned here; the world step then adds this frame's dy), reappears with it
   // after a wrap and cannot bite while its bubble pops.
-  for(const e of g.enemies||[])if(e.ride&&e.room===DIM_ROOM&&e.platformIndex===s.index&&!e.dead){e.y=s.y-e.h-s.dy;e.x=Math.max(s.x,Math.min(s.x+s.w-e.w,e.x));e.phased=state==='pop';}
+  for(const e of g.enemies||[])if(e.ride&&e.room===DIM_ROOM&&e.platformIndex===s.index&&!e.dead){e.y=(e.flipped?s.y:s.y-e.h)-s.dy;e.x=Math.max(s.x,Math.min(s.x+s.w-e.w,e.x));e.phased=state==='pop';}
   return;
  }
  if(piece.type==='slide'){const x=rooms[DIM_ROOM].x+slideX(piece,g.time);s.dx=x-s.prevX;s.x=x;s.dimState='slide';s.intangible=false;

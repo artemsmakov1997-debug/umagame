@@ -124,7 +124,7 @@ export class Renderer{
    }
    if(e.type==='inflator'&&e.room===3)drawInflatorMachine(c,a,e,t);else if(e.type==='inflator')drawMonster(c,a,e.type,e.x-18,e.y-46,89,76,t,e.dir<0,e);
    if(e.type==='panicker')drawMonster(c,a,e.type,e.x-9,e.y-35,67,65,t,e.dir<0,e);
-   if(e.type==='clickbait'&&!drawClickbaitTrap(c,a,e,t))drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);
+   if(e.type==='clickbait'){c.save();if(e.flipped){c.translate(0,2*e.y+e.h);c.scale(1,-1);}if(!drawClickbaitTrap(c,a,e,t))drawMonster(c,a,e.type,e.x-35,e.y-79,112,108,t,e.dir>0,e);c.restore();}
    c.restore();c.filter='none';c.globalAlpha=1;if(e.dead||e.spawnTime>0||e.phased)continue;
    drawEnemyDefense(c,e,t,a);
    if(e.guardian)text(c,'!',e.x+38,e.y-72,'#ffcf77');if(e.state==='windup')text(c,'!',e.x+19,e.y-(e.type==='inflator'&&e.room===3?62:78),'#ffcf79',2);
@@ -144,7 +144,7 @@ export class Renderer{
   }
   for(const trail of this.trail){trail.life-=dt;c.globalAlpha=Math.max(0,trail.life/.3);rect(c,trail.x,trail.y,trail.dash?12:3,3,trail.dash?'#72dffe':'#ccd3ff');}c.globalAlpha=1;this.trail=this.trail.filter(v=>v.life>0);
   // Upside-down Uma in «Разлом»: mirror the whole sprite around her middle.
-  const flipUma=p.flipped&&!g.swallow;if(flipUma){c.save();c.translate(0,2*(p.y+p.h/2));c.scale(1,-1);}
+  const flipUma=p.flipped;if(flipUma){c.save();c.translate(0,2*(p.y+p.h/2));c.scale(1,-1);}
   this.hitTail=p.hurtTime>0?HIT_TAIL:hitSettled(p)?Math.max(0,(this.hitTail||0)-dt):0;
   if(g.storyEnabled&&!g.seenScenes.has('intro')||g.dialogue?.id==='intro'){
    drawWakeup(c,a,p,g.wakeTime);
@@ -173,7 +173,8 @@ export class Renderer{
    const {box,anchor,sheet}=cats[pose],progress=g.swallow?1-Math.pow(g.swallow.timer/g.swallow.total,3):0,scale=(g.swallow?Math.max(0,1-progress*1.18):1)*(p.warpScale??1);
    const w=Math.round(box[2]*.195*scale),h=Math.round(box[3]*.195*scale);
    const center=g.swallow?(g.swallow.x+17)*(1-progress)+(g.swallow.targetX+12)*progress:p.x+p.w/2;
-   const feet=g.swallow?(g.swallow.y+48)*(1-progress)+(g.swallow.targetY+24)*progress:p.y+p.h;
+   const targetFeet=g.swallow?(flipUma?2*p.y+p.h-(g.swallow.targetY+24):g.swallow.targetY+24):p.y+p.h;
+   const feet=g.swallow?(g.swallow.y+48)*(1-progress)+targetFeet*progress:p.y+p.h;
    const galloping=(pose===1||pose===2)&&a.umaRun8;
    if(w>0&&h>0){c.save();if(p.dash>0){c.shadowColor='#7deaf5';c.shadowBlur=8;}if(galloping)drawRun(c,a,runFrame(t),center,feet,p.dir<0,scale);else sprite(c,a[sheet||'uma'],box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);c.restore();}
    if(p.powerTime>0)for(let i=0;i<5;i++)rect(c,p.x-13+i*14,p.y-10+Math.sin(t*5+i)*5,2,2,'#ffe6a0');

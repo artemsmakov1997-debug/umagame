@@ -28,12 +28,12 @@ export const DIM_PIECES=[
 // Rising feed: copies appear at `bottom`, rise at `speed` and pop near `top`. Neighbouring lanes are half a step apart.
 export const FEED={bottom:500,top:110,speed:34,perLane:3,lanePhase:[0,.5,0],fade:.86,pop:.965};
 // «Яркие сообщения»: copies leave the bottom of a lane one after another; every fourth one in each lane comes up
-// bright — bait. Step on it and a Кликбейт bursts out of the bubble. They come regularly from the very start (lanes 0
+// bright — bait in both the rising and upside-down feeds. Step on it and a Кликбейт bursts out of the bubble. They come regularly from the very start (lanes 0
 // and 2 are offset so one of them always carries a bait); a used one stays plain until it wraps.
 export const BAIT={every:4,emerge:.4};
 export function feedCycle(piece,t){const range=FEED.bottom-FEED.top,spacing=range/FEED.perLane;return Math.floor((FEED.speed*t+(piece.slot+FEED.lanePhase[piece.lane])*spacing)/range);}
 // The order in which a lane's copies come up: slot s of wrap c is the (3c−s)-th.
-export function isBaitCopy(piece,t){if(piece.type!=='copy'||piece.reversed)return false;const k=FEED.perLane*feedCycle(piece,t)-piece.slot+piece.lane;return (k%BAIT.every+BAIT.every)%BAIT.every===0;}
+export function isBaitCopy(piece,t){if(piece.type!=='copy')return false;const k=FEED.perLane*feedCycle(piece,t)-piece.slot+piece.lane;return (k%BAIT.every+BAIT.every)%BAIT.every===0;}
 // Gravity rifts: crossing one turns the world upside down (or back).
 export const RIFTS=[{x:870,y:120,h:210},{x:1690,y:110,h:220}];
 // «Первоисточники» (envelopes) were removed from the map; the list stays empty.
