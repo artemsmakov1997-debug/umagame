@@ -19,7 +19,7 @@ function restoreSize(image,[k,w,h]){
  for(const [prop,value] of [['naturalWidth',w],['naturalHeight',h],['width',w],['height',h]])Object.defineProperty(image,prop,{value,configurable:true});
 }
 // CSS backgrounds use unversioned URLs: decode those exact URLs before enabling the menu.
-export const LIBRARY_UI_FILES=['book','page','paper','note','tabs','stages','strip','seals','arrows','plate','tag','cards'].map(name=>'./assets/library-'+name+'.png');
+export const LIBRARY_UI_FILES=['book','page','paper','tabs','stages','strip','seals','arrows','tag','cards'].map(name=>'./assets/library-'+name+'.png').concat(['./assets/library-tactics.webp','./assets/library-tactics-wide.webp']);
 export async function loadAssets(onProgress=()=>{}){
  let done=0,failed=false;
  const files=[...Object.entries(sources),...LIBRARY_UI_FILES.map((path,i)=>['libraryUI'+i,path])];
