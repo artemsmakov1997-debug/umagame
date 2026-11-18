@@ -159,7 +159,7 @@ export class Renderer{
   }else if(moodPose(p,g)!==null&&a.moods){
    const mood=moodPose(p,g),owner=mood===MOOD.dragged?g.enemies.find(e=>e.id===g.tether.ownerId):null,face=owner?(owner.x>p.x?1:-1):p.dir;
    if(p.inv>0&&Math.floor(t*12)%2!==0)c.globalAlpha=.6;
-   c.save();if(mood===MOOD.dash){c.shadowColor='#7deaf5';c.shadowBlur=8;}if(mood===MOOD.dash&&a.umaRun8)drawRun(c,a,runFrame(t),p.x+p.w/2,p.y+p.h,face<0);else drawMood(c,a,mood,p.x+p.w/2,p.y+p.h,face<0);c.restore();c.globalAlpha=1;
+   c.save();if(mood===MOOD.dash){c.shadowColor='#7deaf5';c.shadowBlur=8;}drawMood(c,a,mood,p.x+p.w/2,p.y+p.h,face<0);c.restore();c.globalAlpha=1;
    if(mood===MOOD.hiss&&Math.floor(t*6)%2)rect(c,p.x+(face>0?p.w+2:-8),p.y+8,6,2,'#ffd2d8');
   }else if((p.sleeping||p.slipping||p.pulled)&&drawRest(c,a,p)){
    if(p.sleeping&&p.sleepTime>1){const z=Math.floor(t*1.4)%3;rect(c,p.x+32+z*4,p.y+5-z*7,4,2,'#a4cede');rect(c,p.x+34+z*4,p.y+7-z*7,2,3,'#a4cede');rect(c,p.x+32+z*4,p.y+10-z*7,4,2,'#a4cede');}

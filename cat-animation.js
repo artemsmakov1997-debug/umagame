@@ -98,7 +98,10 @@ export function moodPose(p,g={}){
  if(p.frightTime>0&&still(p)&&!p.sneaking)return MOOD.hiss;
  return null;
 }
-export function drawMood(c,assets,frame,center,feet,flip=false,s=.18){
+// The stretched dash is deliberately low, so match the cat's body/head scale rather than its pose height.
+// Its old .18 scale made the whole cat miniature; .27 restores the normal body length without distortion.
+export const DASH_SCALE=.27;
+export function drawMood(c,assets,frame,center,feet,flip=false,s=frame===MOOD.dash?DASH_SCALE:.18){
  const {box,pivot}=moodFrames[frame];if(!assets.moods)return false;
  c.save();c.translate(Math.round(center),Math.round(feet));if(flip)c.scale(-1,1);
  sprite(c,assets.moods,box,(box[0]-pivot[0])*s,(box[1]-pivot[1])*s,box[2]*s,box[3]*s);c.restore();return true;
