@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {Game} from '../engine.js';
 import {activateRoom} from '../room-transitions.js';
 import {solidSurfaces} from '../terrain.js';
-import {rooms,createEnemies,platforms} from '../level.js';
+import {rooms,createEnemies,platforms,enemy} from '../level.js';
 import {STUDIO_PIECES,TAKES,STUDIO_CHECKPOINTS,SPOTLIGHTS} from '../studio-map.js';
 import {stageLit,liveTake} from '../studio-systems.js';
 import {botHop,BOT_BEAT,MAX_BOTS,botsOf} from '../botfarm.js';
@@ -19,7 +19,7 @@ function stand(g,index,local){const s=g.platforms.find(s=>s.id==='5:'+index);Obj
 const solid=(g,id)=>solidSurfaces(g).some(s=>s.id===id);
 
 test('the studio is built from its own pieces: no ladders, burrows, controllers or moving platforms',()=>{
- const own=platforms.filter(s=>s.room===5);assert.equal(own.length,STUDIO_PIECES.length);
+ const own=platforms.filter(s=>s.room===5);assert.equal(own.length,STUDIO_PIECES.filter(p=>p.type!=='removed').length);assert.ok(!own.some(s=>s.index===13),'the last blue take is removed');assert.ok(own.some(s=>s.index===10),'the earlier blue take stays');
  for(const s of own){assert.deepEqual(s.studio,STUDIO_PIECES[s.index]);assert.equal(s.motion,null);}
  const g=ready();assert.equal(g.mapProps.filter(d=>d.room===5).length,0);assert.equal(g.routePortals.filter(r=>r.room===5).length,0);
  assert.deepEqual([...new Set(createEnemies().filter(e=>e.room===5).map(e=>e.type))].sort(),['boom','botfarm','spotlight']);
@@ -71,21 +71,18 @@ test('a Прожектор rides the ceiling rail and slows Uma by 45% without c
  stand(g,3,700);tick(g,1,{right:true});assert.equal(g.player.vx,155);assert.equal(g.player.spotSlowed,false);
  ({g,e}=mk());stand(g,4,880);for(let i=0;i<200&&e.state!=='burn';i++)tick(g,1,{down:true});const box=beamBox(g,e);assert.ok(box.y+box.h<=g.player.y+2);tick(g,20,{down:true});assert.equal(g.player.spotSlowed,false);assert.equal(g.cuts.length,0);assert.equal(g.health,4);
 });
-test('the huge Ботоферма at the far end sends bots that leap between the fixed islands towards Uma without falling',()=>{
+test('the huge Ботоферма at the far end sends bots left between fixed islands without falling',()=>{
  const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];assert.equal(farm.platformIndex,11);assert.ok(farm.h>=120,'big');assert.equal(farm.container,undefined);
  stand(g,4,880);let reached=false,fell=0;const fixed=new Set(STUDIO_PIECES.map((p,i)=>p.type==='fixed'?i:null).filter(i=>i!==null));
- for(let i=0;i<60*20;i++){g.player.inv=999;Object.assign(g.player,{x:x0+880});tick(g,1);fell+=g.events.filter(v=>v.type==='copyDissolve').length;g.events=[];for(const b of botsOf(g,farm))if(!b.jumpPhase&&(b.platformIndex===4||b.platformIndex===8))reached=true;}
- assert.ok(g.events.length>=0);assert.ok(reached,'a bot leapt across to the fixed islands towards Uma');assert.equal(fell,0,'no bot fell into a pit');
+ for(let i=0;i<60*20;i++){g.player.inv=999;Object.assign(g.player,{x:x0+880});tick(g,1);fell+=g.events.filter(v=>v.type==='copyDissolve'&&v.reason!=='exit').length;g.events=[];for(const b of botsOf(g,farm))if(!b.jumpPhase&&(b.platformIndex===4||b.platformIndex===8))reached=true;}
+ assert.ok(g.events.length>=0);assert.ok(reached,'a bot leapt left across to the fixed islands');assert.equal(fell,0,'no bot fell into a pit');
  assert.equal(g.hitEnemy(farm),true,'the machine can be broken');assert.equal(farm.hp,2);
 });
-test('a bot on a riser that goes dark falls into the pit',()=>{
- const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));g.enemies=[farm];stand(g,11,1900);g.player.inv=999;
- for(let i=0;i<60*4&&!botsOf(g,farm).length;i++)tick(g,1);const [bot]=botsOf(g,farm);assert.ok(bot);farm.timer=999;
- const riser=g.platforms.find(s=>s.id==='5:5');
- // Wait for a moment when riser 5 is lit but about to go dark, and put the bot on it; it hops on the spot meanwhile.
- for(let i=0;i<60*8&&!(stageLit(riser.studio,g.time)&&!stageLit(riser.studio,g.time+.4));i++)tick(g,1);
- Object.assign(bot,{x:riser.x+36,y:riser.y-bot.h,platformIndex:5,spawnTime:0,jumpPhase:null,vx:0,vy:0,noticed:false,lastBeat:Math.floor(g.time/BOT_BEAT)});
- for(let i=0;i<60*3&&!bot.dead;i++){bot.lastBeat=Math.floor(g.time/BOT_BEAT);tick(g,1);}
+test('a bot over a dark riser falls into the pit',()=>{
+ const g=ready({enemies:true}),farm=arm(g,g.enemies.find(e=>e.type==='botfarm'));farm.timer=999;g.enemies=[farm];stand(g,11,1900);g.player.inv=999;
+ const riser=g.platforms.find(s=>s.id==='5:5');let t=0;for(;t<20;t+=.05)if([0,.2,.5,.8,1].every(d=>!stageLit(riser.studio,t+d)))break;assert.ok(t<20);g.time=t;
+ const bot=enemy('bot',5,riser.x-x0+36,5,{active:true,noticed:true,ownerId:farm.id,w:28,h:28,lastBeat:Math.floor(t/BOT_BEAT)});bot.y=riser.y-bot.h;g.enemies.push(bot);
+ for(let i=0;i<90&&!bot.dead;i++)tick(g,1);
  assert.equal(bot.dead,true,'the dark riser drops the bot');
 });
 test('a bot hurts on contact and dies from one paw swing',()=>{

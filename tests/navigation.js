@@ -93,7 +93,7 @@ export function crossStudio(g,lib,{relays=true}={}){
  if(!hop(15))return false;if(!run(()=>on(4),{right:true},300))return false;
  if(!hop(5,litSoon(5))||!hop(6,litSoon(6))||!hop(7,litSoon(7))||!hop(8))return false;hit(8);
  if(!hop(9,takeSoon(9))||!hop(10,takeSoon(10))||!hop(11))return false;hit(11);
- if(!hop(12,takeSoon(12))||!hop(13,takeSoon(13))||!hop(14))return false;
+ if(!hop(12,takeSoon(12))||!hop(14))return false;
  return on(14);
 }
 

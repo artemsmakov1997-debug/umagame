@@ -107,7 +107,7 @@ export function stepEnemies(g,dt,paw,prevBottom){
    }
    if((e.type==='inflator'&&e.room!==3||e.type==='panicker')&&e.state==='patrol')e.x+=e.dir*e.speed*(e.inkSlow||1)*dt;
   }
-  if(!e.frozen&&!e.flying&&!e.jumpPhase&&!e.terrainFall&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
+  if(!(e.type==='bot'&&e.room===5)&&!e.frozen&&!e.flying&&!e.jumpPhase&&!e.terrainFall&&(e.x<e.origin||e.x>e.end)){e.dir*=-1;e.x=Math.max(e.origin,Math.min(e.end,e.x));}
   e.moving=!e.teleport&&Math.abs(e.x-previousX)>.01;if(e.moving)e.walkTime+=Math.abs(e.x-previousX)/24;
   if(!e.phased&&p.attack>0&&e.lastSwing!==p.swing&&g.overlap(paw,e)){e.lastSwing=p.swing;if(e.type==='clickbait'&&!e.revealed)reveal(g,e,dx);g.hitEnemy(e);}
   if(e.dead||e.phased)continue;

@@ -82,7 +82,7 @@ const motions={
  '4:10':{axis:'y',amplitude:30,period:6.4},
  '8:13':{axis:'y',amplitude:26,period:5.6}
 };
-export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:false,roof:r.index===3?roofPiece(index):null,studio:r.index===5?STUDIO_PIECES[index]:null,dim:r.index===7?DIM_PIECES[index]:null,cuttable:r.index===5?studioCuttable(index):(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===0?-45:0,shelter:r.index===2&&[1,2].includes(index)?y+16:r.index===0&&index===4?y+11:r.index===5?STUDIO_PIECES[index]?.shelter??null:null,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null})));
+export const platforms=rooms.flatMap(r=>layouts[r.index].map(([x,y,w],index)=>({id:r.index+':'+index,x:x+r.x,y,w,room:r.index,index,fragile:false,roof:r.index===3?roofPiece(index):null,studio:r.index===5?STUDIO_PIECES[index]:null,dim:r.index===7?DIM_PIECES[index]:null,cuttable:r.index===5?studioCuttable(index):(r.theme==='studio'&&[1,4,13,16,22,25].includes(index))||(r.index===8&&[9,12,13,15].includes(index)),belt:r.index===1&&index===0?-45:0,shelter:r.index===2&&[1,2].includes(index)?y+16:r.index===0&&index===4?y+11:r.index===5?STUDIO_PIECES[index]?.shelter??null:null,studioPlatform:r.index===6&&[6,7,8,9,10,11,12,13,14,15,16,17].includes(index),motion:[4,6].includes(r.index)?null:motions[r.index+':'+index]||null}))).filter(p=>p.studio?.type!=='removed');
 export const ladders=rooms.flatMap(r=>{
  if(r.tutorial)return [];
  if(r.index===4)return AGITATOR_LADDERS.map(l=>({...l,x:r.x+l.x,room:4}));
@@ -159,7 +159,7 @@ export const MAP_PACKS=[[1,3],[1,6],[3,13],[3,14],[5,15],[5,11],[7,10],[7,25]];
 const hasPack=(room,index)=>MAP_PACKS.some(([r,i])=>r===room&&i===index);
 export function createFish(){return rooms.flatMap(r=>{
  if(r.index===2)return [];
- const points=r.index===4?AGITATOR_FISH:r.tutorial?[[330,415],[538,428],[880,415],[980,380],[1110,415],[1330,415]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>i%2===0).filter(s=>!hasPack(r.index,s.index)||s.w>=110).map(s=>[s.x-r.x+s.w*(hasPack(r.index,s.index)?.18:.45),s.y-35]);
+ const points=r.index===4?AGITATOR_FISH:r.tutorial?[[330,415],[538,428],[880,415],[980,380],[1110,415],[1330,415]]:platforms.filter(s=>s.room===r.index&&s.y<430).filter((s,i)=>(r.index===5?s.index:i)%2===0).filter(s=>!hasPack(r.index,s.index)||s.w>=110).map(s=>[s.x-r.x+s.w*(hasPack(r.index,s.index)?.18:.45),s.y-35]);
  return points.map(([x,y])=>({room:r.index,x:x+r.x,y,taken:false}));
 });}
 const antennaPlaces=[[2,4],[3,2],[3,5],[3,7],[5,3],[5,8],[5,11],[6,13],[8,10],[8,13]];

@@ -22,7 +22,7 @@ export const STUDIO_PIECES=[
  {type:'take',color:'blue',x:1750,w:100,y:270},         // 10
  {type:'fixed',kind:'case',x:1890,w:140,y:262},         // 11 the huge Ботоферма stands here
  {type:'take',color:'red',x:2050,w:100,y:244},          // 12
- {type:'take',color:'blue',x:2150,w:70,y:232},          // 13
+ {type:'removed',x:2150,w:70,y:232},                 // 13 retired; keep the door/flat IDs stable
  {type:'fixed',kind:'truss',x:2214,w:90,y:226},         // 14 the pavilion door
  // Containers (never solid, never on the route). x/w is the box, y its bottom edge.
  // A hanging set flat over the dolly: a low ceiling (crawl under it — or hop on top). It also blocks the red beam.
@@ -40,7 +40,7 @@ export const SPOT_MIN_OVERLAP=30;
 // «Дубли»: red is live for `beat` seconds, then blue; the last `warn` seconds blink before the swap.
 export const TAKES={beat:2.4,warn:.6,overlap:.85};
 // The Нарезчик may cut anything Uma walks on except the door island; containers are not surfaces at all.
-export function studioCuttable(index){const p=STUDIO_PIECES[index];return !!p&&p.type!=='container'&&p.kind!=='flat'&&index!==14;}
+export function studioCuttable(index){const p=STUDIO_PIECES[index];return !!p&&p.type!=='container'&&p.type!=='removed'&&p.kind!=='flat'&&index!==14;}
 export const studioContainer=index=>STUDIO_PIECES[index]?.type==='container';
 export const STUDIO_CHECKPOINTS=[{x:45,index:0},{x:600,index:3},{x:1440,index:8},{x:1910,index:11}];
 export const STUDIO_DOOR={x:2216,h:74};
