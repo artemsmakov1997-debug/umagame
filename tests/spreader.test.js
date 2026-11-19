@@ -133,12 +133,32 @@ test('exposeSpreader opens the current phase for scripted scenes',()=>{
  const g=ready();ticks(g,1);exposeSpreader(g);assert.equal(damageBoss(g,99,true),true);assert.equal(g.mode,'bossDefeat');
 });
 
-test('servants: two harass the air phase, they wait out a sheltered Uma, die to a paw',()=>{
+test('servants: air phase keeps two; later phases retain their sheltered patrol and a paw kills them',()=>{
  const g=ready();ticks(g,2);assert.equal(g.enemies.filter(e=>e.type==='servant').length,2);
- const h=ready(),t=table(h);floorAt(h,t.x+80,26);h.player.forcedCrouch=true;summonServants(h,1);const e=h.enemies[0];Object.assign(e,{spawnTime:0,timer:0,x:h.player.x+60,y:h.player.y-20});
+ const h=ready(),t=table(h);h.boss.hp=4;floorAt(h,t.x+80,26);h.player.forcedCrouch=true;summonServants(h,1);const e=h.enemies[0];Object.assign(e,{spawnTime:0,timer:0,x:h.player.x+60,y:h.player.y-20});
  for(let i=0;i<120;i++)stepServant(h,e,1/60,{x:0,y:0,w:0,h:0});assert.equal(e.state,'patrol');assert.ok(e.y<h.player.y-40);
  h.player.forcedCrouch=false;for(let i=0;i<120&&e.state==='patrol';i++)stepServant(h,e,1/60,{x:0,y:0,w:0,h:0});assert.notEqual(e.state,'patrol');
  h.hitEnemy(e);assert.ok(e.dead);
+});
+
+test('air-phase servants descend and lunge at crouched Uma under either table during real bombing',()=>{
+ for(const index of [1,2]){
+  const g=ready();g.testingInvulnerable=false;const t=table(g,index);floorAt(g,t.x+t.w/2-17,26);g.player.forcedCrouch=true;
+  // Ordinary idle/down inputs: the shelters protect from newspapers, but no longer stop the servants.
+  let warned=false,low=false;for(let i=0;i<360&&g.health===4;i++){
+   g.step(1/60,{down:true});for(const e of g.enemies.filter(e=>e.type==='servant'&&!e.dead))if(e.state==='windup'){warned=true;low ||=e.y>=g.player.y-6;}
+  }
+  assert.ok(warned&&low,'approaches at crouching height and telegraphs the lunge');assert.equal(g.health,3,'one hit under table '+index);
+  assert.ok(g.boss.fight.phase==='air'&&g.boss.fight.mode==='bombing');assert.ok(g.enemies.some(e=>e.contactHit));assert.ok(g.enemies.filter(e=>!e.dead).length<=2);
+ }
+});
+test('a sheltered Uma can swat an attacking servant or dash through its lunge',()=>{
+ for(const action of ['paw','dash']){
+  const g=ready();g.testingInvulnerable=false;const t=table(g);floorAt(g,t.x+80,26);g.player.forcedCrouch=true;g.player.dir=1;
+  const [e]=summonServants(g,1);Object.assign(e,{spawnTime:0,x:g.player.x+38,y:g.player.y,state:'windup',timer:.5});
+  if(action==='paw'){g.step(1/60,{down:true,attack:true});assert.ok(e.dead,'one ordinary low paw swing');}
+  else{Object.assign(e,{x:g.player.x+4,state:'lunge',timer:.3,vx:-225,vy:0,contactHit:false});g.step(1/60,{right:true,dash:true,down:true});assert.equal(g.health,4);assert.ok(g.player.dash>0);}
+ }
 });
 
 test('six hits through the three openings defeat the boss, clearing servants and bundles before the story',()=>{

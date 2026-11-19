@@ -10,6 +10,16 @@ for(const[width,height]of[[1920,1080],[1366,768],[390,844],[320,568],[844,390]])
  await p.evaluate(async()=>{const g=testGame,{activateRoom}=await import('./room-transitions.js?v=0.21.5'),{stepBoss}=await import('./boss.js?v=0.21.5');g.mode='playing';g.notebooks=[];g.enemies=[];activateRoom(g,2);g.boss.noticeTime=0;g.step=()=>{};g.testingInvulnerable=true;
   window.advanceSpreader=n=>{for(let i=0;i<n;i++){g.time+=1/60;stepBoss(g,1/60);}};});
  await place(p,'under');
+ const coverWindup=await p.evaluate(()=>{
+  const g=testGame;g.testingInvulnerable=false;g.player.inv=0;
+  window.advanceCover=n=>{for(let i=0;i<n;i++)Object.getPrototypeOf(g).step.call(g,1/60,{down:true});};
+  for(let i=0;i<360&&!g.enemies.some(e=>e.type==='servant'&&e.state==='windup');i++)advanceCover(1);
+  const e=g.enemies.find(e=>e.type==='servant'&&e.state==='windup');g.updateCamera();
+  return {warned:!!e,low:!!e&&e.y>=g.player.y-6,hp:g.health,under:g.player.forcedCrouch};
+ });assert.deepEqual(coverWindup,{warned:true,low:true,hp:4,under:true});await shot(p,'spreader-servant-under-cover-windup-'+width);
+ await p.keyboard.press('Escape');const coverPause=await p.evaluate(()=>JSON.stringify(testGame));await p.waitForTimeout(80);assert.equal(await p.evaluate(()=>JSON.stringify(testGame)),coverPause);await p.keyboard.press('Escape');
+ const coverHit=await p.evaluate(()=>{const g=testGame;for(let i=0;i<120&&g.health===4;i++)advanceCover(1);g.updateCamera();return {hp:g.health,hit:g.enemies.some(e=>e.type==='servant'&&e.contactHit),phase:g.boss.fight.phase,count:g.enemies.filter(e=>e.type==='servant'&&!e.dead).length};});assert.deepEqual(coverHit,{hp:3,hit:true,phase:'air',count:2});await shot(p,'spreader-servant-under-cover-hit-'+width);
+ await p.evaluate(()=>{testGame.testingInvulnerable=true;testGame.health=4;testGame.player.inv=0;});await place(p,'under');
  await p.evaluate(()=>{for(let i=0;i<60*8&&!(testGame.boss.fight?.mode==='bombing'&&testGame.boss.fight.elapsed>1.4);i++)advanceSpreader(1);testGame.enemies.forEach((e,i)=>Object.assign(e,{spawnTime:0,x:testGame.player.x+(i?120:-110),y:300}));testGame.updateCamera();});
  await p.waitForTimeout(60);
  assert.equal(await mode(p),'air:bombing');
@@ -44,4 +54,4 @@ for(const[width,height]of[[1920,1080],[1366,768],[390,844],[320,568],[844,390]])
  await p.waitForFunction(()=>testGame.mode==='bossDefeat');assert.equal(await p.evaluate(()=>testGame.enemies.some(e=>!e.dead)),false);assert.equal(await p.evaluate(()=>testGame.boss.fight.bundles.length),0);
  if(width===1366){await p.evaluate(()=>{testGame.defeat.time=.8;});await p.waitForTimeout(60);await shot(p,'spreader-defeat-'+width);}
  await p.evaluate(()=>testGame.skipBossDefeat());await p.waitForFunction(()=>document.getElementById('ending-caption').textContent.length>0);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await p.close();
-}assert.deepEqual(errors,[]);await browser.close();console.log('PASS Spreader «Тираж»: 5 viewports; carpet bombing over shelters, collecting, heavy opening, dash windup, dash, dizzy opening, spear aim, piercing shelter and hitting crouched Uma, stuck opening, pause freeze, defeat and story.');})().catch(e=>{console.error(e);process.exit(1);});
+}assert.deepEqual(errors,[]);await browser.close();console.log('PASS Spreader «Тираж»: 5 viewports; servant windup and lunge under cover with real physics, carpet bombing over shelters, collecting, heavy opening, dash windup, dash, dizzy opening, spear aim, piercing shelter and hitting crouched Uma, stuck opening, pause freeze, defeat and story.');})().catch(e=>{console.error(e);process.exit(1);});

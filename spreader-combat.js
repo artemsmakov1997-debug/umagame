@@ -141,7 +141,12 @@ export function damageSpreader(g,amount){
 export function stepServant(g,e,dt,paw){
  if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);return;}if(e.spawnTime>0){e.spawnTime=Math.max(0,e.spawnTime-dt);return;}
  e.inv=Math.max(0,e.inv-dt);e.timer-=dt;e.walkTime+=dt;const p=g.player,r=rooms[e.room],dx=p.x+p.w/2-e.x-e.w/2,dy=p.y+12-e.y;
- if(e.state==='patrol'){const covered=!!p.forcedCrouch;e.dir=dx<0?-1:1;e.x+=clamp(dx+e.flank*(covered?90:65),-80,80)*dt;e.y+=clamp((covered?COVER_HOVER:p.y-38)-e.y,-65,65)*dt;if(!covered&&Math.abs(dx)<120&&Math.abs(dy)<75&&e.timer<=0){e.state='windup';e.timer=.5;e.aimX=p.x;e.aimY=p.y;}}
+ if(e.state==='patrol'){
+  const huntingCover=!!p.forcedCrouch&&spreaderPhase(g.boss)==='air',covered=!!p.forcedCrouch&&!huntingCover;
+  const hoverY=huntingCover?Math.min(p.y,FLOOR_Y-e.h-3):covered?COVER_HOVER:p.y-38;
+  e.dir=dx<0?-1:1;e.x+=clamp(dx+e.flank*(covered?90:65),-80,80)*dt;e.y+=clamp(hoverY-e.y,-65,65)*dt;
+  if(!covered&&(!huntingCover||e.y>=p.y-6)&&Math.abs(dx)<(huntingCover?80:120)&&Math.abs(dy)<75&&e.timer<=0){e.state='windup';e.timer=.5;e.aimX=p.x;e.aimY=p.y;}
+ }
  else if(e.state==='windup'&&e.timer<=0){const len=Math.hypot(e.aimX-e.x,e.aimY-e.y)||1;e.vx=(e.aimX-e.x)/len*225;e.vy=(e.aimY-e.y)/len*225;e.state='lunge';e.timer=.3;e.contactHit=false;}
  else if(e.state==='lunge'){e.x+=e.vx*dt;e.y+=e.vy*dt;if(e.timer<=0){e.state='recover';e.timer=SERVANT_RECOVER;}}
  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.7;}
