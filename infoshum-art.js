@@ -272,9 +272,21 @@ export function drawInfoshumMini(c,a,cx,cy,height,time){const p=AT.free2['i'+Mat
 const FS=1.4;
 // Eye landmarks in the existing animation cells keep the wounded drawing on the same body pivot.
 const FREE_EYES={i0:[54.4,57.5],i1:[60.2,55.8],i2:[58.3,55.2],i3:[62,56.1],i4:[56.8,55.2],r0:[73.1,60.5],r1:[73.4,60.2],r2:[74,58.3],s0:[70.2,49.9],s1:[67.4,56.4],s2:[59.7,51.7],w0:[83.9,51.4],w1:[116.3,51.9],w2:[124,47.6],m0:[135.1,47.8],m1:[136.6,39],c0:[79.1,59.2],c1:[81.9,63],c2:[89.1,51.9],d0:[77.8,71.3],d1:[75.4,68.2],h0:[64.4,57.2],h1:[59.3,53.9]};
+// Keep the original hand-drawn stunned pose: spiral eyes, stars and rubble. Only the severed limb is clipped out.
+const STUN_LOST_LIMB={d0:[[91,59],[99,40],[141,38],[141,61],[127,63],[115,60],[103,61],[98,65]],d1:[[90,59],[98,44],[138,41],[138,66],[124,67],[114,62],[102,62],[96,65]]};
+export function drawInfoshumStun(c,a,name,x,y,w,h,{flip=false,damaged=false}={}){
+ const p=AT.free2[name],cut=STUN_LOST_LIMB[name],img=a.infoshumFree2;if(!p||!cut||!img)return false;
+ c.save();
+ if(damaged){
+  const kx=w/p.r[2],ky=h/p.r[3];c.beginPath();c.rect(x-12,y-12,w+24,h+24);
+  cut.forEach(([px,py],i)=>{const xx=x+(flip?p.r[2]-px:px)*kx,yy=y+py*ky;if(i)c.lineTo(xx,yy);else c.moveTo(xx,yy);});c.closePath();c.clip('evenodd');
+ }
+ piece(c,img,p,x,y,w,h,{flip});c.restore();return true;
+}
 function free2(c,a,name,cx,cy,{flip=false,ay=.5,damaged=false,time=0}={}){
  const p=AT.free2[name],img=a.infoshumFree2;if(!p||!img)return;
  const [cw,ch]=p.cell,[ox,oy]=p.o,k=FS,x0=cx-cw*k/2,y0=cy-ch*k*ay,w=p.r[2]*k,h=p.r[3]*k,px=flip?x0+(cw-ox)*k-w:x0+ox*k;
+ if(STUN_LOST_LIMB[name]){drawInfoshumStun(c,a,name,px,y0+oy*k,w,h,{flip,damaged});return;}
  if(damaged&&a.infoshumFree&&FREE_EYES[name]){
   // The original t2 drawing is missing the upper-right tentacle torn off by the first paw hit.
   // Keep that silhouette in every following action, including the ghost copies. Animate it around its eyes.
@@ -282,8 +294,6 @@ function free2(c,a,name,cx,cy,{flip=false,ay=.5,damaged=false,time=0}={}){
   const grounded=ay===1,breathe=Math.sin(time*6)*.018,tilt=grounded?Math.sin(time*8)*.015:name[0]==='m'?-.35:name[0]==='w'?-.18:Math.sin(time*5)*.035;
   c.save();c.translate(fx,fy);if(flip)c.scale(-1,1);c.rotate(tilt);c.scale(1+breathe,(grounded?.46:1)-breathe);
   piece(c,a.infoshumFree,q,-80.6*dk,-70.3*dk,q.r[2]*dk,q.r[3]*dk);c.restore();
-  // Reuse only the stars from the dizzy artwork, leaving its intact body out of the damaged pose.
-  if(name[0]==='d'){const stars={r:[p.r[0],p.r[1],p.r[2],22]};piece(c,img,stars,px,y0+oy*k,w,22*k,{flip});}
   return;
  }
  piece(c,img,p,px,y0+oy*k,w,h,{flip});
