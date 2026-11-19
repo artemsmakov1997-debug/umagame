@@ -96,9 +96,23 @@ test('spear phase: aim at Uma, dive, stick in the surface with a shockwave, thre
  assert.equal(f.shocks.length,2);assert.ok(Math.abs(h.boss.y+h.boss.h-FLOOR_Y)<1);
 });
 
-test('a table catches the spear: he sticks in the tabletop',()=>{
- const g=ready();g.boss.hp=2;const t=table(g);Object.assign(g.player,{x:t.x+80,y:t.y-48,h:48,grounded:true,supportId:t.id,inv:0});
- until(g,'spear:stuck');assert.ok(Math.abs(g.boss.y+g.boss.h-t.y)<1);
+test('the spear crosses both shelters and side ledges and sticks only in the floor',()=>{
+ for(const index of [1,2,3,4]){
+  const g=ready();g.testingInvulnerable=false;g.boss.hp=2;const t=table(g,index);
+  Object.assign(g.player,{x:t.x+t.w/2-17,y:t.y-48,h:48,grounded:true,supportId:t.id,inv:0});
+  until(g,'spear:spear');assert.equal(g.boss.fight.aimY,FLOOR_Y);g.health=4;g.player.inv=0;
+  const hp=g.health;until(g,'spear:stuck');assert.equal(g.boss.y+g.boss.h,FLOOR_Y);assert.equal(hp-g.health,1,'the descending spear hits Uma on platform '+index);
+  assert.ok(spreaderExposed(g.boss));assert.equal(g.platforms.find(s=>s.id===t.id).y,t.y);
+ }
+});
+test('hiding under either table cannot stop the spear; a dash or leaving the marked column still evades it',()=>{
+ for(const index of [1,2])for(const evade of ['none','dash','move']){
+  const g=ready();g.testingInvulnerable=false;g.boss.hp=2;const t=table(g,index);floorAt(g,t.x+t.w/2-17,26);g.player.forcedCrouch=true;
+  until(g,'spear:spear');assert.equal(g.boss.fight.aimY,FLOOR_Y);
+  if(evade==='dash')g.player.dash=.5;if(evade==='move')g.player.x+=120;
+  const hp=g.health;until(g,'spear:stuck');assert.equal(g.boss.y+g.boss.h,FLOOR_Y);assert.equal(hp-g.health,evade==='none'?1:0,evade+' under table '+index);
+  assert.equal(g.boss.fight.dives,1);assert.equal(g.boss.fight.shocks.length,2);
+ }
 });
 
 test('one paw hit per opening, none in flight or during the dash; three phases of two hits',()=>{

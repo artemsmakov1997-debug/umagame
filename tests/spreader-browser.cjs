@@ -29,8 +29,19 @@ for(const[width,height]of[[1920,1080],[1366,768],[390,844],[320,568],[844,390]])
  await p.evaluate(()=>{testGame.boss.hp=2;});await place(p,432);
  assert.equal(await until(p,'spear:aim',30),'spear:aim');await p.waitForTimeout(40);await shot(p,'spreader-spear-aim-'+width);
  assert.equal(await until(p,'spear:stuck',8),'spear:stuck');await p.waitForTimeout(40);await shot(p,'spreader-stuck-'+width);
+ // Phase 3 must pierce a real tabletop even when Uma is crouching underneath it.
+ const pierce=await p.evaluate(()=>{
+  const g=testGame,b=g.boss,f=b.fight,t=g.platforms.find(s=>s.id==='2:1');g.testingInvulnerable=false;g.health=4;g.enemies=[];
+  Object.assign(g.player,{x:t.x+t.w/2-17,y:416-26,h:26,sneaking:true,forcedCrouch:true,grounded:true,supportId:'2:0',dir:1,dash:0,inv:0});
+  Object.assign(f,{mode:'aim',timer:.9,elapsed:0,from:null,bundles:[],streams:[],shocks:[],hitThisWindow:false});b.x=g.player.x+17-b.w/2;b.y=86;
+  for(let i=0;i<120&&f.mode!=='spear';i++)advanceSpreader(1);
+  for(let i=0;i<60&&b.y+b.h<=t.y+5;i++)advanceSpreader(1);
+  g.updateCamera();return {mode:f.mode,aimY:f.aimY,tip:b.y+b.h,tableY:t.y};
+ });assert.equal(pierce.mode,'spear');assert.equal(pierce.aimY,416);assert.ok(pierce.tip>pierce.tableY);await shot(p,'spreader-spear-through-cover-'+width);
+ const impact=await p.evaluate(()=>{const g=testGame,b=g.boss;for(let i=0;i<60&&b.fight.mode!=='stuck';i++)advanceSpreader(1);return {mode:b.fight.mode,feet:b.y+b.h,hp:g.health};});assert.deepEqual(impact,{mode:'stuck',feet:416,hp:3});await shot(p,'spreader-spear-under-cover-'+width);
+ await p.evaluate(()=>{testGame.testingInvulnerable=true;});
  await p.evaluate(async()=>{const{damageBoss}=await import('./boss.js?v=0.21.5');testGame.storyEnabled=true;for(let i=0;i<9&&testGame.boss.hp>0;i++){testGame.boss.fight.hitThisWindow=false;damageBoss(testGame,1);}});
  await p.waitForFunction(()=>testGame.mode==='bossDefeat');assert.equal(await p.evaluate(()=>testGame.enemies.some(e=>!e.dead)),false);assert.equal(await p.evaluate(()=>testGame.boss.fight.bundles.length),0);
  if(width===1366){await p.evaluate(()=>{testGame.defeat.time=.8;});await p.waitForTimeout(60);await shot(p,'spreader-defeat-'+width);}
  await p.evaluate(()=>testGame.skipBossDefeat());await p.waitForFunction(()=>document.getElementById('ending-caption').textContent.length>0);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await p.close();
-}assert.deepEqual(errors,[]);await browser.close();console.log('PASS Spreader «Тираж»: 5 viewports; carpet bombing over shelters, collecting, heavy opening, dash windup, dash, dizzy opening, spear aim, stuck opening, pause freeze, defeat and story.');})().catch(e=>{console.error(e);process.exit(1);});
+}assert.deepEqual(errors,[]);await browser.close();console.log('PASS Spreader «Тираж»: 5 viewports; carpet bombing over shelters, collecting, heavy opening, dash windup, dash, dizzy opening, spear aim, piercing shelter and hitting crouched Uma, stuck opening, pause freeze, defeat and story.');})().catch(e=>{console.error(e);process.exit(1);});

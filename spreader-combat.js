@@ -7,7 +7,7 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 //   leaflets stream from the floor up to him. Overloaded, he sinks low beside Uma — the opening.
 // 2 GROUND «Рывок»: rolled into a tube he dashes at Uma and stops just past her, crashes and lies
 //   flat and dizzy — the opening is always close to Uma.
-// 3 SPEAR «Срочный выпуск»: he dives as a tube-spear at a marked spot and sticks in the surface.
+// 3 SPEAR «Срочный выпуск»: he dives as a tube-spear through cover at a marked spot and sticks in the arena floor.
 // Servants (small paper rays) keep pestering throughout.
 export const SPREADER_HP=6,PHASE_HP=2;
 export const FLOOR_Y=416,FLY_Y=86,EDGE=18;
@@ -113,10 +113,13 @@ export function stepSpreader(g,dt){
   case 'stunned':{if(f.timer<=0){if(spreaderPhase(b)!=='ground'){setMode(b,'takeoff',.7);}else if(f.dashes<DASHES)beginWindup(g);else setMode(b,'takeoff',.7);}return;}
   case 'takeoff':{glide(b,{x:b.x,y:FLY_Y},300,.7);if(f.timer<=0){const phase=spreaderPhase(b);if(phase!==f.phase)goNext(g);else{f.passes=1;f.side=px<r.x+r.width/2?1:-1;setMode(b,'enter',.6);}}return;}
   case 'ascend':{glide(b,{x:b.x,y:FLY_Y},300,.7);if(f.timer<=0)setMode(b,'aim',AIM);return;}
-  case 'aim':{const tx=clamp(px-b.w/2,r.x+EDGE,r.end-EDGE-b.w);if(f.timer>AIM_LOCK)b.x+=(tx-b.x)*Math.min(1,dt*6);b.y+=(FLY_Y-b.y)*Math.min(1,dt*6);f.aimX=b.x+b.w/2;f.aimY=surfaceAt(g,f.aimX);
-   if(f.elapsed<=dt)g.emit('bossWarning',{boss:b.id,ability:'spear',x:f.aimX,y:f.aimY});if(f.timer<=0)setMode(b,'spear',2);return;}
-  case 'spear':{b.y+=SPEAR_SPEED*dt;b.x=f.aimX-b.w/2;if(b.y+b.h>=f.aimY){b.y=f.aimY-b.h;f.dives++;
-    if(p.dash===0&&Math.abs(px-f.aimX)<44&&Math.abs(p.y+p.h-f.aimY)<70){g.hurt(false,f.aimX);}
+  case 'aim':{const tx=clamp(px-b.w/2,r.x+EDGE,r.end-EDGE-b.w);if(f.timer>AIM_LOCK)b.x+=(tx-b.x)*Math.min(1,dt*6);b.y+=(FLY_Y-b.y)*Math.min(1,dt*6);f.aimX=b.x+b.w/2;f.aimY=FLOOR_Y;
+   if(f.elapsed<=dt)g.emit('bossWarning',{boss:b.id,ability:'spear',x:f.aimX,y:f.aimY});if(f.timer<=0){f.spearHit=false;setMode(b,'spear',2);}return;}
+  case 'spear':{const tip=b.y+b.h;b.y+=SPEAR_SPEED*dt;b.x=f.aimX-b.w/2;
+   // Sweep the descending tip through tables and ledges; only the arena floor stops it.
+   if(!f.spearHit&&p.dash===0&&Math.abs(px-f.aimX)<44&&p.y+p.h>=tip&&p.y<=Math.min(b.y+b.h,f.aimY)){f.spearHit=true;g.hurt(false,f.aimX);}
+   if(b.y+b.h>=f.aimY){b.y=f.aimY-b.h;f.dives++;
+    if(!f.spearHit&&p.dash===0&&Math.abs(px-f.aimX)<44&&Math.abs(p.y+p.h-f.aimY)<70){f.spearHit=true;g.hurt(false,f.aimX);}
     for(const dir of[-1,1])f.shocks.push({x:f.aimX+dir*30,y:f.aimY,vx:dir*230,t:0});g.emit('spreaderImpact',{x:f.aimX,y:f.aimY});setMode(b,'stuck',STUCK);}return;}
   case 'stuck':{if(f.timer<=0)setMode(b,'pull',.45);return;}
   case 'pull':{glide(b,{x:b.x,y:FLY_Y},520,.45);if(f.timer<=0){if(spreaderPhase(b)!=='spear')goNext(g);else if(f.dives<DIVES)setMode(b,'aim',AIM);else{f.passes=1;f.side=px<r.x+r.width/2?1:-1;setMode(b,'enter',.6);}}return;}
