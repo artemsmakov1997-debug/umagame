@@ -270,12 +270,29 @@ export function drawInfoshumMini(c,a,cx,cy,height,time){const p=AT.free2['i'+Mat
 // the crash ×3, dizzy ×2, hurt ×2, a tentacle torn off ×2, the burst ×3. Each piece keeps its place in its grid cell.
 // assets/infoshum-free.png: the crack in the ground, a tentacle bursting out, the headline shards.
 const FS=1.4;
-function free2(c,a,name,cx,cy,{flip=false,ay=.5}={}){const p=AT.free2[name],img=a.infoshumFree2;if(!p||!img)return;const [cw,ch]=p.cell,[ox,oy]=p.o,k=FS,x0=cx-cw*k/2,y0=cy-ch*k*ay,w=p.r[2]*k,h=p.r[3]*k,px=flip?x0+(cw-ox)*k-w:x0+ox*k;piece(c,img,p,px,y0+oy*k,w,h,{flip});}
+// Eye landmarks in the existing animation cells keep the wounded drawing on the same body pivot.
+const FREE_EYES={i0:[54.4,57.5],i1:[60.2,55.8],i2:[58.3,55.2],i3:[62,56.1],i4:[56.8,55.2],r0:[73.1,60.5],r1:[73.4,60.2],r2:[74,58.3],s0:[70.2,49.9],s1:[67.4,56.4],s2:[59.7,51.7],w0:[83.9,51.4],w1:[116.3,51.9],w2:[124,47.6],m0:[135.1,47.8],m1:[136.6,39],c0:[79.1,59.2],c1:[81.9,63],c2:[89.1,51.9],d0:[77.8,71.3],d1:[75.4,68.2],h0:[64.4,57.2],h1:[59.3,53.9]};
+function free2(c,a,name,cx,cy,{flip=false,ay=.5,damaged=false,time=0}={}){
+ const p=AT.free2[name],img=a.infoshumFree2;if(!p||!img)return;
+ const [cw,ch]=p.cell,[ox,oy]=p.o,k=FS,x0=cx-cw*k/2,y0=cy-ch*k*ay,w=p.r[2]*k,h=p.r[3]*k,px=flip?x0+(cw-ox)*k-w:x0+ox*k;
+ if(damaged&&a.infoshumFree&&FREE_EYES[name]){
+  // The original t2 drawing is missing the upper-right tentacle torn off by the first paw hit.
+  // Keep that silhouette in every following action, including the ghost copies. Animate it around its eyes.
+  const q=AT.free.t2,[ex,ey]=FREE_EYES[name],fx=x0+(flip?cw-ox-ex:ox+ex)*k,fy=y0+(oy+ey)*k,dk=FS*.88;
+  const grounded=ay===1,breathe=Math.sin(time*6)*.018,tilt=grounded?Math.sin(time*8)*.015:name[0]==='m'?-.35:name[0]==='w'?-.18:Math.sin(time*5)*.035;
+  c.save();c.translate(fx,fy);if(flip)c.scale(-1,1);c.rotate(tilt);c.scale(1+breathe,(grounded?.46:1)-breathe);
+  piece(c,a.infoshumFree,q,-80.6*dk,-70.3*dk,q.r[2]*dk,q.r[3]*dk);c.restore();
+  // Reuse only the stars from the dizzy artwork, leaving its intact body out of the damaged pose.
+  if(name[0]==='d'){const stars={r:[p.r[0],p.r[1],p.r[2],22]};piece(c,img,stars,px,y0+oy*k,w,22*k,{flip});}
+  return;
+ }
+ piece(c,img,p,px,y0+oy*k,w,h,{flip});
+}
 function freePiece(c,a,name,cx,cy,{flip=false,alpha=1,ay=.5,k=1}={}){const p=AT.free[name],img=a.infoshumFree;if(!p||!img)return;const w=p.r[2]*k,h=p.r[3]*k;piece(c,img,p,cx-w/2,cy-h*ay,w,h,{flip,alpha});}
 const yur=(a,i)=>[a.infoshumYuri,AT.yuri['y'+i]];
 function drawCasing(c,a,name,x,y,w,pic){const cs=AT.casings[name],img=a.infoshumCasings;if(!cs||!img)return;const k=w/cs.r[2],h=cs.r[3]*k,s=cs.s;if(s&&pic?.[0])piece(c,pic[0],pic[1],x+s[0]*k-1,y+s[1]*k-1,s[2]*k+2,s[3]*k+2);piece(c,img,cs,x,y,w,h);}
 function amberPath(c,x0,y0,x1,y1,time){c.save();c.strokeStyle='#ffc45e';c.shadowColor='#ffb347';c.shadowBlur=10;c.lineWidth=3;c.globalAlpha=.55+.25*Math.sin(time*8);c.setLineDash?.([10,8]);c.lineDashOffset=-time*60;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.restore();}
-// For the last blow Yuri flies in on a little TV (assets/infoshum-yuri-rope.png), lassoes Infoshum with a cable and
+// Yuri flies in on a little TV (assets/infoshum-yuri-rope.png), lassoes Infoshum with a cable and
 // pulls with all his strength; when the paw lands he gives a thumbs-up and climbs back into his screen.
 const YR={"y0":{"r":[0,0,151,158],"b":[96.0,147.5]},"y1":{"r":[153,0,168,160],"b":[85.0,149.5]},"y2":{"r":[323,0,183,176],"b":[80.0,163.5]},"y3":{"r":[508,0,188,174],"b":[96.5,165.5],"rope":[187.0,56.0]},"y4":{"r":[698,0,173,182],"b":[94.5,171.5],"rope":[172.5,66.0]},"y5":{"r":[873,0,169,180],"b":[92.8,168.0],"rope":[168.5,88.5]},"y6":{"r":[0,184,158,174],"b":[99.0,160.5]},"y7":{"r":[160,184,164,168],"b":[108.0,151.6]}},YK=.8;
 function yuriCheer(c,a,cx,cy,t){const img=a.infoshumYuriRope;if(!img)return;const p=YR['y'+(t<1.4?6:7)],w=p.r[2]*YK,h=p.r[3]*YK,x=cx-230,y=cy-150+Math.sin(t*3)*4-(t>2.2?(t-2.2)*60:0);c.save();c.globalAlpha=t>2.2?Math.max(0,1-(t-2.2)/.8):Math.min(1,t/.2);c.drawImage(img,p.r[0],p.r[1],p.r[2],p.r[3],Math.round(x-w/2),Math.round(y-h/2),Math.round(w),Math.round(h));c.restore();}
@@ -292,21 +309,21 @@ function drawYuriRope(c,a,g,f,time){
 }
 // «Двойники»: the split — two pale copies slide out of him to either side, leaving afterimages, with a flash; then
 // each attacker's line blinks while it aims and it dives along it; the copies vanish after their dive.
-function ghostSprite(c,a,x,y,alpha,time,ang=null,frame='w2'){c.save();c.globalAlpha=alpha;c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';c.translate(x,y);if(ang!==null){let r=ang;if(Math.cos(ang)<0){c.scale(-1,1);r=Math.PI-ang;}c.rotate(r);}free2(c,a,frame,0,0);c.restore();}
+function ghostSprite(c,a,x,y,alpha,time,ang=null,frame='w2',damaged=false){c.save();c.globalAlpha=alpha;c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';c.translate(x,y);if(ang!==null){let r=ang;if(Math.cos(ang)<0){c.scale(-1,1);r=Math.PI-ang;}c.rotate(r);}free2(c,a,frame,0,0,{damaged,time});c.restore();}
 function dashArc(c,gh,time){c.save();c.globalAlpha=.4+.4*Math.abs(Math.sin(time*12));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*90;c.beginPath();for(let j=0;j<=24;j++){const q=ghostPos(gh,j/24);if(j)c.lineTo(q.x,q.y);else c.moveTo(q.x,q.y);}c.stroke();c.restore();}
 function dashLine(c,x0,y0,x1,y1,time){c.save();c.globalAlpha=.4+.4*Math.abs(Math.sin(time*12));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*90;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.restore();}
 function drawGhosts(c,a,f,time){
  if(f.mode==='ghostPrep'){const split=1-Math.max(0,Math.min(1,f.timer/FREE.ghostSplit));if(split<=0)return;const e=split*split*(3-2*split);
   if(split<.25){c.save();c.globalAlpha=(1-split/.25)*.8;c.strokeStyle='#bff6ff';c.lineWidth=3;c.beginPath();c.ellipse(f.x,f.y,30+split*260,20+split*120,0,0,Math.PI*2);c.stroke();c.restore();}
-  for(const gh of f.ghosts){const x=f.x+(gh.x0-f.x)*e,y=f.y+(gh.y0-f.y)*e;for(let i=3;i>=1;i--){const q=Math.max(0,e-i*.12);ghostSprite(c,a,f.x+(gh.x0-f.x)*q,f.y+(gh.y0-f.y)*q,.12*(4-i)*split,time);}ghostSprite(c,a,x,y,.25+.4*split,time);}
+  for(const gh of f.ghosts){const x=f.x+(gh.x0-f.x)*e,y=f.y+(gh.y0-f.y)*e;for(let i=3;i>=1;i--){const q=Math.max(0,e-i*.12);ghostSprite(c,a,f.x+(gh.x0-f.x)*q,f.y+(gh.y0-f.y)*q,.12*(4-i)*split,time,null,'w2',f.hits>0);}ghostSprite(c,a,x,y,.25+.4*split,time,null,'w2',f.hits>0);}
   return;}
  for(const [i,gh] of f.ghosts.entries()){if(gh.state==='gone')continue;
-  if(gh.state==='wait')ghostSprite(c,a,gh.x0,gh.y0+Math.sin(time*4+i)*5,.55,time);
-  else if(gh.state==='aim'){dashArc(c,gh,time);ghostSprite(c,a,gh.x0,gh.y0+Math.sin(time*4+i)*5*Math.max(0,f.timer/FREE.ghostAim),.7,time);}
+  if(gh.state==='wait')ghostSprite(c,a,gh.x0,gh.y0+Math.sin(time*4+i)*5,.55,time,null,'w2',f.hits>0);
+  else if(gh.state==='aim'){dashArc(c,gh,time);ghostSprite(c,a,gh.x0,gh.y0+Math.sin(time*4+i)*5*Math.max(0,f.timer/FREE.ghostAim),.7,time,null,'w2',f.hits>0);}
   else{const fade=gh.k>.85?(1-gh.k)/.15:1,lead=ghostPos(gh,Math.min(1,gh.k+.04)),q=ghostPos(gh,gh.k),ang=Math.atan2(lead.y-q.y,lead.x-q.x);
    // Afterimages along the arc behind the copy.
-   for(let j=4;j>=1;j--){const kk=Math.max(0,gh.k-j*.06),qq=ghostPos(gh,kk);ghostSprite(c,a,qq.x,qq.y,.1*(5-j)*fade,time,ang,'m'+Math.floor(time*14)%2);}
-   ghostSprite(c,a,q.x,q.y,.75*fade,time,ang,'m'+Math.floor(time*14)%2);}}
+   for(let j=4;j>=1;j--){const kk=Math.max(0,gh.k-j*.06),qq=ghostPos(gh,kk);ghostSprite(c,a,qq.x,qq.y,.1*(5-j)*fade,time,ang,'m'+Math.floor(time*14)%2,f.hits>0);}
+   ghostSprite(c,a,q.x,q.y,.75*fade,time,ang,'m'+Math.floor(time*14)%2,f.hits>0);}}
  if(f.seq===2&&f.phase==='aim')dashLine(c,f.x,f.y+30,f.dive.x,f.dive.y1+20,time);
 }
 function drawFree(c,a,g,time){
@@ -316,7 +333,7 @@ function drawFree(c,a,g,time){
  // A swatted shard turns gold on its way back.
  for(const s of f.shards){if(s.back){c.save();c.filter='sepia(1) saturate(3) brightness(1.35)';}freePiece(c,a,'sh'+Math.floor(time*12)%3,s.x,s.y,{k:.42,flip:s.vx<0});if(s.back)c.restore();}
  if(f.mode==='ramPrep'){const x0=Math.min(f.tx,f.ex),x1=Math.max(f.tx,f.ex);drawLineWarning(c,a,x0,f.ty,x1-x0,time);}
- // For the last blow Yuri holds him from a surviving screen.
+ // Yuri holds him at the impact point.
  if((f.mode==='dizzy'||f.mode==='pulled')&&f.yuri)drawYuriRope(c,a,g,f,time);
  if(f.ghosts&&(f.mode==='ghostPrep'||f.mode==='ghostDash'))drawGhosts(c,a,f,time);
  const ground={ay:1,y:f.gy+10};let name='i'+[0,1,2,3,4][Math.floor(time*6)%5],flip=false,place=null;
@@ -327,7 +344,7 @@ function drawFree(c,a,g,time){
  else if(f.mode==='ram'){name='m'+Math.floor(time*14)%2;flip=f.dir<0;}
  else if(f.mode==='ghostPrep')name='r'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/ghostPrep())*3));
  else if(f.mode==='ghostDash')name=f.seq===2&&f.phase==='dive'?'dive':'r'+(1+Math.floor(time*8)%2);
- else if(f.mode==='pulled')name='d0';
+ else if(f.mode==='pulled'){name='d0';place=ground;}
  else if(f.mode==='crash'){name='c'+Math.min(2,Math.floor((FREE.crash-f.timer)/FREE.crash*3));place=ground;}
  else if(f.mode==='dizzy'){name='d'+Math.floor(time*4)%2;place=ground;}
  else if(f.mode==='hit'){name='t'+Math.min(1,Math.floor((FREE.hit-f.timer)/FREE.hit*2));}
@@ -336,8 +353,8 @@ function drawFree(c,a,g,time){
  // sprite, and smooth scaling (the sheet is drawn at 1.4×, which nearest-neighbour turns into uneven blocks).
  const cy=place?place.y-60:f.y;c.save();const halo=c.createRadialGradient(f.x,cy,10,f.x,cy,120);halo.addColorStop(0,'rgba(4,2,16,.62)');halo.addColorStop(1,'rgba(4,2,16,0)');c.fillStyle=halo;c.fillRect(f.x-120,cy-120,240,240);c.restore();
  c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.filter='drop-shadow(0 0 1px #090316) drop-shadow(0 0 1px #090316) drop-shadow(0 0 6px rgba(110,235,255,.8))';
- if(name==='dive'){c.translate(f.x,f.y);const d=f.dive,ang=d?Math.atan2(d.y1-d.y0,d.x-d.x0):Math.PI/2;if(Math.cos(ang)<-.01){c.scale(-1,1);c.rotate(Math.PI-ang);}else c.rotate(ang);free2(c,a,'m'+Math.floor(time*14)%2,0,0);}
- else free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5});c.restore();
+ if(name==='dive'){c.translate(f.x,f.y);const d=f.dive,ang=d?Math.atan2(d.y1-d.y0,d.x-d.x0):Math.PI/2;if(Math.cos(ang)<-.01){c.scale(-1,1);c.rotate(Math.PI-ang);}else c.rotate(ang);free2(c,a,'m'+Math.floor(time*14)%2,0,0,{damaged:f.hits>0,time});}
+ else free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5,damaged:f.hits>0&&f.mode!=='hit',time});c.restore();
  flash(c,g,Math.min(.4,f.flash*1.4));
 }
 // The storm (assets/infoshum-storm.jpg, infoshum-storm-platforms.png: slab, cracked slab, slab with a terminal).
