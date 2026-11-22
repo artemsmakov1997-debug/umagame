@@ -1,3 +1,4 @@
+import {drawWoundedAttack,woundedAttackFrame,woundedDashFrame} from './infoshum-wounded-art.js?v=0.21.6';
 import {drawColossusAttacks} from './infoshum-attacks-art.js?v=0.21.6';
 import {drawAttackFx} from './boss-attack-fx.js?v=0.21.6';
 import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.6';
@@ -283,7 +284,8 @@ export function drawInfoshumStun(c,a,name,x,y,w,h,{flip=false,damaged=false}={})
  }
  piece(c,img,p,x,y,w,h,{flip});c.restore();return true;
 }
-function free2(c,a,name,cx,cy,{flip=false,ay=.5,damaged=false,time=0}={}){
+function free2(c,a,name,cx,cy,{flip=false,ay=.5,damaged=false,time=0,woundedFrame=null,muzzle=null}={}){
+ if(damaged&&woundedFrame!==null&&drawWoundedAttack(c,a,woundedFrame,muzzle?muzzle.x:cx,muzzle?muzzle.y:cy,{flip,anchor:muzzle?'muzzle':'eyes'}))return;
  const p=AT.free2[name],img=a.infoshumFree2;if(!p||!img)return;
  const [cw,ch]=p.cell,[ox,oy]=p.o,k=FS,x0=cx-cw*k/2,y0=cy-ch*k*ay,w=p.r[2]*k,h=p.r[3]*k,px=flip?x0+(cw-ox)*k-w:x0+ox*k;
  if(STUN_LOST_LIMB[name]){drawInfoshumStun(c,a,name,px,y0+oy*k,w,h,{flip,damaged});return;}
@@ -319,7 +321,7 @@ function drawYuriRope(c,a,g,f,time){
 }
 // «Двойники»: the split — two pale copies slide out of him to either side, leaving afterimages, with a flash; then
 // each attacker's line blinks while it aims and it dives along it; the copies vanish after their dive.
-function ghostSprite(c,a,x,y,alpha,time,ang=null,frame='w2',damaged=false){c.save();c.globalAlpha=alpha;c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';c.translate(x,y);if(ang!==null){let r=ang;if(Math.cos(ang)<0){c.scale(-1,1);r=Math.PI-ang;}c.rotate(r);}free2(c,a,frame,0,0,{damaged,time});c.restore();}
+function ghostSprite(c,a,x,y,alpha,time,ang=null,frame='w2',damaged=false){c.save();c.globalAlpha=alpha;c.filter='brightness(1.7) saturate(.35) drop-shadow(0 0 6px rgba(150,240,255,.9))';c.translate(x,y);if(ang!==null){let r=ang;if(Math.cos(ang)<0){c.scale(-1,1);r=Math.PI-ang;}c.rotate(r);}free2(c,a,frame,0,0,{damaged,time,woundedFrame:damaged&&frame.startsWith('m')?woundedDashFrame(time):null});c.restore();}
 function dashArc(c,gh,time){c.save();c.globalAlpha=.4+.4*Math.abs(Math.sin(time*12));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*90;c.beginPath();for(let j=0;j<=24;j++){const q=ghostPos(gh,j/24);if(j)c.lineTo(q.x,q.y);else c.moveTo(q.x,q.y);}c.stroke();c.restore();}
 function dashLine(c,x0,y0,x1,y1,time){c.save();c.globalAlpha=.4+.4*Math.abs(Math.sin(time*12));c.strokeStyle='#ff6ad8';c.lineWidth=3;c.setLineDash?.([10,7]);c.lineDashOffset=-time*90;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.restore();}
 function drawGhosts(c,a,f,time){
@@ -349,7 +351,7 @@ function drawFree(c,a,g,time){
  const ground={ay:1,y:f.gy+10};let name='i'+[0,1,2,3,4][Math.floor(time*6)%5],flip=false,place=null;
  if(f.mode==='enter')name='r'+Math.min(2,Math.floor((FREE.enter-f.timer)/FREE.enter*3));
  else if(f.mode==='tentacle')name='s'+Math.floor(time*8)%3;
- else if(f.mode==='volley')name=f.timer>0?'i0':'r'+(1+Math.floor(time*8)%2);
+ else if(f.mode==='volley'){name=f.timer>0?'i0':'r'+(1+Math.floor(time*8)%2);flip=f.hits>0&&f.dir<0;}
  else if(f.mode==='ramPrep'){name='w'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/FREE.ramPrep)*3));flip=f.dir<0;}
  else if(f.mode==='ram'){name='m'+Math.floor(time*14)%2;flip=f.dir<0;}
  else if(f.mode==='ghostPrep')name='r'+Math.min(2,Math.floor((1-Math.max(0,f.timer)/ghostPrep())*3));
@@ -361,10 +363,11 @@ function drawFree(c,a,g,time){
  else if(b.hurtTime>0)name='h'+Math.floor(time*10)%2;
  // He has to stand out of the purple storm: a dark halo behind him, a dark outline and a cyan glow around the
  // sprite, and smooth scaling (the sheet is drawn at 1.4×, which nearest-neighbour turns into uneven blocks).
+ const woundedFrame=woundedAttackFrame(f,time),muzzle=woundedFrame>=4?{x:f.x+f.dir*40,y:f.y}:null;
  const cy=place?place.y-60:f.y;c.save();const halo=c.createRadialGradient(f.x,cy,10,f.x,cy,120);halo.addColorStop(0,'rgba(4,2,16,.62)');halo.addColorStop(1,'rgba(4,2,16,0)');c.fillStyle=halo;c.fillRect(f.x-120,cy-120,240,240);c.restore();
  c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.filter='drop-shadow(0 0 1px #090316) drop-shadow(0 0 1px #090316) drop-shadow(0 0 6px rgba(110,235,255,.8))';
- if(name==='dive'){c.translate(f.x,f.y);const d=f.dive,ang=d?Math.atan2(d.y1-d.y0,d.x-d.x0):Math.PI/2;if(Math.cos(ang)<-.01){c.scale(-1,1);c.rotate(Math.PI-ang);}else c.rotate(ang);free2(c,a,'m'+Math.floor(time*14)%2,0,0,{damaged:f.hits>0,time});}
- else free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5,damaged:f.hits>0&&f.mode!=='hit',time});c.restore();
+ if(name==='dive'){c.translate(f.x,f.y);const d=f.dive,ang=d?Math.atan2(d.y1-d.y0,d.x-d.x0):Math.PI/2;if(Math.cos(ang)<-.01){c.scale(-1,1);c.rotate(Math.PI-ang);}else c.rotate(ang);free2(c,a,'m'+Math.floor(time*14)%2,0,0,{damaged:f.hits>0,time,woundedFrame});}
+ else free2(c,a,name,f.x,place?place.y:f.y,{flip,ay:place?1:.5,damaged:f.hits>0&&f.mode!=='hit',time,woundedFrame,muzzle});c.restore();
  flash(c,g,Math.min(.4,f.flash*1.4));
 }
 // The storm (assets/infoshum-storm.jpg, infoshum-storm-platforms.png: slab, cracked slab, slab with a terminal).

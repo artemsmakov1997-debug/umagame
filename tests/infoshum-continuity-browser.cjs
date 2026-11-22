@@ -23,7 +23,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    window.continueFree=n=>{for(let i=0;i<n;i++)Object.getPrototypeOf(g).step.call(g,1/60,{});};
    const s=g.platforms.find(s=>s.id==='8:2');Object.assign(g.player,{x:s.x+160,y:s.y-48,h:48,grounded:true,supportId:s.id,vx:0,vy:0,inv:99});
    window.forceFree=i=>{const f=g.boss.network.free;f.mode='hover';f.timer=0;f.step=i;f.tentacles=[];f.shards=[];g.boss.network.noiseTime=0;continueFree(1);};
-   window.captureFree=()=>{const r=testRenderer,c=r.c,a=r.assets,old=c.drawImage,oldClip=c.clip,calls=[];let cuts=0;c.clip=function(...args){if(args[0]==='evenodd')cuts++;return oldClip.apply(this,args);};c.drawImage=function(img,...args){if(img===a.infoshumFree2||img===a.infoshumFree)calls.push({sheet:img===a.infoshumFree2?'free2':'free',args,masked:cuts>0});return old.call(this,img,...args);};try{g.updateCamera();r.draw(g,0);}finally{c.drawImage=old;c.clip=oldClip;}return calls;};
+   window.captureFree=()=>{const r=testRenderer,c=r.c,a=r.assets,old=c.drawImage,oldClip=c.clip,calls=[];let cuts=0;c.clip=function(...args){if(args[0]==='evenodd')cuts++;return oldClip.apply(this,args);};c.drawImage=function(img,...args){if(img===a.infoshumFree2||img===a.infoshumFree||img===a.infoshumWounded)calls.push({sheet:img===a.infoshumFree2?'free2':img===a.infoshumWounded?'wounded':'free',args,masked:cuts>0});return old.call(this,img,...args);};try{g.updateCamera();r.draw(g,0);}finally{c.drawImage=old;c.clip=oldClip;}return calls;};
    forceFree(2);
   });
   const hold=await p.evaluate(async()=>{
@@ -43,7 +43,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    const out={hp:g.boss.hp,hits:f.hits,mode:f.mode};continueFree(45);return out;
   });assert.deepEqual(hit,{hp:2,hits:1,mode:'hit'});
   const check=async name=>{
-   const calls=await p.evaluate(()=>captureFree());if(name==='held')assert.ok(calls.some(c=>c.sheet==='free2'&&c.args[3]>22&&c.masked),'held uses the original drawn dizzy pose with the lost limb clipped');else assert.ok(calls.some(c=>c.sheet==='free'&&[178,148,161,139].every((v,i)=>v===c.args[i])),name+' uses the original wounded sprite');
+   const calls=await p.evaluate(()=>captureFree());if(name==='held')assert.ok(calls.some(c=>c.sheet==='free2'&&c.args[3]>22&&c.masked),'held uses the original drawn dizzy pose with the lost limb clipped');else if(name==='volley')assert.ok(calls.some(c=>c.sheet==='wounded'&&c.args[1]>=512),'volley uses a drawn shooting frame');else assert.ok(calls.some(c=>c.sheet==='free'&&[178,148,161,139].every((v,i)=>v===c.args[i])),name+' uses the original wounded sprite');
    assert.ok(!calls.some(c=>c.sheet==='free2'&&c.args[3]>22&&!c.masked),name+' cannot show the intact body');await shot(p,'infoshum-injured-'+name+'-'+width);
   };
   await check('hover');await p.evaluate(()=>{forceFree(0);continueFree(30);});await check('tentacle');await p.evaluate(()=>{forceFree(1);continueFree(85);});await check('volley');
