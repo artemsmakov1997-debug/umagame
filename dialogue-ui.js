@@ -1,7 +1,7 @@
-import {drawYuriPortrait,yuriEmotion,yuriEmotions} from './yuri-portrait.js?v=0.21.5';
-import {scenes,dialogueSpeaker} from './story.js?v=0.21.5';
-import {drawUmaPortrait,umaEmotions} from './uma-portrait.js?v=0.21.5';
-import {drawNovelPortraits} from './novel-portraits.js?v=0.21.5';
+import {drawYuriPortrait,yuriEmotion,yuriEmotions} from './yuri-portrait.js?v=0.21.6';
+import {scenes,dialogueSpeaker} from './story.js?v=0.21.6';
+import {drawUmaPortrait,umaEmotions} from './uma-portrait.js?v=0.21.6';
+import {drawNovelPortraits} from './novel-portraits.js?v=0.21.6';
 const $=id=>document.getElementById(id);
 export class DialogueUI{
  constructor(game,assets,clearInput){this.game=game;this.clearInput=clearInput;this.lastKey=null;this.signalClock=0;this.mouthAge=0;this.assets=assets;$('dialogue-next').addEventListener('click',()=>this.advance());$('dialogue-skip').addEventListener('click',()=>this.advance(true));

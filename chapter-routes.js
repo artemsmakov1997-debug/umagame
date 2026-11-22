@@ -1,4 +1,4 @@
-import {rooms,platforms} from './level.js?v=0.21.5';
+import {rooms,platforms} from './level.js?v=0.21.6';
 export const sectionNames={1:['Редакционный зал','Печатный цех','Серверная'],3:['Батуты','Переулки','Ветреные крыши'],5:['Павильон','Прожекторы','Монтажная'],7:['Лента','Изнанка','Разлом','Пересылка']};
 export function hazardZone(room,section){return [260,370];}
 // A location machine runs while its controller is intact.

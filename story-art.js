@@ -1,4 +1,4 @@
-import {chapterStories} from './chapter-story.js?v=0.21.5';
+import {chapterStories} from './chapter-story.js?v=0.21.6';
 // Extra scenes live in assets/story-extra.jpg (two frames side by side) and are referenced as art:'extra:N'.
 export function extraFrame(assets,n){const a=assets.storyExtra,w=a.width/2;return{a,box:[n*w,0,w,a.height]};}
 export function storyFrame(assets,mode,index,interlude){

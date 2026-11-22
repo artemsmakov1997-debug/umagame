@@ -1,10 +1,10 @@
-import {rooms} from './level.js?v=0.21.5';
-import {ROOF_BUILDINGS,FLOCK,WIND,ROOF_CHECKPOINTS} from './roofs-map.js?v=0.21.5';
-import * as roofMap from './roofs-map.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {ROOF_BUILDINGS,FLOCK,WIND,ROOF_CHECKPOINTS} from './roofs-map.js?v=0.21.6';
+import * as roofMap from './roofs-map.js?v=0.21.6';
 export const lanes=roofMap;
 // «Крыши» mechanics: solid building walls, a fall costs one heart and returns Uma to the last safe roof,
 // the awning is a trampoline, wind gusts in the antenna forest and flocks of Сенсации.
-import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
+import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.6';
 export const ROOM=3,AWNING_BOUNCE=-700,BIRD={w:34,h:18};
 const x0=()=>rooms[ROOM].x;
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;

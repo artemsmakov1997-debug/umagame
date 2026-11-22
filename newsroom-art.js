@@ -1,7 +1,7 @@
-import {rooms} from './level.js?v=0.21.5';
-import {rect} from './pixel.js?v=0.21.5';
-import {PRESSES,PRESS_W,PRESS_H,PRESS_REST,PRESS_SLAM,PRESS_HOLD,PRESS_CYCLE,pressState,BELT_TOP,BELT_SPEED,CENSOR} from './newsroom-systems.js?v=0.21.5';
-import {drawCensorSprite} from './censor-art.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {rect} from './pixel.js?v=0.21.6';
+import {PRESSES,PRESS_W,PRESS_H,PRESS_REST,PRESS_SLAM,PRESS_HOLD,PRESS_CYCLE,pressState,BELT_TOP,BELT_SPEED,CENSOR} from './newsroom-systems.js?v=0.21.6';
+import {drawCensorSprite} from './censor-art.js?v=0.21.6';
 // Newsroom conveyor art. Atlases: newsroom-conveyor.png (tile | left drive end | right end, stored at 2×),
 // newsroom-papers.png (newspapers riding the belt, 2×), newsroom-press-frames.png (the press, 4 states), censor-emerge.png.
 const TILE=[0,0,208,89],BAND=13,LEFT=[216,0,316,145],LEFT_TOP=57,RIGHT=[540,0,300,112],RIGHT_TOP=24;

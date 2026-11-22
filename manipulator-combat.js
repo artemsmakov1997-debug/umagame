@@ -1,6 +1,6 @@
-import {rooms} from './level.js?v=0.21.5';
-import {phasePlans} from './boss-phases.js?v=0.21.5';
-import {solidSurfaces} from './terrain.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {phasePlans} from './boss-phases.js?v=0.21.6';
+import {solidSurfaces} from './terrain.js?v=0.21.6';
 // «Монтаж»: the Manipulator films the fight in three phases of two hits (each paw hit deals 3 of 18).
 // 1 «Панорама»: the camera rides a crane that rolls along the dolly track behind the stage (it never hurts) and
 //   pans a slanted beam across the stage in bursts. The beam stops on the first surface it meets, so a platform

@@ -1,5 +1,5 @@
-import {rooms} from './level.js?v=0.21.5';
-import {solidSurfaces} from './terrain.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {solidSurfaces} from './terrain.js?v=0.21.6';
 // Studio monsters of the second redesign.
 // Прожектор follows Uma along the ceiling, fixes its red beam and slows movement inside it.
 // The beam stops at the first platform/flat and never removes collision surfaces.

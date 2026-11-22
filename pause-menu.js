@@ -1,4 +1,4 @@
-import {rooms,chapters} from './level.js?v=0.21.5';
+import {rooms,chapters} from './level.js?v=0.21.6';
 const $=id=>document.getElementById(id);
 // Level select rows: the quiet room, then each chapter's location and its boss arena.
 const BOSS_NAMES={spreader:'Распростра\u00adнитель',agitator:'Агитатор',manipulator:'Манипулятор',infoshum:'Инфошум'};

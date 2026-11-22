@@ -1,5 +1,5 @@
-import {chapters,rooms} from './level.js?v=0.21.5';
-import {rect} from './pixel.js?v=0.21.5';
+import {chapters,rooms} from './level.js?v=0.21.6';
+import {rect} from './pixel.js?v=0.21.6';
 export function routeInfo(load){
  const from=rooms[load.from],to=rooms[load.to];
  if(!from||!to||from.chapter===to.chapter||!from.chapter)return null;

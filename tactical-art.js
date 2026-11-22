@@ -1,7 +1,7 @@
-import {drawPixelBarrier} from './shield-art.js?v=0.21.5';
-import {drawGlitchPatch} from './dimension-monsters-art.js?v=0.21.5';
-import {rect,text} from './pixel.js?v=0.21.5';
-import {scanArea} from './tactical-enemies.js?v=0.21.5';
+import {drawPixelBarrier} from './shield-art.js?v=0.21.6';
+import {drawGlitchPatch} from './dimension-monsters-art.js?v=0.21.6';
+import {rect,text} from './pixel.js?v=0.21.6';
+import {scanArea} from './tactical-enemies.js?v=0.21.6';
 export function drawTacticalTerrain(c,g,time,a={}){
  for(const ink of g.inks){
   if(ink.room!==g.room)continue;const s=g.platforms.find(s=>s.id===ink.platformId);if(!s)continue;

@@ -1,6 +1,6 @@
-import {rooms} from './level.js?v=0.21.5';
-import {rect} from './pixel.js?v=0.21.5';
-import {DIM_ROOM,RIFTS,DIM_PIECES} from './dimension-map.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {rect} from './pixel.js?v=0.21.6';
+import {DIM_ROOM,RIFTS,DIM_PIECES} from './dimension-map.js?v=0.21.6';
 // «Измерение» art. assets/dimension-pieces.png (4×3): Yuri's message, copy, fading copy, popping copy; island,
 // hanging island, rift, rift flash; «первоисточник», threshold shut/open, cable.
 const P={yuri:[58,125,320,138],copy:[425,125,321,139],fade:[789,125,315,138],pop:[1142,85,344,195],

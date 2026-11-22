@@ -6,7 +6,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
   const p=await browser.newPage({viewport:{width,height},hasTouch:width<1000,isMobile:width<1000});p.on('pageerror',e=>errors.push(e.message));await open(p,{story:false,testing:true});await begin(p);
   // The stunned drawing is the actual old sprite, not a flattened flying pose.
   const stunArt=await p.evaluate(async()=>{
-   const {drawInfoshumStun}=await import('./infoshum-art.js?v=0.21.5'),AT=(await import('./infoshum-atlas.js?v=0.21.5')).INFOSHUM_ATLAS,a=testUI.assets;
+   const {drawInfoshumStun}=await import('./infoshum-art.js?v=0.21.6'),AT=(await import('./infoshum-atlas.js?v=0.21.6')).INFOSHUM_ATLAS,a=testUI.assets;
    return ['d0','d1'].map(name=>{
     const p=AT.free2[name],w=p.r[2],h=p.r[3],draw=(damaged,flip=false)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;drawInfoshumStun(ctx,a,name,0,0,w,h,{damaged,flip});return ctx.getImageData(0,0,w,h).data;};
     const normal=draw(false),hurt=draw(true),mirror=draw(true,true);let lost=0,elsewhere=0,mirrored=true;
@@ -19,7 +19,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    });
   });for(const a of stunArt){assert.ok(a.lost>30,'the torn tentacle stays absent '+JSON.stringify(a));assert.equal(a.elsewhere,0,'spiral eyes, stars, rubble and the lower limb keep their original pixels '+JSON.stringify(a));assert.ok(a.mirrored,'correct flipped anatomy');}
   await p.evaluate(async()=>{
-   const g=testGame,M=await import('./infoshum-combat.js?v=0.21.5'),{activateRoom}=await import('./room-transitions.js?v=0.21.5');activateRoom(g,8);g.mode='playing';g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.boss.noticeTime=0;g.hintsEnabled=false;g.step=()=>{};M.freeInfoshum(g);
+   const g=testGame,M=await import('./infoshum-combat.js?v=0.21.6'),{activateRoom}=await import('./room-transitions.js?v=0.21.6');activateRoom(g,8);g.mode='playing';g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.boss.noticeTime=0;g.hintsEnabled=false;g.step=()=>{};M.freeInfoshum(g);
    window.continueFree=n=>{for(let i=0;i<n;i++)Object.getPrototypeOf(g).step.call(g,1/60,{});};
    const s=g.platforms.find(s=>s.id==='8:2');Object.assign(g.player,{x:s.x+160,y:s.y-48,h:48,grounded:true,supportId:s.id,vx:0,vy:0,inv:99});
    window.forceFree=i=>{const f=g.boss.network.free;f.mode='hover';f.timer=0;f.step=i;f.tentacles=[];f.shards=[];g.boss.network.noiseTime=0;continueFree(1);};
@@ -27,12 +27,12 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    forceFree(2);
   });
   const hold=await p.evaluate(async()=>{
-   const g=testGame,f=g.boss.network.free,AT=(await import('./infoshum-atlas.js?v=0.21.5')).INFOSHUM_ATLAS;
+   const g=testGame,f=g.boss.network.free,AT=(await import('./infoshum-atlas.js?v=0.21.6')).INFOSHUM_ATLAS;
    for(let i=0;i<500&&f.mode!=='pulled';i++)continueFree(1);if(f.mode!=='pulled')throw Error('never landed');
    window.impactSpot={x:f.x,y:f.y};window.holdCalls=captureFree();return {mode:f.mode,yuri:f.yuri};
   });assert.deepEqual(hold,{mode:'pulled',yuri:true});await shot(p,'infoshum-held-impact-'+width);
   const anchored=await p.evaluate(async()=>{
-   const g=testGame,f=g.boss.network.free,AT=(await import('./infoshum-atlas.js?v=0.21.5')).INFOSHUM_ATLAS;
+   const g=testGame,f=g.boss.network.free,AT=(await import('./infoshum-atlas.js?v=0.21.6')).INFOSHUM_ATLAS;
    const pivot=calls=>{const c=calls.find(c=>c.sheet==='free2'&&['d0','d1'].some(n=>AT.free2[n].r.every((v,i)=>v===c.args[i])));if(!c)throw Error('no dizzy body');const n=['d0','d1'].find(n=>AT.free2[n].r.every((v,i)=>v===c.args[i])),a=AT.free2[n];return c.args[5]-a.o[1]*1.4+a.cell[1]*1.4;};
    const before=pivot(holdCalls);let stationary=true;for(let i=0;i<80&&f.mode==='pulled';i++){continueFree(1);stationary&&=Math.abs(f.x-impactSpot.x)<.001&&Math.abs(f.y-impactSpot.y)<.001;}
    return {stationary,mode:f.mode,delta:Math.abs(pivot(captureFree())-before),atFloor:Math.abs(before-(f.gy+10))};

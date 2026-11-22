@@ -3,7 +3,7 @@
 // a gentle travelling ripple, red/cyan fringes, scanlines and now and then a short burst of tearing and a bright
 // band rolling down. It is cheap (one drawImage per row band) and it stops when the menu is hidden. With «reduce
 // motion» the title stays still.
-const SRC='./assets/game-heading.png?v=0.21.5',VIEW=[65,109,2063,525],FPS=15;
+const SRC='./assets/game-heading.png?v=0.21.6',VIEW=[65,109,2063,525],FPS=15;
 let started=false;
 export function startTitleTV(){
  if(started||typeof document==='undefined')return;started=true;

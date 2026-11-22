@@ -1,4 +1,4 @@
-import {beginLocationTransition} from './room-transitions.js?v=0.21.5';
+import {beginLocationTransition} from './room-transitions.js?v=0.21.6';
 export const chapterStories={
  spreader:[
   {title:'РАЗНЫЕ ВЕРСИИ',art:0,text:'Распространитель рассыпается на страницы. На каждой свой заголовок об одном и том же. Подписи нет ни под одним.'},

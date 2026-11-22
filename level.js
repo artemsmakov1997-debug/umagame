@@ -1,7 +1,7 @@
-import {STUDIO_PIECES,studioCuttable,studioContainer,containerGlass} from './studio-map.js?v=0.21.5';
-import {DIM_PIECES} from './dimension-map.js?v=0.21.5';
-import {AGITATOR_LAYOUT,AGITATOR_LADDERS,AGITATOR_FISH} from './agitator-map.js?v=0.21.5';
-import {ROOF_BUILDINGS,ROOF_ROPES,ROOF_AWNINGS,ROOF_PROPS,ROOF_LADDERS,roofPiece} from './roofs-map.js?v=0.21.5';
+import {STUDIO_PIECES,studioCuttable,studioContainer,containerGlass} from './studio-map.js?v=0.21.6';
+import {DIM_PIECES} from './dimension-map.js?v=0.21.6';
+import {AGITATOR_LAYOUT,AGITATOR_LADDERS,AGITATOR_FISH} from './agitator-map.js?v=0.21.6';
+import {ROOF_BUILDINGS,ROOF_ROPES,ROOF_AWNINGS,ROOF_PROPS,ROOF_LADDERS,roofPiece} from './roofs-map.js?v=0.21.6';
 export const WIDTH=768,HEIGHT=480,MAX_HEALTH=4,START_LIVES=3,MAX_LIVES=3,WAKE_DURATION=5.6,ARENA_WIDTH=1536;
 export const chapters=[
  {id:'newsroom',name:'РЕДАКЦИЯ',room:1,arena:2,monsters:['fakenews','stamp','censor'],boss:'spreader'},

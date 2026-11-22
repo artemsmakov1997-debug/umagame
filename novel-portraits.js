@@ -1,5 +1,5 @@
-import {portraitFrame} from './yuri-portrait.js?v=0.21.5';
-import {umaFrame} from './uma-portrait.js?v=0.21.5';
+import {portraitFrame} from './yuri-portrait.js?v=0.21.6';
+import {umaFrame} from './uma-portrait.js?v=0.21.6';
 // Visual-novel portraits for the phone dialogue: the whole bust of each cell, scaled to fit (never cropped at the
 // shoulders), standing on the text box. Yuri stands on the left looking right, Uma on the right (mirrored) looking at him; the
 // one listening is dimmed.

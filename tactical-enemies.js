@@ -1,6 +1,6 @@
-import {actorById} from './boss-actors.js?v=0.21.5';
-import {enemy,rooms} from './level.js?v=0.21.5';
-import {inkAt,solidSurfaces} from './terrain.js?v=0.21.5';
+import {actorById} from './boss-actors.js?v=0.21.6';
+import {enemy,rooms} from './level.js?v=0.21.6';
+import {inkAt,solidSurfaces} from './terrain.js?v=0.21.6';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const TACTICAL_TYPES=['stamp','copier','cutter'];
 export const CUT_HUNTER={reach:640,notice:640,width:96,margin:18,warning:1.15,recover:.5,rest:1.3};

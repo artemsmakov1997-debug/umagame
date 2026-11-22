@@ -1,7 +1,7 @@
 // The colossus's extra attack (see infoshum-combat.js): the televisions.
 // Sheets are 4×4 cells keyed from the mockups; boxes below are [x,y,w,h] of each cell's picture, row by row.
-import {rooms} from './level.js?v=0.21.5';
-import {CHANNELS,FLOOR,tvBeam} from './infoshum-combat.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {CHANNELS,FLOOR,tvBeam} from './infoshum-combat.js?v=0.21.6';
 const AT={"channels":[[26,68,261,205],[340,68,260,205],[653,68,261,205],[960,44,274,229],[26,381,261,205],[339,381,271,205],[646,339,273,251],[961,358,269,233],[26,695,266,204],[339,734,263,112],[652,739,264,105],[965,721,267,138],[7,957,267,269],[357,955,209,235],[639,1050,279,167],[953,1011,287,164]]};
 const B=(sheet,i)=>AT[sheet][i];
 function put(c,img,box,x,y,w,h,{alpha=1,flip=false,rot=0}={}){if(!img||!box)return;c.save();c.globalAlpha*=alpha;c.translate(Math.round(x+w/2),Math.round(y+h/2));if(rot)c.rotate(rot);if(flip)c.scale(-1,1);c.drawImage(img,box[0],box[1],box[2],box[3],-w/2,-h/2,w,h);c.restore();}

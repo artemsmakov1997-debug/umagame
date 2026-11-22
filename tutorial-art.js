@@ -1,7 +1,7 @@
-import {signText,rect,text} from './pixel.js?v=0.21.5';
-import {rooms} from './level.js?v=0.21.5';
-import {TUTORIAL_FLOOR as FLOOR,BENCH,BARRIER,GAP,MONITOR,DOOR,STATIONS} from './tutorial.js?v=0.21.5';
-import {drawTargetGlow,TARGET_PINK} from './target-highlight.js?v=0.21.5';
+import {signText,rect,text} from './pixel.js?v=0.21.6';
+import {rooms} from './level.js?v=0.21.6';
+import {TUTORIAL_FLOOR as FLOOR,BENCH,BARRIER,GAP,MONITOR,DOOR,STATIONS} from './tutorial.js?v=0.21.6';
+import {drawTargetGlow,TARGET_PINK} from './target-highlight.js?v=0.21.6';
 // assets/tutorial-props.png (1536×1024, transparent): source boxes of each prop.
 const PROPS={
  bench:[26,117,570,129],barrier:[649,10,396,269],barrierBroken:[1114,11,398,268],

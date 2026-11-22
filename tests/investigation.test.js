@@ -13,8 +13,8 @@ test('monster origins remain a mystery until the full chain is shown in the epil
   assert.ok(!/создаёте меня каждый день|Всё начинается с нас|запустил цепную реакцию/i.test(words));
  }
  assert.equal(endingSlides.length,11);
- assert.match(endingSlides[1].text,/вспять/);
- assert.match(endingSlides[7].text,/разных людей/);
+ assert.match(endingSlides[1].text,/исчезают/);
+ assert.match(endingSlides[7].text,/честный журналист/);
  assert.match(endingSlides.at(-1).text,/обнимает/);
 
 });

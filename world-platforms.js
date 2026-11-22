@@ -1,6 +1,6 @@
-import {stepStudioPlatforms} from './manipulator-combat.js?v=0.21.5';
-import {platforms} from './level.js?v=0.21.5';
-import {placeDimensionPiece} from './dimension-systems.js?v=0.21.5';
+import {stepStudioPlatforms} from './manipulator-combat.js?v=0.21.6';
+import {platforms} from './level.js?v=0.21.6';
+import {placeDimensionPiece} from './dimension-systems.js?v=0.21.6';
 export function createWorldPlatforms(){return platforms.map(s=>({...s,baseX:s.x,baseY:s.y,prevX:s.x,prevY:s.y,dx:0,dy:0}));}
 export function alignEnemyToPlatform(g,e){
  const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex),base=platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);if(!s||!base)return e;

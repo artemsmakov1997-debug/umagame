@@ -1,0 +1,20 @@
+const{chromium}=require('playwright'),assert=require('node:assert/strict');const{open,begin,shot}=require('./browser-helpers.cjs');
+(async()=>{
+ const b=await chromium.launch({executablePath:process.env.BROWSER_PATH||undefined,args:['--no-sandbox']}),errors=[];
+ for(const[width,height]of[[1920,1080],[1366,768],[390,844],[320,568],[844,390]]){
+  const p=await b.newPage({viewport:{width,height},isMobile:width<1000,hasTouch:width<1000});p.on('pageerror',e=>errors.push(e.message));await open(p);assert.ok(await p.evaluate(()=>testUI.assets.finaleHistory.complete&&testUI.assets.finaleHistory.naturalWidth===3072&&testUI.assets.finaleHistory.naturalHeight===1024));await begin(p);await p.evaluate(()=>testGame.finish());await p.waitForFunction(()=>testGame.mode==='ending');
+  const slides=await p.evaluate(async()=>(await import('./finale.js?v=0.21.6')).endingSlides);assert.equal(slides.length,11);const images=[];
+  for(let i=0;i<slides.length;i++){
+   await p.waitForFunction(i=>testGame.ending.index===i,i);await p.waitForFunction(text=>document.getElementById('ending-caption').textContent===text,slides[i].text);
+   await p.waitForFunction(()=>{const e=document.getElementById('ending-caption');return e.scrollHeight<=e.clientHeight+1&&e.scrollWidth<=e.clientWidth+1;});
+   assert.equal(await p.locator('#ending-hud').count(),0);assert.equal(await p.locator('#ending-title').isVisible(),false);assert.equal(await p.locator('#ending-count').textContent(),'');
+   const layout=await p.evaluate(()=>{const c=document.getElementById('ending-caption').getBoundingClientRect(),a=document.querySelector('.ending-actions').getBoundingClientRect(),panel=document.querySelector('.ending-panel').getBoundingClientRect();return{safe:c.bottom<=a.top+1&&a.bottom<=innerHeight+1&&panel.y>=0&&panel.bottom<=innerHeight+1,contain:getComputedStyle(document.getElementById('ending-art')).objectFit};});assert.ok(layout.safe,'safe layout '+width+' slide '+i);assert.equal(layout.contain,'contain');
+   images.push(await p.locator('#ending-art').evaluate(c=>c.toDataURL()));
+   if(i===2){await p.keyboard.press('Escape');await p.waitForFunction(()=>testGame.mode==='paused');const before=await p.evaluate(()=>JSON.stringify(testGame));await p.waitForTimeout(120);assert.equal(await p.evaluate(()=>JSON.stringify(testGame)),before);await p.keyboard.press('Escape');await p.click('#ending-prev');assert.equal(await p.evaluate(()=>testGame.ending.index),1);await p.click('#ending-next');}
+   if(i>=9){assert.ok(await p.evaluate(async i=>{const{fitStoryImage}=await import('./story-art.js?v=0.21.6'),c=document.createElement('canvas');c.width=768;c.height=512;fitStoryImage(c.getContext('2d'),testUI.assets.ending,[i===9?0:768,512,768,512]);return c.toDataURL()===document.getElementById('ending-art').toDataURL();},i),'preserved original image '+i);}
+   await shot(p,'history-'+width+'-'+i);await p.click('#ending-next');
+  }
+  assert.equal(new Set(images).size,11);await p.waitForFunction(()=>testGame.conclusion?.stage==='typing');await p.click('#closing-next');assert.equal(await p.evaluate(()=>testGame.conclusion.stage),'read');await p.click('#closing-next');await p.waitForFunction(()=>testGame.conclusion.stage==='brand');await p.click('#closing-next');await p.waitForFunction(()=>testGame.mode==='won');await p.click('#return-menu');await begin(p);await p.evaluate(()=>testGame.finish());await p.click('#ending-skip');await p.waitForFunction(()=>testGame.mode==='conclusion');assert.equal(await p.locator('#ending-hud').count(),0);await p.click('#closing-skip');await p.waitForFunction(()=>testGame.mode==='won');await p.close();
+ }
+ assert.deepEqual(errors,[]);await b.close();console.log('PASS: rescue + ten epilogue scenes at five viewports; no HUD/time codes, complete distinct 3:2 art, readable captions, pause/back/skip, exact original home/embrace, typed conclusion/brand/results and restart.');
+})().catch(e=>{console.error(e);process.exit(1);});

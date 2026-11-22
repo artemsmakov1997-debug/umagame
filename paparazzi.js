@@ -1,5 +1,5 @@
-import {ROOF_BUILDINGS,ROOF_PROPS} from './roofs-map.js?v=0.21.5';
-import {rooms} from './level.js?v=0.21.5';
+import {ROOF_BUILDINGS,ROOF_PROPS} from './roofs-map.js?v=0.21.6';
+import {rooms} from './level.js?v=0.21.6';
 // Папарацци (Крыши): a camera on a tripod that stays on its roof. It turns to Uma, aims, charges the lamp and flashes.
 // If Uma is looking at it at that moment and nothing (a chimney, a tank, a taller house) stands between them,
 // the flash blinds her: she freezes for a moment. Turning away or hiding behind cover beats it; two paw hits break it.

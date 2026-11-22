@@ -1,7 +1,7 @@
-import {rect} from './pixel.js?v=0.21.5';
-import {drawTargetSprite} from './target-art.js?v=0.21.5';
-import {drawHauntedMonitor} from './art.js?v=0.21.5';
-import {rooms,PORTAL_X,PORTAL_ROOM} from './level.js?v=0.21.5';
+import {rect} from './pixel.js?v=0.21.6';
+import {drawTargetSprite} from './target-art.js?v=0.21.6';
+import {drawHauntedMonitor} from './art.js?v=0.21.6';
+import {rooms,PORTAL_X,PORTAL_ROOM} from './level.js?v=0.21.6';
 const dishFrames=[
  {box:[0,0,512,512],pivot:[318,480]}, {box:[512,0,512,512],pivot:[830,480]}, {box:[1024,0,512,512],pivot:[1335,480]},
  {box:[0,512,512,512],pivot:[318,988]}, {box:[512,512,512,512],pivot:[811,988]}, {box:[1024,512,512,512],pivot:[1328,988]}

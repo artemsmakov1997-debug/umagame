@@ -1,4 +1,4 @@
-import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
+import {drawAttackFx} from './boss-attack-fx.js?v=0.21.6';
 // New monsters of the second redesign: Папарацци (Крыши), Прожектор and Журавль (Студия).
 // Each has a painted strip (assets/paparazzi.png etc.). Until a strip is loaded, a stand-in made of existing
 // sprites is drawn, so the gameplay works and reads before the art arrives.

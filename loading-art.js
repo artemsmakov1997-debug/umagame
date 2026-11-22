@@ -1,4 +1,4 @@
-import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.5';
+import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.6';
 // Between locations: a tiny Infoshum drags the loading bar across a dark screen. He peeks out of a little TV,
 // hauls the glowing lamp, gets tangled in his own cable halfway and waves at the end.
 // assets/loading-shum.png (infoshum-atlas.js «load»): four hauling frames, tangled, two TV frames, a wave, the bar and its fill.

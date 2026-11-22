@@ -1,5 +1,5 @@
-import {spotlightSlow} from './studio-monsters.js?v=0.21.5';
-import {inkAt} from './terrain.js?v=0.21.5';
+import {spotlightSlow} from './studio-monsters.js?v=0.21.6';
+import {inkAt} from './terrain.js?v=0.21.6';
 export const REST_AFTER=30;
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function wakePlayer(p){p.idleTime=0;p.sleepTime=0;p.sleeping=false;}

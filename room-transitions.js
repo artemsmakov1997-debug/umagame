@@ -1,13 +1,13 @@
-import {signalProfile} from './signal.js?v=0.21.5';
-import {buildWall} from './infoshum-combat.js?v=0.21.5';
-import {rooms,spawns,platforms,MAX_HEALTH,LAST_ROOM} from './level.js?v=0.21.5';
-import {enterRoomPacks} from './health-packs.js?v=0.21.5';
-import {createBoss} from './boss.js?v=0.21.5';
-import {syncAgitatorPlatforms} from './agitator-combat.js?v=0.21.5';
-import {wakePlayer} from './player-rest.js?v=0.21.5';
-import {createRoofs} from './roofs-systems.js?v=0.21.5';
-import {createStudio,updateStudioPlatforms} from './studio-systems.js?v=0.21.5';
-import {createDimension,updateDimensionPlatforms} from './dimension-systems.js?v=0.21.5';
+import {signalProfile} from './signal.js?v=0.21.6';
+import {buildWall} from './infoshum-combat.js?v=0.21.6';
+import {rooms,spawns,platforms,MAX_HEALTH,LAST_ROOM} from './level.js?v=0.21.6';
+import {enterRoomPacks} from './health-packs.js?v=0.21.6';
+import {createBoss} from './boss.js?v=0.21.6';
+import {syncAgitatorPlatforms} from './agitator-combat.js?v=0.21.6';
+import {wakePlayer} from './player-rest.js?v=0.21.6';
+import {createRoofs} from './roofs-systems.js?v=0.21.6';
+import {createStudio,updateStudioPlatforms} from './studio-systems.js?v=0.21.6';
+import {createDimension,updateDimensionPlatforms} from './dimension-systems.js?v=0.21.6';
 export const LOCATION_LOAD_TIME=1.1;
 export function remainingAntennas(g,room=g.room){return g.relays.filter(d=>d.room===room&&!d.scripted&&d.hp>0);}
 export function canLeaveRoom(g,room=g.room){

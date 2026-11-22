@@ -1,4 +1,4 @@
-import {rooms} from './level.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
 // Quiet room: a two-screen controls course curated by Yuri from the old monitor.
 // Stations left to right: run → crouch under the bench → dash through the «помехи» barrier →
 // jump the broken floor → paw the infected monitor → the door opens to the newsroom.

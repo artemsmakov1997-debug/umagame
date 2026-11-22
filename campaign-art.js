@@ -1,11 +1,11 @@
-import {drawInfoshumMini} from './infoshum-art.js?v=0.21.5';
+import {drawInfoshumMini} from './infoshum-art.js?v=0.21.6';
 function safeWarning(p){return p.collapseCharge>.35;}
-import {rooms,WIDTH} from './level.js?v=0.21.5';
-import {signText,rect,text} from './pixel.js?v=0.21.5';
-import {sprite,idleCats} from './assets.js?v=0.21.5';
-import {drawEmotion,wakePose} from './cat-animation.js?v=0.21.5';
-import {drawMonster,drawHauntedMonitor} from './art.js?v=0.21.5';
-import {drawDish,drawTowerPortal} from './stage-art.js?v=0.21.5';
+import {rooms,WIDTH} from './level.js?v=0.21.6';
+import {signText,rect,text} from './pixel.js?v=0.21.6';
+import {sprite,idleCats} from './assets.js?v=0.21.6';
+import {drawEmotion,wakePose} from './cat-animation.js?v=0.21.6';
+import {drawMonster,drawHauntedMonitor} from './art.js?v=0.21.6';
+import {drawDish,drawTowerPortal} from './stage-art.js?v=0.21.6';
 // Three painted 768-wide blocks side by side, with no visible joins: each block is drawn a little wider than its
 // slot so neighbours overlap by `overlap` px, and the later block fades in across the overlap.
 function blendBlocks(c,images,overlap=96,h=512){

@@ -1,8 +1,8 @@
-import {signText,rect,text} from './pixel.js?v=0.21.5';
-import {rooms,HEIGHT} from './level.js?v=0.21.5';
-import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE,mastFooting} from './roofs-map.js?v=0.21.5';
-import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
-import {birdBox,ROOM} from './roofs-systems.js?v=0.21.5';
+import {signText,rect,text} from './pixel.js?v=0.21.6';
+import {rooms,HEIGHT} from './level.js?v=0.21.6';
+import {ROOF_BUILDINGS,ROOF_LADDERS,ROOF_ENTRANCE,mastFooting} from './roofs-map.js?v=0.21.6';
+import {drawAttackFx} from './boss-attack-fx.js?v=0.21.6';
+import {birdBox,ROOM} from './roofs-systems.js?v=0.21.6';
 // Source boxes. assets/roofs-pieces.png: parapet and tin roof (left cap, repeatable middle, right cap), chimneys, vent, tank.
 const PIECES={brickL:[49,86,382,187],brickM:[458,108,623,165],brickR:[1109,86,377,187],tinL:[40,356,378,156],tinM:[454,356,630,156],tinR:[1119,356,377,156],
  chimney:[92,633,130,326],chimneyWide:[333,624,270,335],vent:[663,664,392,295],tank:[1127,562,332,397]};

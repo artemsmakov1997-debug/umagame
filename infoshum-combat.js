@@ -9,9 +9,9 @@
 //   With both hands broken he collapses and the head screen lies on the floor: a paw there takes two health.
 // 3 «На свободе»: he bursts out of the head screen into the storm. Tentacles break out of the ground, shards of
 //   headlines fly at Uma, he rams along her island; dodge the ram and he crashes, dizzy — a paw tears a tentacle off.
-import {rooms} from './level.js?v=0.21.5';
-import {originalsFound} from './dimension-systems.js?v=0.21.5';
-import {pitFall} from './pit-falls.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {originalsFound} from './dimension-systems.js?v=0.21.6';
+import {pitFall} from './pit-falls.js?v=0.21.6';
 // Each «первоисточник» from the Dimension: his face stays longer in the screens.
 export const SOURCE_NOISE_BONUS=12,SOURCE_CORE_BONUS=0,SOURCE_HINT=.8;
 export const NOISE_CLEAR=.3,NOISE_TIME=60,INFOSHUM_HP=12,HIT_DAMAGE=2,PHASE_HP=4;

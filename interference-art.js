@@ -1,4 +1,4 @@
-import {rect} from './pixel.js?v=0.21.5';
+import {rect} from './pixel.js?v=0.21.6';
 // «Помехи»: the interference meter of Infoshum's final phase (the freed form).
 // assets/interference-textures.png on black, 4×3 cells of 384×341, blended with 'lighter' so black vanishes:
 // grain stages ×4; sync tear, shifted band, colour split, rolling bar; eaten corner, Infoshum's eyes ×2, signal lost.

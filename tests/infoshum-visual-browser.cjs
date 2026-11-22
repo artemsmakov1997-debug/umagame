@@ -7,7 +7,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
   const page=await browser.newPage({viewport:{width,height},hasTouch:width<1000,isMobile:width<1000});page.on('pageerror',e=>errors.push(e.message));
   await open(page,{story:false,testing:true});await begin(page,{intro:false});
   const r=await page.evaluate(async()=>{
-   const {activateRoom}=await import('./room-transitions.js?v=0.21.5'),m=await import('./infoshum-combat.js?v=0.21.5');
+   const {activateRoom}=await import('./room-transitions.js?v=0.21.6'),m=await import('./infoshum-combat.js?v=0.21.6');
    const g=testGame,real=Object.getPrototypeOf(g).step;g.hintsEnabled=false;document.getElementById('toast').classList.remove('visible');activateRoom(g,8);g.mode='playing';g.storyEnabled=false;g.enemies=[];g.fishes=[];g.soups=[];g.notebooks=[];g.lifePickups=[];g.boss.noticeTime=0;g.step=()=>{};
    const a=testUI.assets,out={sheets:['infoshumHall','infoshumTower','infoshumRelays','infoshumFx1','infoshumBody','infoshumColossusRig','infoshumYuriRope','interferenceMeter','infoshumFree2','infoshumParts','infoshumAscent','infoshumBreakout','infoshumFree','infoshumStorm','infoshumStormPlatforms','infoshumYuri','infoshumCasings','infoshumSilence','loadingShum','storyExtra','targetMarkerGold','targetMarkerPink'].map(k=>[k,a[k]?.naturalWidth>0])},n=g.boss.network,shots={};
    const draw=(k,t=2)=>{g.updateCamera();testRenderer.draw(g,0,t);shots[k]=document.getElementById('game').toDataURL();},run=k=>{for(let i=0;i<k;i++)real.call(g,1/60,{});},atk=i=>{n.scans=[];n.whips=[];n.tvs=[];n.mode='rest';n.timer=0;n.step=i;};
@@ -30,7 +30,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
  }
  // Full-arena overview: the whole wall of monitors at once.
  const o=await browser.newPage({viewport:{width:3072,height:1000}});o.on('pageerror',e=>errors.push(e.message));await open(o,{story:false,testing:true});await begin(o);
- await o.evaluate(async()=>{const{activateRoom}=await import('./room-transitions.js?v=0.21.5'),m=await import('./infoshum-combat.js?v=0.21.5');const g=testGame;g.hintsEnabled=false;document.getElementById('toast').classList.remove('visible');activateRoom(g,8);g.step=()=>{};g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.boss.noticeTime=0;m.exposeInfoshum(g);testRenderer.draw(g,0,1);});
+ await o.evaluate(async()=>{const{activateRoom}=await import('./room-transitions.js?v=0.21.6'),m=await import('./infoshum-combat.js?v=0.21.6');const g=testGame;g.hintsEnabled=false;document.getElementById('toast').classList.remove('visible');activateRoom(g,8);g.step=()=>{};g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.boss.noticeTime=0;m.exposeInfoshum(g);testRenderer.draw(g,0,1);});
  await shot(o,'infoshum-full-reveal');await o.close();
  await browser.close();assert.deepEqual(errors,[]);
  console.log('PASS: Infoshum sheets decoded; the tower (dome, open relay, scan, whip, volley, Yuri and Infoshum in the screen), the assembly, the colossus (raised and stuck fist, sweep, head beam, fall, lying), the breakout, the free creature and the loading drawn distinctly at 5 viewports and a full-arena view.');

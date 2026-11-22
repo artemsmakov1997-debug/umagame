@@ -1,4 +1,4 @@
-import {drawHit,drawRun} from './cat-animation.js?v=0.21.5';
+import {drawHit,drawRun} from './cat-animation.js?v=0.21.6';
 // Reuse Uma's approved, unmodified sprites. Her face/nose are never regenerated.
 export function umaReaction(p,g){
  if(g.swallow||p.dash>0||p.attack>0||p.climbing)return null;

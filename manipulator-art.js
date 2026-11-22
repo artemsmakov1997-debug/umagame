@@ -1,7 +1,7 @@
-import {rooms} from './level.js?v=0.21.5';
-import {rect,text} from './pixel.js?v=0.21.5';
-import {solidSurfaces} from './terrain.js?v=0.21.5';
-import {studioDock,cranePivot,craneTip,TRACK_Y,DOLLY,DECOYS,WARP,FRAME,VIEWFINDER,SCISSORS_AIM} from './manipulator-combat.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {rect,text} from './pixel.js?v=0.21.6';
+import {solidSurfaces} from './terrain.js?v=0.21.6';
+import {studioDock,cranePivot,craneTip,TRACK_Y,DOLLY,DECOYS,WARP,FRAME,VIEWFINDER,SCISSORS_AIM} from './manipulator-combat.js?v=0.21.6';
 const clamp01=v=>Math.max(0,Math.min(1,v));
 // assets/manipulator-camera.png: 4×3 cells of 181×181, facing right, body centred near x 91, bottom at y 161.
 //  0–1 idle, 2 clapper glitch (teleport), 3 hurt flash, 4 beam forward, 5 beam down, 6 smoking (overheat),

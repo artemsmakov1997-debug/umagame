@@ -1,4 +1,4 @@
-import {platforms,rooms,MAX_LIVES,MAP_PACKS} from './level.js?v=0.21.5';
+import {platforms,rooms,MAX_LIVES,MAP_PACKS} from './level.js?v=0.21.6';
 // Health packets. Each map has two, standing on platforms (they ride moving ones via world-platforms.js); a boss
 // arena starts with none and gets one each time the boss enters a new phase. Lives are not found on the map any
 // more: they are topped up when Uma starts a level (enters its map from the previous chapter).

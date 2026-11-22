@@ -1,11 +1,11 @@
-import {drawColossusAttacks} from './infoshum-attacks-art.js?v=0.21.5';
-import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
-import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.5';
-import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos,ghostPrep,ghostEase} from './infoshum-combat.js?v=0.21.5';
-import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.5';
+import {drawColossusAttacks} from './infoshum-attacks-art.js?v=0.21.6';
+import {drawAttackFx} from './boss-attack-fx.js?v=0.21.6';
+import {drawInfoshumSprite} from './infoshum-sprites.js?v=0.21.6';
+import {WAVE,COL,FREE,FLOOR,TOWER,RELAYS,RELAY_H,ROUND_PAIRS,towerScreen,relayRect,headBox,beamFloor,ghostPos,ghostPrep,ghostEase} from './infoshum-combat.js?v=0.21.6';
+import {INFOSHUM_ATLAS as AT} from './infoshum-atlas.js?v=0.21.6';
 // Infoshum's three phases: the broadcast tower with Yuri in the relays, the colossus, the free creature in the storm.
-import {rooms,WIDTH} from './level.js?v=0.21.5';
-import {rect} from './pixel.js?v=0.21.5';
+import {rooms,WIDTH} from './level.js?v=0.21.6';
+import {rect} from './pixel.js?v=0.21.6';
 const VW=g=>g.viewWidth||WIDTH;
 const POSE_W=190,POSE_H=204,SILENCE_W=172,SILENCE_H=192;
 function cell(c,img,cw,ch,frame,cx,cy,w,{flip=false,rot=0,alpha=1}={}){if(!img)return;const h=w*ch/cw;c.save();c.globalAlpha*=alpha;c.translate(Math.round(cx),Math.round(cy));if(rot)c.rotate(rot);if(flip)c.scale(-1,1);c.drawImage(img,frame*cw,0,cw,ch,-w/2,-h/2,w,h);c.restore();}

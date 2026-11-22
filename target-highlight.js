@@ -1,9 +1,9 @@
-import {rect} from './pixel.js?v=0.21.5';
-import {agitatorTargets} from './agitator-combat.js?v=0.21.5';
-import {infoshumTargets} from './infoshum-combat.js?v=0.21.5';
-import {spreaderExposed} from './spreader-combat.js?v=0.21.5';
-import {manipulatorExposed} from './manipulator-combat.js?v=0.21.5';
-import {INFOSHUM_ATLAS} from './infoshum-atlas.js?v=0.21.5';
+import {rect} from './pixel.js?v=0.21.6';
+import {agitatorTargets} from './agitator-combat.js?v=0.21.6';
+import {infoshumTargets} from './infoshum-combat.js?v=0.21.6';
+import {spreaderExposed} from './spreader-combat.js?v=0.21.6';
+import {manipulatorExposed} from './manipulator-combat.js?v=0.21.6';
+import {INFOSHUM_ATLAS} from './infoshum-atlas.js?v=0.21.6';
 // Boss targets: a soft pulsing glow on exactly the area a paw swing must touch, plus a small
 // bobbing chevron above it. Only targets that can be hit right now are marked.
 export const TARGET_GOLD='#ffd36e',TARGET_PINK='#ff7fd8';

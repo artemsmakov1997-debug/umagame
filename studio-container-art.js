@@ -1,5 +1,5 @@
-import {CONTAINER_ART,STUDIO_PIECES} from './studio-map.js?v=0.21.5';
-import {rooms} from './level.js?v=0.21.5';
+import {CONTAINER_ART,STUDIO_PIECES} from './studio-map.js?v=0.21.6';
+import {rooms} from './level.js?v=0.21.6';
 // Studio containers: the monster is drawn behind the tinted glass, then the container over it.
 // States: 0 sealed, 1 alarm (red lamp, neon on), 2 open (capsule shutters + downward light, grate lids up, cage lamp).
 // assets/studio-container-fx.png: two spark frames (100×90) for a paw clanging off the glass, then the light beam (160×250).

@@ -1,4 +1,4 @@
-import {sprite} from './assets.js?v=0.21.5';
+import {sprite} from './assets.js?v=0.21.6';
 // assets/health-pack.png: 8 cells of 272×440, the pedestal centred in each cell with its foot on y=436.
 // 0–3 idle (bob and a glint running over the foil), 4 pop up with a heart, 5 sparkle ring, 6 fading sparkles,
 // 7 the empty pedestal, which stays where the packet was. (x, y) is the packet's centre; the foot is 24 px lower.

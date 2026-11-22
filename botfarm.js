@@ -1,5 +1,5 @@
-import {enemy,rooms} from './level.js?v=0.21.5';
-import {solidSurfaces} from './terrain.js?v=0.21.5';
+import {enemy,rooms} from './level.js?v=0.21.6';
+import {solidSurfaces} from './terrain.js?v=0.21.6';
 // Ботоферма (Студия): a server rack that stamps out identical bots. It takes three ordinary paw hits. Its bots jump together on one shared beat, from platform to
 // platform to the left; they hurt on contact and die from one hit. A bot that jumps onto a riser that goes dark falls.
 // When the rack breaks, every bot it made hangs (grey, spinner) and falls apart.

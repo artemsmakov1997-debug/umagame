@@ -4,12 +4,12 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||undefined,args:['--no-sandbox']}),errors=[];
  const p=await browser.newPage({viewport:{width:1920,height:1080}});p.on('pageerror',e=>errors.push(e.message));await open(p,{story:false,testing:true});await begin(p);
- await p.evaluate(async()=>{const{activateRoom}=await import('./room-transitions.js?v=0.21.5');const g=testGame;activateRoom(g,8);g.enemies=[];g.notebooks=[];g.lifePickups=[];g.boss.noticeTime=0;g.mode='playing';});
+ await p.evaluate(async()=>{const{activateRoom}=await import('./room-transitions.js?v=0.21.6');const g=testGame;activateRoom(g,8);g.enemies=[];g.notebooks=[];g.lifePickups=[];g.boss.noticeTime=0;g.mode='playing';});
  // Phase 1 «Прямой эфир»: smash each relay Yuri opens, then swat the big screen while his face is on it — two rounds.
  const ready=()=>{const n=testGame.boss.network;return n.stage!=='network'||n.relays.some(r=>r.state==='open')||n.take?.show==='face';};
  for(let k=0;k<20&&await p.evaluate(()=>testGame.boss.network.stage==='network');k++){
   await p.waitForFunction(ready,null,{timeout:30000});if(await p.evaluate(()=>testGame.boss.network.stage!=='network'))break;if(k===0)await shot(p,'infoshum-live-relay');
-  const hp=await p.evaluate(async()=>{const g=testGame,n=g.boss.network,M=await import('./infoshum-combat.js?v=0.21.5'),open=n.relays.find(r=>r.state==='open'),box=open?M.relayHit(g,open.index):M.towerScreen(g);
+  const hp=await p.evaluate(async()=>{const g=testGame,n=g.boss.network,M=await import('./infoshum-combat.js?v=0.21.6'),open=n.relays.find(r=>r.state==='open'),box=open?M.relayHit(g,open.index):M.towerScreen(g);
    const s=open?g.platforms.filter(q=>q.room===8&&!q.bossHidden&&box.x+box.w/2>=q.x&&box.x+box.w/2<=q.x+q.w&&q.y>=box.y+box.h-4).sort((a,c)=>a.y-c.y)[0]:g.platforms.find(q=>q.id==='8:9');
    Object.assign(g.player,{x:Math.max(s.x,Math.min(s.x+s.w-g.player.w,box.x+box.w/2-g.player.w-4)),y:s.y-48,h:48,grounded:true,supportId:s.id,vx:0,vy:0,dir:1,attack:0,cooldown:0,inv:1});g.updateCamera();return g.boss.hp;});
   await p.keyboard.press('Space');await p.waitForFunction(h=>testGame.boss.hp<h,hp,{timeout:3000});
@@ -23,7 +23,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
    await p.keyboard.press('Space');await p.waitForFunction(()=>testGame.boss.network.col.fist?.weak===false||!testGame.boss.network.col.fist,null,{timeout:3000});
   }
   await p.waitForFunction(()=>testGame.boss.network.col.mode==='collapse'&&testGame.boss.network.col.clock>.9,null,{timeout:8000});if(round===0)await shot(p,'infoshum-live-collapse');
-  const hp=await p.evaluate(async()=>{const g=testGame,h=(await import('./infoshum-combat.js?v=0.21.5')).headBox(g);Object.assign(g.player,{x:h.x-30,y:474-48,h:48,grounded:true,vx:0,vy:0,dir:1,attack:0,cooldown:0,inv:2});g.updateCamera();return g.boss.hp;});
+  const hp=await p.evaluate(async()=>{const g=testGame,h=(await import('./infoshum-combat.js?v=0.21.6')).headBox(g);Object.assign(g.player,{x:h.x-30,y:474-48,h:48,grounded:true,vx:0,vy:0,dir:1,attack:0,cooldown:0,inv:2});g.updateCamera();return g.boss.hp;});
   await p.keyboard.press('Space');await p.waitForFunction(h=>testGame.boss.hp<h||testGame.boss.network.stage!=='colossus',hp,{timeout:3000});
  }
  await p.waitForFunction(()=>testGame.boss.network.stage==='breakout',null,{timeout:5000});await p.waitForTimeout(1500);await shot(p,'infoshum-live-breakout');

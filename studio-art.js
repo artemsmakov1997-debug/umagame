@@ -1,7 +1,7 @@
-import {signText,rect,text} from './pixel.js?v=0.21.5';
-import {rooms} from './level.js?v=0.21.5';
-import {STUDIO_PIECES,SPOTLIGHTS,STUDIO_DOOR} from './studio-map.js?v=0.21.5';
-import {spotSpan,liveTake,ROOM} from './studio-systems.js?v=0.21.5';
+import {signText,rect,text} from './pixel.js?v=0.21.6';
+import {rooms} from './level.js?v=0.21.6';
+import {STUDIO_PIECES,SPOTLIGHTS,STUDIO_DOOR} from './studio-map.js?v=0.21.6';
+import {spotSpan,liveTake,ROOM} from './studio-systems.js?v=0.21.6';
 // The studio is dark: a stage riser is drawn only where a lamp's light falls on it (see drawPiece).
 // assets/studio-platforms.png: holograms (solid / warning / gone), stage risers (lit / dark), red and blue takes (live / idle),
 // each as left cap, repeatable middle and right cap; then the camera dolly, a truss section and a flight case.

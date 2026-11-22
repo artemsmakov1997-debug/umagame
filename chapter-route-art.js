@@ -1,8 +1,8 @@
-import {rooms} from './level.js?v=0.21.5';
-import {hazardZone,machineActive} from './chapter-routes.js?v=0.21.5';
-import {signText,rect,text} from './pixel.js?v=0.21.5';
-import {drawTargetSprite} from './target-art.js?v=0.21.5';
-import {drawNewsroomMachines} from './newsroom-art.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {hazardZone,machineActive} from './chapter-routes.js?v=0.21.6';
+import {signText,rect,text} from './pixel.js?v=0.21.6';
+import {drawTargetSprite} from './target-art.js?v=0.21.6';
+import {drawNewsroomMachines} from './newsroom-art.js?v=0.21.6';
 const columns={server:0,power:1,console:2,anchor:3};
 export function drawMapProps(c,a,g,t){
  drawNewsroomMachines(c,g,t,a);

@@ -5,7 +5,7 @@ const {open,begin,shot}=require('./browser-helpers.cjs');
  for(const [width,height]of[[1920,1080],[390,844],[844,390]]){
   const p=await browser.newPage({viewport:{width,height},hasTouch:width<1000,isMobile:width<1000});p.on('pageerror',e=>errors.push(e.message));await open(p,{story:false,testing:false});await begin(p);
   const feed=await p.evaluate(async()=>{
-   const g=testGame,{activateRoom}=await import('./room-transitions.js?v=0.21.5');activateRoom(g,7);g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.hintsEnabled=false;g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};g.step=()=>{};
+   const g=testGame,{activateRoom}=await import('./room-transitions.js?v=0.21.6');activateRoom(g,7);g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.hintsEnabled=false;g.tutorial.complete=true;g.abilities={attack:true,dash:true,sneak:true};g.step=()=>{};
    window.baitTick=(n,input={})=>{for(let i=0;i<n;i++)Object.getPrototypeOf(g).step.call(g,1/60,input);};
    const s=g.platforms.find(s=>s.id==='7:10');Object.assign(g.player,{x:s.x+80,y:s.y-48,h:48,flipped:false,grounded:true,supportId:s.id,vx:0,vy:0,inv:0});
    for(let i=0;i<200&&!(g.player.flipped&&g.player.grounded);i++)baitTick(1,{right:true});

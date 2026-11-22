@@ -1,6 +1,6 @@
-import {rooms} from './level.js?v=0.21.5';
-import {STUDIO_PIECES,SPOTLIGHTS,SPOT_MIN_OVERLAP,TAKES,STUDIO_CHECKPOINTS} from './studio-map.js?v=0.21.5';
-import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {STUDIO_PIECES,SPOTLIGHTS,SPOT_MIN_OVERLAP,TAKES,STUDIO_CHECKPOINTS} from './studio-map.js?v=0.21.6';
+import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.6';
 // «Студия» mechanics: risers that exist only in a spotlight (a swinging lamp, or a lamp bank switched on the clapper beat).
 // Each frame sets `intangible` on the studio platforms; solidSurfaces() skips those.
 export const ROOM=5;

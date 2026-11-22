@@ -1,6 +1,6 @@
-import {rooms,enemy} from './level.js?v=0.21.5';
-import {DIM_ROOM,FEED,MIRROR,RIFTS,ORIGINALS,DIM_CHECKPOINTS,CRUMBLE,BAIT,isSafeDimPiece,slideX,feedCycle,isBaitCopy} from './dimension-map.js?v=0.21.5';
-import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.5';
+import {rooms,enemy} from './level.js?v=0.21.6';
+import {DIM_ROOM,FEED,MIRROR,RIFTS,ORIGINALS,DIM_CHECKPOINTS,CRUMBLE,BAIT,isSafeDimPiece,slideX,feedCycle,isBaitCopy} from './dimension-map.js?v=0.21.6';
+import {pitFall,placeAtCheckpoint} from './pit-falls.js?v=0.21.6';
 // «Измерение» mechanics: rising message copies (and their upside-down mirror), gravity rifts, «первоисточники».
 const x0=()=>rooms[DIM_ROOM].x;
 export function createDimension(){return {checkpoint:0,hints:{},riftCooldown:0,riftFlash:{}};}

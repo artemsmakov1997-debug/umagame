@@ -1,5 +1,5 @@
-import {rooms} from './level.js?v=0.21.5';
-import {phasePlans} from './boss-phases.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {phasePlans} from './boss-phases.js?v=0.21.6';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 // «Тираж»: the newspaper manta in three phases of two hits.
 // 1 AIR «Ковровая бомбардировка»: two high passes drop tied bundles; tabletops catch them, a bundle that

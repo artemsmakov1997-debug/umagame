@@ -1,4 +1,4 @@
-import {rooms} from './level.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
 // Pit rooms (roofs, studio): a fall costs one heart and returns Uma to the last safe surface she stood on.
 export const FALL_RETURN_INV=1.6;
 export function pitFall(g,room,isSafe){

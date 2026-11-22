@@ -6,8 +6,8 @@
 //   he turns to the crowd: his back is open. If Uma stays far away or up high, a sound wave reaches her.
 // 3 «Прямой эфир»: from an antenna tower he blows gusts across the roof with Сенсации in them.
 //   Hide behind chimneys, climb the ladder and hit the screen; he then leaps to the other tower.
-import {rooms} from './level.js?v=0.21.5';
-import {FLOOR_Y,MAST_X,MAST_DECK,LETTER,SLOGAN,LETTER_FRAMES,SLOT_ORDER,HATCHES,TOWERS,CHIMNEYS,AGI,slotRect} from './agitator-map.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {FLOOR_Y,MAST_X,MAST_DECK,LETTER,SLOGAN,LETTER_FRAMES,SLOT_ORDER,HATCHES,TOWERS,CHIMNEYS,AGI,slotRect} from './agitator-map.js?v=0.21.6';
 export const AGITATOR_HP=12,PHASE_HP=4,HIT_DAMAGE=2,BEAT=60/132;
 export const SLOGAN_TIMES={rest:1.1,windup:.9,gap:.26,flight:.62,overheat:4,crumble:.5,blastWarn:.55,stun:1.1,burst:.4};
 export const RALLY_TIMES={spawn:2.3,max:4,step:22,ura:5.4,uraWarn:.55,uraHold:2.5,swingWarn:.45,swing:.3,stomp:6.5,speed:46,stun:.9};

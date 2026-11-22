@@ -1,4 +1,4 @@
-import {rect} from './pixel.js?v=0.21.5';
+import {rect} from './pixel.js?v=0.21.6';
 // Readability layer: gameplay surfaces must never melt into the painted backdrops.
 // 1. A dark veil calms each location's backdrop (stronger where the painting is busy).
 // 2. Every solid surface gets a cast shadow below and a bright rim exactly on its collision top,

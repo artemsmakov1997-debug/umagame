@@ -1,10 +1,10 @@
-import {chapters} from './level.js?v=0.21.5';
-import {monsters} from './catalog.js?v=0.21.5';
-import {fitText} from './fit-text.js?v=0.21.5';
+import {chapters} from './level.js?v=0.21.6';
+import {monsters} from './catalog.js?v=0.21.6';
+import {fitText} from './fit-text.js?v=0.21.6';
 // Wax seals for each ability (assets/library-seals.png): 0 projectile, 1 summon, 2 dash, 3 area, 4 shield, 5 trap, 6 swirl/teleport, 7 beam, 8 stun, 9 warning.
 const ABILITY_SEALS={fakenews:[2,9],censor:[3,4],stamp:[5,8],spreader:[0,2],informant:[6,0],paparazzi:[6,0],boom:[9,5],spotlight:[6,8],inflator:[7,5],sensation:[1,8],agitator:[9,3],botfarm:[1,9],cutter:[9,5],splicer:[6,8],manipulator:[7,5],echo:[6,9],clickbait:[5,8],static:[2,8],infoshum:[4,7]};
-import {drawMenuScene,drawPortrait} from './art.js?v=0.21.5';
-import {idleFrame} from './menu-animation.js?v=0.21.5';
+import {drawMenuScene,drawPortrait} from './art.js?v=0.21.6';
+import {idleFrame} from './menu-animation.js?v=0.21.6';
 const $=id=>document.getElementById(id);
 // Long monster descriptions shrink until they fit their row of the card (and refit when the window changes).
 const fitDescription=()=>fitText(document.getElementById('monster-description'));

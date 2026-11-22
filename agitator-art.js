@@ -1,9 +1,9 @@
-import {rooms} from './level.js?v=0.21.5';
-import {rect,text} from './pixel.js?v=0.21.5';
-import {FLOOR_Y,MAST_X,MAST_DECK,LETTER,TOWERS,CHIMNEYS,HATCHES,AGI,PILLARS,slotRect,SLOT_ORDER} from './agitator-map.js?v=0.21.5';
-import {SLOGAN_TIMES,windDir} from './agitator-combat.js?v=0.21.5';
-import {drawSensationBird} from './roofs-art.js?v=0.21.5';
-import {drawAttackFx} from './boss-attack-fx.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {rect,text} from './pixel.js?v=0.21.6';
+import {FLOOR_Y,MAST_X,MAST_DECK,LETTER,TOWERS,CHIMNEYS,HATCHES,AGI,PILLARS,slotRect,SLOT_ORDER} from './agitator-map.js?v=0.21.6';
+import {SLOGAN_TIMES,windDir} from './agitator-combat.js?v=0.21.6';
+import {drawSensationBird} from './roofs-art.js?v=0.21.6';
+import {drawAttackFx} from './boss-attack-fx.js?v=0.21.6';
 // assets/agitator-boss.png: 16 cells of 212×248, feet on y=240, facing right.
 // 0 idle, 1 shout, 2 overheated, 3 stomp, 4 stunned, 5 megaphone bursts, 6 jump, 7 land,
 // 8 announce, 9 low swing, 10 rally aura, 11 blow, 12 knocked back, 13 cracked, 14 slumped, 15 scrap.

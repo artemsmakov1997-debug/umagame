@@ -1,5 +1,5 @@
-import {rooms} from './level.js?v=0.21.5';
-import {cleanCopies} from './tactical-enemies.js?v=0.21.5';
+import {rooms} from './level.js?v=0.21.6';
+import {cleanCopies} from './tactical-enemies.js?v=0.21.6';
 // «Конвейер»: the newsroom is one newspaper conveyor running towards Uma (right to left).
 // - The belt carries Uma, monsters and Stamp ink to the left.
 // - Presses over the belt take a whole life; they crush monsters too.

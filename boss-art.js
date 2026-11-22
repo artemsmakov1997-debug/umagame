@@ -1,12 +1,12 @@
-import {drawSpreader,drawSpreaderLeaflets} from './spreader-art.js?v=0.21.5';
-import {drawAgitator} from './agitator-art.js?v=0.21.5';
-import {drawManipulator} from './manipulator-art.js?v=0.21.5';
-import {drawBossBarrier} from './shield-art.js?v=0.21.5';
-import {drawInfoshumForeground} from './infoshum-art.js?v=0.21.5';
-import {rect,text} from './pixel.js?v=0.21.5';
-import {drawMonster} from './art.js?v=0.21.5';
-import {bossShielded} from './boss.js?v=0.21.5';
-import {rooms} from './level.js?v=0.21.5';
+import {drawSpreader,drawSpreaderLeaflets} from './spreader-art.js?v=0.21.6';
+import {drawAgitator} from './agitator-art.js?v=0.21.6';
+import {drawManipulator} from './manipulator-art.js?v=0.21.6';
+import {drawBossBarrier} from './shield-art.js?v=0.21.6';
+import {drawInfoshumForeground} from './infoshum-art.js?v=0.21.6';
+import {rect,text} from './pixel.js?v=0.21.6';
+import {drawMonster} from './art.js?v=0.21.6';
+import {bossShielded} from './boss.js?v=0.21.6';
+import {rooms} from './level.js?v=0.21.6';
 export function drawArenaBoss(c,a,g,time){
  const b=g.boss;if(!rooms[g.room].arena||b.room!==g.room||b.hp<=0)return;if(b.id==='infoshum'&&b.network){drawInfoshumForeground(c,a,g,time);return;}if(b.id==='agitator'&&b.broadcast){drawAgitator(c,a,g,time);return;}if(b.id==='manipulator'&&b.studio){drawManipulator(c,a,g,time);return;}if(b.id==='spreader'&&drawSpreader(c,a,g,time)){drawSpreaderLeaflets(c,a,g,time);return;}const room=rooms[g.room],final=b.id==='infoshum';
  for(const d of b.docks){rect(c,d.x-9,d.y+b.h+2,b.w+18,3,'#3e4a79');rect(c,d.x+12,d.y+b.h+2,b.w-24,2,b.x===d.x?'#b199ec':'#536680');}

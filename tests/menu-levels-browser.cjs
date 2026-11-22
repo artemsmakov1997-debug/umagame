@@ -6,7 +6,7 @@ const{open,begin,shot,url}=require('./browser-helpers.cjs');
  // Phone portrait menus: Uma is drawn larger than before but her ears stay below the last menu entry.
  for(const [width,height] of[[390,844],[360,740],[320,568],[412,915]]){
   const p=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true});p.on('pageerror',e=>errors.push(e.message));await open(p);await p.waitForTimeout(200);
-  const r=await p.evaluate(async()=>{const {idlePlacement}=await import('./menu-animation.js?v=0.21.5'),{menuTextBottom}=await import('./art.js?v=0.21.5');const canvas=document.getElementById('game'),h=canvas.height,box=canvas.getBoundingClientRect();
+  const r=await p.evaluate(async()=>{const {idlePlacement}=await import('./menu-animation.js?v=0.21.6'),{menuTextBottom}=await import('./art.js?v=0.21.6');const canvas=document.getElementById('game'),h=canvas.height,box=canvas.getBoundingClientRect();
    // Recompute the drawn pose exactly as drawMenuScene does.
    const ground=h*.795,text=menuTextBottom(canvas,h),catHeight=Math.max(h*.08,Math.min(h*.17,ground-text-h*.025)),pose=idlePlacement(0,h,{x:0,y:ground,height:catHeight});
    const last=[...document.querySelectorAll('#menu-screen [data-menu]')].at(-1).getBoundingClientRect();return {catTop:pose.y,textBottom:text,catHeight,h,lastBottomCss:last.bottom,scale:box.height/h};});

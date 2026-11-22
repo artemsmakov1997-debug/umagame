@@ -1,5 +1,5 @@
-import {rect} from './pixel.js?v=0.21.5';
-import {FLOOR_Y,WINDUP,DASH_HITBOX} from './spreader-combat.js?v=0.21.5';
+import {rect} from './pixel.js?v=0.21.6';
+import {FLOOR_Y,WINDUP,DASH_HITBOX} from './spreader-combat.js?v=0.21.6';
 const clamp01=v=>Math.max(0,Math.min(1,v));
 // assets/spreader-air.png: 8 cells of 192×184, centred, facing right.
 //  0 wings up, 1 wings down, 2 bank, 3 bombing, 4 dive, 5 collecting, 6 overloaded, 7 hurt.
