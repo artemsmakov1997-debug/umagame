@@ -5,7 +5,7 @@ import {endingSlides} from './finale.js?v=0.21.6';
 import {storyFrame,fitStoryImage} from './story-art.js?v=0.21.6';
 const $=id=>document.getElementById(id);
 export const FINALE_ATLAS_COLS={finaleHistory:4,ending:2};
-export function finaleFrame(a,index){const slide=endingSlides[index]||endingSlides.at(-1),[key,n]=slide.art.split(':');if(key==='extra'){const art=a.storyExtra,w=art.width/2;return{a:art,box:[+n*w,0,w,art.height]};}const art=a[key],cols=FINALE_ATLAS_COLS[key],rows=2,w=art.width/cols,h=art.height/rows,i=Number(n);return{a:art,box:[i%cols*w,Math.floor(i/cols)*h,w,h]};}
+export function finaleFrame(a,index){const slide=endingSlides[index]||endingSlides.at(-1),[key,n]=slide.art.split(':');if(n===undefined){const art=a[key];return{a:art,box:[0,0,art.width,art.height]};}if(key==='extra'){const art=a.storyExtra,w=art.width/2;return{a:art,box:[+n*w,0,w,art.height]};}const art=a[key],cols=FINALE_ATLAS_COLS[key],rows=2,w=art.width/cols,h=art.height/rows,i=Number(n);return{a:art,box:[i%cols*w,Math.floor(i/cols)*h,w,h]};}
 export class EndingUI{
  constructor(game,assets,clearInput){this.game=game;this.assets=assets;this.clearInput=clearInput;this.lastIndex=null;$('ending-next').addEventListener('click',()=>this.advance(1));$('ending-prev').addEventListener('click',()=>this.advance(-1));$('ending-skip').addEventListener('click',()=>this.skip());}
  advance(direction){this.clearInput();if(this.game.mode==='prologue')this.game.advanceOpening(direction);else if(this.game.mode==='interlude')this.game.advanceInterlude(direction);else this.game.advanceEnding(direction);this.update(true);}
