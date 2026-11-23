@@ -2,6 +2,12 @@
 // right under the HUD; the space below is a decorated panel that holds the stick and the action buttons, so nothing
 // covers the floor or Uma. The scene height is reserved for the tallest HUD (boss bar) so the scale never jumps.
 export const PANEL={worldWidth:450,bossHud:132,minPanel:200};
+// Some phone/privacy browsers report no touch points and a fine primary pointer.
+// Keep the phone layout when another pointer or the browser's mobile identity confirms it.
+export function detectTouchDevice(nav=globalThis.navigator,media=globalThis.matchMedia){
+ const coarse=query=>typeof media==='function'&&media(query).matches;
+ return Number(nav?.maxTouchPoints)>0||coarse('(pointer:coarse)')||coarse('(any-pointer:coarse)')||nav?.userAgentData?.mobile===true||/Android|iPhone|iPad|iPod|IEMobile|Windows Phone|Mobile/i.test(nav?.userAgent||'');
+}
 export function panelLayout(width,height,touch){
  if(!touch||width>700||height<=width)return null;
  const scene=Math.round(Math.min(width*480/PANEL.worldWidth,height-PANEL.bossHud-PANEL.minPanel));

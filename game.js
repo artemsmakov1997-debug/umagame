@@ -13,18 +13,22 @@ import {ScreenManager} from './screens.js?v=0.21.6';
 import {DialogueUI} from './dialogue-ui.js?v=0.21.6';
 import {PauseMenu} from './pause-menu.js?v=0.21.6';
 import {TouchControls} from './touch-controls.js?v=0.21.6';
-import {applyPanelLayout} from './mobile-layout.js?v=0.21.6';
+import {applyPanelLayout,detectTouchDevice} from './mobile-layout.js?v=0.21.6';
 import {GameAudio} from './audio.js?v=0.21.6';
 const $=id=>document.getElementById(id);
 // The huge-wall hint is shown once per visit to the fight.
 let giantShown=false,yuriHintShown=false;
 async function boot(){
- document.documentElement.classList.toggle('has-touch',navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches);
+ document.documentElement.classList.toggle('has-touch',detectTouchDevice());
  const game=new Game({cinematic:true});game.testingInvulnerable=false;game.touchEnabled=document.documentElement.classList.contains('has-touch');
  const assets=await loadAssets((done,total)=>{$('loading').style.setProperty('--loading-progress',String(Math.max(0,Math.min(1,done/total))));}).catch(()=>null);
  if(!assets){$('loading').textContent='Не удалось загрузить рисунки. ';const retry=document.createElement('button');retry.textContent='Повторить загрузку';retry.className='back-button';retry.addEventListener('click',()=>location.reload());$('loading').append(retry);return;}
  $('loading').hidden=true;document.documentElement.classList.remove('booting');document.documentElement.classList.add('booted');
  const renderer=new Renderer($('game'),assets),keys=new Set();let jump=false,dash=false,attack=false,last=0,clock=0,accumulator=0,toastTimer,touch;
+ // A real touch is definitive, even if every capability hint was hidden at startup.
+ function enableTouch(){if(game.touchEnabled)return;game.touchEnabled=true;document.documentElement.classList.add('has-touch');applyPanelLayout($('app'),true);}
+ window.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')enableTouch();},{capture:true});
+ window.addEventListener('touchstart',enableTouch,{capture:true,passive:true});
  const audio=new GameAudio({onChange:()=>updateSound()});
  window.addEventListener('pointerdown',()=>audio.unlock(),{capture:true});window.addEventListener('keydown',()=>audio.unlock(),{capture:true});
  function clearInput(){keys.clear();jump=false;dash=false;attack=false;touch?.reset();}
