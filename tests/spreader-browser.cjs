@@ -7,7 +7,7 @@ const place=(p,where)=>p.evaluate(where=>{const g=testGame,t=g.platforms.find(s=
  else Object.assign(g.player,{x:3840+where,y:416-48,h:48,sneaking:false,forcedCrouch:false,grounded:true,supportId:'2:0',dir:1});g.updateCamera();},where);
 for(const[width,height]of[[1920,1080],[1366,768],[390,844],[320,568],[844,390]]){
  const p=await browser.newPage({viewport:{width,height},hasTouch:width<1000,isMobile:width<1000});p.on('pageerror',e=>errors.push(e.message));await open(p,{story:false,testing:true});await begin(p);
- await p.evaluate(async()=>{const g=testGame,{activateRoom}=await import('./room-transitions.js?v=0.21.6'),{stepBoss}=await import('./boss.js?v=0.21.6');g.mode='playing';g.notebooks=[];g.enemies=[];activateRoom(g,2);g.boss.noticeTime=0;g.step=()=>{};g.testingInvulnerable=true;
+ await p.evaluate(async()=>{const g=testGame,{activateRoom}=await import('./room-transitions.js?v=0.21.6'),{stepBoss}=await import('./boss.js?v=0.21.6');g.mode='playing';g.notebooks=[];g.enemies=[];activateRoom(g,2);g.boss.noticeTime=0;g.hintsEnabled=false;document.getElementById('toast').classList.remove('visible');g.step=()=>{};g.testingInvulnerable=true;
   window.advanceSpreader=n=>{for(let i=0;i<n;i++){g.time+=1/60;stepBoss(g,1/60);}};});
  await place(p,'under');
  const coverWindup=await p.evaluate(()=>{
@@ -29,7 +29,13 @@ for(const[width,height]of[[1920,1080],[1366,768],[390,844],[320,568],[844,390]])
  assert.equal(await p.evaluate(()=>['spreaderAir','spreaderTube','spreaderFx','spreaderServants','spreaderLeaflets','spreaderShelters','spreaderArena'].every(k=>testUI.assets[k].complete&&testUI.assets[k].naturalWidth>0)),true);
  assert.ok(await p.evaluate(()=>testGame.relays.filter(d=>d.room===2).every(d=>d.hp===0)));
  await shot(p,'spreader-carpet-bombing-'+width);
- await place(p,300);assert.equal(await until(p,'air:collect',40),'air:collect');await p.waitForTimeout(40);await shot(p,'spreader-collect-'+width);
+ await place(p,300);assert.equal(await until(p,'air:collect'),'air:collect');
+ await p.evaluate(async()=>{const{collectFlightPose,COLLECT_FLIGHT_EYES}=await import('./spreader-collect-art.js?v=0.21.6'),g=testGame,r=testRenderer,c=r.c,a=r.assets,seen=new Set();let error=0;
+  window.inspectCollect=(stop=-1)=>{for(let i=0;i<120&&g.boss.fight.mode==='collect';i++){advanceSpreader(1);const pose=collectFlightPose(g.boss);if(!pose||pose.alpha===0)break;const old=c.drawImage;c.drawImage=function(img,...v){if(img===a.spreaderCollectFlight){const index=Math.floor(v[1]/512)*3+v[0]/512;seen.add(index);const[ex,ey]=COLLECT_FLIGHT_EYES[index],m=c.getTransform(),x=v[4]+ex*v[6]/512,y=v[5]+ey*v[7]/512;error=Math.max(error,Math.abs(m.a*x+m.c*y+m.e-(g.boss.x+g.boss.w/2+(pose.flip?-12.09:12.09)-Math.round(g.camera)+Math.max(0,(c.canvas.width-864)/2))),Math.abs(m.b*x+m.d*y+m.f-(g.boss.y+g.boss.h/2-1.95)));}return old.call(this,img,...v);};try{g.updateCamera();r.draw(g,0);}finally{c.drawImage=old;}if(pose.frame===stop)break;}return{frames:[...seen].sort(),error,ready:a.spreaderCollectFlight.complete,size:[a.spreaderCollectFlight.naturalWidth,a.spreaderCollectFlight.naturalHeight]};};inspectCollect(3);
+ });await shot(p,'spreader-collect-glide-'+width);
+ await p.keyboard.press('Escape');const flightPause=await p.evaluate(()=>JSON.stringify(testGame));await p.waitForTimeout(80);assert.equal(await p.evaluate(()=>JSON.stringify(testGame)),flightPause);await p.keyboard.press('Escape');
+ const collected=await p.evaluate(()=>inspectCollect());assert.deepEqual(collected.frames,[0,1,2,3,4,5]);assert.ok(collected.error<.02,JSON.stringify(collected));assert.equal(collected.ready,true);assert.deepEqual(collected.size,[1536,1024]);
+ await p.waitForTimeout(40);await shot(p,'spreader-collect-'+width);
  assert.equal(await until(p,'air:heavy',10),'air:heavy');assert.ok(await p.evaluate(()=>{const b=testGame.boss;return Math.abs(b.x+b.w/2-testGame.player.x-17)<200;}));await p.waitForTimeout(40);await shot(p,'spreader-heavy-'+width);
  await p.evaluate(()=>{testGame.boss.hp=4;});await place(p,600);
  assert.equal(await until(p,'ground:windup',40),'ground:windup');await p.waitForTimeout(40);await shot(p,'spreader-dash-windup-'+width);

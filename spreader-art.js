@@ -1,5 +1,6 @@
 import {rect} from './pixel.js?v=0.21.6';
 import {FLOOR_Y,WINDUP,DASH_HITBOX} from './spreader-combat.js?v=0.21.6';
+import {collectFlightPose,drawCollectFlight} from './spreader-collect-art.js?v=0.21.6';
 const clamp01=v=>Math.max(0,Math.min(1,v));
 // assets/spreader-air.png: 8 cells of 192×184, centred, facing right.
 //  0 wings up, 1 wings down, 2 bank, 3 bombing, 4 dive, 5 collecting, 6 overloaded, 7 hurt.
@@ -54,7 +55,7 @@ export function fx(c,a,frame,cx,cy,scale,alpha=1,flip=false){
 
 export function drawSpreader(c,a,g,time){
  const b=g.boss,air=a.spreaderAir,tube=a.spreaderTube;if(!air||!tube)return false;
- const f=b.fight,[kind,frame]=spreaderFrame(b,time),sheet=kind==='tube'?TUBE:AIR,image=kind==='tube'?tube:air,cx=b.x+b.w/2,top=poseTop(b,kind,frame),flip=b.dir<0;
+ const f=b.fight,collect=collectFlightPose(b),[kind,frame]=spreaderFrame(b,time),sheet=kind==='tube'?TUBE:AIR,image=kind==='tube'?tube:air,cx=b.x+b.w/2,top=poseTop(b,kind,frame),flip=collect?collect.flip:b.dir<0;
  if(f?.mode==='windup')drawDashLane(c,g,b,time,clamp01(1-f.timer/WINDUP));
  if(f?.mode==='aim')drawTarget(c,a,f,time);
  if(f&&['stuck','pull'].includes(f.mode))fx(c,a,6,f.aimX,f.aimY-2,.62,f.mode==='pull'?clamp01(1-f.elapsed/.45):1);
@@ -63,7 +64,10 @@ export function drawSpreader(c,a,g,time){
  if(f?.mode==='heavy'||f?.mode==='sink'){const k=.5+.5*Math.sin(time*9);c.save();c.globalAlpha=.25+.2*k;c.fillStyle='#ffe9a8';c.beginPath();c.ellipse(cx,b.y+b.h+4,62,8,0,0,Math.PI*2);c.fill();c.restore();}
  const shake=f?.mode==='heavy'?Math.sin(time*40)*1.2:0;
  const rotation=f?.mode==='spear'?(flip?-1:1)*.75:0;
- cell(c,image,sheet,frame,cx+shake,top,flip,1,rotation);
+ if(collect?.alpha>0&&a.spreaderCollectFlight?.complete&&a.spreaderCollectFlight.naturalWidth){
+  if(collect.alpha<1)cell(c,image,sheet,frame,cx,top,flip,1-collect.alpha);
+  drawCollectFlight(c,a,b,collect);
+ }else cell(c,image,sheet,frame,cx+shake,top,flip,1,rotation);
  // Collecting the print run: arrows of wind and a glow in the belly.
  if(f?.mode==='collect'){const k=.5+.5*Math.sin(time*12);c.save();c.globalAlpha=.25+.25*k;c.fillStyle='#ffd27a';c.beginPath();c.arc(cx,b.y+b.h*.62,16+k*5,0,Math.PI*2);c.fill();c.restore();}
  if(f?.mode==='crash')fx(c,a,11,cx+f.dashDir*48,FLOOR_Y-30,.5,clamp01(f.timer/.35));

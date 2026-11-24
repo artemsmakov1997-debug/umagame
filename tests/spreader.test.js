@@ -4,6 +4,7 @@ import {stepBoss,damageBoss} from '../boss.js';
 import {SPREADER_HP,WINDUP,STUN,STUCK,HEAVY,FLOOR_Y,FLY_Y,DASH_HITBOX,BURST_RADIUS,summonServants,stepServant,spreaderExposed,exposeSpreader,spreaderPhase} from '../spreader-combat.js';
 import {bossTargets} from '../target-highlight.js';
 import {jumpTo} from './navigation.js';
+import {collectFlightPose,drawCollectFlight,COLLECT_FLIGHT_EYES,COLLECT_FLIGHT_SCALE} from '../spreader-collect-art.js';
 function ready(){const g=new Game({story:false,cinematic:true});g.start();g.mode='playing';activateRoom(g,2);g.testingInvulnerable=true;g.enemies=[];g.notebooks=[];g.fishes=[];g.soups=[];g.lifePickups=[];g.boss.noticeTime=0;return g;}
 const ticks=(g,n)=>{for(let i=0;i<n;i++)stepBoss(g,1/60);};
 const mode=g=>`${g.boss.fight.phase}:${g.boss.fight.mode}`;
@@ -11,6 +12,36 @@ function next(g,target){for(let i=0;i<60*20&&mode(g)===target;i++)stepBoss(g,1/6
 function until(g,target,max=60*40){for(let i=0;i<max&&!(g.boss.fight&&mode(g)===target);i++)stepBoss(g,1/60);return mode(g);}
 const table=(g,index=1)=>g.platforms.find(s=>s.id==='2:'+index);
 const floorAt=(g,x,h=48)=>Object.assign(g.player,{x,y:FLOOR_Y-h,h,vx:0,vy:0,grounded:true,supportId:'2:0',inv:0,dash:0,knock:0,sneaking:h<48});
+
+test('collection flight selects six poses from actual travel progress and faces the centre',()=>{
+ for(const x of[rooms[2].x+18,rooms[2].end-118]){
+  const b={room:2,x,y:86,w:100,h:76,fight:{mode:'collect',from:{x,y:86},dur:.8,elapsed:0}};
+  const frames=[];for(let i=0;i<6;i++){b.fight.elapsed=(i+.5)/6*.8;const before=JSON.stringify(b),pose=collectFlightPose(b);frames.push(pose.frame);assert.equal(pose.flip,x>rooms[2].x+382);assert.equal(pose.alpha,1);assert.equal(JSON.stringify(b),before);}
+  assert.deepEqual(frames,[0,1,2,3,4,5]);b.fight.elapsed=.86;assert.ok(collectFlightPose(b).alpha>.49&&collectFlightPose(b).alpha<.51);b.fight.elapsed=.93;assert.equal(collectFlightPose(b).alpha,0);b.fight.mode='bombing';assert.equal(collectFlightPose(b),null);
+ }
+});
+
+test('drawn collection frames retain one scale and the original collecting eye anchor in either direction',()=>{
+ for(let frame=0;frame<6;frame++)for(const flip of[false,true]){
+  const b={x:120,y:86,w:100,h:76},image={complete:true,naturalWidth:1536},calls=[];
+  const c={globalAlpha:1,save(){},restore(){},translate(x,y){calls.push([x,y]);},scale(x,y){assert.deepEqual([x,y],[-1,1]);},drawImage(...args){calls.push(args);}};
+  assert.equal(drawCollectFlight(c,{spreaderCollectFlight:image},b,{frame,flip,alpha:1}),true);assert.deepEqual(calls[0],[170+(flip?-12.09:12.09),122.05]);const draw=calls[1],[ex,ey]=COLLECT_FLIGHT_EYES[frame],k=COLLECT_FLIGHT_SCALE;
+  assert.deepEqual(draw.slice(1,5),[frame%3*512,Math.floor(frame/3)*512,512,512]);assert.ok(Math.abs(draw[5]+ex*k)<.001&&Math.abs(draw[6]+ey*k)<.001);assert.equal(draw[7],512*k);assert.equal(draw[8],512*k);
+ }
+ assert.equal(drawCollectFlight({}, {},{},null),false);
+});
+
+test('actual flight animation follows both unchanged glide trajectories and freezes with pause',()=>{
+ for(const local of[220,650]){
+  const g=ready();floorAt(g,rooms[2].x+local);until(g,'air:collect');const seen=new Set();
+  for(let i=0;i<120&&g.boss.fight.mode==='collect';i++){
+   ticks(g,1);const b=g.boss,f=b.fight,pose=collectFlightPose(b);if(!pose)break;if(pose.alpha>0)seen.add(pose.frame);
+   const k=Math.min(1,f.elapsed/f.dur),ease=k*k*(3-2*k),goal=rooms[2].x+rooms[2].width/2-b.w/2;assert.ok(Math.abs(b.x-(f.from.x+(goal-f.from.x)*ease))<.001);
+   if(i===8){g.mode='paused';const frozen=JSON.stringify(pose);g.step(1/60,{});assert.equal(JSON.stringify(collectFlightPose(b)),frozen);g.mode='playing';}
+  }
+  assert.deepEqual([...seen].sort(),[0,1,2,3,4,5]);
+ }
+});
 
 test('arena: floor, two crouch-height shelters and two side ledges reachable from the tables',()=>{
  const g=ready();assert.equal(rooms[2].width,864);const s=g.platforms.filter(s=>s.room===2);assert.equal(s.length,5);
