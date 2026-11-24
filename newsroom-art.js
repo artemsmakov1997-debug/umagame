@@ -19,7 +19,7 @@ const NEWS_K={desk:.42,walk:.4,pile:.42,shelf:.4};
 function cut(c,img,p,sx,sw,x,y,k){if(sw<=0)return;c.drawImage(img,p.r[0]+sx,p.r[1],sw,p.r[3],Math.round(x),Math.round(y-p.t[0]*k),Math.ceil(sw*k),Math.round(p.r[3]*k));}
 export function newsroomPlatformKind(p){return NEWS_KIND[p.id]||null;}
 export function drawNewsroomPlatform(c,a,p){
- if(p.id==='1:7'&&a.newsroomInkStation){const k=(BELT_TOP-p.y)/(1398-100);c.drawImage(a.newsroomInkStation,p.x-78*k,p.y-100*k,1086*k,1448*k);return true;}
+ if(['1:7','1:8'].includes(p.id)&&a.newsroomInkStation){const k=(BELT_TOP-p.y)/(1398-100);c.drawImage(a.newsroomInkStation,p.x-78*k,p.y-100*k,1086*k,1448*k);return true;}
  const kind=NEWS_KIND[p.id],img=a.newsroomPlatforms;if(!kind||!img?.complete||!img.naturalWidth)return false;
  const x=Math.round(p.x),y=Math.round(p.y),w=Math.round(p.w);
  if(NP[kind]){const q=NP[kind],k=w*1.08/q.r[2];cut(c,img,q,0,q.r[2],x-w*.04,y,k);return true;}

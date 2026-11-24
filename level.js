@@ -39,7 +39,8 @@ layouts[1]=[
  [1460,345,120],  // 4 catwalk, checkpoint (soup)
  [1880,345,90],   // 5 catwalk, checkpoint between the last two presses
  [1860,260,100],  // 6 upper cache (life)
- [2010,260,124]   // 7 ink station on grounded supports
+ [2010,260,124],  // 7 final ink station on grounded supports
+ [1070,260,124]   // 8 middle ink station beside the upper catwalk
 ];
 // «Крыши» (roofs-map.js): buildings, then the washing line, the awning and roof props.
 layouts[3]=[...ROOF_BUILDINGS.map(b=>[b.x,b.y,b.w]),...ROOF_ROPES.map(r=>[r.x,r.y,r.w]),...ROOF_AWNINGS.map(a=>[a.x,a.y,a.w]),...ROOF_PROPS.map(p=>[p.x,p.y,p.w])];
@@ -131,10 +132,10 @@ function seatInContainer(actor,s){
 }
 export function createEnemies(){const all=[
  // Редакция: Фейкньюс, Цензоры (newsroom-systems.js CENSOR_SOURCES) and Штампы alternate evenly along the belt —
- // F 330 · C 540 · F 760 · C 1000 · S 1180 · F 1430 · C 1620 · F 1900 · S 2048 · F 2290. The last Stamp works on its own station; the first wakes while Uma is
- // still on the catwalk before it, so its ink rides the belt into the open stretch she has to cross on foot.
+ // F 330 · C 540 · F 760 · C 1000 · S 1108 · F 1430 · C 1620 · F 1900 · S 2048 · F 2290.
+ // Exactly two Stamps sit on grounded stations; their slower, staggered casts leave clean belt gaps.
  enemy('fakenews',1,330,0,{trigger:90}),enemy('fakenews',1,760,0),
- enemy('stamp',1,1180,0,{trigger:880,timer:0}),enemy('fakenews',1,1430,0),
+ enemy('stamp',1,1108,8,{inkStation:true,inkPlatformId:'1:0',noticed:true,speed:0,timer:3.5}),enemy('fakenews',1,1430,0),
  enemy('fakenews',1,1900,0),enemy('stamp',1,2048,7,{inkStation:true,inkPlatformId:'1:0',noticed:true,speed:0,timer:0}),enemy('fakenews',1,2290,0,{hp:2,maxHp:2}),
  // Крыши: Нагнетатели sit on wall brackets high above the roofs, out of reach, and blow across the whole map.
  enemy('paparazzi',3,575,1,{trigger:260}),enemy('inflator',3,520,1,{dir:-1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:-1,mountY:112}),enemy('inflator',3,1727,10,{dir:-1,mountY:64}),enemy('paparazzi',3,2240,7),
@@ -149,7 +150,7 @@ export function createEnemies(){const all=[
 enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
  enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('echo',7,2420,25,{trigger:2300}),enemy('static',7,2660,26,{y:200})
  ];
- const kept={1:[330,760,1180,1430,1900,2048,2290],3:[575,520,1150,1060,1727,2240],5:[715,860,1525,1800,1925],7:[330,760,1250,1700,1960,2420,2660]};
+ const kept={1:[330,760,1108,1430,1900,2048,2290],3:[575,520,1150,1060,1727,2240],5:[715,860,1525,1800,1925],7:[330,760,1250,1700,1960,2420,2660]};
  const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}

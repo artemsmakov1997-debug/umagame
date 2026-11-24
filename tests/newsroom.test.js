@@ -21,7 +21,7 @@ const toPhase=(g,press,phase)=>{g.time=((phase-press.offset)%4.5+4.5)%4.5;};
 test('the newsroom is one conveyor towards Uma with a few short catwalks and an exit that needs no nodes',()=>{
  const g=ready(),belt=g.platforms.find(s=>s.id==='1:0'),local=g.platforms.filter(s=>s.room===1);
  assert.equal(belt.x,R.x);assert.equal(belt.w,R.width);assert.equal(belt.belt,BELT_SPEED);assert.ok(BELT_SPEED<0,'runs right to left');
- assert.ok(local.length<=8);for(const s of local.slice(1))assert.ok(s.w<=130,'catwalks are short');
+ assert.ok(local.length<=9);for(const s of local.slice(1))assert.ok(s.w<=130,'catwalks are short');
  assert.equal(g.relays.filter(d=>d.room===1).length,0);assert.equal(canLeaveRoom(g,1),true);
  assert.deepEqual(chapters.find(c=>c.room===1).monsters,['fakenews','stamp','censor']);
  assert.ok(createEnemies().filter(e=>e.room===1).every(e=>['fakenews','stamp'].includes(e.type)),'no Copier in the newsroom');
@@ -75,16 +75,33 @@ test('Yuri speaks once, at the very start of the newsroom',()=>{
 });
 
 test('the rightmost press is replaced by a reachable stationary Stamp platform',()=>{
- const g=ready(),s=g.platforms.find(s=>s.id==='1:7'),stamp=createEnemies().find(e=>e.inkStation);
+ const g=ready(),s=g.platforms.find(s=>s.id==='1:7'),stamp=createEnemies().find(e=>e.inkStation&&e.platformIndex===7);
  assert.equal(PRESSES.length,3);assert.ok(!PRESSES.some(p=>p.x===2010));assert.deepEqual([s.x-R.x,s.y,s.w],[2010,260,124]);
  assert.equal(stamp.platformIndex,7);assert.equal(stamp.y+stamp.h,s.y);assert.equal(stamp.speed,0);assert.equal(stamp.source,undefined);assert.equal(stamp.inkPlatformId,'1:0');
  place(g,6,1880);assert.equal(jumpTo(g,1,7),true);
 });
 
-test('the ink station keeps casting from far away; belt ink survives drying and the old eight-blot cap',()=>{
- const g=ready(),stamp=createEnemies().find(e=>e.inkStation);g.enemies=[stamp];place(g,3,980);const x=stamp.x;
+test('exactly two Stamps stand on the middle and final grounded stations, never on the belt',()=>{
+ const g=ready(),stamps=createEnemies().filter(e=>e.room===1&&e.type==='stamp');assert.equal(stamps.length,2);
+ assert.deepEqual(stamps.map(e=>e.platformIndex),[8,7]);assert.ok(stamps.every(e=>e.inkStation&&e.speed===0&&!e.source));
+ for(const e of stamps){const s=g.platforms.find(s=>s.index===e.platformIndex&&s.room===1);assert.equal(e.y+e.h,s.y);assert.ok(e.x>=s.x&&e.x+e.w<=s.x+s.w);}
+ place(g,3,980);assert.equal(jumpTo(g,1,8),true);
+});
+
+test('the two persistent ink streams leave clean walking gaps after prolonged operation',()=>{
+ const g=ready();g.enemies=createEnemies().filter(e=>e.room===1&&e.type==='stamp');place(g,3,980);tick(g,60*60);
+ const coverage=visual=>{const spans=g.inks.filter(i=>i.fly===0).map(i=>{const pad=visual?i.w*.1:0;return[Math.max(100,i.localX-pad),Math.min(1000,i.localX+i.w+pad)];}).filter(([a,b])=>b>a).sort((a,b)=>a[0]-b[0]);let end=100,dirty=0,gap=0;
+  for(const[a,b]of spans){gap=Math.max(gap,a-end);dirty+=Math.max(0,b-Math.max(end,a));end=Math.max(end,b);}return{dirty:dirty/900,gap:Math.max(gap,1000-end)};};
+ for(let sample=0;sample<30;sample++){
+  tick(g,60);const floor=coverage(false),art=coverage(true);assert.ok(floor.dirty>.3&&floor.dirty<.65,JSON.stringify(floor));assert.ok(art.dirty<.75&&art.gap>=45,JSON.stringify(art));assert.ok(g.inks.length<=15);assert.ok(g.inks.every(i=>i.w===84&&i.persistent));
+ }
+ assert.ok(g.inks.length>8,'both streams persist beyond the former eight-blot cap');
+});
+
+test('the final ink station keeps casting from far away and belt ink survives drying',()=>{
+ const g=ready(),stamp=createEnemies().find(e=>e.inkStation&&e.platformIndex===7);g.enemies=[stamp];place(g,3,980);const x=stamp.x;
  tick(g,180);assert.ok(g.inks.length>0);const first=g.inks[0],local=first.localX;assert.ok(first.persistent);assert.equal(first.platformId,'1:0');assert.equal(first.fly,0);
- tick(g,60*22);assert.equal(stamp.x,x);assert.ok(g.inks.includes(first));assert.equal(first.time,9);assert.ok(first.localX<local-950);assert.ok(g.inks.length>8);assert.ok(g.inks.every(i=>i.platformId==='1:0'));
+ tick(g,60*22);assert.equal(stamp.x,x);assert.ok(g.inks.includes(first));assert.equal(first.time,9);assert.ok(first.localX<local-950);assert.ok(g.inks.length>=3&&g.inks.length<=5);assert.ok(g.inks.every(i=>i.platformId==='1:0'));
  const frozen=JSON.stringify(g);g.mode='paused';const paused=JSON.stringify(g);tick(g,180);assert.equal(JSON.stringify(g),paused);g.mode='playing';assert.notEqual(frozen,paused);
  stamp.inv=0;g.hitEnemy(stamp);stamp.inv=0;g.hitEnemy(stamp);assert.ok(stamp.dead);assert.ok(g.inks.includes(first));const serial=g.tacticalSerial;
  tick(g,60*48);assert.ok(!g.inks.includes(first),'removed only after riding off the left belt edge');assert.equal(g.inks.length,0);assert.equal(g.tacticalSerial,serial,'a defeated Stamp stops producing ink');

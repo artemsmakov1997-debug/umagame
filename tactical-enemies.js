@@ -2,6 +2,8 @@ import {actorById} from './boss-actors.js?v=0.21.6';
 import {enemy,rooms} from './level.js?v=0.21.6';
 import {inkAt,solidSurfaces} from './terrain.js?v=0.21.6';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+// Two staggered stations: compact blots separated by clean belt instead of a continuous ink carpet.
+export const INK_STATION_INTERVAL=7,INK_STATION_WIDTH=84;
 export const TACTICAL_TYPES=['stamp','copier','cutter'];
 export const CUT_HUNTER={reach:640,notice:640,width:96,margin:18,warning:1.15,recover:.5,rest:1.3};
 export function scanArea(g,e){
@@ -22,7 +24,7 @@ export function cleanCopies(g){
 }
 export function stampInk(g,e,offset=0){
  const s=g.platforms.find(s=>e.inkPlatformId?s.id===e.inkPlatformId:s.room===e.room&&s.index===e.platformIndex);if(!s)return;
- const w=Math.min(96,s.w-8),localX=clamp(e.x+e.w/2+offset-s.x-w/2,4,s.w-w-4),old=g.inks.find(i=>i.platformId===s.id&&Math.abs(i.localX-localX)<35);
+ const w=Math.min(e.inkStation?INK_STATION_WIDTH:96,s.w-8),localX=clamp(e.x+e.w/2+offset-s.x-w/2,4,s.w-w-4),old=g.inks.find(i=>i.platformId===s.id&&Math.abs(i.localX-localX)<35);
  // A flung blot flies for a moment before it lands (and only then makes the floor slippery).
  const fly=offset?(e.inkStation?.65:.3):0,from={x:e.x+e.w/2,y:e.y+e.h*.35},persistent=s.id==='1:0',data={localX,time:9,fly,flyDuration:fly,flyFrom:from,persistent};
  if(old)Object.assign(old,data);else g.inks.push({id:'ink-'+(++g.tacticalSerial),room:e.room,platformId:s.id,w,...data,drift:e.x+e.w/2>s.x+s.w/2?1:-1});
@@ -55,7 +57,7 @@ export function stepTacticalEnemy(g,e,dt,dx,dy){
    // A stamp splashes ink under itself and flings a second blot ahead, towards Uma.
    if(e.inkStation)stampInk(g,e,-70);else{stampInk(g,e);stampInk(g,e,(dx<0?-1:1)*90);}e.state='stamping';e.timer=.28;}
   else if(e.state==='stamping'&&e.timer<=0){e.state='recover';e.timer=.55;}
-  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.8;}
+  else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=e.inkStation?INK_STATION_INTERVAL-.42-.28-.55:.8;}
  }else if(e.type==='copier'){
   if(e.state==='patrol'){
    e.x+=e.dir*e.speed*dt;const source=scanSource(g,e);
