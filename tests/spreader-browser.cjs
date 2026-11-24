@@ -50,7 +50,9 @@ for(const[width,height]of[[1920,1080],[1366,768],[390,844],[320,568],[844,390]])
  });assert.equal(pierce.mode,'spear');assert.equal(pierce.aimY,416);assert.ok(pierce.tip>pierce.tableY);await shot(p,'spreader-spear-through-cover-'+width);
  const impact=await p.evaluate(()=>{const g=testGame,b=g.boss;for(let i=0;i<60&&b.fight.mode!=='stuck';i++)advanceSpreader(1);return {mode:b.fight.mode,feet:b.y+b.h,hp:g.health};});assert.deepEqual(impact,{mode:'stuck',feet:416,hp:3});await shot(p,'spreader-spear-under-cover-'+width);
  await p.evaluate(()=>{testGame.testingInvulnerable=true;});
- await p.evaluate(async()=>{const{damageBoss}=await import('./boss.js?v=0.21.6');testGame.storyEnabled=true;for(let i=0;i<9&&testGame.boss.hp>0;i++){testGame.boss.fight.hitThisWindow=false;damageBoss(testGame,1);}});
+ const swat=()=>p.evaluate(()=>{const g=testGame,b=g.boss;g.storyEnabled=true;Object.assign(g.player,{x:b.x+b.w+4,y:416-48,h:48,vx:0,vy:0,grounded:true,supportId:'2:0',sneaking:false,forcedCrouch:false,dir:-1,cooldown:0,attack:0,powerTime:8,inv:99});Object.getPrototypeOf(g).step.call(g,1/60,{attack:true});return{hp:b.hp,mode:g.mode};});
+ assert.deepEqual(await swat(),{hp:1,mode:'playing'});await shot(p,'spreader-third-phase-first-powered-hit-'+width);
+ assert.equal(await until(p,'spear:aim'),'spear:aim');assert.equal(await until(p,'spear:stuck'),'spear:stuck');assert.deepEqual(await swat(),{hp:0,mode:'bossDefeat'});
  await p.waitForFunction(()=>testGame.mode==='bossDefeat');assert.equal(await p.evaluate(()=>testGame.enemies.some(e=>!e.dead)),false);assert.equal(await p.evaluate(()=>testGame.boss.fight.bundles.length),0);
  if(width===1366){await p.evaluate(()=>{testGame.defeat.time=.8;});await p.waitForTimeout(60);await shot(p,'spreader-defeat-'+width);}
  await p.evaluate(()=>testGame.skipBossDefeat());await p.waitForFunction(()=>document.getElementById('ending-caption').textContent.length>0);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await p.close();

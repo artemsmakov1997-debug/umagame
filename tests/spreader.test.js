@@ -128,6 +128,31 @@ test('a real paw swing lands on the dizzy tube',()=>{
  const hp=b.hp;g.step(1/60,{attack:true});assert.equal(b.hp,hp-1);
 });
 
+test('powered paws enter the spear phase at full health and need two separate openings to win',()=>{
+ const g=ready();g.boss.hp=3;until(g,'ground:stunned');
+ const swat=()=>{const b=g.boss;floorAt(g,b.x+b.w+4);Object.assign(g.player,{dir:-1,cooldown:0,attack:0,powerTime:8});g.step(1/60,{attack:true});};
+ swat();assert.equal(g.boss.hp,2,'extra damage cannot spill across the phase boundary');
+ until(g,'spear:stuck');swat();assert.equal(g.boss.hp,1);assert.equal(g.mode,'playing');assert.equal(damageBoss(g,2),false,'only one hit per opening');
+ next(g,'spear:stuck');swat();assert.equal(g.boss.hp,0);assert.equal(g.mode,'bossDefeat');assert.ok(g.enemies.every(e=>e.dead));
+});
+
+test('servants refill every four seconds in all phases without exceeding two live helpers',()=>{
+ for(const hp of[6,4,2]){
+  const g=ready();g.boss.hp=hp;ticks(g,1);const f=g.boss.fight;f.mode=hp===6?'heavy':hp===4?'stunned':'stuck';f.timer=100;
+  const live=()=>g.enemies.filter(e=>!e.dead);assert.equal(live().length,2);const old=live()[0];old.spawnTime=0;g.hitEnemy(old);assert.ok(old.dead);
+  ticks(g,230);assert.equal(live().length,1);ticks(g,20);assert.equal(live().length,2);assert.ok(live().some(e=>e.id!==old.id&&e.spawnTime===.6));
+  ticks(g,60*12);assert.equal(live().length,2);assert.ok(live().every(e=>Math.hypot(e.x-g.player.x,e.y-g.player.y)>=90));
+ }
+});
+
+test('an overdue servant summon waits until the dash or descending spear has finished',()=>{
+ for(const mode of['dash','spear']){
+  const g=ready();g.boss.hp=mode==='dash'?4:2;ticks(g,1);g.enemies[0].dead=true;const b=g.boss,f=b.fight,r=rooms[2];
+  Object.assign(f,{mode,timer:5,servantTimer:0,dashDir:1,dashTarget:r.end-20,aimX:b.x+b.w/2,aimY:FLOOR_Y});b.x=r.x+100;b.y=FLY_Y;
+  ticks(g,2);assert.equal(g.enemies.filter(e=>!e.dead).length,1);f.mode=mode==='dash'?'stunned':'stuck';f.timer=1;ticks(g,1);assert.equal(g.enemies.filter(e=>!e.dead).length,2);
+ }
+});
+
 test('exposeSpreader opens the current phase for scripted scenes',()=>{
  for(const [hp,m] of [[6,'air:heavy'],[4,'ground:stunned'],[2,'spear:stuck']]){const g=ready();g.boss.hp=hp;ticks(g,1);exposeSpreader(g);assert.equal(mode(g),m);assert.ok(spreaderExposed(g.boss));}
  const g=ready();ticks(g,1);exposeSpreader(g);assert.equal(damageBoss(g,99,true),true);assert.equal(g.mode,'bossDefeat');

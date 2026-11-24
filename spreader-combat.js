@@ -26,7 +26,7 @@ const edgeX=(g,side)=>{const r=rooms[g.boss.room];return side<0?r.x+EDGE:r.end-E
 export function spreaderDeck(g){return g.platforms.find(s=>s.room===g.boss.room&&s.index===4);}
 export function spreaderExposed(b){const f=b.fight;return !!f&&OPENINGS.includes(f.mode)&&!f.hitThisWindow;}
 export function spreaderPhase(b){return b.hp>SPREADER_HP-PHASE_HP?'air':b.hp>SPREADER_HP-2*PHASE_HP?'ground':'spear';}
-export const SERVANTS={air:2,ground:1,spear:1};
+export const SERVANTS={air:2,ground:2,spear:2},SERVANT_SUMMON_INTERVAL=4;
 export function summonServants(g,cap=SERVANTS[spreaderPhase(g.boss)]??2){
  const b=g.boss,r=rooms[b.room],alive=g.enemies.filter(e=>e.bossOwnerId===b.id&&!e.dead),made=[];
  for(const [local,side] of [[b.x-110,-1],[b.x+b.w+35,1],[g.player.x-140,-1],[g.player.x+140,1]]){
@@ -87,6 +87,8 @@ export function stepSpreader(g,dt){
  const b=g.boss,f=fight(b),p=g.player,r=rooms[b.room],px=p.x+p.w/2;
  f.timer-=dt;f.elapsed=(f.elapsed||0)+dt;stepProjectiles(g,dt);b.phase=f.phase==='air'?1:f.phase==='ground'?2:3;b.phaseName=phasePlans.spreader[b.phase-1][0];
  if(!f.relaysCleared){f.relaysCleared=true;g.relays.filter(d=>d.room===b.room).forEach(d=>{d.hp=0;d.breakTime=.45;});summonServants(g);g.emit('bossPhase',{boss:b.id,phase:1,name:phasePlans.spreader[0][0]});}
+ f.servantTimer=(f.servantTimer??SERVANT_SUMMON_INTERVAL)-dt;
+ if(f.servantTimer<=0&&!['dash','spear'].includes(f.mode)){summonServants(g);f.servantTimer=SERVANT_SUMMON_INTERVAL;}
  b.state=OPENINGS.includes(f.mode)?'recover':['windup','aim','collect'].includes(f.mode)?'windup':'casting';
  switch(f.mode){
   case 'enter':{if(f.side===undefined||f.elapsed<=dt)f.side=px<r.x+r.width/2?1:-1;glide(b,{x:edgeX(g,-f.side),y:FLY_Y},420,.8);b.dir=f.side;
@@ -129,10 +131,11 @@ function beginWindup(g){const b=g.boss,f=b.fight,px=g.player.x+g.player.w/2;f.da
 // Puts the boss into the opening of his current phase (tests and scripted scenes).
 export function exposeSpreader(g){const b=g.boss,f=fight(b),phase=spreaderPhase(b);f.phase=phase;b.cooldown=0;
  if(phase==='air'){b.y=FLOOR_Y-b.h;setMode(b,'heavy',HEAVY);}else if(phase==='ground'){f.dashDir=f.dashDir||-1;b.y=FLOOR_Y-b.h;setMode(b,'stunned',STUN);}else{f.aimX=b.x+b.w/2;f.aimY=FLOOR_Y;b.y=FLOOR_Y-b.h;setMode(b,'stuck',STUCK);}return b;}
-// One paw swing per opening; a powered paw deals 2.
+// One paw swing per opening. Damage cannot spill into the next phase; the final phase needs two swings,
+// including powered paws. Explicit scripted finishing damage still skips the fight for cinematics/tests.
 export function damageSpreader(g,amount){
  const b=g.boss,f=b.fight;if(!b.active||b.hp<=0||!spreaderExposed(b))return false;
- const before=spreaderPhase(b);f.hitThisWindow=true;b.hp=Math.max(0,b.hp-Math.max(1,amount));b.hurtTime=.35;b.cooldown=.3;g.emit('bossHit',{x:b.x+b.w/2,y:b.y+b.h-14,boss:b.id});
+ const before=spreaderPhase(b),scripted=amount>=SPREADER_HP,floor=scripted?0:before==='air'?SPREADER_HP-PHASE_HP:before==='ground'?PHASE_HP:0,damage=!scripted&&before==='spear'?1:Math.max(1,amount);f.hitThisWindow=true;b.hp=Math.max(floor,b.hp-damage);b.hurtTime=.35;b.cooldown=.3;g.emit('bossHit',{x:b.x+b.w/2,y:b.y+b.h-14,boss:b.id});
  if(b.hp===0){f.bundles=[];f.streams=[];f.shocks=[];g.bolts=[];for(const e of g.enemies)if(e.bossOwnerId===b.id&&!e.dead){e.dead=true;e.hp=0;e.deathTime=.3;}g.bossDefeated();return true;}
  // A hit cuts the opening short; crossing a phase boundary moves straight on.
  f.timer=Math.min(f.timer,spreaderPhase(b)!==before?.35:.6);
