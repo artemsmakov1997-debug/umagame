@@ -42,8 +42,9 @@ export function stepEnemies(g,dt,paw,prevBottom){
   if(g.mode!=='playing')break;
   if(e.type==='servant'){if(e.room===g.room)stepServant(g,e,dt,paw);continue;}
   if(e.dead){e.deathTime=Math.max(0,e.deathTime-dt);continue;}if(e.room!==g.room)continue;
+  if(e.inkStation&&!e.active){e.active=true;e.spawnTime=0;}
   // Summoned or pre-activated enemies bypass encounter activation; introduce them once, too.
-  if(e.active&&g.cinematic&&!g.seenScenes.has('sighting:'+e.type)){
+  if(e.active&&g.cinematic&&(!e.inkStation||Math.abs(e.x-p.x)<460)&&!g.seenScenes.has('sighting:'+e.type)){
    g.seenScenes.add('sighting:'+e.type);
    g.emit('enemyIntroduction',{enemyType:e.type,room:e.room});
   }

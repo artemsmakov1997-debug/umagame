@@ -21,12 +21,12 @@ export function cleanCopies(g){
  }
 }
 export function stampInk(g,e,offset=0){
- const s=g.platforms.find(s=>s.room===e.room&&s.index===e.platformIndex);if(!s)return;
+ const s=g.platforms.find(s=>e.inkPlatformId?s.id===e.inkPlatformId:s.room===e.room&&s.index===e.platformIndex);if(!s)return;
  const w=Math.min(96,s.w-8),localX=clamp(e.x+e.w/2+offset-s.x-w/2,4,s.w-w-4),old=g.inks.find(i=>i.platformId===s.id&&Math.abs(i.localX-localX)<35);
  // A flung blot flies for a moment before it lands (and only then makes the floor slippery).
- const fly=offset?.3:0,from={x:e.x+e.w/2,y:e.y+e.h*.35};
- if(old){old.localX=localX;old.time=9;old.fly=fly;old.flyFrom=from;}else g.inks.push({id:'ink-'+(++g.tacticalSerial),room:e.room,platformId:s.id,localX,w,time:9,fly,flyFrom:from,drift:e.x+e.w/2>s.x+s.w/2?1:-1});
- const own=g.inks.filter(i=>i.room===e.room);if(own.length>8)g.inks.splice(g.inks.indexOf(own[0]),1);
+ const fly=offset?(e.inkStation?.65:.3):0,from={x:e.x+e.w/2,y:e.y+e.h*.35},persistent=s.id==='1:0',data={localX,time:9,fly,flyDuration:fly,flyFrom:from,persistent};
+ if(old)Object.assign(old,data);else g.inks.push({id:'ink-'+(++g.tacticalSerial),room:e.room,platformId:s.id,w,...data,drift:e.x+e.w/2>s.x+s.w/2?1:-1});
+ const own=g.inks.filter(i=>i.room===e.room&&!i.persistent);if(own.length>8)g.inks.splice(g.inks.indexOf(own[0]),1);
  g.emit('inkStamp',{x:e.x+e.w/2,y:s.y,enemyType:e.type});
 }
 function copyEnemy(g,e){
@@ -50,10 +50,10 @@ export function stepTacticalEnemy(g,e,dt,dx,dy){
  if(e.type==='stamp'){
   if(e.state==='patrol'){
    e.x+=e.dir*e.speed*dt;
-   if(e.timer<=0&&Math.abs(dx)<420&&Math.abs(dy)<170){e.state='windup';e.timer=.42;g.emit('inkWarning',{x:e.x,y:e.y,enemyType:e.type});}
+   if(e.timer<=0&&(e.inkStation||Math.abs(dx)<420&&Math.abs(dy)<170)){e.state='windup';e.timer=.42;g.emit('inkWarning',{x:e.x,y:e.y,enemyType:e.type});}
   }else if(e.state==='windup'&&e.timer<=0){
    // A stamp splashes ink under itself and flings a second blot ahead, towards Uma.
-   stampInk(g,e);stampInk(g,e,(dx<0?-1:1)*90);e.state='stamping';e.timer=.28;}
+   if(e.inkStation)stampInk(g,e,-70);else{stampInk(g,e);stampInk(g,e,(dx<0?-1:1)*90);}e.state='stamping';e.timer=.28;}
   else if(e.state==='stamping'&&e.timer<=0){e.state='recover';e.timer=.55;}
   else if(e.state==='recover'&&e.timer<=0){e.state='patrol';e.timer=.8;}
  }else if(e.type==='copier'){

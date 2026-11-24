@@ -49,8 +49,8 @@ export function drawEnemyDefense(c,e,time,a={}){
 const INK_CELL=120,INK_H=110,INK_FEET=88;
 function drawStampInk(c,a,ink,x,y){
  const k=ink.w/100;
- if(ink.fly>0){const t=1-ink.fly/.3,fx=ink.flyFrom.x+(x+ink.w/2-ink.flyFrom.x)*t,fy=ink.flyFrom.y+(y-6-ink.flyFrom.y)*t-Math.sin(t*Math.PI)*34,f=Math.min(2,Math.floor(t*3)),dir=x+ink.w/2<ink.flyFrom.x?-1:1;
+ if(ink.fly>0){const t=1-ink.fly/(ink.flyDuration||.3),fx=ink.flyFrom.x+(x+ink.w/2-ink.flyFrom.x)*t,fy=ink.flyFrom.y+(y-6-ink.flyFrom.y)*t-Math.sin(t*Math.PI)*34,f=Math.min(2,Math.floor(t*3)),dir=x+ink.w/2<ink.flyFrom.x?-1:1;
   c.save();c.translate(Math.round(fx),Math.round(fy));c.scale(-dir,1);c.drawImage(a.stampInk,f*INK_CELL,0,INK_CELL,INK_H,-INK_CELL*.55*.5,-INK_H*.55*.6,INK_CELL*.55,INK_H*.55);c.restore();return true;}
- const f=ink.time>8.7?3:ink.time<1.4?5:4;c.save();c.globalAlpha=Math.min(1,ink.time/1.1);
+ const f=ink.persistent?4:ink.time>8.7?3:ink.time<1.4?5:4;c.save();c.globalAlpha=Math.min(1,ink.time/1.1);
  const v=k*.75;c.drawImage(a.stampInk,f*INK_CELL,0,INK_CELL,INK_H,Math.round(x+ink.w/2-INK_CELL*k/2),Math.round(y+3-INK_FEET*v),INK_CELL*k,INK_H*v);c.restore();return true;
 }

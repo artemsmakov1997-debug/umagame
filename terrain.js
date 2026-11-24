@@ -19,7 +19,7 @@ export function inkAt(g,actor){
  })||null;
 }
 export function stepTacticalTerrain(g,dt){
- for(const ink of g.inks)if(ink.room===g.room){ink.time-=dt;if(ink.fly>0)ink.fly=Math.max(0,ink.fly-dt);}
+ for(const ink of g.inks)if(ink.room===g.room){if(!ink.persistent)ink.time-=dt;if(ink.fly>0)ink.fly=Math.max(0,ink.fly-dt);}
  g.inks=g.inks.filter(i=>i.time>0);
  for(const cut of g.cuts){
   if(cut.room!==g.room)continue;

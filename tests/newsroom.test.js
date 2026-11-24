@@ -4,6 +4,7 @@ import {Game,rooms} from '../engine.js';
 import {enemy,createEnemies,createNotebooks,chapters} from '../level.js';
 import {activateRoom,canLeaveRoom} from '../room-transitions.js';
 import {stampInk} from '../tactical-enemies.js';
+import {jumpTo} from './navigation.js';
 import {PRESSES,PRESS_W,PRESS_WARN,PRESS_SLAM,PRESS_HOLD,CENSOR,CENSOR_SOURCES,CHECKPOINTS,BELT_SPEED,pressState,censorBox} from '../newsroom-systems.js';
 const tick=(g,n,input={})=>{for(let i=0;i<n;i++)g.step(1/60,input);};
 const R=rooms[1];
@@ -71,4 +72,26 @@ test('catwalks are checkpoints: a lost life returns Uma to the furthest one reac
 test('Yuri speaks once, at the very start of the newsroom',()=>{
  const notes=createNotebooks().filter(n=>n.room===1&&!n.bossRecord);assert.equal(notes.length,1);
  const [note]=notes;assert.ok(note.x-R.x<100);assert.deepEqual(note.scenes,['arrival1','fakenews','stamp','censor','press']);
+});
+
+test('the rightmost press is replaced by a reachable stationary Stamp platform',()=>{
+ const g=ready(),s=g.platforms.find(s=>s.id==='1:7'),stamp=createEnemies().find(e=>e.inkStation);
+ assert.equal(PRESSES.length,3);assert.ok(!PRESSES.some(p=>p.x===2010));assert.deepEqual([s.x-R.x,s.y,s.w],[2010,260,124]);
+ assert.equal(stamp.platformIndex,7);assert.equal(stamp.y+stamp.h,s.y);assert.equal(stamp.speed,0);assert.equal(stamp.source,undefined);assert.equal(stamp.inkPlatformId,'1:0');
+ place(g,6,1880);assert.equal(jumpTo(g,1,7),true);
+});
+
+test('the ink station keeps casting from far away; belt ink survives drying and the old eight-blot cap',()=>{
+ const g=ready(),stamp=createEnemies().find(e=>e.inkStation);g.enemies=[stamp];place(g,3,980);const x=stamp.x;
+ tick(g,180);assert.ok(g.inks.length>0);const first=g.inks[0],local=first.localX;assert.ok(first.persistent);assert.equal(first.platformId,'1:0');assert.equal(first.fly,0);
+ tick(g,60*22);assert.equal(stamp.x,x);assert.ok(g.inks.includes(first));assert.equal(first.time,9);assert.ok(first.localX<local-950);assert.ok(g.inks.length>8);assert.ok(g.inks.every(i=>i.platformId==='1:0'));
+ const frozen=JSON.stringify(g);g.mode='paused';const paused=JSON.stringify(g);tick(g,180);assert.equal(JSON.stringify(g),paused);g.mode='playing';assert.notEqual(frozen,paused);
+ stamp.inv=0;g.hitEnemy(stamp);stamp.inv=0;g.hitEnemy(stamp);assert.ok(stamp.dead);assert.ok(g.inks.includes(first));const serial=g.tacticalSerial;
+ tick(g,60*48);assert.ok(!g.inks.includes(first),'removed only after riding off the left belt edge');assert.equal(g.inks.length,0);assert.equal(g.tacticalSerial,serial,'a defeated Stamp stops producing ink');
+});
+
+test('ordinary off-belt ink still dries and the removed press no longer crushes Uma',()=>{
+ const g=ready();place(g,0,2070);g.time=2.7;tick(g,1);assert.equal(g.lives,3);assert.equal(g.mode,'playing');
+ const stamp=enemy('stamp',1,980,3,{active:true});stampInk(g,stamp);const ink=g.inks[0];assert.equal(ink.persistent,false);
+ place(g,3,980);tick(g,60*10);assert.ok(!g.inks.includes(ink));
 });

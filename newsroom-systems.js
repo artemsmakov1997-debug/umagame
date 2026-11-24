@@ -8,7 +8,7 @@ import {cleanCopies} from './tactical-enemies.js?v=0.21.6';
 const ROOM=1;
 export const BELT_ID='1:0',BELT_TOP=430,BELT_SPEED=-45;
 // Press heads (local x of the head's left edge) and their phase offsets in the shared cycle.
-export const PRESSES=[{x:560,offset:0},{x:1240,offset:1.5},{x:1700,offset:3},{x:2010,offset:.75}];
+export const PRESSES=[{x:560,offset:0},{x:1240,offset:1.5},{x:1700,offset:3}];
 export const PRESS_W=153,PRESS_H=65,PRESS_REST=300,PRESS_STRIKE=371;
 // Cycle: head up (safe) → warning (lamp blinks, head shakes) → slam → hold → rise.
 export const PRESS_CYCLE=4.5,PRESS_WARN=2.4,PRESS_SLAM=3.4,PRESS_LANDED=3.52,PRESS_HOLD=3.95;
