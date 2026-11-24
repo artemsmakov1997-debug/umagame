@@ -62,8 +62,6 @@ export function drawNewsroomScenery(c,a,g,t){
  for(const press of PRESSES){
   const cx=r.x+press.x+PRESS_W/2;if(!visible(g,cx-w/2,w))continue;
   const s=pressState(press,t),frame=pressFrame(s),shake=s.warn?Math.round(Math.sin(t*40)):0;
-  // A soft shadow behind the machine lifts it off the wall.
-  c.save();c.globalAlpha=.35;c.fillStyle='#02040c';c.fillRect(Math.round(cx-w/2+10),Math.round(top+18),Math.round(w-8),Math.round(BELT_TOP-top-14));c.restore();
   const f=outlinedPress(image,frame,Math.round(w),Math.round(h));c.drawImage(f,Math.round(cx-w/2+shake)-1,Math.round(top)-1);
  }
 }

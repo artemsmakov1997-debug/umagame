@@ -35,7 +35,7 @@ layouts[1]=[
  [0,430,2304],    // 0 the conveyor
  [260,345,120],   // 1 rest catwalk before the first press
  [860,345,120],   // 2 catwalk, checkpoint
- [960,260,110],   // 3 upper cache (life)
+ [910,260,110],   // 3 upper cache (life)
  [1460,345,120],  // 4 catwalk, checkpoint (soup)
  [1880,345,90],   // 5 catwalk, checkpoint between the last two presses
  [1860,260,100],  // 6 upper cache (life)
