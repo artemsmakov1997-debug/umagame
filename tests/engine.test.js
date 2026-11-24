@@ -104,8 +104,8 @@ test('a packet can be parried into its owner even when the final boss is active'
 test('dash protects Uma and cannot restart during its cooldown',()=>{
  const g=isolated();g.step(1/60,{dash:true});const lives=g.health;g.hurt();assert.equal(g.health,lives);tick(g,20,{dash:true});assert.equal(g.player.dash,0);assert.ok(g.player.dashCooldown>0);
 });
-test('soup heals once, strengthens range and damage for ten seconds, and pauses correctly',()=>{
- const g=isolated();g.health=2;g.soups=[{x:g.player.x+17,y:g.player.y+24,taken:false}];tick(g,1);assert.equal(g.health,3);assert.equal(g.player.powerTime,10);g.mode='paused';tick(g,120);assert.equal(g.player.powerTime,10);g.mode='playing';const e=enemy('fakenews',1,160,0,{hp:3,maxHp:3});g.enemies=[e];g.hitEnemy(e);assert.equal(e.hp,1);g.enemies=[];tick(g,610);assert.equal(g.player.powerTime,0);assert.equal(g.health,3);
+test('food heals once, gives ten seconds of mild run speed without extra damage, and pauses correctly',()=>{
+ const g=isolated();g.health=2;g.soups=[{x:g.player.x+17,y:g.player.y+24,taken:false}];tick(g,1);assert.equal(g.health,3);assert.equal(g.player.powerTime,0);assert.equal(g.player.speedTime,10);g.mode='paused';tick(g,120);assert.equal(g.player.speedTime,10);g.mode='playing';const e=enemy('fakenews',1,160,0,{hp:3,maxHp:3});g.enemies=[e];g.hitEnemy(e);assert.equal(e.hp,2);g.enemies=[];tick(g,610);assert.equal(g.player.speedTime,0);assert.equal(g.player.powerTime,0);assert.equal(g.health,3);
 });
 test('eight fish heal once and a collected packet cannot be collected again',()=>{
  const g=isolated();g.health=2;g.fish=7;g.fishes=[{x:g.player.x+17,y:g.player.y+24,taken:false}];tick(g,5);assert.equal(g.fish,8);assert.equal(g.health,3);assert.equal(g.fishes[0].taken,true);

@@ -4,6 +4,7 @@ import {platforms,rooms,MAX_LIVES,MAP_PACKS} from './level.js?v=0.21.6';
 // more: they are topped up when Uma starts a level (enters its map from the previous chapter).
 export {MAP_PACKS};
 export const PACK={lift:24,near:[200,320],rise:130,drop:60,boss:150,minW:70};
+export const FOOD_BOOST={duration:10,runMultiplier:1.1};
 export function createPacks(){return MAP_PACKS.map(([room,index],i)=>{const s=platforms.find(p=>p.room===room&&p.index===index);return {id:'pack-'+i,room,platformIndex:index,x:s.x+s.w*.6,y:s.y-PACK.lift,taken:false};});}
 // Called by activateRoom: arena packets of an earlier attempt go away; a new level refills the lives.
 export function enterRoomPacks(g,index,heal){

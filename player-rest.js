@@ -1,5 +1,6 @@
 import {spotlightSlow} from './studio-monsters.js?v=0.21.6';
 import {inkAt} from './terrain.js?v=0.21.6';
+import {FOOD_BOOST} from './health-packs.js?v=0.21.6';
 export const REST_AFTER=30;
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function wakePlayer(p){p.idleTime=0;p.sleepTime=0;p.sleeping=false;}
@@ -10,7 +11,7 @@ export function playerHorizontal(g,axis,dt){
   if(p.dash>0){p.vx=p.dir*430;p.inkTime=0;}
   else if(p.inkTime>0&&!p.climbing){const target=axis*(p.sneaking?46:112)+(onInk?(ink.drift||0)*(p.sneaking?12:70):0);p.vx=approach(p.vx,target,(p.sneaking?330:axis?230:90)*dt);}
   else if(p.launch>0&&!p.grounded)p.vx=p.launchVx+axis*40; // an envelope throw keeps its speed
-  else p.vx=axis*(p.sneaking?62:155);
+  else p.vx=axis*(p.sneaking?62:155*(p.grounded&&p.speedTime>0?FOOD_BOOST.runMultiplier:1));
  }
  const slow=spotlightSlow(g);if(slow<1&&!p.spotSlowed)p.slowWalkTime=g.time;p.spotSlowed=slow<1;if(p.spotSlowed)p.slowWalkTime=(p.slowWalkTime||0)+dt*slow;if(!p.knock&&p.dash===0)p.vx*=slow;
  p.slipping=!!(p.grounded&&p.dash===0&&!p.knock&&p.inkTime>0&&Math.abs(p.vx)>9&&!p.attack);

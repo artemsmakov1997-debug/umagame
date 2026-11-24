@@ -7,7 +7,7 @@ import {beginChapterStory,advanceChapterStory} from './chapter-story.js?v=0.21.6
 import {createMapProps,createRoutePortals,stepMapProps,stepSection,stepLocationHazards,tryRouteShortcut} from './chapter-routes.js?v=0.21.6';
 import {advanceOpening} from './prologue.js?v=0.21.6';
 import {tryDrop} from './drop-through.js?v=0.21.6';
-import {createPacks,queuePhasePack,stepPhasePack} from './health-packs.js?v=0.21.6';
+import {createPacks,queuePhasePack,stepPhasePack,FOOD_BOOST} from './health-packs.js?v=0.21.6';
 import {WIDTH,HEIGHT,WORLD,MAX_HEALTH,START_LIVES,MAX_LIVES,WAKE_DURATION,rooms,roomAt,chapters,platforms,ladders,spawns,createEnemies,createFish,createNotebooks,createRelays,LAST_ROOM,FINAL_X,PORTAL_ROOM,PORTAL_X} from './level.js?v=0.21.6';
 import {createBoss,stepBoss,damageBoss,stepProjectiles,bossContact} from './boss.js?v=0.21.6';
 import {strikeInfoshum,infoshumFall} from './infoshum-combat.js?v=0.21.6';
@@ -42,7 +42,7 @@ export class Game {
   this.trainingHintShown=false;this.tutorial=createTutorial();
   this.abilities={attack:true,dash:true,sneak:true};this.notebooks=createNotebooks();
   this.platforms=createWorldPlatforms();this.platformClocks={};this.arenaEntered=false;this.arenaEntry=null;
-  this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,frightTime:0,joyTime:0,lowSwat:false,powerTime:0,glueGrace:0,pulled:false};
+  this.player={...spawns[0],w:34,h:48,vx:0,vy:0,dir:1,grounded:true,supportId:'0:0',coyote:0,jumpBuffer:0,inv:0,hurtTime:0,attack:0,cooldown:0,climbing:false,climbTime:0,sneaking:false,sneakTime:0,swing:0,dash:0,dashCooldown:0,knock:0,frightTime:0,joyTime:0,lowSwat:false,powerTime:0,speedTime:0,glueGrace:0,pulled:false};
   this.swallow=null;this.interlude=null;this.mapProps=createMapProps();this.originals=createOriginals();this.routePortals=createRoutePortals();this.visitedSections=new Set();this.sectionTransition=null;this.routeUpHeld=false;this.echoPull=null;this.portals=[];this.portalSerial=0;this.soups=createPacks();this.pendingPack=null;this.enemies=createEnemies();this.fishes=createFish();this.boss=createBoss();
   this.relays=createRelays();this.censors=[];this.bolts=[];this.events=[];this.inks=[];this.cuts=[];this.tacticalSerial=0;
  }
@@ -160,7 +160,7 @@ export class Game {
   if(this.mode!=='playing'||this.checkNotebooks())return;dt=Math.min(dt,1/30);this.time+=dt;stepSignalStory(this,dt);
   if(this.transition){this.transition.time+=dt;if(this.transition.time>=this.transition.duration)this.transition=null;}
   this.routeUpPressed=!!input.up&&!this.routeUpHeld;this.routeUpHeld=!!input.up;if(tryRouteShortcut(this))input={...input,up:false,jump:false};
-  const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);
+  const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);p.speedTime=Math.max(0,(p.speedTime||0)-dt);
   if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}
    // Кликбейт costs two hearts; only when that would empty them does it take a life.
    if(this.health>2&&!this.testingInvulnerable){this.health-=2;this.swallow=null;Object.assign(this.player,{inv:1.8,hurtTime:.5,vx:0,vy:this.player.flipped?240:-240,grounded:false,knock:.25});this.emit('clickbaitSpit',{x:this.player.x,y:this.player.y});}
@@ -218,7 +218,7 @@ export class Game {
   if(this.mode!=='playing'||this.swallow)return;
   stepPhasePack(this);
   for(const f of this.fishes)if(!f.taken&&Math.abs(p.x+17-f.x)<26&&Math.abs(p.y+p.h/2-f.y)<32){f.taken=true;this.fish++;if(this.fish%8===0){this.health=Math.min(MAX_HEALTH,this.health+1);this.emit('heal');}this.emit('fish',{x:f.x,y:f.y});}
-  for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;soup.takenAt=this.time;this.health=Math.min(MAX_HEALTH,this.health+1);p.powerTime=10;this.emit('soup',{x:soup.x,y:soup.y});}
+  for(const soup of this.soups)if(!soup.taken&&Math.abs(p.x+17-soup.x)<27&&Math.abs(p.y+p.h/2-soup.y)<35){soup.taken=true;soup.takenAt=this.time;this.health=Math.min(MAX_HEALTH,this.health+1);p.speedTime=FOOD_BOOST.duration;this.emit('soup',{x:soup.x,y:soup.y});}
   if(this.mode!=='playing'){this.updateCamera(dt);return;}
   for(const relay of this.relays){relay.breakTime=Math.max(0,relay.breakTime-dt);if(!relay.scripted&&relay.room!==8&&relay.hp>0&&p.attack>0&&relay.lastSwing!==p.swing&&overlap(paw,relay)){relay.lastSwing=p.swing;relay.hp=0;relay.breakTime=.65;p.joyTime=1.1;this.emit('dishBreak',{x:relay.x+relay.w/2,y:relay.y+25});this.emit('relay',{room:relay.room,id:relay.id});
     const effect=applyRelayEffect(this,relay),clue=relayClues[relay.room]?.[relay.ordinal];

@@ -1,3 +1,4 @@
+import {drawSpeedAura,drawSleepZ,drawClawMarks} from './uma-micro-effects.js?v=0.21.6';
 import {drawUmaReaction} from './uma-reactions.js?v=0.21.6';
 import {drawAgitatorEquipment,drawAgitatorBackdrop,drawAgitatorPlatform} from './agitator-art.js?v=0.21.6';
 import {drawInterferenceOverlay} from './interference-art.js?v=0.21.6';
@@ -145,6 +146,7 @@ export class Renderer{
   for(const trail of this.trail){trail.life-=dt;c.globalAlpha=Math.max(0,trail.life/.3);rect(c,trail.x,trail.y,trail.dash?12:3,3,trail.dash?'#72dffe':'#ccd3ff');}c.globalAlpha=1;this.trail=this.trail.filter(v=>v.life>0);
   // Upside-down Uma in «Разлом»: mirror the whole sprite around her middle.
   const flipUma=p.flipped;if(flipUma){c.save();c.translate(0,2*(p.y+p.h/2));c.scale(1,-1);}
+  drawSpeedAura(c,p,t);
   this.hitTail=p.hurtTime>0?HIT_TAIL:hitSettled(p)?Math.max(0,(this.hitTail||0)-dt):0;
   if(g.storyEnabled&&!g.seenScenes.has('intro')||g.dialogue?.id==='intro'){
    drawWakeup(c,a,p,g.wakeTime);
@@ -162,7 +164,7 @@ export class Renderer{
    c.save();if(mood===MOOD.dash){c.shadowColor='#7deaf5';c.shadowBlur=8;}drawMood(c,a,mood,p.x+p.w/2,p.y+p.h,face<0);c.restore();c.globalAlpha=1;
    if(mood===MOOD.hiss&&Math.floor(t*6)%2)rect(c,p.x+(face>0?p.w+2:-8),p.y+8,6,2,'#ffd2d8');
   }else if((p.sleeping||p.slipping||p.pulled)&&drawRest(c,a,p)){
-   if(p.sleeping&&p.sleepTime>1){const z=Math.floor(t*1.4)%3;rect(c,p.x+32+z*4,p.y+5-z*7,4,2,'#a4cede');rect(c,p.x+34+z*4,p.y+7-z*7,2,3,'#a4cede');rect(c,p.x+32+z*4,p.y+10-z*7,4,2,'#a4cede');}
+   drawSleepZ(c,p);
    if(p.slipping)for(let i=0;i<3;i++)rect(c,p.x-p.dir*(i*8+5),p.y+p.h-2,5,2,'#b27edc');
   }else if((p.climbing||p.sneaking)&&drawTraversal(c,a,p)){
    if(p.sneaking)rect(c,p.x+10,p.y-5,14,2,'#a9eac977');
@@ -177,11 +179,10 @@ export class Renderer{
    const feet=g.swallow?(g.swallow.y+48)*(1-progress)+targetFeet*progress:p.y+p.h;
    const galloping=(pose===1||pose===2)&&a.umaRun8;
    if(w>0&&h>0){c.save();if(p.dash>0){c.shadowColor='#7deaf5';c.shadowBlur=8;}if(galloping)drawRun(c,a,runFrame(t),center,feet,p.dir<0,scale);else sprite(c,a[sheet||'uma'],box,p.dir>0?center-w*anchor:center-w*(1-anchor),feet-h,w,h,p.dir<0);c.restore();}
-   if(p.powerTime>0)for(let i=0;i<5;i++)rect(c,p.x-13+i*14,p.y-10+Math.sin(t*5+i)*5,2,2,'#ffe6a0');
    c.globalAlpha=1;
   }
+  drawClawMarks(c,p);
   if(flipUma)c.restore();
-  if(p.attack>.04){c.save();c.translate(Math.round(p.x+17+p.dir*36),Math.round(p.y+24));if(p.dir<0)c.scale(-1,1);for(let i=0;i<3;i++){rect(c,10+i*2,-13+i*8,3,10,'#ffe6a7');rect(c,6+i*2,-15+i*8,4,2,'#ffe6a7');}c.restore();}
   for(const q of this.particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=160*dt;rect(c,q.x,q.y,3,3,q.color);}this.particles=this.particles.filter(q=>q.life>0);
   if(g.tether){const e=g.tether.ownerId==='boss:'+g.boss.id?g.boss:g.enemies.find(e=>e.id===g.tether.ownerId);if(e){c.strokeStyle='#c9a4ed';c.lineWidth=3;c.setLineDash([5,4]);c.beginPath();c.moveTo(e.x+24,e.y+2);c.lineTo(p.x+17,p.y+28);c.stroke();c.setLineDash([]);for(let i=0;i<5;i++)rect(c,e.x+5+i*8,e.y-58,5,3,i<Math.ceil(g.tether.remaining)?'#ffdb9b':'#263a55');}}
   drawYuriSignal(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawBossDefeat(c,a,g);
