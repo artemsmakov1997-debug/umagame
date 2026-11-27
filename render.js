@@ -1,3 +1,4 @@
+import {drawCheckpointMarkers} from './checkpoint-art.js?v=0.21.6';
 import {drawSpeedAura,drawSleepZ,drawClawMarks} from './uma-micro-effects.js?v=0.21.6';
 import {drawUmaReaction} from './uma-reactions.js?v=0.21.6';
 import {drawAgitatorEquipment,drawAgitatorBackdrop,drawAgitatorPlatform} from './agitator-art.js?v=0.21.6';
@@ -95,7 +96,7 @@ export class Renderer{
   drawSpreaderEquipment(c,a,g,t);drawAgitatorEquipment(c,a,g,t);drawTutorialProps(c,a,g,t);drawRoofProps(c,a,g,t);drawStudioProps(c,a,g,t);drawDimensionProps(c,a,g,t);drawCampaignObjects(c,a,g,t);drawNotebookReceivers(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t);drawTacticalTerrain(c,g,t,a);
   drawInfection(c,g,a);drawEnemySources(c,g,t,a);drawMapProps(c,a,g,t);c.restore();
   if(g.room===0)drawYuriSignal(c,a,g,g.mode==='dialogue'||g.pausedFrom==='dialogue'?this.signalTime:t,true);
-  drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t,a);drawSensations(c,a,g,t);drawRoofWind(c,g,t,a);
+  drawCheckpointMarkers(c,g,a);drawArenaBoss(c,a,g,t);drawTargetHighlights(c,g,t,a);drawSensations(c,a,g,t);drawRoofWind(c,g,t,a);
   for(const f of g.fishes)if(f.room===g.room&&!opening&&!f.taken&&f.x>cam-20&&f.x<cam+vw+20)sprite(c,a.noise,creatures.fish,f.x-13,f.y+Math.sin(t*3+f.x)*2-8,26,16);
   for(const pack of g.soups)if(pack.room===g.room)drawPack(c,a,pack,packFrame(pack,g.time,t));
   for(const e of g.enemies)if(e.active&&!e.dead&&e.room===g.room&&e.teleport)drawTeleportMarkers(c,e,t);
@@ -150,6 +151,9 @@ export class Renderer{
   this.hitTail=p.hurtTime>0?HIT_TAIL:hitSettled(p)?Math.max(0,(this.hitTail||0)-dt):0;
   if(g.storyEnabled&&!g.seenScenes.has('intro')||g.dialogue?.id==='intro'){
    drawWakeup(c,a,p,g.wakeTime);
+  }else if(p.attack>0&&p.lowSwat&&a.moods){
+   // A real low swat always completes its wind-up/strike, even during the tail of a previous hit.
+   this.hitTail=0;drawMood(c,a,p.attack>.12?MOOD.lowWindup:MOOD.lowStrike,p.x+p.w/2,p.y+p.h,p.dir<0);
   }else if(p.hurtTime>0||this.hitTail>0){
    // Hit reaction: impact → recoil → stumble → head shake during hurtTime, then recover → ready if she stays put.
    const elapsed=p.hurtTime>0?.5-p.hurtTime:.5+HIT_TAIL-this.hitTail;

@@ -66,13 +66,13 @@ function invertedBait(){
  const e=g.enemies.find(e=>e.bait&&e.platformIndex===s.index);assert.ok(e&&e.flipped&&e.revealed);assert.equal(e.y,s.y);assert.equal(s.bait,false);
  return {g,s,e};
 }
-test('a Кликбейт emerges underneath a descending message, rides it, bites upside-down Uma, pauses and spits away from the ceiling',()=>{
+test('a Кликбейт emerges underneath a descending message, bites upside-down Uma, pauses and returns her upright to the checkpoint',()=>{
  const {g,s,e}=invertedBait(),y=e.y;tick(g,5);assert.ok(e.y>y);assert.ok(Math.abs(e.y-s.y)<.01);assert.equal(g.player.y,s.y);
  for(let i=0;i<60&&!g.swallow;i++)tick(g,1);assert.ok(g.swallow);assert.equal(g.health,4);
  const target=g.swallow.targetY+24;assert.ok(target>=e.y&&target<=e.y+e.h);
  g.mode='paused';const snapshot=JSON.stringify(g);tick(g,45);assert.equal(JSON.stringify(g),snapshot);g.mode='playing';
  for(let i=0;i<40&&g.swallow;i++)tick(g,1);
- assert.equal(g.swallow,null);assert.equal(g.health,2);assert.equal(g.lives,3);assert.equal(g.player.flipped,true);assert.equal(g.player.vy,240);
+ assert.equal(g.swallow,null);assert.equal(g.health,2);assert.equal(g.lives,3);assert.equal(g.player.flipped,false);assert.equal(g.player.vy,0);assert.equal(g.player.supportId,'7:0');assert.equal(g.player.grounded,true);
 });
 test('inverted bait is consumed once per wrap; Shift evades the bite and the pink trap returns on a later feed cycle',()=>{
  const {g,s,e}=invertedBait();g.player.inv=999;for(let i=0;i<60&&e.state!=='snap';i++)tick(g,1);assert.equal(e.state,'snap');
@@ -106,7 +106,7 @@ test('falling up out of the world costs one heart and returns Uma upright to the
 test('the Echo double copies the flip; checkpoints follow the blocks; Clickbait spits Uma out for two hearts',()=>{
  const g=ready(),e=enemy('echo',7,1600,21,{active:true,noticed:true,spawnTime:0,noticeTime:0});g.enemies=[e];g.player.inv=999;stand(g,10,760);
  for(let i=0;i<60*3.5;i++)tick(g,1,{right:!g.player.flipped||g.player.x<x0+950});assert.equal(e.flipped,true);
- const c=ready();stand(c,10,740);tick(c,2);assert.equal(c.dimension.checkpoint,1);stand(c,22,1670);tick(c,2);assert.equal(c.dimension.checkpoint,2);stand(c,25,2400);tick(c,2);assert.equal(c.dimension.checkpoint,3);assert.equal(DIM_CHECKPOINTS.length,4);
+ const c=ready();stand(c,10,740);tick(c,2);assert.equal(c.dimension.checkpoint,0);stand(c,22,1670);tick(c,2);assert.equal(c.dimension.checkpoint,1);stand(c,25,2400);tick(c,2);assert.equal(c.dimension.checkpoint,1);assert.equal(DIM_CHECKPOINTS.length,2);
 });
 test('a full run with ordinary inputs crosses all four blocks without a fall and enters the threshold',()=>{
  // The route itself, without the Кликбейт traps (they are tested above).

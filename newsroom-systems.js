@@ -2,7 +2,7 @@ import {rooms} from './level.js?v=0.21.6';
 import {cleanCopies} from './tactical-enemies.js?v=0.21.6';
 // «Конвейер»: the newsroom is one newspaper conveyor running towards Uma (right to left).
 // - The belt carries Uma, monsters and Stamp ink to the left.
-// - Presses over the belt take a whole life; they crush monsters too.
+// - Presses over the belt take a whole life; Fakenews survive them, other monsters do not.
 // - Censors grow out of the belt ahead of Uma, ride it towards her and hurt on touch: jump over them.
 // - Catwalks are checkpoints: after a lost life Uma returns to the furthest one she reached.
 const ROOM=1;
@@ -14,7 +14,7 @@ export const PRESS_W=153,PRESS_H=65,PRESS_REST=300,PRESS_STRIKE=371;
 export const PRESS_CYCLE=4.5,PRESS_WARN=2.4,PRESS_SLAM=3.4,PRESS_LANDED=3.52,PRESS_HOLD=3.95;
 export const CENSOR_SOURCES=[540,1000,1620];
 export const CENSOR={warn:.6,grow:.3,stand:2.6,retract:.35,height:62,width:24,cooldown:4.5,near:200,far:460,max:2};
-export const CHECKPOINTS=[2,4,5];
+export const CHECKPOINTS=[2];
 
 export function pressState(press,t){
  const phase=((t+press.offset)%PRESS_CYCLE+PRESS_CYCLE)%PRESS_CYCLE;
@@ -46,7 +46,7 @@ export function stepNewsroom(g,dt){
   const s=pressState(press,t),x0=r.x+press.x,x1=x0+PRESS_W,bottom=s.top+PRESS_H;
   if(p.x+p.w>x0+8&&p.x<x1-8&&bottom>p.y+6&&s.drop>0){g.emit('pressHit',{x:p.x+p.w/2,y:p.y});g.loseLife('press');return;}
   if(s.drop<1)continue;
-  for(const e of g.enemies)if(e.room===ROOM&&e.active&&grounded(e)&&e.y+e.h>BELT_TOP-4&&e.x+e.w>x0+6&&e.x<x1-6){
+  for(const e of g.enemies)if(e.room===ROOM&&e.type!=='fakenews'&&e.active&&grounded(e)&&e.y+e.h>BELT_TOP-4&&e.x+e.w>x0+6&&e.x<x1-6){
    e.hp=0;e.dead=true;e.deathTime=.28;g.kills++;crushed=true;g.emit('pop',{x:e.x+24,y:e.y,enemyType:e.type});g.emit('pressCrush',{x:e.x+e.w/2,y:BELT_TOP,enemyType:e.type});
   }
   for(const c of g.censors)if(c.phase!=='retract'&&c.x>x0&&c.x<x1){c.phase='retract';c.time=0;g.emit('pressCrush',{x:c.x,y:BELT_TOP,enemyType:'censor'});}
@@ -81,7 +81,7 @@ export function placeAtNewsroomCheckpoint(g){
  if(g.room!==ROOM)return false;g.censors=[];g.censorCooldowns={};
  const rank=g.newsroomCheckpoint??-1;if(rank<0)return false;
  const deck=g.platforms.find(s=>s.id==='1:'+CHECKPOINTS[rank]),p=g.player;
- Object.assign(p,{x:deck.x+deck.w/2-p.w/2,y:deck.y-p.h,vx:0,vy:0,grounded:true,supportId:deck.id});
+ Object.assign(p,{x:deck.w<110?deck.x+4:deck.x+deck.w/2-p.w/2,y:deck.y-p.h,vx:0,vy:0,grounded:true,supportId:deck.id});
  g.visitedPlatforms?.add(deck.id);g.safeTrail=[{platformId:deck.id,x:p.x,y:p.y}];g.updateCamera();return true;
 }
 export function newsroomRestore(g){placeAtNewsroomCheckpoint(g);}

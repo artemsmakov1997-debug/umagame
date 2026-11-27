@@ -42,7 +42,8 @@ export const TAKES={beat:2.4,warn:.6,overlap:.85};
 // The Нарезчик may cut anything Uma walks on except the door island; containers are not surfaces at all.
 export function studioCuttable(index){const p=STUDIO_PIECES[index];return !!p&&p.type!=='container'&&p.type!=='removed'&&p.kind!=='flat'&&index!==14;}
 export const studioContainer=index=>STUDIO_PIECES[index]?.type==='container';
-export const STUDIO_CHECKPOINTS=[{x:45,index:0},{x:600,index:3},{x:1440,index:8},{x:1910,index:11}];
+// One save point on the central rest truss, clear of the farm's crowded case.
+export const STUDIO_CHECKPOINTS=[{x:45,index:0},{x:1480,index:8}];
 export const STUDIO_DOOR={x:2216,h:74};
 export const studioSectionNames=['Павильон','Прожекторы','Монтажная'];
 export function studioPiece(index){return STUDIO_PIECES[index];}

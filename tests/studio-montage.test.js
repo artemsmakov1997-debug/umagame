@@ -100,7 +100,7 @@ test('the hanging flat over the dolly is a low ceiling: standing Uma stops at it
 
 
 test('falls cost one heart and return to the last safe truss; checkpoints follow the blocks',async()=>{
- const g=ready();stand(g,3,620);tick(g,2);assert.equal(g.studio.checkpoint,1);
+ const g=ready();stand(g,8,1480);tick(g,2);assert.equal(g.studio.checkpoint,1);
  Object.assign(g.player,{x:x0+990,y:420,grounded:false,supportId:null,vy:200});for(let i=0;i<90&&g.health===4;i++)tick(g,1);
  assert.equal(g.health,3);tick(g,5);assert.equal(STUDIO_PIECES[g.platforms.find(s=>s.id===g.player.supportId)?.index]?.type,'fixed');
  g.health=1;g.player.inv=0;g.hurt();assert.equal(g.mode,'respawning');for(let i=0;i<120&&g.mode!=='playing';i++)tick(g,1);assert.equal(g.lives,2);

@@ -40,7 +40,7 @@ export const RIFTS=[{x:870,y:120,h:210},{x:1690,y:110,h:220}];
 export const ORIGINALS=[];
 // A purple copy under Uma: cracks after CRUMBLE.crack seconds, pops after CRUMBLE.pop and stays gone until it wraps.
 export const CRUMBLE={crack:.3,pop:.6};
-export const DIM_CHECKPOINTS=[{x:40,index:0},{x:740,index:10},{x:1660,index:22},{x:2400,index:25}];
+export const DIM_CHECKPOINTS=[{x:40,index:0},{x:1660,index:22}];
 export const dimensionSectionNames=['Лента','Изнанка','Разлом','Пересылка'];
 export const isSafeDimPiece=p=>!!p&&!p.inverted&&p.type==='island';
 // A sliding message: its x at time t (x is the left end of its swing, range the swing width).

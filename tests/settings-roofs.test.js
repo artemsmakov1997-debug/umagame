@@ -16,7 +16,7 @@ test('temporary protection: a fall into the street returns Uma to her last roof 
 test('on the roofs a fall costs one heart and returns Uma to the last safe roof; the last heart costs a life and restarts at the checkpoint',()=>{
  const g=ready(true);g.testingInvulnerable=false;const roof=g.platforms.find(s=>s.id==='3:2');Object.assign(g.player,{x:roof.x+120,y:roof.y-48,grounded:true,supportId:roof.id});tick(g,2);g.roofs.checkpoint=1;
  Object.assign(g.player,{y:560,grounded:false,dash:.2,inv:99});g.health=3;tick(g,1);assert.equal(g.health,2);assert.equal(g.lives,3);assert.equal(g.player.supportId,'3:2');assert.ok(g.player.inv>1);
- Object.assign(g.player,{y:560,grounded:false,inv:0});g.health=1;tick(g,1);assert.equal(g.lives,2);assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.mode,'playing');assert.equal(g.health,4);assert.equal(g.room,3);assert.equal(g.player.supportId,'3:2');
+ Object.assign(g.player,{y:560,grounded:false,inv:0});g.health=1;tick(g,1);assert.equal(g.lives,2);assert.equal(g.mode,'respawning');tick(g,70);assert.equal(g.mode,'playing');assert.equal(g.health,4);assert.equal(g.room,3);assert.equal(g.player.supportId,'3:4');
 });
 test('a trampoline in the alley throws Uma up to the next roof; holding ↓ lets her stand on it; a miss drops her in the street',()=>{
  const g=ready(true),t0=g.platforms.find(s=>s.id==='3:8'),a0=g.platforms.find(s=>s.id==='3:0'),a1=g.platforms.find(s=>s.id==='3:1');assert.equal(t0.roof.type,'awning');assert.ok(a1.y<a0.y-115,'out of reach of an ordinary jump');

@@ -101,10 +101,10 @@ export function enemy(type,room,x,platformIndex,extra={}){
  if(type==='montager')type='cutter';
  if(!enemyTypes.includes(type))throw new Error('Unknown enemy type: '+type);
  const s=platforms.find(p=>p.room===room&&p.index===platformIndex);if(!s)throw new Error('Unknown enemy platform');
- const hp=['fakenews','injection','bot'].includes(type)?1:['inflator','informant','copier','splicer','botfarm','echo','spotlight','boom'].includes(type)?3:2;
+ const hp=type==='fakenews'&&room===1?2:['fakenews','injection','bot'].includes(type)?1:['inflator','informant','copier','splicer','botfarm','echo','spotlight','boom'].includes(type)?3:2;
  const r=rooms[room],flying=['echo','static'].includes(type);
  const actor={id:type+'-'+room+'-'+x+'-'+platformIndex,type,room,platformIndex,x:r.x+x,y:s.y-(flying?100:29),w:flying?40:48,h:flying?38:29,origin:s.x+12,end:s.x+s.w-60,
- dir:-1,speed:{fakenews:38,clickbait:30,inflator:14,informant:25,paparazzi:0,spotlight:0,boom:0,panicker:16,stamp:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105,botfarm:0,bot:78}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
+ dir:-1,speed:{fakenews:room===1?48:38,clickbait:30,inflator:14,informant:25,paparazzi:0,spotlight:0,boom:0,panicker:16,stamp:20,copier:10,cutter:13,splicer:12,injection:42,echo:76,static:105,botfarm:0,bot:78}[type],hp,maxHp:hp,state:type==='clickbait'?'lure':'patrol',timer:1.3,
  active:false,trigger:Math.max(55,x-250),spawnTime:0,inv:0,lastSwing:-1,dead:false,deathTime:0,hurtTime:0,noticeTime:0,noticed:false,revealed:false,revealTime:0,moving:false,alert:0,pressureTime:0,shieldBroken:0,blastHit:false,attackFlash:0,walkTime:0,vy:0,jumpPhase:null,jumpCooldown:1.2,teleport:null,teleportCooldown:1.6,phased:false,flying,alarmCooldown:0,warpCooldown:0,...extra};
  if(type==='echo'){actor.w=30;actor.h=40;actor.y=s.y-actor.h;actor.pose='stand';}
  // The studio's Ботоферма is a huge machine at the end of the location.
@@ -140,9 +140,9 @@ export function createEnemies(){const all=[
  // Крыши: Нагнетатели sit on wall brackets high above the roofs, out of reach, and blow across the whole map.
  enemy('paparazzi',3,575,1,{trigger:260}),enemy('inflator',3,520,1,{dir:-1,mountY:115}),enemy('paparazzi',3,1150,3),enemy('inflator',3,1060,3,{dir:-1,mountY:112}),enemy('inflator',3,1727,10,{dir:-1,mountY:64}),enemy('paparazzi',3,2240,7),
  // Студия: a Журавль on each long truss, two Прожекторы riding the ceiling rail over the whole studio, the
- // Ботоферма caged over the door at the far end, sending its bots towards Uma from the moment she arrives.
+ // Two farms: the original by the door and another on the starting truss, without moving any platforms.
  enemy('boom',5,715,3,{dir:-1,trigger:430}),enemy('spotlight',5,860,4,{trigger:600}),enemy('boom',5,1525,8,{dir:-1}),
- enemy('spotlight',5,1800,11),enemy('botfarm',5,1925,11,{range:2400,trigger:60}),
+ enemy('spotlight',5,1800,11),enemy('botfarm',5,1925,11,{range:2400,trigger:60}),enemy('botfarm',5,132,0,{range:700,trigger:60,timer:2.4}),
  // Измерение: Помеха over the feeds, Кликбейты only on the rising messages of «Лента» (five of them, on purple and
  // blue bubbles alike), an Эхо by each rift and one in «Пересылка».
  enemy('static',7,330,0,{trigger:150}),
@@ -150,7 +150,7 @@ export function createEnemies(){const all=[
 enemy('echo',7,760,10,{trigger:680}),enemy('static',7,1250,12,{y:220}),
  enemy('echo',7,1700,22,{trigger:1600}),enemy('static',7,1960,23,{y:220}),enemy('echo',7,2420,25,{trigger:2300}),enemy('static',7,2660,26,{y:200})
  ];
- const kept={1:[330,760,1108,1430,1900,2048,2290],3:[575,520,1150,1060,1727,2240],5:[715,860,1525,1800,1925],7:[330,760,1250,1700,1960,2420,2660]};
+ const kept={1:[330,760,1108,1430,1900,2048,2290],3:[575,520,1150,1060,1727,2240],5:[132,715,860,1525,1800,1925],7:[330,760,1250,1700,1960,2420,2660]};
  const roster=all.filter(e=>kept[e.room].includes(+e.id.split('-')[2]));
  // Conveyor walkers patrol their own stretch of belt instead of the whole location.
  for(const e of roster)if(e.room===1&&e.platformIndex===0){e.origin=Math.max(e.origin,e.x-200);e.end=Math.min(e.end,e.x+200);}

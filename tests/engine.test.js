@@ -67,8 +67,8 @@ test('Panicker alerts only active nearby enemies and does not redirect a prepare
 test('a Fakenews folds, lunges in its locked direction and exposes a recovery window',()=>{
  const g=isolated(1,0,20),e=enemy('fakenews',1,125,0,{timer:0,hp:3,maxHp:3});g.enemies=[e];tick(g,1);assert.equal(e.state,'windup');const direction=e.dir,x=e.x;tick(g,31);assert.equal(e.state,'lunge');assert.equal(e.dir,direction);tick(g,21);assert.equal(e.state,'recover');assert.ok(e.x<x);assert.equal(g.bolts.length,0);
 });
-test('the first Fakenews is weak; one swing cannot damage a tougher one repeatedly',()=>{
- const g=isolated(1,0,45),weak=enemy('fakenews',1,100),tough=enemy('fakenews',1,100,0,{hp:4,maxHp:4});g.enemies=[weak];g.step(1/60,{attack:true});assert.equal(weak.dead,true);g.enemies=[tough];g.player.cooldown=0;tick(g,12,{attack:true});assert.equal(tough.hp,3);
+test('every newsroom Fakenews takes two separate hits; one swing cannot damage a tougher one repeatedly',()=>{
+ const g=isolated(1,0,45),fake=enemy('fakenews',1,100),tough=enemy('fakenews',1,100,0,{hp:4,maxHp:4});g.enemies=[fake];g.step(1/60,{attack:true});assert.equal(fake.dead,false);assert.equal(fake.hp,1);fake.inv=0;g.hitEnemy(fake);assert.equal(fake.dead,true);g.enemies=[tough];g.player.cooldown=0;tick(g,12,{attack:true});assert.equal(tough.hp,3);
 });
 test('a revealed Clickbait bites once where the bait was, then crumbles to pixels and is gone for good',()=>{
  const g=isolated(2,1,350),e=enemy('clickbait',2,365,1);g.enemies=[e];tick(g,1);assert.equal(e.revealed,true);assert.equal(e.state,'emerge');g.player.x=campaignRooms[2].x+10;g.player.y=282;const x=e.x;

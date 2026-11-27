@@ -64,7 +64,7 @@ export function stepRoofs(g,dt,paw,input={}){
  if(g.room!==ROOM||g.mode!=='playing')return;const q=g.roofs??=createRoofs(),p=g.player;
  q.bounceTime=Math.max(0,q.bounceTime-dt);
  // Checkpoints: the furthest one reached on its own roof.
- for(const [i,c]of ROOF_CHECKPOINTS.entries())if(i>q.checkpoint&&p.grounded&&p.supportId===ROOM+':'+c.index&&p.x>=x0()+c.x-40)q.checkpoint=i;
+ for(const [i,c]of ROOF_CHECKPOINTS.entries())if(i>q.checkpoint&&p.grounded&&p.supportId===ROOM+':'+c.index&&p.x>=x0()+c.x-40){q.checkpoint=i;g.emit('checkpoint',{x:p.x,y:p.y,room:ROOM});}
  // Awning trampoline: landing from the air throws Uma high; holding ↓ lets her stand on it.
  const support=p.grounded?g.platforms.find(s=>s.id===p.supportId):null;
  if(support?.roof?.type==='awning'&&q.lastSupport!==support.id&&!p.sneaking&&!input.down){p.vy=AWNING_BOUNCE;p.grounded=false;p.supportId=null;q.bounceTime=.35;g.emit('roofBounce',{x:p.x+p.w/2,y:support.y});}

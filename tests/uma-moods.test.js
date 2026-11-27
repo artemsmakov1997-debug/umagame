@@ -19,7 +19,7 @@ test('↓ + paw on the last floor is a low swat from the sneak: Uma stays low an
  tick(g,1,{down:true});assert.equal(g.player.sneaking,true);
  tick(g,1,{down:true,attack:true});assert.equal(g.player.lowSwat,true);assert.ok(g.player.attack>0);assert.equal(g.player.sneaking,true,'the swat does not stand her up');assert.equal(g.player.h,26);
  assert.equal(moodPose(g.player,g),MOOD.lowWindup);tick(g,6,{down:true});assert.equal(moodPose(g.player,g),MOOD.lowStrike);
- assert.equal(e.dead,true,'one low swat knocks out the Fakenews');assert.ok(g.events.some(v=>v.type==='swat'&&v.low));
+ assert.equal(e.dead,false);assert.equal(e.hp,1,'a low swat deals one of the two required hits');assert.ok(g.events.some(v=>v.type==='swat'&&v.low));
  assert.equal(g.events.filter(v=>v.type==='dropThrough').length,0);
 });
 
@@ -33,6 +33,15 @@ test('↓ + paw still drops through a platform when nothing is in reach, and swa
 
 test('a standing swat is unchanged and clears the low flag',()=>{
  const g=ready(1);standOn(g,'1:0',300);tick(g,1,{attack:true});assert.equal(g.player.lowSwat,false);assert.equal(g.player.h,48);assert.equal(moodPose(g.player,g),null);
+});
+
+test('attacking directly from a crouch or a low ceiling keeps the low wind-up and strike even without holding down',()=>{
+ for(const forced of [false,true]){
+  const g=ready(1);standOn(g,'1:0',300);g.platforms.find(s=>s.id==='1:0').belt=0;
+  tick(g,1,{down:true});g.player.forcedCrouch=forced;g.player.hurtTime=.15;
+  tick(g,1,{attack:true});assert.equal(g.player.lowSwat,true);assert.equal(g.player.h,26);assert.equal(moodPose(g.player,g),MOOD.lowWindup);
+  tick(g,6);assert.equal(moodPose(g.player,g),MOOD.lowStrike);assert.equal(g.player.h,26);
+ }
 });
 
 test('a monster noticing Uma nearby makes her hiss while she stands still; moving or swatting ends it',()=>{

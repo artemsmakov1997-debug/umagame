@@ -93,7 +93,7 @@ async function boot(){
  window.addEventListener('blur',blur);document.addEventListener('visibilitychange',()=>{audio.setHidden(document.hidden);if(document.hidden)blur();});
  function events(){for(const event of game.events){
   if(event.type==='dialogue'&&game.mode==='dialogue'){clearTimeout(toastTimer);$('toast').classList.remove('visible');}
-  if(['lifeLost','lifeRestored','arenaPull','arenaEnter','arenaReady','locationExit','locationEnter','locationReady','echoTeleport','echoArrive','echoReady','endingSlide','victory'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
+  if(['lifeLost','lifeRestored','clickbaitSpit','arenaPull','arenaEnter','arenaReady','locationExit','locationEnter','locationReady','echoTeleport','echoArrive','echoReady','endingSlide','victory'].includes(event.type)){clearInput();renderer.trail=[];renderer.particles=[];}
   if(event.type==='notebook'){updateControls();renderer.burst(event.x,event.y,'#ffe0a0');}
   if(['parry','blocked','boltImpact'].includes(event.type)){renderer.combatEffects.push({kind:event.type,x:event.x,y:event.y,time:0,frame:projectileStyle(game,{kind:event.kind,visual:event.visual})});renderer.combatEffects=renderer.combatEffects.slice(-18);}
   audio.play(event,game);if(['fish','pop','bossHit','enemyHit','parry','blocked','soup','evidence','dishBreak','lifePickup','controlBreak'].includes(event.type)&&Number.isFinite(event.x))renderer.burst(event.x,event.y,['fish','soup'].includes(event.type)?'#ffce76':'#77e4e3');
@@ -115,7 +115,8 @@ async function boot(){
   if(event.type==='dimensionHint')notify({feed:'Пересланные копии всплывают и лопаются наверху. Синие держат, фиолетовые трескаются под лапами.',flip:'Разлом перевернёт тебя. Дальше лента бежит вниз, держись под сообщениями.',back:'Второй разлом вернёт тебя на ноги.',slide:'Пересланные сообщения ездят туда-сюда. Прыгай, когда подъедут.'}[event.kind],4600);
   if(event.type==='deadLink')notify('Битая ссылка: этот конверт никуда не ведёт.',2600);
   if(event.type==='sourceFound')notify(`Первоисточник ${event.count}/${event.total}: помехи Инфошума будут расти медленнее, удары по ядру — сильнее.`,4200);
-  if(event.type==='clickbaitSpit')notify('Кликбейт выплюнул Уму: −2 сердца.',2600);
+  if(event.type==='clickbaitSpit')notify('Кликбейт: −2 сердца. Ума вернулась к чек-поинту.',3000);
+  if(event.type==='checkpoint')notify('Связь с Юрием установлена.',2200);
   if(event.type==='windIntroduction')notify('Порыв ветра! В воздухе сносит влево.',2200);
   if(event.type==='lesson')notify(event.text,6000);
   if(event.type==='tutorialBump')notify('Шагом барьер не пройти — нужен рывок.',3600);

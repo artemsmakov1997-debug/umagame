@@ -33,7 +33,7 @@ export function stepStudio(g,dt){
  // One hint per block, the first time Uma meets its rule.
  const hints=q.hints??=new Set(),local=p.x-x0();
  for(const [key,cond,text] of [['stage',local>240,'Подиум появляется только в луче прожектора — пока светло, по нему можно пройти. Иди за светом.'],['take',local>1570,'Перед хлопушкой оба цвета держат 0,85 секунды. Прыгай на следующий дубль.']])if(cond&&!hints.has(key)){hints.add(key);g.emit('studioHint',{key,text});}
- for(const [i,c]of STUDIO_CHECKPOINTS.entries())if(i>q.checkpoint&&p.grounded&&p.supportId===ROOM+':'+c.index)q.checkpoint=i;
+ for(const [i,c]of STUDIO_CHECKPOINTS.entries())if(i>q.checkpoint&&p.grounded&&p.supportId===ROOM+':'+c.index){q.checkpoint=i;g.emit('checkpoint',{x:p.x,y:p.y,room:ROOM});}
  updateStudioPlatforms(g);
 }
 

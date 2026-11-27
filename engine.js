@@ -90,7 +90,7 @@ export class Game {
 
  finish(){return beginFinale(this);}
  advanceEnding(direction=1){return advanceFinale(this,direction);}
- respawn(){releaseEchoPull(this);this.swallow=null;wakePlayer(this.player);Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,climbing:false,sneaking:false,knock:0,slipping:false,onInk:false,inkTime:0,slideTime:0});placeAtNewsroomCheckpoint(this);placeAtRoofCheckpoint(this);placeAtStudioCheckpoint(this);placeAtDimensionCheckpoint(this);delete this.player.warpScale;this.bolts=[];this.updateCamera();}
+ respawn(){releaseEchoPull(this);releaseTether(this);this.swallow=null;this.echoWarp=null;wakePlayer(this.player);Object.assign(this.player,{...spawns[this.checkpoint],h:48,vx:0,vy:0,grounded:true,supportId:this.checkpoint+':0',inv:1.6,dash:0,dashCooldown:0,attack:0,cooldown:0,lowSwat:false,climbing:false,sneaking:false,forcedCrouch:false,flipped:false,launch:0,dropTime:0,dropId:null,dropHeld:false,dropConsumed:false,knock:0,slipping:false,onInk:false,inkTime:0,slideTime:0});this.safeTrail=[{platformId:this.player.supportId,x:this.player.x,y:this.player.y}];placeAtNewsroomCheckpoint(this);placeAtRoofCheckpoint(this);placeAtStudioCheckpoint(this);placeAtDimensionCheckpoint(this);delete this.player.warpScale;this.bolts=[];this.updateCamera();}
  restoreCheckpoint(){
   const revealed=this.enemies.filter(e=>e.room===this.checkpoint&&e.type==='clickbait'&&e.revealed&&!e.dead);
   const local=createEnemies().filter(e=>e.room===this.checkpoint).map(e=>alignEnemyToPlatform(this,e)).map(e=>{const old=revealed.find(old=>e.type==='clickbait'&&old.platformIndex===e.platformIndex);return old?{...e,revealed:true,active:true,noticed:true,state:'patrol',timer:1,x:Math.max(e.origin,Math.min(e.end,old.x)),walkTime:old.walkTime}:e;});
@@ -163,7 +163,7 @@ export class Game {
   const p=this.player,oldX=p.x,oldY=p.y,oldRoom=this.room;p.powerTime=Math.max(0,p.powerTime-dt);p.speedTime=Math.max(0,(p.speedTime||0)-dt);
   if(this.swallow){const captor=this.enemies.find(e=>e.id===this.swallow.enemyId);this.swallow.timer=Math.max(0,this.swallow.timer-dt);if(captor)captor.captureTime=1-this.swallow.timer/this.swallow.total;if(this.swallow.timer===0){if(captor){captor.captureTime=null;captor.attackFlash=0;}
    // Кликбейт costs two hearts; only when that would empty them does it take a life.
-   if(this.health>2&&!this.testingInvulnerable){this.health-=2;this.swallow=null;Object.assign(this.player,{inv:1.8,hurtTime:.5,vx:0,vy:this.player.flipped?240:-240,grounded:false,knock:.25});this.emit('clickbaitSpit',{x:this.player.x,y:this.player.y});}
+   if(this.health>2&&!this.testingInvulnerable){this.health-=2;this.respawn();Object.assign(this.player,{inv:1.8,hurtTime:.5});this.emit('clickbaitSpit',{x:this.player.x,y:this.player.y});}
    else this.loseLife('clickbait');this.updateCamera();}return;}
   stepWorldPlatforms(this,dt);
   stepTacticalTerrain(this,dt);
@@ -175,9 +175,9 @@ export class Game {
   let useLadder=ladder&&p.dash===0&&(input.up&&p.y+p.h>ladder.y+6||input.down&&p.y+p.h<ladder.y+ladder.h-1);
   const dropping=tryDrop(this,input,dt);if(dropping)useLadder=false;
   // ↓ + attack is a low paw swat from the sneak when there is nothing to drop through to (or a target is in reach).
-  const lowSwat=!!(input.attack&&input.down&&!dropping&&!p.dropConsumed&&this.abilities.attack&&this.abilities.sneak&&p.grounded&&!useLadder);
+  const lowSwat=!!(input.attack&&(input.down||p.sneaking||p.forcedCrouch)&&!dropping&&!p.dropConsumed&&this.abilities.attack&&this.abilities.sneak&&p.grounded&&!useLadder);
   const canAttack=input.attack&&(!input.down||lowSwat)&&this.abilities.attack,canDash=input.dash&&this.abilities.dash;
-  p.sneaking=!!((this.abilities.sneak&&input.down||p.forcedCrouch)&&!p.flipped&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&(lowSwat||p.lowSwat&&p.attack>0||p.attack===0&&!canAttack)&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
+  p.sneaking=!!((this.abilities.sneak&&(input.down||lowSwat||p.lowSwat&&p.attack>0)||p.forcedCrouch)&&!p.flipped&&p.grounded&&!useLadder&&p.dash===0&&p.knock===0&&(lowSwat||p.lowSwat&&p.attack>0||p.attack===0&&!canAttack)&&!input.jump&&!canDash);playerHeight(p,p.sneaking?26:48);
   p.coyote=p.grounded?.1:Math.max(0,p.coyote-dt);p.jumpBuffer=input.jump&&!input.down?.13:Math.max(0,p.jumpBuffer-dt);
   if(canDash&&p.dashCooldown===0){p.dash=.2;p.dashCooldown=1.5;p.climbing=false;p.knock=0;p.hurtTime=0;p.vy=0;this.emit('dash');}
   playerHorizontal(this,axis,dt);stepTether(this,dt);stepEchoPull(this,dt);

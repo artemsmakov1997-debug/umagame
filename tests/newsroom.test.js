@@ -43,10 +43,11 @@ test('a press takes a whole life; its warning and raised head leave a fair windo
  assert.ok(PRESS_WARN>=2,'the head stays up long enough to run under it');assert.ok(PRESS_SLAM-PRESS_WARN>=.9,'about a second of warning');
 });
 
-test('a press crushes monsters and Censors under it',()=>{
+test('a press spares Fakenews but still crushes other monsters and Censors under it',()=>{
  const press=PRESSES[1],g=ready();place(g,0,press.x-300);const e=enemy('fakenews',1,press.x+50,0,{active:true,spawnTime:0,state:'recover',timer:99});g.enemies=[e];
  g.censors=[{id:'c',source:0,x:R.x+press.x+100,phase:'stand',time:0,flash:0}];toPhase(g,press,PRESS_HOLD-.2);tick(g,1);
- assert.equal(e.dead,true);assert.equal(g.censors[0].phase,'retract');assert.ok(g.events.some(x=>x.type==='pressCrush'));
+ assert.equal(e.dead,false);assert.equal(e.hp,2);assert.equal(g.kills,0);assert.equal(g.censors[0].phase,'retract');assert.ok(g.events.some(x=>x.type==='pressCrush'));
+ const stamp=enemy('stamp',1,press.x+55,0,{active:true,spawnTime:0,state:'recover',timer:99});g.enemies.push(stamp);tick(g,1);assert.equal(stamp.dead,true);assert.equal(e.dead,false);
 });
 
 test('a Censor grows from the belt ahead of Uma after a harmless warning, rides towards her and hurts on touch',()=>{
@@ -63,9 +64,9 @@ test('a Censor cannot be defeated by the paw',()=>{
 });
 
 test('catwalks are checkpoints: a lost life returns Uma to the furthest one reached',()=>{
- const g=ready();place(g,CHECKPOINTS[1],1500);tick(g,2);assert.equal(g.newsroomCheckpoint,1);
+ const g=ready();place(g,CHECKPOINTS[0],900);tick(g,2);assert.equal(g.newsroomCheckpoint,0);
  place(g,0,1700);g.health=1;g.player.inv=0;g.hurt(false,g.player.x+100);tick(g,90);
- assert.equal(g.mode,'playing');assert.equal(g.player.supportId,'1:'+CHECKPOINTS[1]);
+ assert.equal(g.mode,'playing');assert.equal(g.player.supportId,'1:'+CHECKPOINTS[0]);
  g.retryLocation();assert.equal(g.newsroomCheckpoint,null);
 });
 

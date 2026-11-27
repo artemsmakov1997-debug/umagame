@@ -81,7 +81,7 @@ export function stepDimension(g,dt,oldX){
  // «Первоисточники».
  for(const o of g.originals||[])if(o.room===DIM_ROOM&&!o.taken&&g.overlap(p,o)){o.taken=true;g.emit('sourceFound',{x:o.x,y:o.y,count:originalsFound(g),total:ORIGINALS.length});}
  // Checkpoints and one hint per block.
- DIM_CHECKPOINTS.forEach((c,i)=>{if(i>q.checkpoint&&p.grounded&&p.supportId===DIM_ROOM+':'+c.index&&local>=c.x-30)q.checkpoint=i;});
+ DIM_CHECKPOINTS.forEach((c,i)=>{if(i>q.checkpoint&&p.grounded&&p.supportId===DIM_ROOM+':'+c.index&&local>=c.x-30){q.checkpoint=i;g.emit('checkpoint',{x:p.x,y:p.y,room:DIM_ROOM});}});
  // The Кликбейт is introduced as soon as Uma heads into the feed: its bait bubbles are there from the start.
  if(!g.seenScenes?.has('sighting:clickbait')&&local>150){const r=(g.encounters[DIM_ROOM]??={types:{}});r.types.clickbait??={time:g.time,firstId:'bait'};g.seenScenes.add('sighting:clickbait');g.emit('enemyIntroduction',{enemyType:'clickbait',room:DIM_ROOM});}
  for(const [key,from] of [['feed',-1],['flip',700],['back',1520],['slide',1860]])if(!q.hints[key]&&local>from){q.hints[key]=true;g.emit('dimensionHint',{kind:key});}

@@ -40,8 +40,8 @@ export const FLOCK={period:7.5,first:3.5,warn:1.1,count:5,speed:250,spacing:38,w
 
 // Nothing blows without a Нагнетатель: the gusts come from them (roofs-systems.js).
 export const WIND={x1:0,x2:2304,period:5.3,warn:.9,gust:1.8,speed:-120,ground:-45};
-// Checkpoints after losing a life: start, A2, B1.
-export const ROOF_CHECKPOINTS=[{x:45,index:0},{x:720,index:2},{x:1340,index:4}];
+// Start fallback and one checkpoint on the safe central roof.
+export const ROOF_CHECKPOINTS=[{x:45,index:0},{x:1340,index:4}];
 export const ROOF_ENTRANCE={x:2196,h:150};
 export const roofSectionNames=['Батуты','Переулки','Ветреные крыши'];
 // What stands at a room-3 platform index.
